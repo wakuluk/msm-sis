@@ -1,0 +1,105 @@
+##################################
+# General
+##################################
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.orig
+
+##################################
+# IDE / Editor
+##################################
+.idea/
+.vscode/
+*.iml
+
+##################################
+# OS / Misc
+##################################
+.env
+.env.*
+!.env.example
+
+##################################
+# Java / Spring Boot (api/)
+##################################
+api/target/
+api/build/
+api/.gradle/
+api/gradle-app.setting
+api/!gradle/wrapper/gradle-wrapper.jar
+
+# Logs
+api/logs/
+api/*.log
+
+# Spring Boot devtools
+api/.springBootDevtools/
+
+##################################
+# Node / React (frontend/)
+##################################
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.cache/
+frontend/.parcel-cache/
+frontend/.next/
+frontend/out/
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+##################################
+# Msm-sis-fileshare
+##################################
+msm-sis-file-share/
+
+##################################
+# Docker
+##################################
+# Ignore local volumes / db data
+**/data/
+**/db_data/
+**/mysql_data/
+**/postgres_data/
+
+# Docker override files (local only)
+docker-compose.override.yml
+
+##################################
+# Database / Secrets
+##################################
+*.sql
+*.sqlite
+*.sqlite3
+
+# But allow migrations if you store them
+!api/src/main/resources/db/migration/
+
+##################################
+# Build Artifacts
+##################################
+*.jar
+*.war
+*.class
+
+##################################
+# Coverage / Testing
+##################################
+coverage/
+*.lcov
+
+##################################
+# Misc
+##################################
+*.pid
+*.seed
+*.tgz
