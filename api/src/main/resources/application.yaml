@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: msm-sis-api
+
+  datasource:
+    url: jdbc:mysql://msm-sis-db:3306/msmsisdb
+    username: root
+    password: msmsisdb
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration,classpath:db/testdata
+app:
+  cors:
+    allowed-origin: http://localhost:5173
+
+server:
+  port: 8080
