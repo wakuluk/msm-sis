@@ -1,5 +1,6 @@
 package com.msm.sis.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,12 +11,10 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 @Data
 @Entity
-@Table(name = "students")
-public class Student {
+@Table(name = "staff")
+public class Staff {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

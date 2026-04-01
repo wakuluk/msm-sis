@@ -15,7 +15,7 @@ function StudentSearch() {
         }
 
         try {
-            const res = await fetch(`/api/students?q=${encodeURIComponent(query)}`);
+            const res = await fetch(`/api/students?lastName=${encodeURIComponent(query)}`);
 
             if (!res.ok) {
                 setError(`Request failed with status ${res.status}`);
