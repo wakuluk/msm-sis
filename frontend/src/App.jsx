@@ -1,61 +1,48 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import Home from "./Home";
+import PdfList from "./PdfList";
+import PdfUpload from "./PdfUpload";
+import StudentSearch from "./StudentSearch";
+import StudentSearchById from "./StudentSearchById";
+import StudentCreate from "./StudentCreate";
 
 function App() {
-    const [health, setHealth] = useState(null);
-    const [student, setStudent] = useState(null);
-    const [studentId, setStudentId] = useState("");
-
-    useEffect(() => {
-        fetch('/api/health')
-            .then(res => res.json())
-            .then(data => setHealth(data))
-            .catch(err => console.error("Health error:", err));
-    }, []);
-
     return (
-        <div>
-            <h1>React → Spring Test</h1>
+        <Router>
+            <div style={{ padding: "20px" }}>
+                <h1>MSM SIS</h1>
 
-            <h2>Health</h2>
-            <pre>{JSON.stringify(health, null, 2)}</pre>
+                <nav style={{ marginBottom: "20px" }}>
+                    <Link to="/" style={{ marginRight: "10px" }}>
+                        Home
+                    </Link>
+                    <Link to="/students" style={{ marginRight: "10px" }}>
+                        Search Students
+                    </Link>
+                    <Link to="/students/id" style={{ marginRight: "10px" }}>
+                        Search Student By ID
+                    </Link>
+                    <Link to="/students/new" style={{ marginRight: "10px" }}>
+                        Create Student
+                    </Link>
+                    <Link to="/pdfs" style={{ marginRight: "10px" }}>
+                        List PDFs
+                    </Link>
+                    <Link to="/pdfs/new">
+                        Upload PDF
+                    </Link>
+                </nav>
 
-            <h2>Lookup Student</h2>
-
-            <input
-                type="text"
-                placeholder="Enter student ID"
-                value={studentId}
-                onChange={(e) => setStudentId(e.target.value)}
-                style={{ padding: "8px", marginRight: "10px" }}
-            />
-
-            <button
-                onClick={() => {
-                    fetch(`/api/students/${studentId}`)
-                        .then(res => res.json())
-                        .then(data => setStudent(data))
-                        .catch(err => console.error("Student error:", err));
-                }}
-            >
-                Fetch Student
-            </button>
-
-            <h2>Student</h2>
-            <pre>{JSON.stringify(student, null, 2)}</pre>
-
-            <button
-                style={{
-                    padding: "10px 16px",
-                    fontSize: "16px",
-                    cursor: "pointer"
-                }}
-                onClick={() => {
-                    window.location.href = "/opensis/bridge_to_add_student.php";
-                }}
-            >
-                ← Back to OpenSIS (Add Student)
-            </button>
-        </div>
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/students" element={<StudentSearch />} />
+                    <Route path="/students/id" element={<StudentSearchById />} />
+                    <Route path="/students/new" element={<StudentCreate />} />
+                    <Route path="/pdfs" element={<PdfList />} />
+                    <Route path="/pdfs/new" element={<PdfUpload />} />
+                </Routes>
+            </div>
+        </Router>
     );
 }
 

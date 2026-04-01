@@ -21,6 +21,8 @@ spring:
 app:
   cors:
     allowed-origin: http://localhost:5173
+  storage:
+    root-dir: ${APP_STORAGE_ROOT_DIR:./uploads}
 
 server:
   port: 8080

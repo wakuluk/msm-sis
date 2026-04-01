@@ -44,6 +44,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://msm-sis-db:3306/msmsisdb
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: msmsisdb
+      APP_STORAGE_ROOT_DIR: /app/files
 
 volumes:
   msm_sis_db_data:
