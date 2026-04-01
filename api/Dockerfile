@@ -1,9 +1,16 @@
 FROM amazoncorretto:26.0.0-alpine3.22 AS build
 
 WORKDIR /app
-COPY . .
 
-RUN chmod +x gradlew && ./gradlew bootJar --no-daemon
+COPY gradlew gradlew.bat build.gradle settings.gradle ./
+COPY gradle gradle
+
+RUN chmod +x gradlew
+RUN ./gradlew dependencies --no-daemon
+
+COPY src src
+
+RUN ./gradlew bootJar --no-daemon -x test
 
 FROM amazoncorretto:26.0.0-alpine3.22
 

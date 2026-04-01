@@ -1,5 +1,6 @@
 package com.msm.sis.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,26 +11,21 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 @Data
 @Entity
-@Table(name = "students")
-public class Student {
+@Table(name = "pdf_documents")
+public class PdfDocument {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "first_name")
-    private String firstName;
+    @Column(name = "file_path", nullable = false)
+    private String filePath;
 
-    @Column(name = "last_name")
-    private String lastName;
-
-    @Column(name = "email")
-    private String email;
+    @Column(name = "original_file_name", nullable = false)
+    private String originalFileName;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "created_at", insertable = false, updatable = false)
