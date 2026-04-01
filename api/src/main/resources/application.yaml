@@ -17,10 +17,14 @@ spring:
         format_sql: true
   flyway:
     enabled: true
-    locations: classpath:db/migration,classpath:db/testdata
+    locations: classpath:db/migration
 app:
   cors:
     allowed-origin: http://localhost:5173
+  security:
+    jwt:
+      secret: ${APP_JWT_SECRET:change-me-to-a-long-random-development-secret-at-least-32-bytes}
+      expiration-seconds: ${APP_JWT_EXPIRATION_SECONDS:3600}
   storage:
     root-dir: ${APP_STORAGE_ROOT_DIR:./uploads}
 

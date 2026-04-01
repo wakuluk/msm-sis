@@ -18,5 +18,9 @@ spring:
     locations: classpath:db/migration,classpath:db/testdata
 
 app:
+  security:
+    jwt:
+      secret: change-me-to-a-long-random-development-secret-at-least-32-bytes
+      expiration-seconds: 3600
   storage:
     root-dir: ./uploads

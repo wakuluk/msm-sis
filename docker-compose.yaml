@@ -34,6 +34,7 @@ services:
       context: ./api
     ports:
       - "8081:8080"
+      - "5005:5005"
     depends_on:
       msm-sis-db:
         condition: service_healthy
@@ -45,6 +46,7 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: msmsisdb
       APP_STORAGE_ROOT_DIR: /app/files
+      JAVA_OPTS: ${JAVA_OPTS:-}
 
 volumes:
   msm_sis_db_data:
