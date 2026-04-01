@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -47,12 +46,8 @@ public class StudentController {
     @GetMapping("/{studentId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get student by id", description = "Returns a single student record")
-    public ResponseEntity<Student> getStudent(@PathVariable Long studentId, Authentication authentication) {
-        if (authentication == null || !(authentication.getPrincipal() instanceof AuthenticatedUser authenticatedUser)) {
-            return ResponseEntity.status(401).build();
-        }
-
-        return ResponseEntity.ok(studentAccessService.getAuthorizedStudentById(authenticatedUser, studentId));
+    public ResponseEntity<Student> getStudent(@PathVariable Long studentId) {
+        return ResponseEntity.ok(studentAccessService.getStudentById(studentId));
     }
 
     @PostMapping("/create")

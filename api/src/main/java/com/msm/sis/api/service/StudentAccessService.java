@@ -16,21 +16,9 @@ public class StudentAccessService {
         this.studentRepository = studentRepository;
     }
 
-    public Student getAuthorizedStudentById(AuthenticatedUser authenticatedUser, Long studentId) {
-        Student student = studentRepository.findById(studentId)
+    public Student getStudentById(Long studentId) {
+        return studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        if (authenticatedUser.hasAnyRole("ADMIN", "STAFF")) {
-            return student;
-        }
-
-        if (authenticatedUser.hasRole("STUDENT")
-                && authenticatedUser.userId() != null
-                && authenticatedUser.userId().equals(student.getUserId())) {
-            return student;
-        }
-
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }
 
     public Student getStudentProfile(AuthenticatedUser authenticatedUser) {
