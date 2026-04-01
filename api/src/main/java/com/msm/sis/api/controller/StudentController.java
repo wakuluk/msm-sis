@@ -1,6 +1,6 @@
 package com.msm.sis.api.controller;
 
-import com.msm.sis.api.config.AuthenticatedUser;
+import com.msm.sis.api.config.AuthenticatedJwt;
 import com.msm.sis.api.entity.Student;
 import com.msm.sis.api.repository.StudentRepository;
 import com.msm.sis.api.service.StudentAccessService;
@@ -35,8 +35,8 @@ public class StudentController {
     @GetMapping("/profile")
     @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Get current student profile", description = "Returns the student record linked to the authenticated student user")
-    public ResponseEntity<Student> getStudentProfile(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
-        return ResponseEntity.ok(studentAccessService.getStudentProfile(authenticatedUser));
+    public ResponseEntity<Student> getStudentProfile(@AuthenticationPrincipal AuthenticatedJwt jwt) {
+        return ResponseEntity.ok(studentAccessService.getStudentProfile(jwt.getUserId()));
     }
 
     /***

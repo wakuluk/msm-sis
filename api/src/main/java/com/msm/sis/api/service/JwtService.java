@@ -1,9 +1,7 @@
 package com.msm.sis.api.service;
 
 import com.msm.sis.api.entity.SisUser;
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,36 +36,11 @@ public class JwtService {
                 .claim("roles", roles)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
-                .signWith(secretKey)
+                .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
-    }
-
-    public ParsedJwt parseToken(String token) throws JwtException {
-        Claims claims = Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
-        Long userId = claims.get("userId", Long.class);
-        String email = claims.getSubject();
-        List<String> roles = claims.get("roles", List.class);
-
-        return new ParsedJwt(
-                userId,
-                email,
-                roles == null ? List.of() : roles.stream().map(String::valueOf).toList()
-        );
     }
 
     public long getExpirationSeconds() {
         return expirationSeconds;
-    }
-
-    public record ParsedJwt(
-            Long userId,
-            String email,
-            List<String> roles
-    ) {
     }
 }

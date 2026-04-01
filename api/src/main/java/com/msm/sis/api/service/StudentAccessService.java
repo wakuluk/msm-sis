@@ -1,6 +1,5 @@
 package com.msm.sis.api.service;
 
-import com.msm.sis.api.config.AuthenticatedUser;
 import com.msm.sis.api.entity.Student;
 import com.msm.sis.api.repository.StudentRepository;
 import org.springframework.http.HttpStatus;
@@ -21,12 +20,12 @@ public class StudentAccessService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
-    public Student getStudentProfile(AuthenticatedUser authenticatedUser) {
-        if (authenticatedUser.userId() == null) {
+    public Student getStudentProfile(Long userId) {
+        if (userId == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        return studentRepository.findByUserId(authenticatedUser.userId())
+        return studentRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 }
