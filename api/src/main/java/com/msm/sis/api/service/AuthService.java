@@ -12,7 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @Service
-public class AuthService {
+public class  AuthService {
 
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
