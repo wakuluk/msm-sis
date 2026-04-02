@@ -4,7 +4,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--space-6);
   box-sizing: border-box;
   overflow: hidden;
   background:
@@ -50,7 +50,7 @@
   width: 100%;
   padding: 32px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 24px;
+  border-radius: var(--radius-lg);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9)),
     linear-gradient(160deg, rgba(88, 181, 255, 0.14), rgba(1, 40, 85, 0.08));
@@ -99,13 +99,14 @@
 }
 
 .login-button {
+  --button-hover-background: linear-gradient(90deg, #01163c 0%, #012855 100%);
+  --button-hover-transform: translateY(-4px);
   width: 100%;
   background: linear-gradient(90deg, #012855 0%, #0d4c8f 100%);
 }
 
 .login-button:hover {
   background: linear-gradient(90deg, #01163c 0%, #012855 100%);
-  transform: translateY(-4px);
 }
 
 .login-button:disabled {

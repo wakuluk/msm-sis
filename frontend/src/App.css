@@ -7,45 +7,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
   min-height: 72px;
-  padding: 16px 24px;
+  padding: var(--space-4) var(--space-6);
   background: linear-gradient(180deg, #0e3b73 0%, #1d5a9c 100%);
-  box-shadow: 0 10px 24px rgba(1, 40, 85, 0.18);
-
+  box-shadow: var(--shadow-header);
   border-bottom: 1px solid var(--shell-border);
-}
-
-.app-header__brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.app-header__logo-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.app-header__logo {
-  width: 75px;
-  height: 75px;
-  object-fit: contain;
-  display: block;
-}
-
-.app-header__menu {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--shell-border);
-  border-radius: 10px;
-  color: var(--brand-blue);
-  background: var(--card-background);
-  font-size: 10px;
-  letter-spacing: 1px;
 }
 
 .app-header__title {
@@ -54,34 +21,11 @@
   color: #ffffff;
 }
 
-.app-header__subtitle {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
-.app-header__meta {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  color: var(--text-muted);
-  font-size: 0.95rem;
-}
-
-.app-userbar {
-  display: flex;
-  gap: 20px;
-  padding: 12px 24px;
-  background: var(--brand-blue);
-  color: #ffffff;
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
 .app-main {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   align-items: start;
-  gap: 20px;
+  gap: var(--space-5);
   padding: 18px;
 }
 
@@ -94,13 +38,13 @@
   max-height: calc(100svh - 36px);
   overflow-x: hidden;
   overflow-y: auto;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   background: linear-gradient(180deg, #0e3b73 0%, #1d5a9c 100%);
-  box-shadow: 0 14px 34px rgba(1, 40, 85, 0.14);
+  box-shadow: var(--shadow-elevated);
 }
 
 .app-profile {
-  padding: 28px 20px 24px;
+  padding: var(--space-7) var(--space-5) var(--space-6);
   text-align: center;
   color: #ffffff;
   background:
@@ -151,6 +95,8 @@
 }
 
 .app-sidebar__logout {
+  --button-hover-transform: none;
+  --button-hover-background: rgba(255, 255, 255, 0.2);
   width: 100%;
   background: rgba(255, 255, 255, 0.12);
   box-shadow: none;
@@ -158,7 +104,6 @@
 
 .app-sidebar__logout:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: none;
 }
 
 .app-nav__link {
@@ -198,13 +143,7 @@
     max-height: none;
   }
 
-  .app-header,
-  .app-userbar {
+  .app-header {
     padding-inline: 16px;
-  }
-
-  .app-userbar {
-    flex-direction: column;
-    gap: 6px;
   }
 }
