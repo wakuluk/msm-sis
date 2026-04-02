@@ -16,4 +16,8 @@ public final class AuthenticatedJwt {
         this.email = email;
         this.roles = roles;
     }
+
+    public String getUsername() {
+        return email;
+    }
 }
