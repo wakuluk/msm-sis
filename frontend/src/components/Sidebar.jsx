@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { getAccessibleNavigationItems } from "../config/navigationConfig";
 import { getAuthState, getUserRoles, logout } from "../services/authService";
 
@@ -10,7 +10,7 @@ function formatRole(role) {
         .join(" ");
 }
 
-function Sidebar({ pathname }) {
+function Sidebar() {
     const navigate = useNavigate();
     const authState = getAuthState();
     const userRoles = getUserRoles();
@@ -39,17 +39,17 @@ function Sidebar({ pathname }) {
 
             <nav className="app-nav" aria-label="Main navigation">
                 {visibleNavigationItems.map((item) => {
-                    const isActive = pathname === item.to;
-
                     return (
-                        <Link
+                        <NavLink
                             key={item.to}
                             to={item.to}
-                            className={`app-nav__link${isActive ? " app-nav__link--active" : ""}`}
+                            className={({ isActive }) =>
+                                `app-nav__link${isActive ? " app-nav__link--active" : ""}`
+                            }
                         >
                             <span>{item.label}</span>
                             <span className="app-nav__chevron">&gt;</span>
-                        </Link>
+                        </NavLink>
                     );
                 })}
             </nav>

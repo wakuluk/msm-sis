@@ -10,7 +10,7 @@ import StudentCreate from "./pages/StudentCreate";
 import { isAuthenticated } from "./services/authService";
 import "./App.css";
 
-function AuthenticatedLayout({ children, pathname }) {
+function AuthenticatedLayout({ children }) {
     return (
         <div className="app-shell">
             <header className="app-header">
@@ -18,7 +18,7 @@ function AuthenticatedLayout({ children, pathname }) {
             </header>
 
             <div className="app-main">
-                <Sidebar pathname={pathname} />
+                <Sidebar />
 
                 <main className="app-content">
                     {children}
@@ -44,7 +44,7 @@ function AppLayout() {
             )
         ) : (
             authenticated ? (
-                <AuthenticatedLayout pathname={location.pathname}>
+                <AuthenticatedLayout>
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/students" element={<StudentSearch />} />

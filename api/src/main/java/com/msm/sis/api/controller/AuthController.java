@@ -50,7 +50,7 @@ public class AuthController {
     @Operation(summary = "Get current user", description = "Returns the authenticated user's username and roles")
     public ResponseEntity<CurrentUserResponse> me(@AuthenticationPrincipal AuthenticatedJwt jwt) {
         return ResponseEntity.ok(new CurrentUserResponse(
-                jwt.getUsername(),
+                jwt.getEmail(),
                 jwt.getRoles()
         ));
     }
