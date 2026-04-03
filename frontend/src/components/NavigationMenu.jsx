@@ -2,14 +2,6 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { getAccessibleNavigationPages } from "../config/appPages";
 import { useAuth } from "../contexts/useAuth";
 
-function formatRole(role) {
-    return role
-        .toLowerCase()
-        .split("_")
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ");
-}
-
 function NavigationMenu() {
     const navigate = useNavigate();
     const { currentUser, userRoles, logout } = useAuth();
@@ -18,7 +10,7 @@ function NavigationMenu() {
     const initialsSource = displayName.split("@")[0] || displayName;
     const initials = initialsSource.slice(0, 2).toUpperCase();
     const roleLabel = userRoles.length > 0
-        ? userRoles.map(formatRole).join(", ")
+        ? userRoles.join(", ")
         : "Authenticated User";
 
     const handleLogout = () => {

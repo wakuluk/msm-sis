@@ -1,6 +1,5 @@
 const AUTH_STORAGE_KEY = "msm-sis-auth";
 const LOGIN_EMAIL_STORAGE_KEY = "msm-sis-login-email";
-const LEGACY_LAST_EMAIL_STORAGE_KEY = "msm-sis-last-email";
 const AUTH_STATE_CHANGED_EVENT = "msm-sis-auth-state-changed";
 
 function getStoredItem(key) {
@@ -46,7 +45,6 @@ export async function login(email, password) {
 
   setStoredItem(AUTH_STORAGE_KEY, JSON.stringify(authState));
   setStoredItem(LOGIN_EMAIL_STORAGE_KEY, payload.email.trim());
-  localStorage.removeItem(LEGACY_LAST_EMAIL_STORAGE_KEY);
   notifyAuthStateChanged(authState);
 
   return authState;
@@ -80,9 +78,7 @@ export function subscribeToAuthStateChanges(listener) {
 }
 
 export function getSavedLoginEmail() {
-  return getStoredItem(LOGIN_EMAIL_STORAGE_KEY)
-    ?? getStoredItem(LEGACY_LAST_EMAIL_STORAGE_KEY)
-    ?? "";
+  return getStoredItem(LOGIN_EMAIL_STORAGE_KEY) ?? "";
 }
 
 export function getAuthState() {
