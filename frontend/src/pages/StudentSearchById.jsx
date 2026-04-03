@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { authFetch } from "../services/authService";
 
 function StudentSearchById() {
     const [studentId, setStudentId] = useState("");
@@ -22,7 +23,7 @@ function StudentSearchById() {
         }
 
         try {
-            const res = await fetch(`/api/students/${encodeURIComponent(trimmedId)}`);
+            const res = await authFetch(`/api/students/${encodeURIComponent(trimmedId)}`);
 
             if (res.status === 404) {
                 setError("Student not found.");

@@ -1,3 +1,5 @@
+import { ROLES } from "./roles";
+
 export const navigationItems = [
   { to: "/", label: "Home" },
   {
@@ -5,31 +7,31 @@ export const navigationItems = [
     label: "Students",
     quickActionLabel: "Search Students",
     showInQuickActions: true,
-    roles: ["ADMIN"],
+    roles: [ROLES.ADMIN],
   },
   {
     to: "/students/id",
     label: "Student ID Search",
-    roles: ["STUDENT"],
+    roles: [ROLES.STUDENT],
   },
   {
     to: "/students/new",
     label: "Create Student",
     showInQuickActions: true,
-    roles: ["ADMIN"],
+    roles: [ROLES.ADMIN],
   },
   {
     to: "/pdfs",
     label: "Documents",
     quickActionLabel: "View Documents",
     showInQuickActions: true,
-    roles: ["ADMIN"],
+    roles: [ROLES.ADMIN],
   },
   {
     to: "/pdfs/new",
     label: "Upload PDF",
     showInQuickActions: true,
-    roles: ["ADMIN"],
+    roles: [ROLES.ADMIN],
   },
 ];
 

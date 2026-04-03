@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { authFetch } from "../services/authService";
 
 function PdfList() {
     const [documents, setDocuments] = useState([]);
@@ -13,7 +14,7 @@ function PdfList() {
             setIsLoading(true);
 
             try {
-                const res = await fetch("/api/pdfs");
+                const res = await authFetch("/api/pdfs");
 
                 if (!res.ok) {
                     if (isMounted) {

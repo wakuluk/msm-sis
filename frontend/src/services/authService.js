@@ -1,5 +1,7 @@
 const AUTH_STORAGE_KEY = "msm-sis-auth";
-const LAST_EMAIL_STORAGE_KEY = "msm-sis-last-email";
+const LOGIN_EMAIL_STORAGE_KEY = "msm-sis-login-email";
+const LEGACY_LAST_EMAIL_STORAGE_KEY = "msm-sis-last-email";
+const AUTH_STATE_CHANGED_EVENT = "msm-sis-auth-state-changed";
 
 function getStoredItem(key) {
   return localStorage.getItem(key);
@@ -7,6 +9,14 @@ function getStoredItem(key) {
 
 function setStoredItem(key, value) {
   localStorage.setItem(key, value);
+}
+
+function notifyAuthStateChanged(authState) {
+  window.dispatchEvent(new CustomEvent(AUTH_STATE_CHANGED_EVENT, {
+    detail: {
+      authState,
+    },
+  }));
 }
 
 export async function login(email, password) {
@@ -35,17 +45,44 @@ export async function login(email, password) {
   };
 
   setStoredItem(AUTH_STORAGE_KEY, JSON.stringify(authState));
-  setStoredItem(LAST_EMAIL_STORAGE_KEY, trimmedEmail);
+  setStoredItem(LOGIN_EMAIL_STORAGE_KEY, payload.email.trim());
+  localStorage.removeItem(LEGACY_LAST_EMAIL_STORAGE_KEY);
+  notifyAuthStateChanged(authState);
 
   return authState;
 }
 
 export function logout() {
   localStorage.removeItem(AUTH_STORAGE_KEY);
+  notifyAuthStateChanged(null);
 }
 
-export function getLastEmail() {
-  return getStoredItem(LAST_EMAIL_STORAGE_KEY) ?? "";
+export function subscribeToAuthStateChanges(listener) {
+  const handleAuthStateChanged = (event) => {
+    listener(event.detail?.authState ?? getAuthState());
+  };
+
+  const handleStorageChanged = (event) => {
+    if (event.key && event.key !== AUTH_STORAGE_KEY) {
+      return;
+    }
+
+    listener(getAuthState());
+  };
+
+  window.addEventListener(AUTH_STATE_CHANGED_EVENT, handleAuthStateChanged);
+  window.addEventListener("storage", handleStorageChanged);
+
+  return () => {
+    window.removeEventListener(AUTH_STATE_CHANGED_EVENT, handleAuthStateChanged);
+    window.removeEventListener("storage", handleStorageChanged);
+  };
+}
+
+export function getSavedLoginEmail() {
+  return getStoredItem(LOGIN_EMAIL_STORAGE_KEY)
+    ?? getStoredItem(LEGACY_LAST_EMAIL_STORAGE_KEY)
+    ?? "";
 }
 
 export function getAuthState() {
@@ -76,47 +113,46 @@ export function getAuthState() {
   }
 }
 
-export function isAuthenticated() {
-  return getAuthState() !== null;
-}
+export async function authFetch(input, init) {
+  const authState = getAuthState();
 
-export function getAccessToken() {
-  return getAuthState()?.token ?? null;
-}
-
-export function getUserRoles() {
-  const roles = getAuthState()?.roles;
-
-  if (!Array.isArray(roles)) {
-    return [];
+  if (!authState?.token) {
+    throw new Error("Authentication required.");
   }
 
-  return roles.filter((role) => typeof role === "string" && role.trim() !== "");
+  const request = new Request(input, init);
+  const headers = new Headers(request.headers);
+  headers.set("Authorization", `Bearer ${authState.token}`);
+
+  const response = await fetch(new Request(request, { headers }));
+
+  if (response.status === 401) {
+    logout();
+  }
+
+  return response;
 }
 
 export async function fetchCurrentUser() {
-  const token = getAccessToken();
+  try {
+    const response = await authFetch("/api/auth/me");
 
-  if (!token) {
-    return null;
+    if (response.status === 401 || response.status === 403) {
+      return null;
+    }
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.message ?? "Failed to load current user.");
+    }
+
+    return payload;
+  } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required.") {
+      return null;
+    }
+
+    throw error;
   }
-
-  const response = await fetch("/api/auth/me", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    logout();
-    return null;
-  }
-
-  const payload = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(payload.message ?? "Failed to load current user.");
-  }
-
-  return payload;
 }

@@ -1,56 +1,12 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAccessibleNavigationItems } from "../config/navigationConfig";
-import { fetchCurrentUser, getAuthState } from "../services/authService";
+import { useAuth } from "../contexts/useAuth";
 import "./Home.css";
 
 function Home() {
-    const authState = getAuthState();
-    const [currentUser, setCurrentUser] = useState(null);
-    const [isLoadingUser, setIsLoadingUser] = useState(Boolean(authState?.token));
-    const [userError, setUserError] = useState("");
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const loadCurrentUser = async () => {
-            if (!authState?.token) {
-                if (isMounted) {
-                    setIsLoadingUser(false);
-                }
-                return;
-            }
-
-            try {
-                const user = await fetchCurrentUser();
-
-                if (isMounted) {
-                    setCurrentUser(user);
-                    setUserError("");
-                }
-            } catch (error) {
-                console.error("Current user lookup error:", error);
-
-                if (isMounted) {
-                    setUserError("Could not load account details.");
-                }
-            } finally {
-                if (isMounted) {
-                    setIsLoadingUser(false);
-                }
-            }
-        };
-
-        loadCurrentUser();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [authState?.token]);
-
-    const welcomeName = currentUser?.username ?? authState?.email ?? "there";
-    const roles = currentUser?.roles ?? authState?.roles ?? [];
-    const quickActionItems = getAccessibleNavigationItems(roles).filter(
+    const { currentUser, userRoles, isLoadingAuth, authError } = useAuth();
+    const welcomeName = currentUser?.username ?? "there";
+    const quickActionItems = getAccessibleNavigationItems(userRoles).filter(
         (item) => item.showInQuickActions
     );
 
@@ -67,18 +23,18 @@ function Home() {
                     </p>
 
                     <div className="home-user-meta">
-                        {isLoadingUser ? (
+                        {isLoadingAuth ? (
                             <span className="home-user-meta__message">Loading account details...</span>
                         ) : null}
 
-                        {!isLoadingUser && userError ? (
+                        {!isLoadingAuth && authError ? (
                             <span className="home-user-meta__message home-user-meta__message--error">
-                                {userError}
+                                {authError}
                             </span>
                         ) : null}
 
-                        {!isLoadingUser && !userError && roles.length > 0 ? (
-                            roles.map((role) => (
+                        {!isLoadingAuth && !authError && userRoles.length > 0 ? (
+                            userRoles.map((role) => (
                                 <span key={role} className="home-role-chip">
                                     {role}
                                 </span>

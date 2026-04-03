@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { getAccessibleNavigationItems } from "../config/navigationConfig";
-import { getAuthState, getUserRoles, logout } from "../services/authService";
+import { useAuth } from "../contexts/useAuth";
 
 function formatRole(role) {
     return role
@@ -12,10 +12,9 @@ function formatRole(role) {
 
 function Sidebar() {
     const navigate = useNavigate();
-    const authState = getAuthState();
-    const userRoles = getUserRoles();
+    const { currentUser, userRoles, logout } = useAuth();
     const visibleNavigationItems = getAccessibleNavigationItems(userRoles);
-    const displayName = authState?.email ?? "User";
+    const displayName = currentUser?.username ?? "User";
     const initialsSource = displayName.split("@")[0] || displayName;
     const initials = initialsSource.slice(0, 2).toUpperCase();
     const roleLabel = userRoles.length > 0

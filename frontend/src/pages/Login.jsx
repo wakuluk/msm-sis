@@ -1,11 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getLastEmail, login } from "../services/authService";
+import { useAuth } from "../contexts/useAuth";
+import { getSavedLoginEmail } from "../services/authService";
 import "./Login.css";
+
+function getErrorMessage(error) {
+    if (error instanceof Error && error.message.trim() !== "") {
+        return error.message;
+    }
+
+    return "Something went wrong while signing in.";
+}
 
 function Login() {
     const navigate = useNavigate();
-    const [email, setEmail] = useState(() => getLastEmail());
+    const { login: loginUser } = useAuth();
+    const [email, setEmail] = useState(() => getSavedLoginEmail());
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,12 +34,12 @@ function Login() {
         setIsSubmitting(true);
 
         try {
-            await login(trimmedEmail, password);
+            await loginUser(trimmedEmail, password);
             setPassword("");
             navigate("/");
         } catch (submissionError) {
             console.error("Login error:", submissionError);
-            setError(submissionError.message || "Something went wrong while signing in.");
+            setError(getErrorMessage(submissionError));
         } finally {
             setIsSubmitting(false);
         }
