@@ -38,9 +38,6 @@ export const APP_PAGES = Object.freeze({
 });
 
 export const appPages = Object.values(APP_PAGES);
-const appPagesByPath = Object.freeze(
-  Object.fromEntries(appPages.map((page) => [page.path, page]))
-);
 
 export function canAccessAppPage(page, userRoles = []) {
   if (!page?.roles?.length) {
@@ -48,20 +45,6 @@ export function canAccessAppPage(page, userRoles = []) {
   }
 
   return page.roles.some((role) => userRoles.includes(role));
-}
-
-export function getAppPage(path) {
-  return appPagesByPath[path] ?? null;
-}
-
-export function getRequiredRolesForPath(path) {
-  const page = getAppPage(path);
-
-  if (!page) {
-    throw new Error(`No app page config found for path "${path}".`);
-  }
-
-  return Array.isArray(page.roles) ? page.roles : [];
 }
 
 export function getAccessibleNavigationPages(userRoles = []) {
