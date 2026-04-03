@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRoute from "./components/RoleRoute";
-import { ROLES } from "./config/roles";
-import Sidebar from "./components/Sidebar";
+import { APP_PAGES } from "./config/appPages";
+import NavigationMenu from "./components/NavigationMenu";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useAuth } from "./contexts/useAuth";
 import Home from "./pages/Home";
@@ -10,9 +10,9 @@ import Forbidden from "./pages/Forbidden";
 import Login from "./pages/Login";
 import PdfList from "./pages/PdfList";
 import PdfUpload from "./pages/PdfUpload";
+import StudentCreate from "./pages/StudentCreate";
 import StudentSearch from "./pages/StudentSearch";
 import StudentSearchById from "./pages/StudentSearchById";
-import StudentCreate from "./pages/StudentCreate";
 import "./App.css";
 
 function AuthenticatedLayout({ children }) {
@@ -23,7 +23,7 @@ function AuthenticatedLayout({ children }) {
             </header>
 
             <div className="app-main">
-                <Sidebar />
+                <NavigationMenu />
 
                 <main className="app-content">
                     {children ?? <Outlet />}
@@ -40,21 +40,33 @@ function AppRoutes() {
         <Routes>
             <Route
                 path="/login"
-                element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
+                element={isAuthenticated ? <Navigate to={APP_PAGES.HOME.path} replace /> : <Login />}
             />
 
             <Route element={<ProtectedRoute />}>
                 <Route element={<AuthenticatedLayout />}>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/forbidden" element={<Forbidden />} />
-                    <Route path="/students" element={<StudentSearch />} />
-                    <Route path="/students/id" element={<StudentSearchById />} />
-                    <Route element={<RoleRoute allowedRoles={[ROLES.ADMIN]} />}>
-                        <Route path="/students/new" element={<StudentCreate />} />
+                    <Route path={APP_PAGES.HOME.path} element={<Home />} />
+                    <Route path={APP_PAGES.FORBIDDEN.path} element={<Forbidden />} />
+
+                    <Route element={<RoleRoute allowedRoles={APP_PAGES.STUDENTS.roles} />}>
+                        <Route path={APP_PAGES.STUDENTS.path} element={<StudentSearch />} />
                     </Route>
 
-                    <Route path="/pdfs" element={<PdfList />} />
-                    <Route path="/pdfs/new" element={<PdfUpload />} />
+                    <Route element={<RoleRoute allowedRoles={APP_PAGES.STUDENT_ID_SEARCH.roles} />}>
+                        <Route path={APP_PAGES.STUDENT_ID_SEARCH.path} element={<StudentSearchById />} />
+                    </Route>
+
+                    <Route element={<RoleRoute allowedRoles={APP_PAGES.STUDENT_CREATE.roles} />}>
+                        <Route path={APP_PAGES.STUDENT_CREATE.path} element={<StudentCreate />} />
+                    </Route>
+
+                    <Route element={<RoleRoute allowedRoles={APP_PAGES.PDFS.roles} />}>
+                        <Route path={APP_PAGES.PDFS.path} element={<PdfList />} />
+                    </Route>
+
+                    <Route element={<RoleRoute allowedRoles={APP_PAGES.PDF_UPLOAD.roles} />}>
+                        <Route path={APP_PAGES.PDF_UPLOAD.path} element={<PdfUpload />} />
+                    </Route>
                 </Route>
             </Route>
         </Routes>

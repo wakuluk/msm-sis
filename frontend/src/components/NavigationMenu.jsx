@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { getAccessibleNavigationItems } from "../config/navigationConfig";
+import { getAccessibleNavigationPages } from "../config/appPages";
 import { useAuth } from "../contexts/useAuth";
 
 function formatRole(role) {
@@ -10,10 +10,10 @@ function formatRole(role) {
         .join(" ");
 }
 
-function Sidebar() {
+function NavigationMenu() {
     const navigate = useNavigate();
     const { currentUser, userRoles, logout } = useAuth();
-    const visibleNavigationItems = getAccessibleNavigationItems(userRoles);
+    const visibleNavigationItems = getAccessibleNavigationPages(userRoles);
     const displayName = currentUser?.username ?? "User";
     const initialsSource = displayName.split("@")[0] || displayName;
     const initials = initialsSource.slice(0, 2).toUpperCase();
@@ -27,21 +27,21 @@ function Sidebar() {
     };
 
     return (
-        <aside className="app-sidebar">
+        <aside className="app-navigation">
             <div className="app-profile">
                 <div className="app-profile__avatar">{initials}</div>
                 <div className="app-profile__name">{displayName}</div>
                 <div className="app-profile__role">{roleLabel}</div>
             </div>
 
-            <div className="app-sidebar__section">My Account</div>
+            <div className="app-navigation__section">My Account</div>
 
             <nav className="app-nav" aria-label="Main navigation">
                 {visibleNavigationItems.map((item) => {
                     return (
                         <NavLink
-                            key={item.to}
-                            to={item.to}
+                            key={item.path}
+                            to={item.path}
                             className={({ isActive }) =>
                                 `app-nav__link${isActive ? " app-nav__link--active" : ""}`
                             }
@@ -53,10 +53,10 @@ function Sidebar() {
                 })}
             </nav>
 
-            <div className="app-sidebar__footer">
+            <div className="app-navigation__footer">
                 <button
                     type="button"
-                    className="app-sidebar__logout"
+                    className="app-navigation__logout"
                     onClick={handleLogout}
                 >
                     Logout
@@ -66,4 +66,4 @@ function Sidebar() {
     );
 }
 
-export default Sidebar;
+export default NavigationMenu;

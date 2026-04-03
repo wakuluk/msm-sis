@@ -136,32 +136,6 @@
   color: var(--text-strong);
 }
 
-.home-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-5);
-}
-
-.home-quick-links {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.home-quick-links a {
-  padding: 14px 16px;
-  border: 1px solid var(--border-brand-soft);
-  border-radius: 14px;
-  color: var(--brand-blue);
-  background: rgba(1, 40, 85, 0.04);
-  text-decoration: none;
-  font-weight: 700;
-}
-
-.home-quick-links a:hover {
-  background: rgba(1, 40, 85, 0.08);
-}
-
 .home-status-list {
   display: grid;
   gap: 14px;
@@ -194,8 +168,6 @@
 
 @media (max-width: 960px) {
   .home-card--intro,
-  .home-grid,
-  .home-quick-links,
   .home-note-table__head,
   .home-note-table__row {
     grid-template-columns: 1fr;

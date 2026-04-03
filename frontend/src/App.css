@@ -29,7 +29,7 @@
   padding: 18px;
 }
 
-.app-sidebar {
+.app-navigation {
   position: sticky;
   top: 18px;
   display: flex;
@@ -75,7 +75,7 @@
   color: rgba(255, 255, 255, 0.76);
 }
 
-.app-sidebar__section {
+.app-navigation__section {
   padding: 14px 18px;
   background: rgba(0, 0, 0, 0.2);
   color: #ffffff;
@@ -88,13 +88,13 @@
   padding: 10px 0;
 }
 
-.app-sidebar__footer {
+.app-navigation__footer {
   margin-top: auto;
   padding: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.app-sidebar__logout {
+.app-navigation__logout {
   --button-hover-transform: none;
   --button-hover-background: rgba(255, 255, 255, 0.2);
   width: 100%;
@@ -102,7 +102,7 @@
   box-shadow: none;
 }
 
-.app-sidebar__logout:hover {
+.app-navigation__logout:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
@@ -207,7 +207,7 @@
     grid-template-columns: 1fr;
   }
 
-  .app-sidebar {
+  .app-navigation {
     position: static;
     top: auto;
     max-height: none;
