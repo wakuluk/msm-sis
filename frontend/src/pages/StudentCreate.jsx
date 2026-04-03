@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { authFetch } from "../services/authService";
 
 const initialFormState = {
     firstName: "",
@@ -39,7 +40,7 @@ function StudentCreate() {
         setIsSubmitting(true);
 
         try {
-            const res = await fetch("/api/students", {
+            const res = await authFetch("/api/students", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

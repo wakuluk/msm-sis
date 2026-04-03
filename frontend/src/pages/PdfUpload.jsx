@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { authFetch } from "../services/authService";
 
 function PdfUpload() {
     const [selectedFile, setSelectedFile] = useState(null);
@@ -29,7 +30,7 @@ function PdfUpload() {
         setIsSubmitting(true);
 
         try {
-            const res = await fetch("/api/pdfs", {
+            const res = await authFetch("/api/pdfs", {
                 method: "POST",
                 body: formData,
             });

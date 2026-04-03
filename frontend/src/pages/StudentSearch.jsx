@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { authFetch } from "../services/authService";
 
 function StudentSearch() {
     const [query, setQuery] = useState("");
@@ -15,7 +16,7 @@ function StudentSearch() {
         }
 
         try {
-            const res = await fetch(`/api/students?lastName=${encodeURIComponent(query)}`);
+            const res = await authFetch(`/api/students?lastName=${encodeURIComponent(query)}`);
 
             if (!res.ok) {
                 setError(`Request failed with status ${res.status}`);
