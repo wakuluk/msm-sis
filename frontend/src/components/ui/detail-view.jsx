@@ -4,10 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TabsContent } from "@/components/ui/tabs";
+import { formatDisplayValue } from "@/lib/formatDisplayValue";
 import { cn } from "@/lib/utils";
-import { formatProfileValue } from "@/components/profile/formatProfileValue";
 
-const profileStateIconVariants = cva(
+const detailStateIconVariants = cva(
   "flex h-16 w-16 items-center justify-center rounded-3xl",
   {
     variants: {
@@ -22,7 +22,7 @@ const profileStateIconVariants = cva(
   },
 );
 
-const profileStatusBadgeVariants = cva(
+const detailStatusBadgeVariants = cva(
   "w-fit shadow-[0_6px_16px_rgba(14,75,144,0.08)]",
   {
     variants: {
@@ -37,7 +37,7 @@ const profileStatusBadgeVariants = cva(
   },
 );
 
-export function ProfilePage({ className, ...props }) {
+export function DetailPage({ className, ...props }) {
   return (
     <div
       className={cn("mx-auto flex w-full max-w-6xl flex-col gap-6 py-1", className)}
@@ -46,7 +46,7 @@ export function ProfilePage({ className, ...props }) {
   );
 }
 
-export function ProfileHeaderCard({ eyebrow, title, statusBadges, summary }) {
+export function DetailHeaderCard({ eyebrow, title, badges, summary }) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="gap-6">
@@ -55,9 +55,9 @@ export function ProfileHeaderCard({ eyebrow, title, statusBadges, summary }) {
             {eyebrow ? <Badge className="w-fit">{eyebrow}</Badge> : null}
             <div className="space-y-4">
               <CardTitle className="text-3xl sm:text-4xl">
-                {formatProfileValue(title)}
+                {formatDisplayValue(title)}
               </CardTitle>
-              {statusBadges ? <div className="flex flex-wrap gap-3">{statusBadges}</div> : null}
+              {badges ? <div className="flex flex-wrap gap-3">{badges}</div> : null}
             </div>
           </div>
 
@@ -68,43 +68,43 @@ export function ProfileHeaderCard({ eyebrow, title, statusBadges, summary }) {
   );
 }
 
-export function ProfileStatusBadge({ className, tone, ...props }) {
+export function DetailStatusBadge({ className, tone, ...props }) {
   return (
     <Badge
       variant={tone === "cool" ? "accent" : "default"}
-      className={cn(profileStatusBadgeVariants({ tone }), className)}
+      className={cn(detailStatusBadgeVariants({ tone }), className)}
       {...props}
     />
   );
 }
 
-export function ProfileSummaryItem({ label, value }) {
+export function DetailSummaryCard({ label, value }) {
   return (
     <div className="rounded-2xl border border-[rgba(1,40,85,0.08)] bg-white/72 px-4 py-4 shadow-[0_6px_18px_rgba(1,40,85,0.06)]">
       <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[rgba(1,40,85,0.56)]">
         {label}
       </p>
       <p className="mt-2 text-base font-semibold text-[var(--text-strong)]">
-        {formatProfileValue(value)}
+        {formatDisplayValue(value)}
       </p>
     </div>
   );
 }
 
-export function ProfileField({ label, value }) {
+export function DetailField({ label, value }) {
   return (
     <div className="rounded-2xl border border-[rgba(1,40,85,0.08)] bg-white/78 px-4 py-4 shadow-[0_6px_16px_rgba(1,40,85,0.04)]">
       <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[rgba(1,40,85,0.56)]">
         {label}
       </p>
       <p className="mt-2 text-[0.98rem] font-medium leading-6 text-[var(--text-strong)]">
-        {formatProfileValue(value)}
+        {formatDisplayValue(value)}
       </p>
     </div>
   );
 }
 
-export function ProfileSection({ icon: Icon, title, description, children }) {
+export function DetailSection({ icon: Icon, title, description, children }) {
   const iconElement = createElement(Icon, { className: "h-5 w-5" });
   const hasDescription = typeof description === "string" && description.trim().length > 0;
 
@@ -127,14 +127,14 @@ export function ProfileSection({ icon: Icon, title, description, children }) {
   );
 }
 
-export function ProfileState({ icon: Icon, title, description, tone = "default" }) {
+export function DetailStateCard({ icon: Icon, title, description, tone = "default" }) {
   const iconElement = createElement(Icon, { className: "h-7 w-7" });
 
   return (
-    <ProfilePage>
+    <DetailPage>
       <Card className="overflow-hidden">
         <CardContent className="flex flex-col items-center gap-5 px-6 py-12 text-center sm:px-10">
-          <div className={profileStateIconVariants({ tone })}>
+          <div className={detailStateIconVariants({ tone })}>
             {iconElement}
           </div>
           <div className="space-y-2">
@@ -143,13 +143,13 @@ export function ProfileState({ icon: Icon, title, description, tone = "default" 
           </div>
         </CardContent>
       </Card>
-    </ProfilePage>
+    </DetailPage>
   );
 }
 
-export function ProfileLoading() {
+export function DetailPageLoading() {
   return (
-    <ProfilePage>
+    <DetailPage>
       <Card className="overflow-hidden">
         <CardHeader className="gap-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -204,11 +204,11 @@ export function ProfileLoading() {
           ))}
         </CardContent>
       </Card>
-    </ProfilePage>
+    </DetailPage>
   );
 }
 
-export function ProfileTabPanel({ className, ...props }) {
+export function DetailTabPanel({ className, ...props }) {
   return (
     <TabsContent
       className={cn("px-6 pb-6 pt-6 sm:px-8 sm:pb-8", className)}

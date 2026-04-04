@@ -8,19 +8,19 @@ import {
   UserRound,
 } from "lucide-react";
 import {
-  ProfileField,
-  ProfileHeaderCard,
-  ProfileLoading,
-  ProfilePage,
-  ProfileSection,
-  ProfileState,
-  ProfileStatusBadge,
-  ProfileSummaryItem,
-  ProfileTabPanel,
-} from "@/components/profile/ProfilePrimitives";
-import { formatProfileValue } from "@/components/profile/formatProfileValue";
+  DetailField,
+  DetailHeaderCard,
+  DetailPage,
+  DetailPageLoading,
+  DetailSection,
+  DetailStateCard,
+  DetailStatusBadge,
+  DetailSummaryCard,
+  DetailTabPanel,
+} from "@/components/ui/detail-view";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatDisplayValue } from "@/lib/formatDisplayValue";
 import { fetchStudentProfile } from "@/services/studentService";
 
 function formatDate(value) {
@@ -82,12 +82,12 @@ function StudentProfile() {
   }, []);
 
   if (isLoading) {
-    return <ProfileLoading />;
+    return <DetailPageLoading />;
   }
 
   if (error) {
     return (
-      <ProfileState
+      <DetailStateCard
         icon={AlertCircle}
         title="Unable to load your profile"
         description={error}
@@ -98,7 +98,7 @@ function StudentProfile() {
 
   if (!profile) {
     return (
-      <ProfileState
+      <DetailStateCard
         icon={UserRound}
         title="Profile not available"
         description="A student record was not found for this account."
@@ -141,21 +141,21 @@ function StudentProfile() {
   ];
 
   return (
-    <ProfilePage>
-      <ProfileHeaderCard
+    <DetailPage>
+      <DetailHeaderCard
         eyebrow="Student Profile"
         title={profile.fullName}
-        statusBadges={
+        badges={
           <>
-            <ProfileStatusBadge tone="cool">
-              {formatProfileValue(profile.classStanding)}
-            </ProfileStatusBadge>
-            <ProfileStatusBadge tone="warm">
-              Class of {formatProfileValue(profile.classOf, "TBD")}
-            </ProfileStatusBadge>
+            <DetailStatusBadge tone="cool">
+              {formatDisplayValue(profile.classStanding)}
+            </DetailStatusBadge>
+            <DetailStatusBadge tone="warm">
+              Class of {formatDisplayValue(profile.classOf, "TBD")}
+            </DetailStatusBadge>
           </>
         }
-        summary={<ProfileSummaryItem label="Preferred name" value={profile.preferredName} />}
+        summary={<DetailSummaryCard label="Preferred name" value={profile.preferredName} />}
       />
 
       <Card className="overflow-hidden">
@@ -166,50 +166,50 @@ function StudentProfile() {
             <TabsTrigger value="contact">Contact</TabsTrigger>
           </TabsList>
 
-          <ProfileTabPanel value="personal">
+          <DetailTabPanel value="personal">
             <div className="grid gap-6 lg:grid-cols-2">
-              <ProfileSection icon={UserRound} title="Identity">
+              <DetailSection icon={UserRound} title="Identity">
                 {personalIdentityFields.map((field) => (
-                  <ProfileField key={field.label} label={field.label} value={field.value} />
+                  <DetailField key={field.label} label={field.label} value={field.value} />
                 ))}
-              </ProfileSection>
+              </DetailSection>
 
-              <ProfileSection icon={IdCard} title="Background">
+              <DetailSection icon={IdCard} title="Background">
                 {personalBackgroundFields.map((field) => (
-                  <ProfileField key={field.label} label={field.label} value={field.value} />
+                  <DetailField key={field.label} label={field.label} value={field.value} />
                 ))}
-              </ProfileSection>
+              </DetailSection>
             </div>
-          </ProfileTabPanel>
+          </DetailTabPanel>
 
-          <ProfileTabPanel value="student">
+          <DetailTabPanel value="student">
             <div className="grid gap-6">
-              <ProfileSection icon={GraduationCap} title="School record">
+              <DetailSection icon={GraduationCap} title="School record">
                 {studentFields.map((field) => (
-                  <ProfileField key={field.label} label={field.label} value={field.value} />
+                  <DetailField key={field.label} label={field.label} value={field.value} />
                 ))}
-              </ProfileSection>
+              </DetailSection>
             </div>
-          </ProfileTabPanel>
+          </DetailTabPanel>
 
-          <ProfileTabPanel value="contact">
+          <DetailTabPanel value="contact">
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-              <ProfileSection icon={Mail} title="Contact details">
+              <DetailSection icon={Mail} title="Contact details">
                 {contactFields.map((field) => (
-                  <ProfileField key={field.label} label={field.label} value={field.value} />
+                  <DetailField key={field.label} label={field.label} value={field.value} />
                 ))}
-              </ProfileSection>
+              </DetailSection>
 
-              <ProfileSection icon={MapPin} title="Mailing address">
+              <DetailSection icon={MapPin} title="Mailing address">
                 {addressFields.map((field) => (
-                  <ProfileField key={field.label} label={field.label} value={field.value} />
+                  <DetailField key={field.label} label={field.label} value={field.value} />
                 ))}
-              </ProfileSection>
+              </DetailSection>
             </div>
-          </ProfileTabPanel>
+          </DetailTabPanel>
         </Tabs>
       </Card>
-    </ProfilePage>
+    </DetailPage>
   );
 }
 

@@ -1,4 +1,4 @@
-export function formatProfileValue(value, fallback = "Not provided") {
+export function formatDisplayValue(value, fallback = "Not provided") {
   if (value == null) {
     return fallback;
   }
