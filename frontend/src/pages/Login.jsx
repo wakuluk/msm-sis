@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getDefaultAppPage } from "../config/appPages";
 import { useAuth } from "../contexts/useAuth";
 import { getSavedLoginEmail } from "../services/authService";
 import "./Login.css";
@@ -34,9 +35,9 @@ function Login() {
         setIsSubmitting(true);
 
         try {
-            await loginUser(trimmedEmail, password);
+            const authState = await loginUser(trimmedEmail, password);
             setPassword("");
-            navigate("/");
+            navigate(getDefaultAppPage(authState?.roles).path, { replace: true });
         } catch (submissionError) {
             console.error("Login error:", submissionError);
             setError(getErrorMessage(submissionError));

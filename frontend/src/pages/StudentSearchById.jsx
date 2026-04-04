@@ -72,7 +72,7 @@ function StudentSearchById() {
                     <p><strong>ID:</strong> {student.id}</p>
                     <p><strong>Name:</strong> {student.firstName} {student.lastName}</p>
                     <p><strong>Email:</strong> {student.email || "N/A"}</p>
-                    <p><strong>Created At:</strong> {student.createdAt || "N/A"}</p>
+                    <p><strong>Last Updated:</strong> {student.lastUpdated || "N/A"}</p>
                 </div>
             )}
         </div>

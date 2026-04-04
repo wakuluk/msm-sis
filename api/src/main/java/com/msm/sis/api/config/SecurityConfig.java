@@ -12,8 +12,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.BadJwtException;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -75,8 +76,10 @@ public class SecurityConfig {
         return jwt -> {
             Collection<GrantedAuthority> authorities = grantedAuthoritiesConverter.convert(jwt);
             List<String> roles = jwt.getClaimAsStringList("roles");
+            Long userId = extractRequiredUserId(jwt);
+
             AuthenticatedJwt principal = new AuthenticatedJwt(
-                    jwt.getClaim("userId"),
+                    userId,
                     jwt.getSubject(),
                     roles == null ? List.of() : List.copyOf(roles)
             );
@@ -88,5 +91,23 @@ public class SecurityConfig {
                 }
             };
         };
+    }
+
+    private Long extractRequiredUserId(Jwt jwt) {
+        Object userIdClaim = jwt.getClaim("userId");
+
+        if (userIdClaim instanceof Number number) {
+            return number.longValue();
+        }
+
+        if (userIdClaim instanceof String text) {
+            try {
+                return Long.parseLong(text);
+            } catch (NumberFormatException ignored) {
+                // Fall through to the auth failure below.
+            }
+        }
+
+        throw new BadJwtException("JWT is missing required userId claim.");
     }
 }
