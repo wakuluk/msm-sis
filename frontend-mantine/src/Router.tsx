@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { RedirectIfAuthenticated } from '@/auth/RedirectIfAuthenticated';
 import { RequireAuth } from '@/auth/RequireAuth';
 import { LogingPage } from '@/components/auth/LogingPage';
@@ -8,6 +8,10 @@ import { PublicPage } from './pages/Public.page';
 const router = createBrowserRouter([
   {
     path: '/',
+    element: <Navigate to="/login" replace/>,
+  },
+  {
+    path: '/public',
     element: <PublicPage />,
   },
   {

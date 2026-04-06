@@ -57,6 +57,20 @@ frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/pnpm-debug.log*
 
+#mantine
+frontend-mantine/node_modules/
+frontend-mantine/dist/
+frontend-mantine/storybook-static/
+frontend-mantine/coverage/
+frontend-mantine/.yarn/install-state.gz
+
+frontend-mantine/npm-debug.log*
+frontend-mantine/yarn-debug.log*
+frontend-mantine/yarn-error.log*
+frontend-mantine/pnpm-debug.log*
+
+frontend-mantine/.stylelintcache
+
 ##################################
 # Msm-sis-fileshare
 ##################################

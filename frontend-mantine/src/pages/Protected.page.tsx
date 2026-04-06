@@ -24,7 +24,7 @@ export function ProtectedPage() {
             Current roles: {tokenData?.roles.join(', ') ?? 'none'}
           </Text>
           <Group justify="space-between">
-            <Button variant="default" component={Link} to="/">
+            <Button variant="default" component={Link} to="/public">
               Public home
             </Button>
             <Button color="red" onClick={handleLogout}>
