@@ -4,6 +4,7 @@ import { z } from "zod";
 import { jwtDecode } from "jwt-decode";
 //TODO: for security improvements, storing it in local storage is bad.
 // import CookieService from "./cookie-service";
+// it's available here: https://github.com/doichev-kostia/zustand-auth-store
 import {
 	fetchCurrentUser,
 	login as loginRequest,

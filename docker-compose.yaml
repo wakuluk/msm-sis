@@ -17,17 +17,42 @@ services:
       retries: 20
       start_period: 8s
 
-  msm-sis-frontend:
+#  msm-sis-frontend:
+#    build:
+#      context: ./frontend
+#    ports:
+#      - "5173:5173"
+#    volumes:
+#      - ./frontend:/app
+#      - /app/node_modules
+#    environment:
+#      CHOKIDAR_USEPOLLING: "true"
+#      VITE_PROXY_TARGET: "http://msm-sis-api:8080"
+
+  msm-sis-frontend-mantine:
     build:
-      context: ./frontend
+      context: ./frontend-mantine
     ports:
       - "5173:5173"
     volumes:
-      - ./frontend:/app
+      - ./frontend-mantine:/app
       - /app/node_modules
     environment:
       CHOKIDAR_USEPOLLING: "true"
       VITE_PROXY_TARGET: "http://msm-sis-api:8080"
+#
+#  msm-sis-frontend-auth-test:
+#    build:
+#      context: ./zustand-auth_store
+#    ports:
+#      - "5173:5173"
+#    volumes:
+#      - ./zustand-auth_store:/app
+#      - /app/node_modules
+#    environment:
+#      CHOKIDAR_USEPOLLING: "true"
+#      VITE_PROXY_TARGET: "http://msm-sis-api:8080"
+
 
   msm-sis-api:
     build:
@@ -46,6 +71,7 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: msmsisdb
       APP_STORAGE_ROOT_DIR: /app/files
+      APP_CORS_ALLOWED_ORIGIN: http://localhost:5173
       JAVA_OPTS: ${JAVA_OPTS:-}
 
 volumes:

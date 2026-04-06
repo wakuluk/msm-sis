@@ -20,7 +20,7 @@ spring:
     locations: classpath:db/migration
 app:
   cors:
-    allowed-origin: http://localhost:5173
+    all
   security:
     jwt:
       secret: ${APP_JWT_SECRET:change-me-to-a-long-random-development-secret-at-least-32-bytes}
