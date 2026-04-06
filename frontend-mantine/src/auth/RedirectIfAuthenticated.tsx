@@ -5,7 +5,7 @@ export function RedirectIfAuthenticated() {
   const tokenData = useAccessTokenData();
 
   if (tokenData) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to="/portal" replace />;
   }
 
   return <Outlet />;

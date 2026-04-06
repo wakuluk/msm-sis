@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button, Container, Paper, PasswordInput, Text, TextInput, Title } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { useActions } from '../../auth/auth-store';
@@ -12,14 +12,14 @@ export function LogingPage() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
     setIsSubmitting(true);
 
     try {
       await actions.login(email, password);
-      navigate('/app', { replace: true });
+      navigate('/portal', { replace: true });
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed.');
     } finally {

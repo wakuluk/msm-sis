@@ -1,20 +1,13 @@
 import { Button, Container, Group, Paper, Stack, Text, Title } from '@mantine/core';
-import { Link, useNavigate } from 'react-router-dom';
-import { useActions, useAccessTokenData } from '@/auth/auth-store';
+import { Link } from 'react-router-dom';
+import { useAccessTokenData } from '@/auth/auth-store';
 
-export function ProtectedPage() {
-  const actions = useActions();
+export function PortalPage() {
   const tokenData = useAccessTokenData();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    actions.clearTokens();
-    navigate('/login', { replace: true });
-  };
 
   return (
     <Container size={420} my={40}>
-      <Title ta="center">Protected Page</Title>
+      <Title ta="center">Portal Page</Title>
       <Paper withBorder shadow="sm" p={22} mt={30} radius="md">
         <Stack gap="md">
           <Text size="sm" c="dimmed">
@@ -24,11 +17,16 @@ export function ProtectedPage() {
             Current roles: {tokenData?.roles.join(', ') ?? 'none'}
           </Text>
           <Group justify="space-between">
+            <Button variant="light" component={Link} to="/student">
+              Student page
+            </Button>
+            <Button variant="light" component={Link} to="/admin">
+              Admin page
+            </Button>
+          </Group>
+          <Group justify="flex-start">
             <Button variant="default" component={Link} to="/public">
               Public home
-            </Button>
-            <Button color="red" onClick={handleLogout}>
-              Logout
             </Button>
           </Group>
         </Stack>
