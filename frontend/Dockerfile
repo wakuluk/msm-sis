@@ -1,18 +1,15 @@
-FROM node:20
+FROM node:24
 
 WORKDIR /app
 
-# Install dependencies first (better caching)
-COPY package*.json ./
-RUN npm install
+# Install dependencies first for better layer caching.
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Copy rest of the app
+# Copy the rest of the app after dependencies are installed.
 COPY . .
 
-RUN chmod +x /app/docker-entrypoint.sh
-
-# Vite default port
 EXPOSE 5173
 
-# IMPORTANT: bind to 0.0.0.0 so Docker can expose it
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# The compose bind mount replaces /app at runtime, so refresh deps before starting Vite.
+CMD ["sh", "-lc", "npm ci && npm run dev -- --host 0.0.0.0"]

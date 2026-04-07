@@ -17,41 +17,17 @@ services:
       retries: 20
       start_period: 8s
 
-#  msm-sis-frontend:
-#    build:
-#      context: ./frontend
-#    ports:
-#      - "5173:5173"
-#    volumes:
-#      - ./frontend:/app
-#      - /app/node_modules
-#    environment:
-#      CHOKIDAR_USEPOLLING: "true"
-#      VITE_PROXY_TARGET: "http://msm-sis-api:8080"
-
-  msm-sis-frontend-mantine:
+  msm-sis-frontend:
     build:
-      context: ./frontend-mantine
+      context: ./frontend
     ports:
       - "5173:5173"
     volumes:
-      - ./frontend-mantine:/app
+      - ./frontend:/app
       - /app/node_modules
     environment:
       CHOKIDAR_USEPOLLING: "true"
       VITE_PROXY_TARGET: "http://msm-sis-api:8080"
-#
-#  msm-sis-frontend-auth-test:
-#    build:
-#      context: ./zustand-auth_store
-#    ports:
-#      - "5173:5173"
-#    volumes:
-#      - ./zustand-auth_store:/app
-#      - /app/node_modules
-#    environment:
-#      CHOKIDAR_USEPOLLING: "true"
-#      VITE_PROXY_TARGET: "http://msm-sis-api:8080"
 
 
   msm-sis-api:
