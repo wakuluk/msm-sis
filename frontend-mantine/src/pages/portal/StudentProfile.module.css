@@ -1,0 +1,84 @@
+.page {
+  gap: var(--mantine-spacing-lg);
+}
+
+.summaryCard {
+  padding: var(--mantine-spacing-md);
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-xs);
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+}
+
+.sectionsPanel {
+  padding: var(--mantine-spacing-lg);
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-xs);
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+}
+
+.preferredCard {
+  min-width: 220px;
+  padding-left: var(--mantine-spacing-md);
+  border-left: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.summaryMeta {
+  align-items: center;
+}
+
+.eyebrowText {
+  min-width: 0;
+}
+
+.statusText {
+  color: var(--mantine-color-blue-6);
+}
+
+.summaryTitle {
+  font-family: var(--mantine-font-family);
+  font-size: clamp(1.9rem, 3vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.metaRow {
+  align-items: flex-start;
+}
+
+.metaItem {
+  gap: 2px;
+}
+
+.summarySide {
+  height: 100%;
+  justify-content: space-between;
+}
+
+.label {
+  min-width: 0;
+}
+
+.metaValue,
+.preferredValue {
+  min-width: 0;
+}
+
+.tabsList {
+  gap: var(--mantine-spacing-xs);
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.tab {
+  border-radius: var(--mantine-radius-xs) var(--mantine-radius-xs) 0 0;
+  font-family: var(--portal-ui-font-family);
+  font-size: var(--portal-ui-font-size);
+  font-weight: var(--portal-ui-font-weight);
+  line-height: var(--portal-ui-line-height);
+  letter-spacing: var(--portal-ui-letter-spacing);
+  color: var(--portal-ui-text-color);
+}
+
+.tabPanel {
+  padding-top: var(--mantine-spacing-lg);
+}

@@ -11,12 +11,12 @@ import { PortalPage } from './pages/portal/Portal.page';
 import { PublicPage } from './pages/public/Public.page';
 import { SharedPage } from './pages/portal/Shared.page';
 import { SharedSecondPage } from './pages/portal/SharedSecond.page';
-import { StudentPage } from './pages/portal/Student.page';
+import { StudentProfilePage } from './pages/portal/StudentProfile.page';
 
 const portalRouteComponents = {
   dashboard: PortalPage,
   shared: SharedPage,
-  student: StudentPage,
+  student: StudentProfilePage,
   admin: AdminPage,
   sharedSecond: SharedSecondPage,
 } satisfies Record<PortalRouteItemKey, ComponentType>;

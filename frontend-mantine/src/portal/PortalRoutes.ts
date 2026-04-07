@@ -11,7 +11,7 @@ export type PortalRoutePath =
     '/portal' |
     '/shared' |
     '/sharedSecond' |
-    '/student' |
+    '/student/profile' |
     '/admin';
 
 export type PortalRouteGroupKey = 'people' | 'sharing';
@@ -70,8 +70,8 @@ export const portalRoutes: PortalRouteNode[] = [
       {
         kind: 'item',
         key: 'student',
-        label: 'Student page',
-        path: '/student',
+        label: 'Student Profile',
+        path: '/student/profile',
         requiredRoles: [PORTAL_ROLES.STUDENT],
         showInNav: true,
       },

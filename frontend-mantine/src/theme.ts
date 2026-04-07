@@ -1,7 +1,10 @@
 import { createTheme } from '@mantine/core';
 
 export const theme = createTheme({
-  /** Put your mantine theme override here */
+  headings: {
+    fontFamily: 'var(--mantine-font-family)',
+    fontWeight: '700',
+  },
   fontSizes: {
     xs: '0.875rem',
     sm: '1rem',

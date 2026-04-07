@@ -1,0 +1,35 @@
+.label {
+  min-width: 0;
+}
+
+.sectionBlock {
+  gap: var(--mantine-spacing-lg);
+}
+
+.sectionBlock + .sectionBlock {
+  padding-top: var(--mantine-spacing-lg);
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+}
+
+.sectionTitle {
+  margin: 0;
+  font-family: var(--mantine-font-family);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.fieldBlock {
+  align-self: start;
+  padding-bottom: var(--mantine-spacing-xs);
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.fieldValue {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fieldInput {
+  max-width: 100%;
+}

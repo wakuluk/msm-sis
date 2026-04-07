@@ -18,7 +18,7 @@ export function PortalPage() {
           </Text>
           <Group justify="space-between">
             <Button variant="light" component={Link} to="/student">
-              Student page
+              Student profile
             </Button>
             <Button variant="light" component={Link} to="/admin">
               Admin page
