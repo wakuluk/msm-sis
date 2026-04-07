@@ -13,11 +13,17 @@
   --portal-ui-label-color: var(--mantine-color-gray-6);
   --portal-ui-eyebrow-font-size: 0.76rem;
   --portal-ui-eyebrow-letter-spacing: 0.1em;
+  --portal-ui-on-accent-color: var(--mantine-color-gray-9);
+  --portal-ui-accent-hover-background: light-dark(
+    rgba(52, 152, 219, 0.12),
+    rgba(52, 152, 219, 0.18)
+  );
 }
 
 :root[data-mantine-color-scheme='dark'] {
-  --portal-ui-text-color: var(--mantine-color-gray-1);
-  --portal-ui-label-color: var(--mantine-color-gray-4);
+  --portal-ui-text-color: var(--mantine-color-white);
+  --portal-ui-label-color: var(--mantine-color-white);
+  --portal-ui-on-accent-color: var(--mantine-color-white);
 }
 
 html {
@@ -39,7 +45,7 @@ html {
   font-weight: var(--portal-ui-value-font-weight);
   line-height: var(--portal-ui-line-height);
   letter-spacing: var(--portal-ui-letter-spacing);
-  color: var(--mantine-color-text);
+  color: var(--portal-ui-text-color);
 }
 
 .portal-ui-nav-text {
@@ -48,7 +54,7 @@ html {
   font-weight: var(--portal-ui-nav-font-weight);
   line-height: var(--portal-ui-line-height);
   letter-spacing: var(--portal-ui-letter-spacing);
-  color: var(--mantine-color-text);
+  color: var(--portal-ui-text-color);
 }
 
 .portal-ui-label-text {
@@ -69,4 +75,8 @@ html {
   letter-spacing: var(--portal-ui-eyebrow-letter-spacing);
   color: var(--portal-ui-label-color);
   text-transform: uppercase;
+}
+
+.portal-ui-on-accent-text {
+  color: var(--portal-ui-on-accent-color) !important;
 }

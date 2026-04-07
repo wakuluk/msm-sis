@@ -64,7 +64,7 @@ export const portalRoutes: PortalRouteNode[] = [
   {
     kind: 'group',
     key: 'people',
-    label: 'People',
+    label: 'Student',
     showInNav: true,
     children: [
       {

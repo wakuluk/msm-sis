@@ -1,67 +1,77 @@
 .page {
   gap: var(--mantine-spacing-lg);
+  --details-table-body-font-size: calc(var(--portal-ui-font-size) + 0.08rem);
 }
 
 .summaryCard {
-  padding: var(--mantine-spacing-md);
+  padding: clamp(var(--mantine-spacing-lg), 2vw, 2rem);
   border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
-  border-radius: var(--mantine-radius-xs);
-  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  border-radius: var(--mantine-radius-sm);
+  background:
+    radial-gradient(
+      circle at top right,
+      light-dark(rgba(52, 152, 219, 0.12), rgba(52, 152, 219, 0.08)),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      light-dark(rgba(236, 244, 252, 0.98), rgba(35, 38, 47, 0.92)),
+      light-dark(rgba(255, 255, 255, 1), var(--mantine-color-dark-6))
+    );
 }
 
-.sectionsPanel {
-  padding: var(--mantine-spacing-lg);
-  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
-  border-radius: var(--mantine-radius-xs);
-  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+.summaryHeader {
+  align-items: flex-start;
 }
 
-.preferredCard {
-  min-width: 220px;
-  padding-left: var(--mantine-spacing-md);
-  border-left: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+.summaryTitle {
+  font-family: var(--mantine-font-family);
+  font-size: clamp(1.9rem, 3vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+}
+
+.summaryDescription {
+  max-width: 54ch;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-2));
+}
+
+.editLegend {
+  align-items: center;
 }
 
 .summaryMeta {
   align-items: center;
 }
 
-.eyebrowText {
-  min-width: 0;
+.metaBadge {
+  padding-inline: 0.28rem;
 }
 
-.statusText {
-  color: var(--mantine-color-blue-6);
+.metaBadgeLabel {
+  font-family: var(--portal-ui-font-family);
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.summaryTitle {
-  font-family: var(--mantine-font-family);
-  font-size: clamp(1.9rem, 3vw, 2.4rem);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+.sectionsPanel {
+  padding: var(--mantine-spacing-lg);
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-sm);
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
 }
 
-.metaRow {
-  align-items: flex-start;
+.sectionsHeader {
+  align-items: flex-end;
 }
 
-.metaItem {
-  gap: 2px;
-}
-
-.summarySide {
-  height: 100%;
-  justify-content: space-between;
-}
-
-.label {
-  min-width: 0;
-}
-
-.metaValue,
-.preferredValue {
-  min-width: 0;
+.tabsHeaderList {
+  flex: 1;
 }
 
 .tabsList {
@@ -69,16 +79,31 @@
   border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
 }
 
+.sectionActions {
+  flex-shrink: 0;
+}
+
 .tab {
   border-radius: var(--mantine-radius-xs) var(--mantine-radius-xs) 0 0;
   font-family: var(--portal-ui-font-family);
-  font-size: var(--portal-ui-font-size);
-  font-weight: var(--portal-ui-font-weight);
+  font-size: var(--details-table-body-font-size);
+  font-weight: var(--portal-ui-nav-font-weight);
   line-height: var(--portal-ui-line-height);
   letter-spacing: var(--portal-ui-letter-spacing);
   color: var(--portal-ui-text-color);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.tab:hover {
+  background-color: var(--portal-ui-accent-hover-background);
 }
 
 .tabPanel {
   padding-top: var(--mantine-spacing-lg);
+}
+
+.panelGrid {
+  align-items: start;
 }

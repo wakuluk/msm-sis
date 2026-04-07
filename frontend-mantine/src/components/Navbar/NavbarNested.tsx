@@ -120,7 +120,7 @@ export function NavbarNested({ onNavigate }: NavbarNestedProps) {
       <NavLink
         key={node.key}
         label={node.label}
-        active={false}
+        active={hasActiveChild}
         opened={isOpened}
         onChange={(opened) => {
           setOpenedGroups((current) => ({
