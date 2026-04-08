@@ -1,6 +1,7 @@
 package com.msm.sis.api.mapper;
 
 import com.msm.sis.api.dto.CreateStudentRequest;
+import com.msm.sis.api.dto.StudentDetailResponse;
 import com.msm.sis.api.dto.StudentProfileResponse;
 import com.msm.sis.api.entity.Address;
 import com.msm.sis.api.entity.Student;
@@ -58,6 +59,42 @@ public class StudentMapper {
                 student.getEstimatedGradDate() == null ? null : student.getEstimatedGradDate().getYear(),
                 student.getEmail(),
                 student.getPhone(),
+                address == null ? null : address.getAddressLine1(),
+                address == null ? null : address.getAddressLine2(),
+                address == null ? null : address.getCity(),
+                address == null ? null : address.getStateRegion(),
+                address == null ? null : address.getPostalCode(),
+                address == null ? null : address.getCountryCode()
+        );
+    }
+
+    public StudentDetailResponse toStudentDetailResponse(Student student) {
+        Address address = student.getAddress();
+
+        return new StudentDetailResponse(
+                student.getId(),
+                student.getUserId(),
+                student.getLastName(),
+                student.getFirstName(),
+                student.getMiddleName(),
+                student.getNameSuffix(),
+                buildFullName(student),
+                student.getGender(),
+                student.getEthnicityId(),
+                student.getEthnicity() == null ? null : student.getEthnicity().getName(),
+                student.getClassStandingId(),
+                student.getClassStanding() == null ? null : student.getClassStanding().getName(),
+                student.getAddressId(),
+                student.getPreferredName(),
+                student.getDateOfBirth(),
+                student.getEstimatedGradDate(),
+                student.getEstimatedGradDate() == null ? null : student.getEstimatedGradDate().getYear(),
+                student.getAltId(),
+                student.getEmail(),
+                student.getPhone(),
+                student.isDisabled(),
+                student.getLastUpdated(),
+                student.getUpdatedBy(),
                 address == null ? null : address.getAddressLine1(),
                 address == null ? null : address.getAddressLine2(),
                 address == null ? null : address.getCity(),

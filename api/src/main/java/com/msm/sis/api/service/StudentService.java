@@ -1,6 +1,7 @@
 package com.msm.sis.api.service;
 
 import com.msm.sis.api.dto.CreateStudentRequest;
+import com.msm.sis.api.dto.StudentDetailResponse;
 import com.msm.sis.api.dto.StudentProfileResponse;
 import com.msm.sis.api.entity.Student;
 import com.msm.sis.api.mapper.StudentMapper;
@@ -22,9 +23,11 @@ public class StudentService {
         this.studentMapper = studentMapper;
     }
 
-    public Student getStudentById(Long studentId) {
-        return studentRepository.findById(studentId)
+    public StudentDetailResponse getStudentById(Long studentId) {
+        Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        return studentMapper.toStudentDetailResponse(student);
     }
 
     public StudentProfileResponse getStudentProfile(Long userId) {

@@ -2,6 +2,7 @@ package com.msm.sis.api.controller;
 
 import com.msm.sis.api.config.AuthenticatedJwt;
 import com.msm.sis.api.dto.CreateStudentRequest;
+import com.msm.sis.api.dto.StudentDetailResponse;
 import com.msm.sis.api.dto.StudentProfileResponse;
 import com.msm.sis.api.entity.Student;
 import com.msm.sis.api.service.StudentService;
@@ -46,7 +47,7 @@ public class StudentController {
     @GetMapping("/{studentId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get student by id", description = "Returns a single student record")
-    public ResponseEntity<Student> getStudent(@NotNull @PathVariable Long studentId) {
+    public ResponseEntity<StudentDetailResponse> getStudent(@NotNull @PathVariable Long studentId) {
         return ResponseEntity.ok(studentService.getStudentById(studentId));
     }
 
