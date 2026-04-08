@@ -13,13 +13,10 @@ export function hasAnyPortalRole(
   userRoles: readonly string[] | undefined,
   requiredRoles: readonly PortalRole[] | undefined,
 ) {
-  if (!requiredRoles?.length) {
-    return true;
-  }
+  // Allow routes with no required roles; otherwise require at least one matching user role.
+  const hasRequiredRole =
+    !requiredRoles?.length ||
+    requiredRoles?.some((role) => hasPortalRole(userRoles, role)) === true;
 
-  if (!userRoles?.length) {
-    return false;
-  }
-
-  return requiredRoles.some((role) => hasPortalRole(userRoles, role));
+  return hasRequiredRole;
 }

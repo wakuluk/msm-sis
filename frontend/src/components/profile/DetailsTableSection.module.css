@@ -1,6 +1,7 @@
 .sectionCard {
   height: 100%;
   padding: 0;
+  --details-table-default-label-font-size: calc(var(--portal-ui-label-font-size) + 0.08rem);
 }
 
 .sectionTitle {
@@ -26,7 +27,7 @@
   min-width: 10rem;
   padding: 0.45rem 0.85rem;
   vertical-align: middle;
-  background-color: light-dark(rgba(148, 163, 184, 0.08), rgba(148, 163, 184, 0.08));
+  background-color: var(--portal-ui-subtle-fill-background);
 }
 
 .rowValue {
@@ -35,15 +36,15 @@
 }
 
 .editableLabelCell {
-  background-color: light-dark(rgba(34, 139, 230, 0.26), rgba(34, 139, 230, 0.34));
+  background-color: var(--portal-ui-editable-label-background);
 }
 
 .editableValueCell {
-  background-color: light-dark(rgba(34, 139, 230, 0.16), rgba(34, 139, 230, 0.22));
+  background-color: var(--portal-ui-editable-value-background);
 }
 
 .readOnlyLabelCell {
-  background-color: light-dark(rgba(148, 163, 184, 0.08), rgba(148, 163, 184, 0.08));
+  background-color: var(--portal-ui-subtle-fill-background);
 }
 
 .readOnlyValueCell {
@@ -62,7 +63,7 @@
 
 .rowLabelText {
   min-width: 0;
-  font-size: var(--details-table-label-font-size, calc(var(--portal-ui-label-font-size) + 0.08rem));
+  font-size: var(--details-table-label-font-size, var(--details-table-default-label-font-size));
   color: light-dark(var(--mantine-color-gray-8), var(--portal-ui-label-color)) !important;
 }
 
@@ -92,17 +93,17 @@
   line-height: var(--portal-ui-line-height);
   letter-spacing: var(--portal-ui-letter-spacing);
   color: var(--portal-ui-text-color);
-  box-shadow: inset 0 -1px 0 light-dark(rgba(34, 139, 230, 0.72), rgba(34, 139, 230, 0.4));
+  box-shadow: inset 0 -1px 0 var(--portal-ui-editable-underline-color);
   transition:
     background-color 120ms ease,
     box-shadow 120ms ease;
 }
 
 .tableInputRoot:focus-within {
-  background-color: light-dark(rgba(34, 139, 230, 0.08), rgba(34, 139, 230, 0.1));
+  background-color: var(--portal-ui-editable-focus-background);
   box-shadow:
-    inset 0 -2px 0 light-dark(rgba(34, 139, 230, 1), rgba(34, 139, 230, 0.9)),
-    inset 0 0 0 1px light-dark(rgba(34, 139, 230, 0.2), rgba(34, 139, 230, 0.18));
+    inset 0 -2px 0 var(--portal-ui-editable-focus-underline-color),
+    inset 0 0 0 1px var(--portal-ui-editable-focus-outline-color);
 }
 
 .tableInputField {
@@ -124,6 +125,6 @@
 }
 
 .tableInputField::placeholder {
-  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-gray-6));
+  color: var(--portal-ui-placeholder-color);
   opacity: 1;
 }

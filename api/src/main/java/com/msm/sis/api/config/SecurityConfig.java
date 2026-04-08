@@ -103,8 +103,8 @@ public class SecurityConfig {
         if (userIdClaim instanceof String text) {
             try {
                 return Long.parseLong(text);
-            } catch (NumberFormatException ignored) {
-                // Fall through to the auth failure below.
+            } catch (NumberFormatException exception) {
+                throw new BadJwtException("JWT has invalid userId claim.", exception);
             }
         }
 

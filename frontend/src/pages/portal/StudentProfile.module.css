@@ -5,18 +5,18 @@
 
 .summaryCard {
   padding: clamp(var(--mantine-spacing-lg), 2vw, 2rem);
-  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border: 1px solid var(--portal-ui-surface-border-color);
   border-radius: var(--mantine-radius-sm);
   background:
     radial-gradient(
       circle at top right,
-      light-dark(rgba(52, 152, 219, 0.12), rgba(52, 152, 219, 0.08)),
+      light-dark(rgb(52 152 219 / 0.12), rgb(52 152 219 / 0.08)),
       transparent 38%
     ),
     linear-gradient(
       180deg,
-      light-dark(rgba(236, 244, 252, 0.98), rgba(35, 38, 47, 0.92)),
-      light-dark(rgba(255, 255, 255, 1), var(--mantine-color-dark-6))
+      light-dark(rgb(236 244 252 / 0.98), rgb(35 38 47 / 0.92)),
+      light-dark(rgb(255 255 255), var(--mantine-color-dark-6))
     );
 }
 
@@ -61,9 +61,9 @@
 
 .sectionsPanel {
   padding: var(--mantine-spacing-lg);
-  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border: 1px solid var(--portal-ui-surface-border-color);
   border-radius: var(--mantine-radius-sm);
-  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  background-color: var(--portal-ui-surface-background);
 }
 
 .sectionsHeader {
@@ -76,7 +76,7 @@
 
 .tabsList {
   gap: var(--mantine-spacing-xs);
-  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-bottom: 1px solid var(--portal-ui-surface-border-color);
 }
 
 .sectionActions {

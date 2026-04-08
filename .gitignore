@@ -30,8 +30,8 @@ Thumbs.db
 api/target/
 api/build/
 api/.gradle/
+api/.gradle-home/
 api/gradle-app.setting
-api/!gradle/wrapper/gradle-wrapper.jar
 
 # Logs
 api/logs/
@@ -51,12 +51,13 @@ frontend/.parcel-cache/
 frontend/.next/
 frontend/out/
 
-# Logs and mantine
+# Logs / frontend caches
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/pnpm-debug.log*
-frontend/.stylelintcacheg
+frontend/.stylelintcache
+frontend/.vite/
 frontend/storybook-static/
 frontend/coverage/
 frontend/.yarn/install-state.gz
@@ -87,6 +88,8 @@ docker-compose.override.yml
 
 # But allow migrations if you store them
 !api/src/main/resources/db/migration/
+!api/src/main/resources/db/migration/**/*.sql
+!testdata/**/*.sql
 
 ##################################
 # Build Artifacts
@@ -94,6 +97,7 @@ docker-compose.override.yml
 *.jar
 *.war
 *.class
+!api/gradle/wrapper/gradle-wrapper.jar
 
 ##################################
 # Coverage / Testing

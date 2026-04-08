@@ -1,0 +1,7 @@
+CREATE TABLE pdf_documents (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    file_path VARCHAR(255) NOT NULL,
+    original_file_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);

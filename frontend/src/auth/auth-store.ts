@@ -73,7 +73,7 @@ const authStore = createStore<AuthStore>()(
 							return undefined;
 						}
 						})();
-						//TODO BAD, security updates
+						//TODO BAD, security updates, cookie-service
 						if (accessToken) {
 							localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
 						} else {
@@ -84,6 +84,7 @@ const authStore = createStore<AuthStore>()(
 							accessTokenData,
 						});
 					},
+					//TODO we'll use this eventually
 					setRefreshToken: (refreshToken: string | undefined) =>
 						set({
 							refreshToken,
