@@ -1,0 +1,109 @@
+.page {
+  gap: var(--mantine-spacing-lg);
+  --details-table-body-font-size: calc(var(--portal-ui-font-size) + 0.08rem);
+}
+
+.summaryCard {
+  padding: clamp(var(--mantine-spacing-lg), 2vw, 2rem);
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  background:
+    radial-gradient(
+      circle at top right,
+      light-dark(rgb(52 152 219 / 0.12), rgb(52 152 219 / 0.08)),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      light-dark(rgb(236 244 252 / 0.98), rgb(35 38 47 / 0.92)),
+      light-dark(rgb(255 255 255), var(--mantine-color-dark-6))
+    );
+}
+
+.summaryHeader {
+  align-items: flex-start;
+}
+
+.summaryTitle {
+  font-family: var(--mantine-font-family);
+  font-size: clamp(1.9rem, 3vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+}
+
+.summaryDescription {
+  max-width: 54ch;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-2));
+}
+
+.editLegend {
+  align-items: center;
+}
+
+.summaryMeta {
+  align-items: center;
+}
+
+.metaBadge {
+  padding-inline: 0.28rem;
+}
+
+.metaBadgeLabel {
+  font-family: var(--portal-ui-font-family);
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sectionsPanel {
+  padding: var(--mantine-spacing-lg);
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  background-color: var(--portal-ui-surface-background);
+}
+
+.sectionsHeader {
+  align-items: flex-end;
+}
+
+.tabsHeaderList {
+  flex: 1;
+}
+
+.tabsList {
+  gap: var(--mantine-spacing-xs);
+  border-bottom: 1px solid var(--portal-ui-surface-border-color);
+}
+
+.sectionActions {
+  flex-shrink: 0;
+}
+
+.tab {
+  border-radius: var(--mantine-radius-xs) var(--mantine-radius-xs) 0 0;
+  font-family: var(--portal-ui-font-family);
+  font-size: var(--details-table-body-font-size);
+  font-weight: var(--portal-ui-nav-font-weight);
+  line-height: var(--portal-ui-line-height);
+  letter-spacing: var(--portal-ui-letter-spacing);
+  color: var(--portal-ui-text-color);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.tab:hover {
+  background-color: var(--portal-ui-accent-hover-background);
+}
+
+.tabPanel {
+  padding-top: var(--mantine-spacing-lg);
+}
+
+.panelGrid {
+  align-items: start;
+}

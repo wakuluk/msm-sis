@@ -1,11 +1,13 @@
 package com.msm.sis.api.controller;
 
 import com.msm.sis.api.config.AuthenticatedJwt;
+import com.msm.sis.api.dto.CreateStudentRequest;
+import com.msm.sis.api.dto.StudentProfileResponse;
 import com.msm.sis.api.entity.Student;
-import com.msm.sis.api.repository.StudentRepository;
-import com.msm.sis.api.service.StudentAccessService;
+import com.msm.sis.api.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,12 +22,10 @@ import java.util.List;
 @Tag(name = "Students", description = "Student endpoints")
 public class StudentController {
 
-    private final StudentAccessService studentAccessService;
-    private final StudentRepository studentRepository;
+    private final StudentService studentService;
 
-    public StudentController(StudentRepository studentRepository, StudentAccessService studentAccessService) {
-        this.studentRepository = studentRepository;
-        this.studentAccessService = studentAccessService;
+    public StudentController(StudentService studentService) {
+        this.studentService = studentService;
     }
 
     /***
@@ -35,8 +35,8 @@ public class StudentController {
     @GetMapping("/profile")
     @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Get current student profile", description = "Returns the student record linked to the authenticated student user")
-    public ResponseEntity<Student> getStudentProfile(@AuthenticationPrincipal AuthenticatedJwt jwt) {
-        return ResponseEntity.ok(studentAccessService.getStudentProfile(jwt.getUserId()));
+    public ResponseEntity<StudentProfileResponse> getStudentProfile(@AuthenticationPrincipal AuthenticatedJwt jwt) {
+        return ResponseEntity.ok(studentService.getStudentProfile(jwt.getUserId()));
     }
 
     /***
@@ -46,17 +46,15 @@ public class StudentController {
     @GetMapping("/{studentId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get student by id", description = "Returns a single student record")
-    public ResponseEntity<Student> getStudent(@PathVariable Long studentId) {
-        return ResponseEntity.ok(studentAccessService.getStudentById(studentId));
+    public ResponseEntity<Student> getStudent(@NotNull @PathVariable Long studentId) {
+        return ResponseEntity.ok(studentService.getStudentById(studentId));
     }
 
-    @PostMapping("/create")
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create student", description = "Creates a new student record")
-    public ResponseEntity<Student> createStudent(@RequestBody Student student) {
-        student.setId(null);
-        student.setCreatedAt(null);
-        Student savedStudent = studentRepository.save(student);
+    public ResponseEntity<Student> createStudent(@NotNull @RequestBody CreateStudentRequest request) {
+        Student savedStudent = studentService.createStudent(request);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -71,13 +69,6 @@ public class StudentController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Search student by last name", description = "Search student by last name")
     public ResponseEntity<List<Student>> searchStudents(@RequestParam(required = false) String lastName) {
-        if (lastName == null || lastName.trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        List<Student> students =
-                studentRepository.findByLastNameContainingIgnoreCaseOrFirstNameContainingIgnoreCase(lastName.trim(), lastName.trim());
-
-        return ResponseEntity.ok(students);
+        return ResponseEntity.ok(studentService.searchStudents(lastName));
     }
 }

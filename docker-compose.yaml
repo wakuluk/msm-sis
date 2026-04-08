@@ -29,6 +29,7 @@ services:
       CHOKIDAR_USEPOLLING: "true"
       VITE_PROXY_TARGET: "http://msm-sis-api:8080"
 
+
   msm-sis-api:
     build:
       context: ./api
@@ -46,6 +47,7 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: msmsisdb
       APP_STORAGE_ROOT_DIR: /app/files
+      APP_CORS_ALLOWED_ORIGIN: http://localhost:5173
       JAVA_OPTS: ${JAVA_OPTS:-}
 
 volumes:
