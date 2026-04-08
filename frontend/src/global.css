@@ -14,55 +14,38 @@
   --portal-ui-eyebrow-font-size: 0.76rem;
   --portal-ui-eyebrow-letter-spacing: 0.1em;
   --portal-ui-on-accent-color: var(--mantine-color-gray-9);
-  --portal-ui-surface-background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
-  --portal-ui-surface-border-color: light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
-  --portal-ui-subtle-fill-background: light-dark(rgb(148 163 184 / 0.08), rgb(148 163 184 / 0.08));
-  --portal-ui-accent-hover-background: light-dark(
-    rgb(52 152 219 / 0.12),
-    rgb(52 152 219 / 0.18)
-  );
-  --portal-ui-accent-active-background: light-dark(
-    rgb(52 152 219 / 0.14),
-    rgb(52 152 219 / 0.24)
-  );
-  --portal-ui-accent-active-border-color: light-dark(
-    rgb(52 152 219),
-    rgb(96 165 250 / 0.95)
-  );
-  --portal-ui-editable-label-background: light-dark(
-    rgb(34 139 230 / 0.26),
-    rgb(34 139 230 / 0.34)
-  );
-  --portal-ui-editable-value-background: light-dark(
-    rgb(34 139 230 / 0.16),
-    rgb(34 139 230 / 0.22)
-  );
-  --portal-ui-editable-underline-color: light-dark(
-    rgb(34 139 230 / 0.72),
-    rgb(34 139 230 / 0.4)
-  );
-  --portal-ui-editable-focus-background: light-dark(
-    rgb(34 139 230 / 0.08),
-    rgb(34 139 230 / 0.1)
-  );
-  --portal-ui-editable-focus-underline-color: light-dark(
-    rgb(34 139 230),
-    rgb(34 139 230 / 0.9)
-  );
-  --portal-ui-editable-focus-outline-color: light-dark(
-    rgb(34 139 230 / 0.2),
-    rgb(34 139 230 / 0.18)
-  );
-  --portal-ui-placeholder-color: light-dark(
-    var(--mantine-color-gray-5),
-    var(--mantine-color-gray-6)
-  );
+  --portal-ui-surface-background: var(--mantine-color-white);
+  --portal-ui-surface-border-color: var(--mantine-color-gray-3);
+  --portal-ui-subtle-fill-background: rgb(148 163 184 / 0.08);
+  --portal-ui-accent-hover-background: rgb(52 152 219 / 0.12);
+  --portal-ui-accent-active-background: rgb(52 152 219 / 0.14);
+  --portal-ui-accent-active-border-color: rgb(52 152 219);
+  --portal-ui-editable-label-background: rgb(34 139 230 / 0.26);
+  --portal-ui-editable-value-background: rgb(34 139 230 / 0.16);
+  --portal-ui-editable-underline-color: rgb(34 139 230 / 0.72);
+  --portal-ui-editable-focus-background: rgb(34 139 230 / 0.08);
+  --portal-ui-editable-focus-underline-color: rgb(34 139 230);
+  --portal-ui-editable-focus-outline-color: rgb(34 139 230 / 0.2);
+  --portal-ui-placeholder-color: var(--mantine-color-gray-5);
 }
 
 :root[data-mantine-color-scheme='dark'] {
   --portal-ui-text-color: var(--mantine-color-white);
   --portal-ui-label-color: var(--mantine-color-white);
   --portal-ui-on-accent-color: var(--mantine-color-white);
+  --portal-ui-surface-background: var(--mantine-color-dark-6);
+  --portal-ui-surface-border-color: var(--mantine-color-dark-4);
+  --portal-ui-subtle-fill-background: rgb(148 163 184 / 0.08);
+  --portal-ui-accent-hover-background: rgb(52 152 219 / 0.18);
+  --portal-ui-accent-active-background: rgb(52 152 219 / 0.24);
+  --portal-ui-accent-active-border-color: rgb(96 165 250 / 0.95);
+  --portal-ui-editable-label-background: rgb(34 139 230 / 0.34);
+  --portal-ui-editable-value-background: rgb(34 139 230 / 0.22);
+  --portal-ui-editable-underline-color: rgb(34 139 230 / 0.4);
+  --portal-ui-editable-focus-background: rgb(34 139 230 / 0.1);
+  --portal-ui-editable-focus-underline-color: rgb(34 139 230 / 0.9);
+  --portal-ui-editable-focus-outline-color: rgb(34 139 230 / 0.18);
+  --portal-ui-placeholder-color: var(--mantine-color-gray-6);
 }
 
 html {
