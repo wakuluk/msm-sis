@@ -80,6 +80,7 @@ INSERT INTO address (
     postal_code,
     country_code,
     address_type,
+    address_lookup_hash,
     updated_by
 )
 VALUES
@@ -92,6 +93,7 @@ VALUES
         NULL,
         NULL,
         'Home',
+        '20dcafab005f19de7eedf2d2b353c4ea0cad9642141b3af9cbf98d736e59ff66',
         'seed-script'
     ),
     (
@@ -103,6 +105,7 @@ VALUES
         NULL,
         NULL,
         'Home',
+        '9cdbe9b9d4b8e2c8780369b276b9430de6419ecd4db8369ea8f6dbe1a913e7dc',
         'seed-script'
     ),
     (
@@ -114,6 +117,7 @@ VALUES
         NULL,
         NULL,
         'Home',
+        'fa766b0b5b43d3181804e1e72512fa68e9798cd17a7d17cf4928541242659bd6',
         'seed-script'
     ),
     (
@@ -125,6 +129,7 @@ VALUES
         NULL,
         NULL,
         'Home',
+        '19c7e4f190dc0436509394da365584fe69ab04f2f93eb2805e4feefa8aa0849b',
         'seed-script'
     );
 

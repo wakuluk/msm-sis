@@ -21,9 +21,11 @@ CREATE TABLE address (
     postal_code VARCHAR(20) DEFAULT NULL,
     country_code CHAR(2) DEFAULT NULL,
     address_type VARCHAR(50) DEFAULT NULL,
+    address_lookup_hash CHAR(64) DEFAULT NULL,
     last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by VARCHAR(255) DEFAULT NULL,
     PRIMARY KEY (address_id),
     KEY idx_address_city_state (city, state_region),
-    KEY idx_address_postal_code (postal_code)
+    KEY idx_address_postal_code (postal_code),
+    KEY idx_address_lookup_hash (address_lookup_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

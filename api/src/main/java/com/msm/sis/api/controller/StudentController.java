@@ -2,9 +2,11 @@ package com.msm.sis.api.controller;
 
 import com.msm.sis.api.config.AuthenticatedJwt;
 import com.msm.sis.api.dto.CreateStudentRequest;
+import com.msm.sis.api.dto.PatchStudentRequest;
 import com.msm.sis.api.dto.StudentDetailResponse;
 import com.msm.sis.api.dto.StudentProfileResponse;
-import com.msm.sis.api.entity.Student;
+import com.msm.sis.api.dto.StudentSearchCriteria;
+import com.msm.sis.api.dto.StudentSearchResponse;
 import com.msm.sis.api.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/students")
@@ -51,25 +52,45 @@ public class StudentController {
         return ResponseEntity.ok(studentService.getStudentById(studentId));
     }
 
+    @PatchMapping("/{studentId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Patch student by id", description = "Updates only the provided student fields")
+    public ResponseEntity<StudentDetailResponse> patchStudent(
+            @NotNull @PathVariable Long studentId,
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @RequestBody PatchStudentRequest request
+    ) {
+        return ResponseEntity.ok(studentService.patchStudent(studentId, request, String.valueOf(jwt.getUserId())));
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create student", description = "Creates a new student record")
-    public ResponseEntity<Student> createStudent(@NotNull @RequestBody CreateStudentRequest request) {
-        Student savedStudent = studentService.createStudent(request);
+    public ResponseEntity<StudentDetailResponse> createStudent(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @NotNull @RequestBody CreateStudentRequest request
+    ) {
+        StudentDetailResponse createdStudent = studentService.createStudent(request, String.valueOf(jwt.getUserId()));
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{studentId}")
-                .buildAndExpand(savedStudent.getId())
+                .buildAndExpand(createdStudent.studentId())
                 .toUri();
 
-        return ResponseEntity.created(location).body(savedStudent);
+        return ResponseEntity.created(location).body(createdStudent);
     }
 
-    @PostMapping("/search/")
+    @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Search student by last name", description = "Search student by last name")
-    public ResponseEntity<List<Student>> searchStudents(@RequestParam(required = false) String lastName) {
-        return ResponseEntity.ok(studentService.searchStudents(lastName));
+    @Operation(summary = "Search students", description = "Returns paged student results for the provided optional filters")
+    public ResponseEntity<StudentSearchResponse> searchStudents(
+            @ModelAttribute StudentSearchCriteria criteria,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            @RequestParam(defaultValue = "lastName") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDirection
+    ) {
+        return ResponseEntity.ok(studentService.searchStudents(criteria, page, size, sortBy, sortDirection));
     }
 }

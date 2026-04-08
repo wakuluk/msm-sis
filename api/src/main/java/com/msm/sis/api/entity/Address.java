@@ -42,6 +42,9 @@ public class Address {
     @Column(name = "address_type")
     private String addressType;
 
+    @Column(name = "address_lookup_hash")
+    private String lookupHash;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "last_updated", insertable = false, updatable = false)
     private LocalDateTime lastUpdated;
