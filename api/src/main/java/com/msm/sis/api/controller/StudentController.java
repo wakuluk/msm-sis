@@ -8,14 +8,19 @@ import com.msm.sis.api.dto.StudentDetailResponse;
 import com.msm.sis.api.dto.StudentProfileResponse;
 import com.msm.sis.api.dto.StudentSearchCriteria;
 import com.msm.sis.api.dto.StudentSearchResponse;
+import com.msm.sis.api.dto.StudentSearchSortField;
 import com.msm.sis.api.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -69,7 +74,7 @@ public class StudentController {
     @Operation(summary = "Create student", description = "Creates a new student record")
     public ResponseEntity<CreateStudentResponse> createStudent(
             @AuthenticationPrincipal AuthenticatedJwt jwt,
-            @NotNull @RequestBody CreateStudentRequest request
+            @Valid @NotNull @RequestBody CreateStudentRequest request
     ) {
         CreateStudentResponse createdStudent = studentService.createStudent(request, jwt.getEmail());
 
@@ -92,6 +97,28 @@ public class StudentController {
             @RequestParam(defaultValue = "lastName") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection
     ) {
-        return ResponseEntity.ok(studentService.searchStudents(criteria, page, size, sortBy, sortDirection));
+        return ResponseEntity.ok(studentService.searchStudents(
+                criteria,
+                page,
+                size,
+                parseStudentSearchSortField(sortBy),
+                parseSortDirection(sortDirection)
+        ));
+    }
+
+    private StudentSearchSortField parseStudentSearchSortField(String sortBy) {
+        try {
+            return StudentSearchSortField.fromRequestValue(sortBy);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
+        }
+    }
+
+    private Direction parseSortDirection(String sortDirection) {
+        try {
+            return Direction.fromString(sortDirection);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sort direction must be 'asc' or 'desc'.");
+        }
     }
 }

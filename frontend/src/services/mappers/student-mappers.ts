@@ -45,7 +45,6 @@ export function mapStudentDetailToFormValues(
     stateRegion: toFormString(detail.stateRegion),
     postalCode: toFormString(detail.postalCode),
     countryCode: toFormString(detail.countryCode),
-    addressType: toFormString(detail.addressType),
   };
 }
 
@@ -187,10 +186,6 @@ const studentPatchFieldConfigs = [
     key: 'countryCode',
     normalize: (values) => toNullableTrimmedString(values.countryCode),
   }),
-  defineStudentPatchField({
-    key: 'addressType',
-    normalize: (values) => toNullableTrimmedString(values.addressType),
-  }),
 ] as const;
 
 function fieldHasChanged<K extends keyof StudentPatchRequest>(
@@ -259,6 +254,5 @@ export function buildCreateStudentRequest(values: StudentCreateFormValues): Stud
     stateRegion: toNullableTrimmedString(values.stateRegion),
     postalCode: toNullableTrimmedString(values.postalCode),
     countryCode: toNullableTrimmedString(values.countryCode),
-    addressType: toNullableTrimmedString(values.addressType),
   });
 }

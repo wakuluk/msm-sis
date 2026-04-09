@@ -139,12 +139,12 @@ const studentDetailTabs: StudentDetailTabConfig[] = [
   {
     key: 'overview',
     label: 'Overview',
-    requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.PROFESSOR],
+    requiredRoles: [PORTAL_ROLES.ADMIN],
   },
   {
     key: 'transcript',
     label: 'Transcript',
-    requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.PROFESSOR],
+    requiredRoles: [PORTAL_ROLES.ADMIN],
   },
   {
     key: 'billing',
@@ -588,21 +588,6 @@ function OverviewSections({
           <ReadOnlyTextField
             label="Country code"
             value={displayValue(values.countryCode)}
-            span={{ base: 12, md: 4 }}
-          />
-        )}
-        {isEditing ? (
-          <EditableTextField
-            form={form}
-            field="addressType"
-            label="Address type"
-            placeholder="Home, Mailing, etc."
-            span={{ base: 12, md: 4 }}
-          />
-        ) : (
-          <ReadOnlyTextField
-            label="Address type"
-            value={displayValue(values.addressType)}
             span={{ base: 12, md: 4 }}
           />
         )}

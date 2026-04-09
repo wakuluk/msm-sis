@@ -25,6 +25,5 @@ public class AddressValidator {
         ValidationUtils.validateMaxLength(address.getStateRegion(), 100, "State/region");
         ValidationUtils.validateMaxLength(address.getPostalCode(), 20, "Postal code");
         ValidationUtils.validateMaxLength(address.getCountryCode(), 2, "Country code");
-        ValidationUtils.validateMaxLength(address.getAddressType(), 50, "Address type");
     }
 }
