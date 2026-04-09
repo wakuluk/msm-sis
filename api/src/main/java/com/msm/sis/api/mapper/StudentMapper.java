@@ -25,7 +25,7 @@ public class StudentMapper {
         student.setLastName(trimToNull(request.lastName()));
         student.setMiddleName(trimToNull(request.middleName()));
         student.setNameSuffix(trimToNull(request.nameSuffix()));
-        student.setGender(trimToNull(request.gender()));
+        student.setGenderId(request.genderId());
         student.setEthnicityId(request.ethnicityId());
         student.setClassStandingId(request.classStandingId());
         student.setPreferredName(trimToNull(request.preferredName()));
@@ -48,7 +48,7 @@ public class StudentMapper {
                 student.getMiddleName(),
                 student.getNameSuffix(),
                 buildFullName(student),
-                student.getGender(),
+                student.getGenderLookup() == null ? null : student.getGenderLookup().getName(),
                 student.getEthnicityId(),
                 student.getEthnicity() == null ? null : student.getEthnicity().getName(),
                 student.getClassStandingId(),
@@ -81,7 +81,8 @@ public class StudentMapper {
                 student.getMiddleName(),
                 student.getNameSuffix(),
                 buildFullName(student),
-                student.getGender(),
+                student.getGenderId(),
+                student.getGenderLookup() == null ? null : student.getGenderLookup().getName(),
                 student.getEthnicityId(),
                 student.getEthnicity() == null ? null : student.getEthnicity().getName(),
                 student.getClassStandingId(),
@@ -143,7 +144,7 @@ public class StudentMapper {
         applyTrimmed(request.getFirstName(), student::setFirstName);
         applyTrimmed(request.getMiddleName(), student::setMiddleName);
         applyTrimmed(request.getNameSuffix(), student::setNameSuffix);
-        applyTrimmed(request.getGender(), student::setGender);
+        applyDirect(request.getGenderId(), student::setGenderId);
         applyDirect(request.getEthnicityId(), student::setEthnicityId);
         applyDirect(request.getClassStandingId(), student::setClassStandingId);
         applyTrimmed(request.getPreferredName(), student::setPreferredName);

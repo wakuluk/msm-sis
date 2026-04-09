@@ -1,0 +1,24 @@
+.input {
+  background-color: var(--portal-ui-surface-background);
+  border-color: var(--portal-ui-surface-border-color);
+  color: var(--portal-ui-text-color);
+  font-family: var(--portal-ui-font-family);
+  font-size: var(--portal-ui-font-size);
+  font-weight: var(--portal-ui-value-font-weight);
+  letter-spacing: var(--portal-ui-letter-spacing);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
+}
+
+.input:focus,
+.input:focus-within {
+  border-color: var(--mantine-primary-color-filled);
+  box-shadow: 0 0 0 1px var(--mantine-primary-color-filled);
+  outline: none;
+}
+
+.section {
+  color: var(--portal-ui-muted-text-color);
+}

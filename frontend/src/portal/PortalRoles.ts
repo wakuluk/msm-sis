@@ -1,6 +1,7 @@
 export const PORTAL_ROLES = {
   STUDENT: 'STUDENT',
   ADMIN: 'ADMIN',
+  PROFESSOR: 'PROFESSOR',
 } as const;
 
 export type PortalRole = (typeof PORTAL_ROLES)[keyof typeof PORTAL_ROLES];
@@ -11,7 +12,7 @@ export function hasPortalRole(userRoles: readonly string[] | undefined, role: Po
 
 export function hasAnyPortalRole(
   userRoles: readonly string[] | undefined,
-  requiredRoles: readonly PortalRole[] | undefined,
+  requiredRoles: readonly PortalRole[] | undefined
 ) {
   // Allow routes with no required roles; otherwise require at least one matching user role.
   const hasRequiredRole =

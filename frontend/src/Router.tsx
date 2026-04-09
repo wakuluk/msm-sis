@@ -6,18 +6,22 @@ import { RequireRole } from '@/auth/RequireRole';
 import { LogingPage } from '@/components/auth/LogingPage';
 import { PortalLayout } from '@/components/layout/PortalLayout';
 import { flattenPortalRoutes, portalRoutes, type PortalRouteItemKey } from '@/portal/PortalRoutes';
-import { AdminPage } from './pages/portal/Admin.page';
 import { PortalPage } from './pages/portal/Portal.page';
 import { PublicPage } from './pages/public/Public.page';
 import { SharedPage } from './pages/portal/Shared.page';
 import { SharedSecondPage } from './pages/portal/SharedSecond.page';
+import { StudentCreatePage } from './pages/portal/StudentCreate.page';
+import { StudentDetailPage } from './pages/portal/StudentDetail.page';
 import { StudentProfilePage } from './pages/portal/StudentProfile.page';
+import { StudentSearchPage } from './pages/portal/StudentSearch.page';
 
 const portalRouteComponents = {
   dashboard: PortalPage,
   shared: SharedPage,
   student: StudentProfilePage,
-  admin: AdminPage,
+  studentCreate: StudentCreatePage,
+  studentDetail: StudentDetailPage,
+  studentSearch: StudentSearchPage,
   sharedSecond: SharedSecondPage,
 } satisfies Record<PortalRouteItemKey, ComponentType>;
 
@@ -45,7 +49,7 @@ const portalChildren = flattenPortalRoutes(portalRoutes).map((route) => {
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to="/login" replace/>,
+    element: <Navigate to="/login" replace />,
   },
   {
     path: '/public',

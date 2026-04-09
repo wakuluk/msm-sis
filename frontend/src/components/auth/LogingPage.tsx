@@ -32,13 +32,12 @@ export function LogingPage() {
       <Title ta="center" className={classes.title}>
         WSIS
       </Title>
-      <Paper withBorder shadow="sm" p={22} mt={30} radius="md">
+      <Paper p={22} mt={30}>
         <form onSubmit={handleSubmit}>
           <TextInput
             label="Email"
             placeholder="you@mantine.dev"
             required
-            radius="md"
             value={email}
             onChange={(event) => setEmail(event.currentTarget.value)}
           />
@@ -47,11 +46,10 @@ export function LogingPage() {
             placeholder="Your password"
             required
             mt="md"
-            radius="md"
             value={password}
             onChange={(event) => setPassword(event.currentTarget.value)}
           />
-          <Button fullWidth mt="xl" radius="md" type="submit" loading={isSubmitting}>
+          <Button fullWidth mt="xl" type="submit" loading={isSubmitting}>
             Sign in
           </Button>
         </form>

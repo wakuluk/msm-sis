@@ -25,17 +25,17 @@
 }
 
 .summaryTitle {
-  font-family: var(--mantine-font-family);
+  font-family: var(--portal-ui-font-family);
   font-size: clamp(1.9rem, 3vw, 2.5rem);
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: -0.03em;
-  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+  color: var(--portal-ui-heading-color);
 }
 
 .summaryDescription {
   max-width: 54ch;
-  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-2));
+  color: var(--portal-ui-muted-text-color);
 }
 
 .editLegend {

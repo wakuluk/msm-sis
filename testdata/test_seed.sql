@@ -2,6 +2,7 @@ DELETE FROM pdf_documents;
 DELETE FROM staff;
 DELETE FROM student;
 DELETE FROM address;
+DELETE FROM gender;
 DELETE FROM class_standing;
 DELETE FROM ethnicity;
 DELETE FROM user_roles;
@@ -71,6 +72,13 @@ VALUES
     (3, 'Third Age'),
     (4, 'Fourth Age');
 
+INSERT INTO gender (gender_id, gender_name)
+VALUES
+    (1, 'Male'),
+    (2, 'Female'),
+    (3, 'Non-binary'),
+    (4, 'Prefer not to say');
+
 INSERT INTO address (
     address_id,
     address_line_1,
@@ -138,7 +146,7 @@ INSERT INTO student (
     last_name,
     middle_name,
     name_suffix,
-    gender,
+    gender_id,
     ethnicity_id,
     class_standing_id,
     address_id,
@@ -157,7 +165,7 @@ VALUES
         'Gamgee',
         NULL,
         NULL,
-        'Male',
+        1,
         1,
         1,
         1,
@@ -175,7 +183,7 @@ VALUES
         'Brandybuck',
         'R.',
         NULL,
-        'Male',
+        1,
         1,
         2,
         2,
@@ -193,7 +201,7 @@ VALUES
         'Took',
         NULL,
         'II',
-        'Male',
+        1,
         1,
         3,
         3,
@@ -211,7 +219,7 @@ VALUES
         'Gloinson',
         NULL,
         NULL,
-        'Male',
+        1,
         2,
         4,
         4,

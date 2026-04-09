@@ -2,6 +2,7 @@ package com.msm.sis.api.controller;
 
 import com.msm.sis.api.config.AuthenticatedJwt;
 import com.msm.sis.api.dto.CreateStudentRequest;
+import com.msm.sis.api.dto.CreateStudentResponse;
 import com.msm.sis.api.dto.PatchStudentRequest;
 import com.msm.sis.api.dto.StudentDetailResponse;
 import com.msm.sis.api.dto.StudentProfileResponse;
@@ -60,21 +61,21 @@ public class StudentController {
             @AuthenticationPrincipal AuthenticatedJwt jwt,
             @RequestBody PatchStudentRequest request
     ) {
-        return ResponseEntity.ok(studentService.patchStudent(studentId, request, String.valueOf(jwt.getUserId())));
+        return ResponseEntity.ok(studentService.patchStudent(studentId, request, jwt.getEmail()));
     }
 
-    @PostMapping
+    @PostMapping("/create")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create student", description = "Creates a new student record")
-    public ResponseEntity<StudentDetailResponse> createStudent(
+    public ResponseEntity<CreateStudentResponse> createStudent(
             @AuthenticationPrincipal AuthenticatedJwt jwt,
             @NotNull @RequestBody CreateStudentRequest request
     ) {
-        StudentDetailResponse createdStudent = studentService.createStudent(request, String.valueOf(jwt.getUserId()));
+        CreateStudentResponse createdStudent = studentService.createStudent(request, jwt.getEmail());
 
         URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{studentId}")
+                .fromCurrentContextPath()
+                .path("/api/students/{studentId}")
                 .buildAndExpand(createdStudent.studentId())
                 .toUri();
 

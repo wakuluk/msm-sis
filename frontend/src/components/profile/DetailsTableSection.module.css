@@ -6,11 +6,11 @@
 
 .sectionTitle {
   margin: 0;
-  font-family: var(--mantine-font-family);
+  font-family: var(--portal-ui-font-family);
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+  color: var(--portal-ui-heading-color);
 }
 
 .tableWrap {
@@ -64,7 +64,7 @@
 .rowLabelText {
   min-width: 0;
   font-size: var(--details-table-label-font-size, var(--details-table-default-label-font-size));
-  color: light-dark(var(--mantine-color-gray-8), var(--portal-ui-label-color)) !important;
+  color: var(--portal-ui-label-color) !important;
 }
 
 .valueText {

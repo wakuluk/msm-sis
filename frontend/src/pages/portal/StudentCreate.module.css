@@ -1,0 +1,88 @@
+.page {
+  gap: var(--mantine-spacing-lg);
+}
+
+.summaryCard {
+  padding: clamp(var(--mantine-spacing-lg), 2vw, 2rem);
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  background:
+    radial-gradient(circle at top right, rgb(70 152 120 / 0.14), transparent 34%),
+    linear-gradient(
+      180deg,
+      light-dark(rgb(241 249 245 / 0.98), rgb(35 38 47 / 0.92)),
+      light-dark(rgb(255 255 255), var(--mantine-color-dark-6))
+    );
+}
+
+.summaryCopy {
+  flex: 1 1 32rem;
+}
+
+.summaryTitle {
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+
+.summaryText {
+  max-width: 42rem;
+}
+
+.formPanel {
+  overflow: hidden;
+  padding: 0;
+}
+
+.section + .section {
+  border-top: 1px solid var(--portal-ui-surface-border-color);
+}
+
+.section {
+  padding: 1.4rem 1.6rem;
+}
+
+.sectionHeader {
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  margin-bottom: 0.25rem;
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--portal-ui-heading-color);
+}
+
+.selectOption {
+  font-family: var(--portal-ui-font-family);
+}
+
+.footerBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--portal-ui-surface-border-color);
+  padding: 1.25rem 1.6rem 1.5rem;
+}
+
+.footerText {
+  max-width: 38rem;
+}
+
+@media (width <= 48rem) {
+  .section {
+    padding: 1.2rem;
+  }
+
+  .footerBar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1.2rem;
+  }
+
+  .footerText {
+    max-width: none;
+  }
+}

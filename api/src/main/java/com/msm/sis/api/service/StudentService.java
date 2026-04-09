@@ -1,6 +1,7 @@
 package com.msm.sis.api.service;
 
 import com.msm.sis.api.dto.CreateStudentRequest;
+import com.msm.sis.api.dto.CreateStudentResponse;
 import com.msm.sis.api.dto.PatchStudentRequest;
 import com.msm.sis.api.dto.StudentSearchCriteria;
 import com.msm.sis.api.dto.StudentSearchResponse;
@@ -11,6 +12,7 @@ import com.msm.sis.api.entity.Student;
 import com.msm.sis.api.mapper.StudentMapper;
 import com.msm.sis.api.repository.StudentRepository;
 import com.msm.sis.api.validation.StudentValidator;
+import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,17 +36,20 @@ import static com.msm.sis.api.util.TextUtils.trimToNull;
 public class StudentService {
 
     private final AddressService addressService;
+    private final EntityManager entityManager;
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
     private final StudentValidator studentValidator;
 
     public StudentService(
             AddressService addressService,
+            EntityManager entityManager,
             StudentRepository studentRepository,
             StudentMapper studentMapper,
             StudentValidator studentValidator
     ) {
         this.addressService = addressService;
+        this.entityManager = entityManager;
         this.studentRepository = studentRepository;
         this.studentMapper = studentMapper;
         this.studentValidator = studentValidator;
@@ -74,19 +79,18 @@ public class StudentService {
      * Creates a new student record from the incoming request after mapper-level validation.
      */
     @Transactional
-    public StudentDetailResponse createStudent(CreateStudentRequest request, String updatedBy) {
+    public CreateStudentResponse createStudent(CreateStudentRequest request, String updatedBy) {
         Student student = studentMapper.fromCreateRequest(request);
         studentValidator.validate(student);
 
         Address resolvedAddress = addressService.resolveAddress(request, updatedBy);
         student.setAddress(resolvedAddress);
         student.setAddressId(resolvedAddress == null ? null : resolvedAddress.getId());
+
         student.setUpdatedBy(updatedBy);
 
         Student savedStudent = studentRepository.save(student);
-        Student savedStudentWithDetails = studentRepository.findByIdWithDetails(savedStudent.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        return studentMapper.toStudentDetailResponse(savedStudentWithDetails);
+        return new CreateStudentResponse(savedStudent.getId());
     }
 
     /**
@@ -113,7 +117,11 @@ public class StudentService {
 
         student.setUpdatedBy(updatedBy);
         Student savedStudent = studentRepository.save(student);
-        return studentMapper.toStudentDetailResponse(savedStudent);
+        entityManager.flush();
+        entityManager.detach(student);
+        Student savedStudentWithDetails = studentRepository.findByIdWithDetails(savedStudent.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return studentMapper.toStudentDetailResponse(savedStudentWithDetails);
     }
 
     /**
@@ -146,6 +154,9 @@ public class StudentService {
                 trimToNull(criteria.getFirstName()),
                 trimToNull(criteria.getLastName()),
                 trimToNull(criteria.getUpdatedBy()),
+                criteria.getGenderId(),
+                criteria.getEthnicityId(),
+                criteria.getClassStandingId(),
                 criteria.getClassOf(),
                 trimToNull(criteria.getAddressLine1()),
                 trimToNull(criteria.getAddressLine2()),

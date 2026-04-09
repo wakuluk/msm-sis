@@ -12,6 +12,13 @@ CREATE TABLE class_standing (
     CONSTRAINT uk_class_standing_name UNIQUE (class_standing_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE gender (
+    gender_id INT NOT NULL AUTO_INCREMENT,
+    gender_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (gender_id),
+    CONSTRAINT uk_gender_name UNIQUE (gender_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE address (
     address_id BIGINT NOT NULL AUTO_INCREMENT,
     address_line_1 VARCHAR(255) NOT NULL,

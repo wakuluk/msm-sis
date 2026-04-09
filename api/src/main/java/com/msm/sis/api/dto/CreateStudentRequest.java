@@ -7,7 +7,7 @@ public record CreateStudentRequest(
         String firstName,
         String middleName,
         String nameSuffix,
-        String gender,
+        Integer genderId,
         Integer ethnicityId,
         Integer classStandingId,
         String preferredName,

@@ -13,6 +13,7 @@ public record StudentDetailResponse(
         String middleName,
         String nameSuffix,
         String fullName,
+        Integer genderId,
         String gender,
         Integer ethnicityId,
         String ethnicity,

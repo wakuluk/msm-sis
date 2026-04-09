@@ -10,6 +10,9 @@ public class StudentSearchCriteria {
     private String firstName;
     private String lastName;
     private String updatedBy;
+    private Integer genderId;
+    private Integer ethnicityId;
+    private Integer classStandingId;
     private Integer classOf;
     private String addressLine1;
     private String addressLine2;

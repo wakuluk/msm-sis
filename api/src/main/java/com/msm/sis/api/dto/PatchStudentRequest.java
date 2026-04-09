@@ -14,7 +14,7 @@ public class PatchStudentRequest {
     private PatchValue<String> firstName = PatchValue.absent();
     private PatchValue<String> middleName = PatchValue.absent();
     private PatchValue<String> nameSuffix = PatchValue.absent();
-    private PatchValue<String> gender = PatchValue.absent();
+    private PatchValue<Integer> genderId = PatchValue.absent();
     private PatchValue<Integer> ethnicityId = PatchValue.absent();
     private PatchValue<Integer> classStandingId = PatchValue.absent();
     private PatchValue<String> preferredName = PatchValue.absent();
