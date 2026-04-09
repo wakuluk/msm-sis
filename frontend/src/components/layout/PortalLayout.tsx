@@ -25,10 +25,10 @@ export function PortalLayout() {
           desktop: !opened,
         },
       }}
-      padding="md"
+      padding="lg"
     >
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
+        <Group h="100%" px="lg" justify="space-between">
           <Group gap="sm">
             <Burger opened={opened} onClick={toggle} size="sm" />
             <Text fw={600}>WSIS</Text>

@@ -1,18 +1,22 @@
 import { type PortalRole, PORTAL_ROLES } from './PortalRoles';
 
 export type PortalRouteItemKey =
-    'dashboard' |
-    'shared' |
-    'student' |
-    'admin' |
-    'sharedSecond';
+  | 'dashboard'
+  | 'shared'
+  | 'student'
+  | 'studentCreate'
+  | 'studentDetail'
+  | 'studentSearch'
+  | 'sharedSecond';
 
 export type PortalRoutePath =
-    '/portal' |
-    '/shared' |
-    '/sharedSecond' |
-    '/student/profile' |
-    '/admin';
+  | '/portal'
+  | '/shared'
+  | '/sharedSecond'
+  | '/student/profile'
+  | '/students/new'
+  | '/students/:studentId'
+  | '/student-search';
 
 export type PortalRouteGroupKey = 'people' | 'sharing';
 
@@ -33,7 +37,6 @@ export type PortalRouteGroup = {
   showInNav: boolean;
   children: PortalRouteItem[];
 };
-
 
 export type PortalRouteNode = PortalRouteItem | PortalRouteGroup;
 
@@ -77,11 +80,27 @@ export const portalRoutes: PortalRouteNode[] = [
       },
       {
         kind: 'item',
-        key: 'admin',
-        label: 'Admin page',
-        path: '/admin',
+        key: 'studentCreate',
+        label: 'Create Student',
+        path: '/students/new',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'studentSearch',
+        label: 'Student Search',
+        path: '/student-search',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'studentDetail',
+        label: 'Student Detail',
+        path: '/students/:studentId',
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.PROFESSOR],
+        showInNav: false,
       },
       {
         kind: 'item',
@@ -96,7 +115,5 @@ export const portalRoutes: PortalRouteNode[] = [
 ];
 
 export function flattenPortalRoutes(routes: PortalRouteNode[]): PortalRouteItem[] {
-  return routes.flatMap((route) =>
-      route.kind === 'group' ? route.children : [route]
-  );
+  return routes.flatMap((route) => (route.kind === 'group' ? route.children : [route]));
 }

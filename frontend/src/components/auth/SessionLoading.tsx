@@ -4,7 +4,7 @@ export function SessionLoading() {
   return (
     <Container size={420} my={40}>
       <Title ta="center">WSIS</Title>
-      <Paper withBorder shadow="sm" p={22} mt={30} radius="md">
+      <Paper p={22} mt={30}>
         <Stack align="center" gap="sm">
           <Loader size="sm" />
           <Text size="sm" c="dimmed">

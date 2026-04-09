@@ -2,6 +2,7 @@ DELETE FROM pdf_documents;
 DELETE FROM staff;
 DELETE FROM student;
 DELETE FROM address;
+DELETE FROM gender;
 DELETE FROM class_standing;
 DELETE FROM ethnicity;
 DELETE FROM user_roles;
@@ -71,6 +72,13 @@ VALUES
     (3, 'Third Age'),
     (4, 'Fourth Age');
 
+INSERT INTO gender (gender_id, gender_name)
+VALUES
+    (1, 'Male'),
+    (2, 'Female'),
+    (3, 'Non-binary'),
+    (4, 'Prefer not to say');
+
 INSERT INTO address (
     address_id,
     address_line_1,
@@ -79,7 +87,7 @@ INSERT INTO address (
     state_region,
     postal_code,
     country_code,
-    address_type,
+    address_lookup_hash,
     updated_by
 )
 VALUES
@@ -91,7 +99,7 @@ VALUES
         'The Shire',
         NULL,
         NULL,
-        'Home',
+        '759063cb8653f059bdad31b7c8aae17a8a376267d00fe6efc87fca1b7f590c2b',
         'seed-script'
     ),
     (
@@ -102,7 +110,7 @@ VALUES
         'Buckland',
         NULL,
         NULL,
-        'Home',
+        'f81fbff26a6f718270eb346ec2277e42dda2109d83d5fca2e53a0d8429939ce0',
         'seed-script'
     ),
     (
@@ -113,7 +121,7 @@ VALUES
         'Tookland',
         NULL,
         NULL,
-        'Home',
+        '928a1c9d8eac9f2c99da4aff380d2803d381f0fb5a471195774ea246691b73d1',
         'seed-script'
     ),
     (
@@ -124,7 +132,7 @@ VALUES
         'Kingdom under the Mountain',
         NULL,
         NULL,
-        'Home',
+        '1f6baffb47907f8074877f455c01ca538ffa4e58ebd1d9e5d9518a01a25ae357',
         'seed-script'
     );
 
@@ -133,7 +141,7 @@ INSERT INTO student (
     last_name,
     middle_name,
     name_suffix,
-    gender,
+    gender_id,
     ethnicity_id,
     class_standing_id,
     address_id,
@@ -152,7 +160,7 @@ VALUES
         'Gamgee',
         NULL,
         NULL,
-        'Male',
+        1,
         1,
         1,
         1,
@@ -170,7 +178,7 @@ VALUES
         'Brandybuck',
         'R.',
         NULL,
-        'Male',
+        1,
         1,
         2,
         2,
@@ -188,7 +196,7 @@ VALUES
         'Took',
         NULL,
         'II',
-        'Male',
+        1,
         1,
         3,
         3,
@@ -206,7 +214,7 @@ VALUES
         'Gloinson',
         NULL,
         NULL,
-        'Male',
+        1,
         2,
         4,
         4,

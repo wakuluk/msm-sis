@@ -42,8 +42,8 @@ public class Student {
     @Column(name = "name_suffix")
     private String nameSuffix;
 
-    @Column(name = "gender")
-    private String gender;
+    @Column(name = "gender_id")
+    private Integer genderId;
 
     @Column(name = "ethnicity_id")
     private Integer ethnicityId;
@@ -56,6 +56,11 @@ public class Student {
 
     @Column(name = "preferred_name")
     private String preferredName;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gender_id", insertable = false, updatable = false)
+    private Gender genderLookup;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)

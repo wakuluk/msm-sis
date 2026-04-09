@@ -8,20 +8,18 @@ export function PortalPage() {
   return (
     <Container size={420} my={40}>
       <Title ta="center">Portal Page</Title>
-      <Paper withBorder shadow="sm" p={22} mt={30} radius="md">
+      <Paper p={22} mt={30}>
         <Stack gap="md">
           <Text size="sm" c="dimmed">
             This route requires authentication.
           </Text>
-          <Text size="sm">
-            Current roles: {tokenData?.roles.join(', ') ?? 'none'}
-          </Text>
-          <Group justify="space-between">
-            <Button variant="light" component={Link} to="/student">
+          <Text size="sm">Current roles: {tokenData?.roles.join(', ') ?? 'none'}</Text>
+          <Group justify="flex-start" gap="sm" wrap="wrap">
+            <Button variant="light" component={Link} to="/student/profile">
               Student profile
             </Button>
-            <Button variant="light" component={Link} to="/admin">
-              Admin page
+            <Button variant="light" component={Link} to="/student-search">
+              Student search
             </Button>
           </Group>
           <Group justify="flex-start">

@@ -14,6 +14,10 @@ import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 import java.util.UUID;
 
+/**
+ * Persists uploaded PDFs under the configured storage root and resolves them back
+ * into Spring Resources when they need to be downloaded or streamed.
+ */
 @Service
 public class PdfStorageService {
 
@@ -23,12 +27,17 @@ public class PdfStorageService {
         this.storageRoot = Path.of(storageRoot).toAbsolutePath().normalize();
     }
 
+    /**
+     * Validates that the upload looks like a PDF, writes it under a generated
+     * filename, and returns the stored relative path plus the display filename.
+     */
     public StoredPdf store(MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty.");
         }
 
         String originalFilename = file.getOriginalFilename();
+        // Browsers can be inconsistent, so check both the extension and content type.
         String normalizedFilename = originalFilename == null ? "" : originalFilename.trim().toLowerCase(Locale.ROOT);
         String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
 
@@ -42,6 +51,7 @@ public class PdfStorageService {
         String storedFilename = UUID.randomUUID() + ".pdf";
         Path destination = pdfDirectory.resolve(storedFilename).normalize();
 
+        // Keep the final resolved path inside the intended storage directory.
         if (!destination.startsWith(pdfDirectory)) {
             throw new IOException("Invalid storage path.");
         }
@@ -50,6 +60,7 @@ public class PdfStorageService {
             Files.copy(inputStream, destination, StandardCopyOption.REPLACE_EXISTING);
         }
 
+        // Persist a relative path so storage roots can differ by environment.
         String relativePath = Path.of("pdf-documents", storedFilename)
                 .toString()
                 .replace('\\', '/');
@@ -57,9 +68,13 @@ public class PdfStorageService {
         return new StoredPdf(relativePath, originalFilename == null || originalFilename.isBlank() ? storedFilename : originalFilename);
     }
 
+    /**
+     * Resolves a previously stored relative path back into a readable resource.
+     */
     public Resource loadAsResource(String relativePath) throws IOException {
         Path resolvedPath = storageRoot.resolve(relativePath).normalize();
 
+        // Prevent callers from escaping the configured storage root with ../ segments.
         if (!resolvedPath.startsWith(storageRoot)) {
             throw new IOException("Invalid storage path.");
         }
@@ -73,6 +88,10 @@ public class PdfStorageService {
         return resource;
     }
 
+    /**
+     * Small return type used by callers that need both the stored path and the
+     * original filename to show back to users.
+     */
     public record StoredPdf(String relativePath, String originalFilename) {
     }
 }

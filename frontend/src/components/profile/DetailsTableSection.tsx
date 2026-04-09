@@ -1,6 +1,6 @@
 import type { HTMLInputTypeAttribute } from 'react';
 import type { UseFormReturnType } from '@mantine/form';
-import { Stack, Table, Text, TextInput, Title } from '@mantine/core';
+import { Stack, Table, Text, Title } from '@mantine/core';
 import classes from './DetailsTableSection.module.css';
 
 export type DetailsTableFieldConfig<
@@ -29,7 +29,7 @@ type DetailsTableSectionProps<
   className?: string;
   form?: UseFormReturnType<TFormValues>;
   getInputPlaceholder?: (
-    field: DetailsTableFieldConfig<TRecord, TFormValues>,
+    field: DetailsTableFieldConfig<TRecord, TFormValues>
   ) => string | undefined;
   isEditing?: boolean;
   minTableWidth?: number;
@@ -82,7 +82,7 @@ export function DetailsTableSection<
                       className={joinClasses(
                         classes.rowLabel,
                         isEditing && isEditable && classes.editableLabelCell,
-                        isEditing && !isEditable && classes.readOnlyLabelCell,
+                        isEditing && !isEditable && classes.readOnlyLabelCell
                       )}
                     >
                       <div className={joinClasses(classes.cellContent, classes.rowLabelContent)}>
@@ -90,7 +90,7 @@ export function DetailsTableSection<
                           className={joinClasses(
                             classes.rowLabelText,
                             isEditing && isEditable && 'portal-ui-on-accent-text',
-                            'portal-ui-label-text',
+                            'portal-ui-label-text'
                           )}
                         >
                           {field.label}
@@ -101,21 +101,19 @@ export function DetailsTableSection<
                       className={joinClasses(
                         classes.rowValue,
                         isEditing && isEditable && classes.editableValueCell,
-                        isEditing && !isEditable && classes.readOnlyValueCell,
+                        isEditing && !isEditable && classes.readOnlyValueCell
                       )}
                     >
                       <div className={classes.cellContent}>
                         {isEditing && isEditable && field.editKey && form ? (
-                          <TextInput
-                            variant="unstyled"
-                            placeholder={field.placeholder ?? getInputPlaceholder?.(field)}
-                            classNames={{
-                              input: classes.tableInputField,
-                              root: classes.tableInputRoot,
-                            }}
-                            type={field.inputType ?? 'text'}
-                            {...form.getInputProps(field.editKey)}
-                          />
+                          <div className={joinClasses(classes.cellContent, classes.tableInputRoot)}>
+                            <input
+                              className={classes.tableInputField}
+                              placeholder={field.placeholder ?? getInputPlaceholder?.(field)}
+                              type={field.inputType ?? 'text'}
+                              {...form.getInputProps(field.editKey)}
+                            />
+                          </div>
                         ) : (
                           <Text className={classes.valueText}>{field.value(record)}</Text>
                         )}

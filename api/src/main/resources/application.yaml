@@ -1,6 +1,6 @@
 spring:
   application:
-    name: msm-sis-api
+    name: api
 
   datasource:
     url: jdbc:mysql://msm-sis-db:3306/msmsisdb

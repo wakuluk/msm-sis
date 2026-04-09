@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Authenticates a user against the stored credential hash and issues an access token.
+ */
 @Service
 public class  AuthService {
 
@@ -28,7 +31,12 @@ public class  AuthService {
         this.sisUserRepository = sisUserRepository;
     }
 
+    /**
+     * Validates email/password credentials and returns the JWT payload the client
+     * needs for authenticated API calls.
+     */
     public LoginResponse login(LoginRequest loginRequest) {
+        // Normalize null and whitespace-only input so bad requests fail consistently.
         String email = loginRequest.email() == null ? "" : loginRequest.email().trim();
         String password = loginRequest.password() == null ? "" : loginRequest.password();
 
@@ -47,6 +55,7 @@ public class  AuthService {
             throw new BadCredentialsException("Invalid email or password.");
         }
 
+        // Stable role ordering keeps the login response and token claims predictable.
         List<String> roles = sisUser.getRoles().stream()
                 .map(role -> role.getName())
                 .sorted(Comparator.naturalOrder())

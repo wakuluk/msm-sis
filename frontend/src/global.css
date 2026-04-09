@@ -6,7 +6,9 @@
   --portal-ui-value-font-weight: var(--mantine-font-weight-regular);
   --portal-ui-line-height: 1.35;
   --portal-ui-letter-spacing: -0.01em;
-  --portal-ui-text-color: var(--mantine-color-gray-8);
+  --portal-ui-text-color: var(--mantine-color-black);
+  --portal-ui-muted-text-color: var(--mantine-color-gray-6);
+  --portal-ui-heading-color: var(--mantine-color-black);
   --portal-ui-label-font-size: 0.72rem;
   --portal-ui-label-font-weight: 700;
   --portal-ui-label-letter-spacing: 0.08em;
@@ -14,59 +16,89 @@
   --portal-ui-eyebrow-font-size: 0.76rem;
   --portal-ui-eyebrow-letter-spacing: 0.1em;
   --portal-ui-on-accent-color: var(--mantine-color-gray-9);
-  --portal-ui-surface-background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
-  --portal-ui-surface-border-color: light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
-  --portal-ui-subtle-fill-background: light-dark(rgb(148 163 184 / 0.08), rgb(148 163 184 / 0.08));
-  --portal-ui-accent-hover-background: light-dark(
-    rgb(52 152 219 / 0.12),
-    rgb(52 152 219 / 0.18)
-  );
-  --portal-ui-accent-active-background: light-dark(
-    rgb(52 152 219 / 0.14),
-    rgb(52 152 219 / 0.24)
-  );
-  --portal-ui-accent-active-border-color: light-dark(
-    rgb(52 152 219),
-    rgb(96 165 250 / 0.95)
-  );
-  --portal-ui-editable-label-background: light-dark(
-    rgb(34 139 230 / 0.26),
-    rgb(34 139 230 / 0.34)
-  );
-  --portal-ui-editable-value-background: light-dark(
-    rgb(34 139 230 / 0.16),
-    rgb(34 139 230 / 0.22)
-  );
-  --portal-ui-editable-underline-color: light-dark(
-    rgb(34 139 230 / 0.72),
-    rgb(34 139 230 / 0.4)
-  );
-  --portal-ui-editable-focus-background: light-dark(
-    rgb(34 139 230 / 0.08),
-    rgb(34 139 230 / 0.1)
-  );
-  --portal-ui-editable-focus-underline-color: light-dark(
-    rgb(34 139 230),
-    rgb(34 139 230 / 0.9)
-  );
-  --portal-ui-editable-focus-outline-color: light-dark(
-    rgb(34 139 230 / 0.2),
-    rgb(34 139 230 / 0.18)
-  );
-  --portal-ui-placeholder-color: light-dark(
-    var(--mantine-color-gray-5),
-    var(--mantine-color-gray-6)
-  );
+  --portal-ui-page-background: rgb(244 247 251);
+  --portal-ui-page-accent-wash: rgb(52 152 219 / 0.08);
+  --portal-ui-header-background: rgb(255 255 255 / 0.84);
+  --portal-ui-surface-background: rgb(255 255 255 / 0.92);
+  --portal-ui-overlay-background: rgb(255 255 255);
+  --portal-ui-surface-border-color: var(--mantine-color-gray-3);
+  --portal-ui-subtle-fill-background: rgb(148 163 184 / 0.08);
+  --portal-ui-accent-hover-background: rgb(52 152 219 / 0.12);
+  --portal-ui-accent-active-background: rgb(52 152 219 / 0.16);
+  --portal-ui-accent-active-border-color: var(--mantine-color-brand-6);
+  --portal-ui-editable-label-background: rgb(34 139 230 / 0.26);
+  --portal-ui-editable-value-background: rgb(34 139 230 / 0.16);
+  --portal-ui-editable-underline-color: rgb(34 139 230 / 0.72);
+  --portal-ui-editable-focus-background: rgb(34 139 230 / 0.08);
+  --portal-ui-editable-focus-underline-color: rgb(34 139 230);
+  --portal-ui-editable-focus-outline-color: rgb(34 139 230 / 0.2);
+  --portal-ui-placeholder-color: var(--mantine-color-gray-5);
 }
 
 :root[data-mantine-color-scheme='dark'] {
-  --portal-ui-text-color: var(--mantine-color-white);
-  --portal-ui-label-color: var(--mantine-color-white);
+  --portal-ui-text-color: var(--mantine-color-gray-1);
+  --portal-ui-muted-text-color: var(--mantine-color-gray-4);
+  --portal-ui-heading-color: var(--mantine-color-white);
+  --portal-ui-label-color: var(--mantine-color-gray-4);
   --portal-ui-on-accent-color: var(--mantine-color-white);
+  --portal-ui-page-background: rgb(16 20 28);
+  --portal-ui-page-accent-wash: rgb(52 152 219 / 0.12);
+  --portal-ui-header-background: rgb(24 28 36 / 0.86);
+  --portal-ui-surface-background: rgb(30 34 43 / 0.92);
+  --portal-ui-overlay-background: rgb(30 34 43);
+  --portal-ui-surface-border-color: var(--mantine-color-dark-4);
+  --portal-ui-subtle-fill-background: rgb(148 163 184 / 0.08);
+  --portal-ui-accent-hover-background: rgb(52 152 219 / 0.18);
+  --portal-ui-accent-active-background: rgb(52 152 219 / 0.24);
+  --portal-ui-accent-active-border-color: var(--mantine-color-brand-4);
+  --portal-ui-editable-label-background: rgb(34 139 230 / 0.34);
+  --portal-ui-editable-value-background: rgb(34 139 230 / 0.22);
+  --portal-ui-editable-underline-color: rgb(34 139 230 / 0.4);
+  --portal-ui-editable-focus-background: rgb(34 139 230 / 0.1);
+  --portal-ui-editable-focus-underline-color: rgb(34 139 230 / 0.9);
+  --portal-ui-editable-focus-outline-color: rgb(34 139 230 / 0.18);
+  --portal-ui-placeholder-color: var(--mantine-color-gray-6);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
 }
 
 html {
   scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  font-family: var(--portal-ui-font-family);
+  line-height: var(--portal-ui-line-height);
+  color: var(--portal-ui-text-color);
+  background:
+    radial-gradient(circle at top right, var(--portal-ui-page-accent-wash), transparent 32%),
+    var(--portal-ui-page-background);
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--portal-ui-font-family);
+}
+
+::selection {
+  background-color: var(--portal-ui-accent-active-background);
+  color: var(--portal-ui-on-accent-color);
+}
+
+a {
+  color: var(--mantine-color-brand-6);
 }
 
 .portal-ui-text {
@@ -118,4 +150,85 @@ html {
 
 .portal-ui-on-accent-text {
   color: var(--portal-ui-on-accent-color) !important;
+}
+
+@media (hover: hover) {
+  :root[data-mantine-color-scheme]
+    [data-combobox-option]:hover:not([data-combobox-selected], [data-combobox-disabled]) {
+    background-color: var(--portal-ui-accent-hover-background);
+  }
+
+  :root[data-mantine-color-scheme]
+    .mantine-DateInput-day:hover:not(
+      [data-static],
+      [data-disabled],
+      [data-selected],
+      [data-in-range]
+    ),
+  :root[data-mantine-color-scheme]
+    .mantine-DatePickerInput-day:hover:not(
+      [data-static],
+      [data-disabled],
+      [data-selected],
+      [data-in-range]
+    ),
+  :root[data-mantine-color-scheme]
+    .mantine-DatePicker-day:hover:not(
+      [data-static],
+      [data-disabled],
+      [data-selected],
+      [data-in-range]
+    ),
+  :root[data-mantine-color-scheme]
+    .mantine-Month-day:hover:not([data-static], [data-disabled], [data-selected], [data-in-range]) {
+    background-color: var(--portal-ui-accent-hover-background);
+  }
+
+  :root[data-mantine-color-scheme]
+    [data-picker-control]:hover:not([data-disabled], [data-selected]) {
+    background-color: var(--portal-ui-accent-hover-background);
+  }
+}
+
+@media (hover: none) {
+  :root[data-mantine-color-scheme]
+    [data-combobox-option]:active:not([data-combobox-selected], [data-combobox-disabled]) {
+    background-color: var(--portal-ui-accent-hover-background);
+  }
+
+  :root[data-mantine-color-scheme]
+    .mantine-DateInput-day:active:not(
+      [data-static],
+      [data-disabled],
+      [data-selected],
+      [data-in-range]
+    ),
+  :root[data-mantine-color-scheme]
+    .mantine-DatePickerInput-day:active:not(
+      [data-static],
+      [data-disabled],
+      [data-selected],
+      [data-in-range]
+    ),
+  :root[data-mantine-color-scheme]
+    .mantine-DatePicker-day:active:not(
+      [data-static],
+      [data-disabled],
+      [data-selected],
+      [data-in-range]
+    ),
+  :root[data-mantine-color-scheme]
+    .mantine-Month-day:active:not(
+      [data-static],
+      [data-disabled],
+      [data-selected],
+      [data-in-range]
+    ) {
+    background-color: var(--portal-ui-accent-hover-background);
+  }
+
+  :root[data-mantine-color-scheme]
+    [data-picker-control]:active:not([data-disabled], [data-selected]) {
+    background-color: var(--portal-ui-accent-hover-background);
+  }
 }

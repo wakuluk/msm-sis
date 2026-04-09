@@ -19,7 +19,7 @@ plugins {
 
 group = 'com.msm'
 version = '0.0.1-SNAPSHOT'
-description = 'msm-sis-api'
+description = 'api'
 
 java {
     toolchain {

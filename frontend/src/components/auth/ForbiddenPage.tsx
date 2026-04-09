@@ -9,7 +9,7 @@ export function ForbiddenPage({ requiredRole }: ForbiddenPageProps) {
   return (
     <Container size={420} my={40}>
       <Title ta="center">403</Title>
-      <Paper withBorder shadow="sm" p={22} mt={30} radius="md">
+      <Paper p={22} mt={30}>
         <Stack gap="md">
           <Text size="sm" c="dimmed">
             You do not have permission to access this page.

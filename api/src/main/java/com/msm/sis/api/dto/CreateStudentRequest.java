@@ -7,13 +7,21 @@ public record CreateStudentRequest(
         String firstName,
         String middleName,
         String nameSuffix,
-        String gender,
+        Integer genderId,
         Integer ethnicityId,
+        Integer classStandingId,
         String preferredName,
         LocalDate dateOfBirth,
         LocalDate estimatedGradDate,
         String altId,
         String email,
-        String phone
+        String phone,
+        String addressLine1,
+        String addressLine2,
+        String city,
+        String stateRegion,
+        String postalCode,
+        String countryCode,
+        String addressType
 ) {
 }

@@ -1,0 +1,8 @@
+.root[data-variant='default'] {
+  --button-bd: calc(0.0625rem * var(--mantine-scale)) solid var(--portal-ui-surface-border-color);
+  --button-bg: var(--portal-ui-surface-background);
+  --button-color: var(--portal-ui-text-color);
+  --button-hover: var(--portal-ui-subtle-fill-background);
+  --button-hover-color: var(--portal-ui-text-color);
+  box-shadow: none;
+}

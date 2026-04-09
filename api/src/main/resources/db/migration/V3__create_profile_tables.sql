@@ -7,7 +7,7 @@ CREATE TABLE student (
  middle_name VARCHAR(50) DEFAULT NULL,
  name_suffix VARCHAR(10) DEFAULT NULL,
 
- gender VARCHAR(50) DEFAULT NULL,
+ gender_id INT DEFAULT NULL,
  ethnicity_id INT DEFAULT NULL,
  class_standing_id INT DEFAULT NULL,
  address_id BIGINT DEFAULT NULL,
@@ -37,6 +37,9 @@ CREATE TABLE student (
  CONSTRAINT fk_student_ethnicity
      FOREIGN KEY (ethnicity_id) REFERENCES ethnicity(ethnicity_id)
          ON DELETE SET NULL,
+ CONSTRAINT fk_student_gender
+     FOREIGN KEY (gender_id) REFERENCES gender(gender_id)
+         ON DELETE SET NULL,
  CONSTRAINT fk_student_class_standing
      FOREIGN KEY (class_standing_id) REFERENCES class_standing(class_standing_id)
          ON DELETE SET NULL,
@@ -44,6 +47,7 @@ CREATE TABLE student (
      FOREIGN KEY (address_id) REFERENCES address(address_id)
          ON DELETE SET NULL,
  KEY idx_student_ethnicity (ethnicity_id),
+ KEY idx_student_gender (gender_id),
  KEY idx_student_class_standing (class_standing_id),
  KEY idx_student_address (address_id),
  KEY idx_student_name (last_name, first_name, middle_name),

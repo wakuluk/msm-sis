@@ -1,0 +1,105 @@
+.page {
+  gap: var(--mantine-spacing-lg);
+}
+
+.summaryCard {
+  padding: clamp(var(--mantine-spacing-lg), 2vw, 2rem);
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  background:
+    radial-gradient(circle at top right, rgb(52 152 219 / 0.14), transparent 34%),
+    linear-gradient(
+      180deg,
+      light-dark(rgb(238 245 252 / 0.98), rgb(35 38 47 / 0.92)),
+      light-dark(rgb(255 255 255), var(--mantine-color-dark-6))
+    );
+}
+
+.summaryHeader {
+  align-items: flex-start;
+}
+
+.summaryTitle {
+  font-size: clamp(2rem, 3vw, 2.65rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+
+.summaryMeta {
+  align-items: center;
+}
+
+.metaBadge {
+  padding-inline: 0.28rem;
+}
+
+.metaBadgeLabel {
+  font-family: var(--portal-ui-font-family);
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sectionsPanel {
+  --detail-content-lane-width: 43rem;
+  overflow: hidden;
+  padding: 0;
+}
+
+.tabsHeader {
+  border-bottom: 1px solid var(--portal-ui-surface-border-color);
+  padding: 0 1.75rem;
+  background-color: transparent;
+}
+
+.tabsHeaderContent {
+  width: 100%;
+}
+
+.tabsList {
+  border-bottom: 0;
+  gap: 1rem;
+}
+
+.tab {
+  min-height: 3.1rem;
+  padding-inline: 0.35rem;
+  font-weight: 500;
+}
+
+.tabPanel {
+  padding: 0;
+}
+
+.sectionTitle {
+  margin-bottom: 0;
+}
+
+.saveSuccess {
+  color: var(--mantine-color-green-6);
+  font-size: 0.92rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.placeholderPanel {
+  padding: 1rem 1.75rem 1.5rem;
+}
+
+.placeholderContent {
+  width: 100%;
+  max-width: var(--detail-content-lane-width);
+  margin: 0 auto;
+}
+
+.placeholderTitle {
+  margin: 0;
+  font-weight: 500;
+}
+
+.placeholderText {
+  max-width: 34rem;
+  color: var(--portal-ui-muted-text-color);
+}
