@@ -407,13 +407,6 @@ export function StudentCreatePage() {
                       {...form.getInputProps('countryCode')}
                     />
                   </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 4 }}>
-                    <TextInput
-                      label="Address type"
-                      placeholder="Home, Mailing, etc."
-                      {...form.getInputProps('addressType')}
-                    />
-                  </Grid.Col>
                 </Grid>
               </section>
 

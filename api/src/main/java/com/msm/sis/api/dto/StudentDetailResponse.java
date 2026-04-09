@@ -38,7 +38,6 @@ public record StudentDetailResponse(
         String city,
         String stateRegion,
         String postalCode,
-        String countryCode,
-        String addressType
+        String countryCode
 ) {
 }

@@ -99,7 +99,7 @@ export const portalRoutes: PortalRouteNode[] = [
         key: 'studentDetail',
         label: 'Student Detail',
         path: '/students/:studentId',
-        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.PROFESSOR],
+        requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
       },
       {

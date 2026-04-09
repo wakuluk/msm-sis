@@ -39,9 +39,6 @@ public class Address {
     @Column(name = "country_code")
     private String countryCode;
 
-    @Column(name = "address_type")
-    private String addressType;
-
     @Column(name = "address_lookup_hash")
     private String lookupHash;
 

@@ -32,5 +32,4 @@ public class PatchStudentRequest {
     private PatchValue<String> stateRegion = PatchValue.absent();
     private PatchValue<String> postalCode = PatchValue.absent();
     private PatchValue<String> countryCode = PatchValue.absent();
-    private PatchValue<String> addressType = PatchValue.absent();
 }

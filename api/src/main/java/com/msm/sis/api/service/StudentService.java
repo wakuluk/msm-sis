@@ -3,28 +3,25 @@ package com.msm.sis.api.service;
 import com.msm.sis.api.dto.CreateStudentRequest;
 import com.msm.sis.api.dto.CreateStudentResponse;
 import com.msm.sis.api.dto.PatchStudentRequest;
-import com.msm.sis.api.dto.StudentSearchCriteria;
-import com.msm.sis.api.dto.StudentSearchResponse;
 import com.msm.sis.api.dto.StudentDetailResponse;
 import com.msm.sis.api.dto.StudentProfileResponse;
+import com.msm.sis.api.dto.StudentSearchCriteria;
+import com.msm.sis.api.dto.StudentSearchResponse;
+import com.msm.sis.api.dto.StudentSearchSortField;
 import com.msm.sis.api.entity.Address;
 import com.msm.sis.api.entity.Student;
 import com.msm.sis.api.mapper.StudentMapper;
 import com.msm.sis.api.repository.StudentRepository;
 import com.msm.sis.api.validation.StudentValidator;
 import jakarta.persistence.EntityManager;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.domain.Sort;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
-import java.util.Locale;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 
@@ -132,8 +129,8 @@ public class StudentService {
             StudentSearchCriteria criteria,
             int page,
             int size,
-            String sortBy,
-            String sortDirection
+            StudentSearchSortField sortField,
+            Sort.Direction sortDirection
     ) {
         if (page < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
@@ -146,7 +143,7 @@ public class StudentService {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                buildSearchSort(sortBy, sortDirection)
+                buildSearchSort(sortField, sortDirection)
         );
 
         Page<Student> studentsPage = studentRepository.searchStudents(
@@ -170,43 +167,9 @@ public class StudentService {
         return studentMapper.toStudentSearchResponse(studentsPage);
     }
 
-    private Sort buildSearchSort(String sortBy, String sortDirection) {
-        Direction direction;
-
-        try {
-            direction = Direction.fromString(sortDirection);
-        } catch (IllegalArgumentException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Sort direction must be 'asc' or 'desc'."
-            );
-        }
-
-        String sortProperty = switch (trimToNull(sortBy) == null ? "lastName" : sortBy.trim()) {
-            case "studentId" -> "id";
-            case "firstName" -> "firstName";
-            case "lastName" -> "lastName";
-            case "classOf" -> "estimatedGradDate";
-            case "classStanding" -> "classStanding.name";
-            case "addressLine1" -> "address.addressLine1";
-            case "addressLine2" -> "address.addressLine2";
-            case "city" -> "address.city";
-            case "stateRegion" -> "address.stateRegion";
-            case "postalCode" -> "address.postalCode";
-            case "countryCode" -> "address.countryCode";
-            case "disabled" -> "disabled";
-            case "lastUpdated" -> "lastUpdated";
-            case "updatedBy" -> "updatedBy";
-            default -> throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Unsupported sort field: " + sortBy
-            );
-        };
-
-        Sort primarySort = Sort.by(direction, sortProperty);
-
+    private Sort buildSearchSort(StudentSearchSortField sortField, Sort.Direction sortDirection) {
         // Keep paging stable when many rows share the same visible sort value.
-        return primarySort.and(Sort.by("id").ascending());
+        return sortField.toSort(sortDirection).and(Sort.by("id").ascending());
     }
 
 }

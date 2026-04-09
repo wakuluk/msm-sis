@@ -65,8 +65,7 @@ public class StudentMapper {
                 address == null ? null : address.getCity(),
                 address == null ? null : address.getStateRegion(),
                 address == null ? null : address.getPostalCode(),
-                address == null ? null : address.getCountryCode(),
-                address == null ? null : address.getAddressType()
+                address == null ? null : address.getCountryCode()
         );
     }
 
@@ -103,8 +102,7 @@ public class StudentMapper {
                 address == null ? null : address.getCity(),
                 address == null ? null : address.getStateRegion(),
                 address == null ? null : address.getPostalCode(),
-                address == null ? null : address.getCountryCode(),
-                address == null ? null : address.getAddressType()
+                address == null ? null : address.getCountryCode()
         );
     }
 

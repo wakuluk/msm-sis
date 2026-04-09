@@ -50,9 +50,7 @@ export async function fetchStudentProfile(): Promise<StudentProfileResponse> {
 
   if (!response.ok) {
     throw new Error(
-      typeof payload?.message === 'string'
-        ? payload.message
-        : 'Failed to fetch student profile.',
+      typeof payload?.message === 'string' ? payload.message : 'Failed to fetch student profile.'
     );
   }
 

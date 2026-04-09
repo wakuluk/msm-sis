@@ -27,7 +27,6 @@ CREATE TABLE address (
     state_region VARCHAR(100) DEFAULT NULL,
     postal_code VARCHAR(20) DEFAULT NULL,
     country_code CHAR(2) DEFAULT NULL,
-    address_type VARCHAR(50) DEFAULT NULL,
     address_lookup_hash CHAR(64) DEFAULT NULL,
     last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by VARCHAR(255) DEFAULT NULL,

@@ -42,8 +42,7 @@ public class AddressService {
                 || request.getCity().isPresent()
                 || request.getStateRegion().isPresent()
                 || request.getPostalCode().isPresent()
-                || request.getCountryCode().isPresent()
-                || request.getAddressType().isPresent();
+                || request.getCountryCode().isPresent();
     }
 
     /**
@@ -58,7 +57,6 @@ public class AddressService {
         effectiveAddress.setStateRegion(trimToNull(request.stateRegion()));
         effectiveAddress.setPostalCode(trimToNull(request.postalCode()));
         effectiveAddress.setCountryCode(trimToNull(request.countryCode()));
-        effectiveAddress.setAddressType(trimToNull(request.addressType()));
         return resolveAddress(effectiveAddress, updatedBy);
     }
 
@@ -104,7 +102,6 @@ public class AddressService {
         applyTrimmed(request.getStateRegion(), address::setStateRegion);
         applyTrimmed(request.getPostalCode(), address::setPostalCode);
         applyTrimmed(request.getCountryCode(), address::setCountryCode);
-        applyTrimmed(request.getAddressType(), address::setAddressType);
     }
 
     /**
@@ -136,7 +133,6 @@ public class AddressService {
         copiedAddress.setStateRegion(currentAddress.getStateRegion());
         copiedAddress.setPostalCode(currentAddress.getPostalCode());
         copiedAddress.setCountryCode(currentAddress.getCountryCode());
-        copiedAddress.setAddressType(currentAddress.getAddressType());
         copiedAddress.setLookupHash(currentAddress.getLookupHash());
         return copiedAddress;
     }
@@ -149,8 +145,7 @@ public class AddressService {
                 normalizeForLookup(address.getCity()),
                 normalizeForLookup(address.getStateRegion()),
                 normalizeForLookup(address.getPostalCode()),
-                normalizeForLookup(address.getCountryCode()),
-                normalizeForLookup(address.getAddressType())
+                normalizeForLookup(address.getCountryCode())
         );
 
         try {

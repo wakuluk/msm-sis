@@ -80,7 +80,6 @@ export const StudentCreateFormValuesSchema = z.object({
   stateRegion: z.string(),
   postalCode: z.string(),
   countryCode: z.string(),
-  addressType: z.string(),
 });
 
 export type StudentCreateFormValues = z.infer<typeof StudentCreateFormValuesSchema>;
@@ -105,7 +104,6 @@ export const initialStudentCreateFormValues: StudentCreateFormValues = {
   stateRegion: '',
   postalCode: '',
   countryCode: '',
-  addressType: '',
 };
 
 export const StudentCreateRequestSchema = z.object({
@@ -128,7 +126,6 @@ export const StudentCreateRequestSchema = z.object({
   stateRegion: z.string().nullable(),
   postalCode: z.string().nullable(),
   countryCode: z.string().nullable(),
-  addressType: z.string().nullable(),
 });
 
 export type StudentCreateRequest = z.infer<typeof StudentCreateRequestSchema>;
@@ -170,7 +167,6 @@ export const StudentDetailResponseSchema = z.object({
   stateRegion: NullableString,
   postalCode: NullableString,
   countryCode: NullableString,
-  addressType: NullableString,
 });
 
 export type StudentDetailResponse = z.infer<typeof StudentDetailResponseSchema>;
@@ -196,7 +192,6 @@ export const studentDetailEditableFieldKeys = [
   'stateRegion',
   'postalCode',
   'countryCode',
-  'addressType',
 ] as const;
 
 export type StudentDetailEditableFieldKey = (typeof studentDetailEditableFieldKeys)[number];
@@ -222,7 +217,6 @@ export const StudentDetailFormValuesSchema = z.object({
   stateRegion: z.string(),
   postalCode: z.string(),
   countryCode: z.string(),
-  addressType: z.string(),
 });
 
 export type StudentDetailFormValues = z.infer<typeof StudentDetailFormValuesSchema>;
@@ -248,7 +242,6 @@ export const initialStudentDetailFormValues: StudentDetailFormValues = {
   stateRegion: '',
   postalCode: '',
   countryCode: '',
-  addressType: '',
 };
 
 export const StudentPatchRequestSchema = z.object({
@@ -272,7 +265,6 @@ export const StudentPatchRequestSchema = z.object({
   stateRegion: z.string().nullable().optional(),
   postalCode: z.string().nullable().optional(),
   countryCode: z.string().nullable().optional(),
-  addressType: z.string().nullable().optional(),
 });
 
 export type StudentPatchRequest = z.infer<typeof StudentPatchRequestSchema>;
