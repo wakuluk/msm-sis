@@ -16,7 +16,6 @@ FIELD_NAMES = [
     "state_region",
     "postal_code",
     "country_code",
-    "address_type",
 ]
 
 SEEDED_ADDRESSES = [
@@ -28,7 +27,6 @@ SEEDED_ADDRESSES = [
         "state_region": "The Shire",
         "postal_code": None,
         "country_code": None,
-        "address_type": "Home",
     },
     {
         "address_id": 2,
@@ -38,7 +36,6 @@ SEEDED_ADDRESSES = [
         "state_region": "Buckland",
         "postal_code": None,
         "country_code": None,
-        "address_type": "Home",
     },
     {
         "address_id": 3,
@@ -48,7 +45,6 @@ SEEDED_ADDRESSES = [
         "state_region": "Tookland",
         "postal_code": None,
         "country_code": None,
-        "address_type": "Home",
     },
     {
         "address_id": 4,
@@ -58,7 +54,6 @@ SEEDED_ADDRESSES = [
         "state_region": "Kingdom under the Mountain",
         "postal_code": None,
         "country_code": None,
-        "address_type": "Home",
     },
 ]
 

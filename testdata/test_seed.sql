@@ -87,7 +87,6 @@ INSERT INTO address (
     state_region,
     postal_code,
     country_code,
-    address_type,
     address_lookup_hash,
     updated_by
 )
@@ -100,8 +99,7 @@ VALUES
         'The Shire',
         NULL,
         NULL,
-        'Home',
-        '20dcafab005f19de7eedf2d2b353c4ea0cad9642141b3af9cbf98d736e59ff66',
+        '759063cb8653f059bdad31b7c8aae17a8a376267d00fe6efc87fca1b7f590c2b',
         'seed-script'
     ),
     (
@@ -112,8 +110,7 @@ VALUES
         'Buckland',
         NULL,
         NULL,
-        'Home',
-        '9cdbe9b9d4b8e2c8780369b276b9430de6419ecd4db8369ea8f6dbe1a913e7dc',
+        'f81fbff26a6f718270eb346ec2277e42dda2109d83d5fca2e53a0d8429939ce0',
         'seed-script'
     ),
     (
@@ -124,8 +121,7 @@ VALUES
         'Tookland',
         NULL,
         NULL,
-        'Home',
-        'fa766b0b5b43d3181804e1e72512fa68e9798cd17a7d17cf4928541242659bd6',
+        '928a1c9d8eac9f2c99da4aff380d2803d381f0fb5a471195774ea246691b73d1',
         'seed-script'
     ),
     (
@@ -136,8 +132,7 @@ VALUES
         'Kingdom under the Mountain',
         NULL,
         NULL,
-        'Home',
-        '19c7e4f190dc0436509394da365584fe69ab04f2f93eb2805e4feefa8aa0849b',
+        '1f6baffb47907f8074877f455c01ca538ffa4e58ebd1d9e5d9518a01a25ae357',
         'seed-script'
     );
 
