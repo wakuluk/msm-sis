@@ -36,7 +36,7 @@ public class CourseOfferingController {
 
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
     @Operation(
             summary = "Search course offerings",
             description = "Returns paged course offering search results from the catalog. Example: /api/course-offerings?termCode=FALL-2026&subjectCode=TOLK&title=Tolkien&page=0&size=25&sortBy=courseNumber&sortDirection=asc"
@@ -64,7 +64,7 @@ public class CourseOfferingController {
     }
 
     @GetMapping("/{courseOfferingId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
     @Operation(summary = "Get course offering by id", description = "Returns the row-expansion details for a single course offering.")
     public ResponseEntity<CourseOfferingDetailResponse> getCourseOffering(
             @AuthenticationPrincipal AuthenticatedJwt jwt,
