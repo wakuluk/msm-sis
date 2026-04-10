@@ -1,5 +1,6 @@
 package com.msm.sis.api.controller;
 
+import com.msm.sis.api.dto.CatalogSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.StudentReferenceOptionsResponse;
 import com.msm.sis.api.service.ReferenceDataService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,5 +27,12 @@ public class ReferenceController {
     @Operation(summary = "Get student reference options", description = "Returns reference options used by student detail forms")
     public ResponseEntity<StudentReferenceOptionsResponse> getStudentReferenceOptions() {
         return ResponseEntity.ok(referenceDataService.getStudentReferenceOptions());
+    }
+
+    @GetMapping("/catalog-search-options")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
+    @Operation(summary = "Get catalog search reference options", description = "Returns academic years, terms, departments, subjects, and status options used by catalog search filters")
+    public ResponseEntity<CatalogSearchReferenceOptionsResponse> getCatalogSearchReferenceOptions() {
+        return ResponseEntity.ok(referenceDataService.getCatalogSearchReferenceOptions());
     }
 }
