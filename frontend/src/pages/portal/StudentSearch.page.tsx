@@ -1,29 +1,13 @@
 import { useEffect, useState } from 'react';
-import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import {
-  Alert,
-  Box,
-  Button,
-  Center,
-  Collapse,
-  Container,
-  Fieldset,
-  Grid,
-  Group,
-  Loader,
-  Pagination,
-  Paper,
-  SegmentedControl,
-  Select,
-  Stack,
-  Table,
-  Text,
-  TextInput,
-  Title,
-  UnstyledButton,
-} from '@mantine/core';
+import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { Container, Paper, Stack, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { StudentSearchForm } from '@/components/student/StudentSearchForm';
+import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
+import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
+import { SearchResultsStateNotice } from '@/components/search/SearchResultsStateNotice';
+import { SearchResultsTable } from '@/components/search/SearchResultsTable';
 import {
   getStudentReferenceOptions,
   mapReferenceOptionsToSelectOptions,
@@ -36,9 +20,6 @@ import {
   parseStudentSortBy,
   parseStudentSortDirection,
   searchStudents,
-  studentSearchSizeSelectOptions,
-  studentSortByOptions,
-  studentSortDirectionOptions,
   type StudentSearchSize,
 } from '@/services/student-service';
 import {
@@ -50,7 +31,6 @@ import {
   type StudentSortBy,
   type StudentSortDirection,
 } from '@/services/schemas/student-schemas';
-import classes from './StudentSearch.module.css';
 
 const advancedSearchKeys: (keyof StudentSearchFilters)[] = [
   'genderId',
@@ -89,14 +69,6 @@ const standardResultsColumnVisibility = {
   lastUpdated: false,
   disabled: false,
 };
-const studentClassOfSelectOptions = Array.from({ length: 41 }, (_, index) => {
-  const year = String(new Date().getFullYear() + 10 - index);
-
-  return {
-    value: year,
-    label: year,
-  };
-});
 
 function parseStudentSearchParams(searchParams: URLSearchParams): StudentSearchPageState {
   const filters: StudentSearchFilters = { ...initialStudentSearchFilters };
@@ -187,18 +159,6 @@ function getResultsSummary(response: StudentSearchResponse): string {
   const end = response.page * response.size + response.results.length;
 
   return `Showing ${start}-${end} of ${response.totalElements} students`;
-}
-
-function getSortIndicator(
-  activeSortBy: StudentSortBy,
-  activeSortDirection: StudentSortDirection,
-  columnSortBy: StudentSortBy
-): string | null {
-  if (activeSortBy !== columnSortBy) {
-    return null;
-  }
-
-  return activeSortDirection === 'asc' ? '↑' : '↓';
 }
 
 const studentResultsColumns: ColumnDef<StudentSearchResultResponse>[] = [
@@ -419,472 +379,109 @@ export function StudentSearchPage() {
     });
   }
 
-  const queryControlStyles = {
-    label: { display: 'block', width: '100%', textAlign: 'right' as const },
-  };
+  function handleSubmit(values: StudentSearchFilters) {
+    applySearchParams({
+      filters: values,
+      hasSearched: true,
+      page: 0,
+      size,
+      sortBy,
+      sortDirection,
+    });
+  }
 
-  const renderQueryControls = (variant: 'header' | 'toolbar') => (
-    <>
-      <Box miw={130} maw={150} style={{ flex: '0 1 9rem' }}>
-        <Select
-          allowDeselect={false}
-          data={studentSearchSizeSelectOptions}
-          value={String(size)}
-          label={variant === 'header' ? 'Page size' : undefined}
-          placeholder={variant === 'toolbar' ? 'Page size' : undefined}
-          aria-label="Page size"
-          styles={queryControlStyles}
-          onChange={(value) => {
-            setSize(parseStudentSearchSize(value));
-          }}
-        />
-      </Box>
-      <Box miw={130} maw={150} style={{ flex: '0 1 9rem' }}>
-        <Select
-          allowDeselect={false}
-          data={studentSortByOptions}
-          value={sortBy}
-          label={variant === 'header' ? 'Sort by' : undefined}
-          placeholder={variant === 'toolbar' ? 'Sort by' : undefined}
-          aria-label="Sort by"
-          styles={queryControlStyles}
-          onChange={(value) => {
-            setSortBy(parseStudentSortBy(value));
-          }}
-        />
-      </Box>
-      <Box miw={130} maw={150} style={{ flex: '0 1 9rem' }}>
-        <Select
-          allowDeselect={false}
-          data={studentSortDirectionOptions}
-          value={sortDirection}
-          label={variant === 'header' ? 'Order' : undefined}
-          placeholder={variant === 'toolbar' ? 'Order' : undefined}
-          aria-label="Order"
-          styles={queryControlStyles}
-          onChange={(value) => {
-            setSortDirection(parseStudentSortDirection(value));
-          }}
-        />
-      </Box>
-    </>
-  );
+  function handleClear() {
+    form.setValues(initialStudentSearchFilters);
+    setSize(defaultStudentSearchSize);
+    setSortBy(defaultStudentSortBy);
+    setSortDirection(defaultStudentSortDirection);
+    setSearchParams(new URLSearchParams());
+    setShowAdvancedSearch(false);
+  }
 
   return (
     <Container size="xl" py="lg">
       <Stack gap="lg">
-        <Paper p="lg">
-          <Stack gap="xl">
-            <form
-              onSubmit={form.onSubmit((values) => {
-                applySearchParams({
-                  filters: values,
-                  hasSearched: true,
-                  page: 0,
-                  size,
-                  sortBy,
-                  sortDirection,
-                });
-              })}
-            >
-              <Stack gap="lg">
-                <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
-                  <Group align="flex-end" gap="sm" wrap="wrap">
-                    <Title order={1}>Student Search</Title>
-                    <Button component={Link} to="/students/new" variant="light">
-                      Create student
-                    </Button>
-                  </Group>
-                  <Group align="flex-end" gap="md" wrap="wrap">
-                    {renderQueryControls('header')}
-                  </Group>
-                </Group>
-
-                <Fieldset legend="Core Filters" radius="sm">
-                  <Grid gap="md" mt="xs">
-                    <Grid.Col span={{ base: 12, sm: 6 }}>
-                      <TextInput
-                        label="Last name"
-                        placeholder="Enter a last name"
-                        {...form.getInputProps('lastName')}
-                      />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 6 }}>
-                      <TextInput
-                        label="First name"
-                        placeholder="Enter a first name"
-                        {...form.getInputProps('firstName')}
-                      />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 6 }}>
-                      <TextInput
-                        label="Student ID"
-                        placeholder="Enter a student ID"
-                        inputMode="numeric"
-                        {...form.getInputProps('studentId')}
-                      />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 6 }}>
-                      <Select
-                        searchable
-                        clearable
-                        label="Class of"
-                        placeholder="Select a graduation year"
-                        data={studentClassOfSelectOptions}
-                        value={form.values.classOf || null}
-                        onChange={(value) => {
-                          form.setFieldValue('classOf', value ?? '');
-                        }}
-                      />
-                    </Grid.Col>
-                  </Grid>
-                </Fieldset>
-
-                <Group justify="space-between" align="center">
-                  <Button
-                    type="button"
-                    variant="light"
-                    onClick={() => {
-                      setShowAdvancedSearch((current) => !current);
-                    }}
-                  >
-                    {showAdvancedSearch ? 'Hide Advanced Search' : 'Advanced Search'}
-                  </Button>
-                  <Group>
-                    <Button
-                      type="button"
-                      variant="default"
-                      onClick={() => {
-                        form.setValues(initialStudentSearchFilters);
-                        setSize(defaultStudentSearchSize);
-                        setSortBy(defaultStudentSortBy);
-                        setSortDirection(defaultStudentSortDirection);
-                        setSearchParams(new URLSearchParams());
-                        setShowAdvancedSearch(false);
-                      }}
-                    >
-                      Clear
-                    </Button>
-                    <Button type="submit" loading={isSearching}>
-                      Search Students
-                    </Button>
-                  </Group>
-                </Group>
-
-                <Collapse expanded={showAdvancedSearch}>
-                  <Stack gap="lg" pt="xs">
-                    <Fieldset legend="Student Filters" radius="sm">
-                      <Grid gap="md" mt="xs">
-                        <Grid.Col span={{ base: 12, md: 4 }}>
-                          <Select
-                            searchable
-                            clearable
-                            label="Gender"
-                            placeholder="Select a gender"
-                            data={studentFilterSelectOptions.genders}
-                            value={form.values.genderId || null}
-                            onChange={(value) => {
-                              form.setFieldValue('genderId', value ?? '');
-                            }}
-                          />
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12, md: 4 }}>
-                          <Select
-                            searchable
-                            clearable
-                            label="Ethnicity"
-                            placeholder="Select an ethnicity"
-                            data={studentFilterSelectOptions.ethnicities}
-                            value={form.values.ethnicityId || null}
-                            onChange={(value) => {
-                              form.setFieldValue('ethnicityId', value ?? '');
-                            }}
-                          />
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12, md: 4 }}>
-                          <Select
-                            searchable
-                            clearable
-                            label="Class standing"
-                            placeholder="Select a class standing"
-                            data={studentFilterSelectOptions.classStandings}
-                            value={form.values.classStandingId || null}
-                            onChange={(value) => {
-                              form.setFieldValue('classStandingId', value ?? '');
-                            }}
-                          />
-                        </Grid.Col>
-                      </Grid>
-                    </Fieldset>
-
-                    {referenceOptionsError ? (
-                      <Alert color="red" title="Unable to load student filter options">
-                        {referenceOptionsError}
-                      </Alert>
-                    ) : null}
-
-                    <Fieldset legend="Address Filters" radius="sm">
-                      <Grid gap="md" mt="xs">
-                        <Grid.Col span={12}>
-                          <TextInput
-                            label="Address line 1"
-                            placeholder="Enter address line 1"
-                            {...form.getInputProps('addressLine1')}
-                          />
-                        </Grid.Col>
-                        <Grid.Col span={12}>
-                          <TextInput
-                            label="Address line 2"
-                            placeholder="Enter address line 2"
-                            {...form.getInputProps('addressLine2')}
-                          />
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12, sm: 6 }}>
-                          <TextInput
-                            label="City"
-                            placeholder="Enter a city"
-                            {...form.getInputProps('city')}
-                          />
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12, sm: 6 }}>
-                          <TextInput
-                            label="State / region"
-                            placeholder="Enter a state or region"
-                            {...form.getInputProps('stateRegion')}
-                          />
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12, sm: 4 }}>
-                          <TextInput
-                            label="Postal code"
-                            placeholder="Enter a postal code"
-                            {...form.getInputProps('postalCode')}
-                          />
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12, sm: 4 }}>
-                          <TextInput
-                            label="Country code"
-                            placeholder="Enter a country code"
-                            {...form.getInputProps('countryCode')}
-                          />
-                        </Grid.Col>
-                      </Grid>
-                    </Fieldset>
-
-                    <Fieldset legend="System Filters" radius="sm">
-                      <Grid gap="md" mt="xs">
-                        <Grid.Col span={{ base: 12, md: 6 }}>
-                          <TextInput
-                            label="Updated by"
-                            placeholder="Enter an updated by value"
-                            {...form.getInputProps('updatedBy')}
-                          />
-                        </Grid.Col>
-                      </Grid>
-                    </Fieldset>
-
-                    <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
-                      <Button
-                        type="button"
-                        variant="light"
-                        onClick={() => {
-                          setShowAdvancedSearch((current) => !current);
-                        }}
-                      >
-                        {showAdvancedSearch ? 'Hide Advanced Search' : 'Advanced Search'}
-                      </Button>
-                      <Group align="flex-end" gap="md" wrap="wrap">
-                        {renderQueryControls('toolbar')}
-                        <Button
-                          type="button"
-                          variant="default"
-                          onClick={() => {
-                            form.setValues(initialStudentSearchFilters);
-                            setSize(defaultStudentSearchSize);
-                            setSortBy(defaultStudentSortBy);
-                            setSortDirection(defaultStudentSortDirection);
-                            setSearchParams(new URLSearchParams());
-                            setShowAdvancedSearch(false);
-                          }}
-                        >
-                          Clear
-                        </Button>
-                        <Button type="submit" loading={isSearching}>
-                          Search Students
-                        </Button>
-                      </Group>
-                    </Group>
-                  </Stack>
-                </Collapse>
-              </Stack>
-            </form>
-          </Stack>
-        </Paper>
+        <StudentSearchForm
+          form={form}
+          showAdvancedSearch={showAdvancedSearch}
+          isSearching={isSearching}
+          size={size}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          studentFilterSelectOptions={studentFilterSelectOptions}
+          referenceOptionsError={referenceOptionsError}
+          onPageSizeChange={setSize}
+          onSortByChange={setSortBy}
+          onSortDirectionChange={setSortDirection}
+          onToggleAdvancedSearch={() => {
+            setShowAdvancedSearch((current) => !current);
+          }}
+          onClear={handleClear}
+          onSubmit={handleSubmit}
+        />
 
         <Paper p="lg">
           <Stack gap="md">
             <Title order={3}>Results</Title>
 
-            <Group justify="space-between" align="center" wrap="wrap" gap="sm">
-              {searchResultsState.status === 'empty' || searchResultsState.status === 'success' ? (
-                <Group align="center" wrap="wrap" gap="xs">
-                  <SegmentedControl
-                    classNames={{
-                      root: classes.resultsViewToggle,
-                      indicator: classes.resultsViewToggleIndicator,
-                      label: classes.resultsViewToggleLabel,
-                    }}
-                    data={[
-                      { label: 'Standard', value: 'standard' },
-                      { label: 'System', value: 'system' },
-                    ]}
-                    value={resultsView}
-                    onChange={(value) => {
-                      setResultsView(value as StudentResultsView);
-                    }}
-                  />
-                </Group>
-              ) : (
-                <div />
-              )}
-              {searchResultsState.status === 'empty' || searchResultsState.status === 'success' ? (
-                <Text size="sm">{getResultsSummary(searchResultsState.response)}</Text>
-              ) : null}
-            </Group>
-
-            {searchResultsState.status === 'idle' ? (
-              <Alert color="gray" title="Search students">
-                Enter filters if needed, then click `Search Students` to load results.
-              </Alert>
+            {searchResultsState.status === 'empty' || searchResultsState.status === 'success' ? (
+              <SearchResultsHeader
+                data={[
+                  { label: 'Standard', value: 'standard' },
+                  { label: 'System', value: 'system' },
+                ]}
+                value={resultsView}
+                onChange={(value) => {
+                  setResultsView(value as StudentResultsView);
+                }}
+                summary={getResultsSummary(searchResultsState.response)}
+              />
             ) : null}
 
-            {searchResultsState.status === 'loading' ? (
-              <Center py="xl">
-                <Stack align="center" gap="xs">
-                  <Loader size="sm" />
-                  <Text size="sm">Loading students...</Text>
-                </Stack>
-              </Center>
-            ) : null}
-
-            {searchResultsState.status === 'error' ? (
-              <Alert color="red" title="Search failed">
-                {searchResultsState.message}
-              </Alert>
-            ) : null}
-
-            {searchResultsState.status === 'empty' ? (
-              <Alert color="gray" title="No students found">
-                No students matched the current search criteria.
-              </Alert>
-            ) : null}
+            <SearchResultsStateNotice
+              status={searchResultsState.status}
+              idleTitle="Search students"
+              idleMessage="Enter filters if needed, then click `Search Students` to load results."
+              loadingMessage="Loading students..."
+              errorMessage={
+                searchResultsState.status === 'error' ? searchResultsState.message : null
+              }
+              emptyTitle="No students found"
+              emptyMessage="No students matched the current search criteria."
+            />
 
             {searchResultsState.status === 'success' ? (
               <Stack gap="lg">
-                <Box className={classes.resultsTableWrapper}>
-                  <Table
-                    className={classes.resultsTable}
-                    style={{ minWidth: `${studentResultsTable.getTotalSize()}px` }}
-                    horizontalSpacing="md"
-                    verticalSpacing="sm"
-                  >
-                    <Table.Thead>
-                      {studentResultsTable.getHeaderGroups().map((headerGroup) => (
-                        <Table.Tr key={headerGroup.id}>
-                          {headerGroup.headers.map((header) => (
-                            <Table.Th key={header.id} style={{ width: `${header.getSize()}px` }}>
-                              {header.isPlaceholder
-                                ? null
-                                : (() => {
-                                    const columnMeta = header.column.columnDef.meta as
-                                      | { sortBy?: StudentSortBy }
-                                      | undefined;
-                                    const columnSortBy = columnMeta?.sortBy;
-                                    const sortIndicator = columnSortBy
-                                      ? getSortIndicator(sortBy, sortDirection, columnSortBy)
-                                      : null;
-
-                                    if (!columnSortBy) {
-                                      return flexRender(
-                                        header.column.columnDef.header,
-                                        header.getContext()
-                                      );
-                                    }
-
-                                    return (
-                                      <UnstyledButton
-                                        className={classes.sortButton}
-                                        onClick={() => {
-                                          toggleColumnSort(columnSortBy);
-                                        }}
-                                      >
-                                        <span>
-                                          {flexRender(
-                                            header.column.columnDef.header,
-                                            header.getContext()
-                                          )}
-                                        </span>
-                                        <span
-                                          className={
-                                            sortIndicator
-                                              ? `${classes.sortDirection} ${classes.sortDirectionActive}`
-                                              : classes.sortDirection
-                                          }
-                                        >
-                                          {sortIndicator ?? '↕'}
-                                        </span>
-                                      </UnstyledButton>
-                                    );
-                                  })()}
-                            </Table.Th>
-                          ))}
-                        </Table.Tr>
-                      ))}
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {studentResultsTable.getRowModel().rows.map((row) => (
-                        <Table.Tr
-                          key={row.id}
-                          className={classes.clickableRow}
-                          role="link"
-                          tabIndex={0}
-                          onClick={() => {
-                            openStudentDetail(row.original.studentId);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              openStudentDetail(row.original.studentId);
-                            }
-                          }}
-                        >
-                          {row.getVisibleCells().map((cell) => (
-                            <Table.Td key={cell.id} style={{ width: `${cell.column.getSize()}px` }}>
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </Table.Td>
-                          ))}
-                        </Table.Tr>
-                      ))}
-                    </Table.Tbody>
-                  </Table>
-                </Box>
-                <Group justify="space-between" align="center" wrap="wrap" gap="sm">
-                  <Text size="sm">
-                    Page {searchResultsState.response.page + 1} of{' '}
-                    {searchResultsState.response.totalPages}
-                  </Text>
-                  <Pagination
-                    hideWithOnePage
-                    total={searchResultsState.response.totalPages}
-                    value={searchResultsState.response.page + 1}
-                    withEdges
-                    onChange={(nextPage) => {
-                      applySearchParams({
-                        ...searchParamValues,
-                        page: nextPage - 1,
-                      });
-                    }}
-                  />
-                </Group>
+                <SearchResultsTable
+                  table={studentResultsTable}
+                  sortBy={sortBy}
+                  sortDirection={sortDirection}
+                  onToggleSort={toggleColumnSort}
+                  getRowProps={(row) => ({
+                    role: 'link',
+                    tabIndex: 0,
+                    onClick: () => {
+                      openStudentDetail(row.original.studentId);
+                    },
+                    onKeyDown: (event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openStudentDetail(row.original.studentId);
+                      }
+                    },
+                  })}
+                />
+                <SearchPaginationFooter
+                  page={searchResultsState.response.page}
+                  totalPages={searchResultsState.response.totalPages}
+                  onPageChange={(nextPage) => {
+                    applySearchParams({
+                      ...searchParamValues,
+                      page: nextPage,
+                    });
+                  }}
+                />
               </Stack>
             ) : null}
           </Stack>

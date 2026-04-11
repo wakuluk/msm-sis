@@ -7,8 +7,9 @@ export type PortalRouteItemKey =
   | 'studentCreate'
   | 'studentDetail'
   | 'studentSearch'
-  | 'sharedSecond';
-
+  | 'sharedSecond'
+  | 'catalog'
+  | 'catalog-advanced';
 export type PortalRoutePath =
   | '/portal'
   | '/shared'
@@ -16,9 +17,11 @@ export type PortalRoutePath =
   | '/student/profile'
   | '/students/new'
   | '/students/:studentId'
-  | '/student-search';
+  | '/student-search'
+  | '/catalog/search'
+  | '/catalog/search-advanced';
 
-export type PortalRouteGroupKey = 'people' | 'sharing';
+export type PortalRouteGroupKey = 'people' | 'sharing' | 'catalog';
 
 export type PortalRouteItem = {
   kind: 'item';
@@ -108,6 +111,30 @@ export const portalRoutes: PortalRouteNode[] = [
         label: 'Shared page Second',
         path: '/sharedSecond',
         requiredRoles: [PORTAL_ROLES.STUDENT, PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+    ],
+  },
+  {
+    kind: 'group',
+    key: 'catalog',
+    label: 'Catalog',
+    showInNav: true,
+    children: [
+      {
+        kind: 'item',
+        key: 'catalog',
+        label: 'Catalog',
+        path: '/catalog/search',
+        requiredRoles: [PORTAL_ROLES.STUDENT],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'catalog-advanced',
+        label: 'Catalog',
+        path: '/catalog/search-advanced',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: true,
       },
     ],

@@ -1,4 +1,4 @@
-import { type ComponentProps, type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ComponentProps, type ReactNode, useEffect, useState } from 'react';
 import { useForm, type UseFormReturnType } from '@mantine/form';
 import {
   Alert,
@@ -9,21 +9,23 @@ import {
   Group,
   Loader,
   Paper,
-  Select,
   Stack,
   Tabs,
   Text,
   TextInput,
   Title,
 } from '@mantine/core';
-import { DateInput } from '@mantine/dates';
 import { useParams } from 'react-router-dom';
 import { useAccessTokenData } from '@/auth/auth-store';
-import { hasAnyPortalRole, PORTAL_ROLES, type PortalRole } from '@/portal/PortalRoles';
 import {
-  getStudentReferenceOptions,
-  mapReferenceOptionsToSelectOptions,
-} from '@/services/reference-service';
+  StudentAddressFormFields,
+  StudentContactFormFields,
+  StudentIdentityFormFields,
+  StudentRecordFormFields,
+} from '@/components/student/StudentProfileFormFields';
+import { StudentReferenceOptionsAlert } from '@/components/student/StudentReferenceOptionsAlert';
+import { useStudentReferenceOptions } from '@/components/student/useStudentReferenceOptions';
+import { hasAnyPortalRole, PORTAL_ROLES, type PortalRole } from '@/portal/PortalRoles';
 import {
   buildPatchStudentRequest,
   hasStudentDetailChanges,
@@ -35,7 +37,6 @@ import {
   type StudentDetailResponse,
 } from '@/services/schemas/student-schemas';
 import { getStudentById, patchStudent } from '@/services/student-service';
-import standardInputClasses from '@/styles/StandardInput.module.css';
 import createClasses from './StudentCreate.module.css';
 import classes from './StudentDetail.module.css';
 
@@ -55,32 +56,6 @@ type GridSpan = ComponentProps<typeof Grid.Col>['span'];
 type ReadOnlyTextFieldProps = {
   label: string;
   value: string;
-  span?: GridSpan;
-};
-
-type EditableTextFieldProps = {
-  field: Exclude<keyof StudentDetailFormValues, 'disabled'>;
-  form: UseFormReturnType<StudentDetailFormValues>;
-  label: string;
-  placeholder?: string;
-  span?: GridSpan;
-};
-
-type EditableDateFieldProps = {
-  field: 'dateOfBirth' | 'estimatedGradDate';
-  form: UseFormReturnType<StudentDetailFormValues>;
-  label: string;
-  placeholder?: string;
-  span?: GridSpan;
-};
-
-type EditableSelectFieldProps = {
-  data: Array<{ value: string; label: string }>;
-  field: 'classStandingId' | 'ethnicityId' | 'genderId';
-  form: UseFormReturnType<StudentDetailFormValues>;
-  label: string;
-  loading?: boolean;
-  placeholder?: string;
   span?: GridSpan;
 };
 
@@ -123,17 +98,6 @@ type PlaceholderTabPanelProps = {
   description: string;
   title: string;
 };
-
-type StudentReferenceOptionsState =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | {
-      status: 'success';
-      classStandingOptions: Array<{ value: string; label: string }>;
-      ethnicityOptions: Array<{ value: string; label: string }>;
-      genderOptions: Array<{ value: string; label: string }>;
-    }
-  | { status: 'error'; message: string };
 
 const studentDetailTabs: StudentDetailTabConfig[] = [
   {
@@ -224,76 +188,6 @@ function ReadOnlyTextField({ label, value, span = { base: 12, md: 6 } }: ReadOnl
   );
 }
 
-function EditableTextField({
-  field,
-  form,
-  label,
-  placeholder,
-  span = { base: 12, md: 6 },
-}: EditableTextFieldProps) {
-  return (
-    <Grid.Col span={span}>
-      <TextInput label={label} placeholder={placeholder} {...form.getInputProps(field)} />
-    </Grid.Col>
-  );
-}
-
-function EditableDateField({
-  field,
-  form,
-  label,
-  placeholder = 'YYYY-MM-DD',
-  span = { base: 12, md: 6 },
-}: EditableDateFieldProps) {
-  return (
-    <Grid.Col span={span}>
-      <DateInput
-        value={form.values[field] || null}
-        onChange={(value) => {
-          form.setFieldValue(field, value ?? '');
-        }}
-        valueFormat="YYYY-MM-DD"
-        label={label}
-        placeholder={placeholder}
-        clearable
-      />
-    </Grid.Col>
-  );
-}
-
-function EditableSelectField({
-  data,
-  field,
-  form,
-  label,
-  loading = false,
-  placeholder,
-  span = { base: 12, md: 6 },
-}: EditableSelectFieldProps) {
-  return (
-    <Grid.Col span={span}>
-      <Select
-        searchable
-        clearable
-        label={label}
-        data={data}
-        value={form.values[field] || null}
-        onChange={(value) => {
-          form.setFieldValue(field, value ?? '');
-        }}
-        placeholder={placeholder}
-        rightSection={loading ? <Loader size="xs" /> : undefined}
-        nothingFoundMessage={loading ? 'Loading options...' : 'No options found'}
-        classNames={{
-          input: standardInputClasses.input,
-          option: createClasses.selectOption,
-          section: standardInputClasses.section,
-        }}
-      />
-    </Grid.Col>
-  );
-}
-
 function DetailSection({ action, children, title }: DetailSectionProps) {
   return (
     <section className={createClasses.section}>
@@ -360,9 +254,9 @@ function OverviewSections({
 
       {referenceOptionsError ? (
         <div className={createClasses.section}>
-          <Alert color="orange" title="Reference options unavailable">
+          <StudentReferenceOptionsAlert>
             {referenceOptionsError} The remaining text and date fields are still available.
-          </Alert>
+          </StudentReferenceOptionsAlert>
         </div>
       ) : null}
 
@@ -391,205 +285,87 @@ function OverviewSections({
         }
       >
         {isEditing ? (
-          <EditableTextField form={form} field="lastName" label="Last name" />
-        ) : (
-          <ReadOnlyTextField label="Last name" value={displayValue(values.lastName)} />
-        )}
-        {isEditing ? (
-          <EditableTextField form={form} field="firstName" label="First name" />
-        ) : (
-          <ReadOnlyTextField label="First name" value={displayValue(values.firstName)} />
-        )}
-        {isEditing ? (
-          <EditableTextField form={form} field="middleName" label="Middle name" />
-        ) : (
-          <ReadOnlyTextField label="Middle name" value={displayValue(values.middleName)} />
-        )}
-        {isEditing ? (
-          <EditableTextField form={form} field="nameSuffix" label="Name suffix" />
-        ) : (
-          <ReadOnlyTextField label="Name suffix" value={displayValue(values.nameSuffix)} />
-        )}
-        {isEditing ? (
-          <EditableTextField form={form} field="preferredName" label="Preferred name" />
-        ) : (
-          <ReadOnlyTextField label="Preferred name" value={displayValue(values.preferredName)} />
-        )}
-        {isEditing ? (
-          <EditableSelectField
-            data={genderOptions}
-            field="genderId"
+          <StudentIdentityFormFields
             form={form}
-            label="Gender"
-            loading={referenceOptionsLoading}
-            placeholder="Select gender"
+            genderOptions={genderOptions}
+            ethnicityOptions={ethnicityOptions}
+            referenceOptionsLoading={referenceOptionsLoading}
           />
         ) : (
-          <ReadOnlyTextField label="Gender" value={displayValue(detail.gender)} />
-        )}
-        {isEditing ? (
-          <EditableSelectField
-            data={ethnicityOptions}
-            field="ethnicityId"
-            form={form}
-            label="Ethnicity"
-            loading={referenceOptionsLoading}
-            placeholder="Select ethnicity"
-          />
-        ) : (
-          <ReadOnlyTextField label="Ethnicity" value={displayValue(detail.ethnicity)} />
-        )}
-        {isEditing ? (
-          <EditableDateField
-            form={form}
-            field="dateOfBirth"
-            label="Date of birth"
-            placeholder="YYYY-MM-DD"
-          />
-        ) : (
-          <ReadOnlyTextField label="Date of birth" value={displayDate(values.dateOfBirth)} />
+          <>
+            <ReadOnlyTextField label="Last name" value={displayValue(values.lastName)} />
+            <ReadOnlyTextField label="First name" value={displayValue(values.firstName)} />
+            <ReadOnlyTextField label="Middle name" value={displayValue(values.middleName)} />
+            <ReadOnlyTextField label="Name suffix" value={displayValue(values.nameSuffix)} />
+            <ReadOnlyTextField label="Preferred name" value={displayValue(values.preferredName)} />
+            <ReadOnlyTextField label="Gender" value={displayValue(detail.gender)} />
+            <ReadOnlyTextField label="Ethnicity" value={displayValue(detail.ethnicity)} />
+            <ReadOnlyTextField label="Date of birth" value={displayDate(values.dateOfBirth)} />
+          </>
         )}
       </DetailSection>
 
       <DetailSection title="Student">
         <ReadOnlyTextField label="Student ID" value={displayValue(detail.studentId)} />
         <ReadOnlyTextField label="User ID" value={displayValue(detail.userId)} />
-        {isEditing ? (
-          <EditableSelectField
-            data={classStandingOptions}
-            field="classStandingId"
-            form={form}
-            label="Class standing"
-            loading={referenceOptionsLoading}
-            placeholder="Select class standing"
-          />
-        ) : (
-          <ReadOnlyTextField label="Class standing" value={displayValue(detail.classStanding)} />
-        )}
         <ReadOnlyTextField label="Class of" value={displayValue(detail.classOf)} />
         {isEditing ? (
-          <EditableTextField
+          <StudentRecordFormFields
             form={form}
-            field="altId"
-            label="Alt ID"
-            placeholder="Enter alternate ID"
+            classStandingOptions={classStandingOptions}
+            referenceOptionsLoading={referenceOptionsLoading}
           />
         ) : (
-          <ReadOnlyTextField label="Alt ID" value={displayValue(values.altId)} />
-        )}
-        {isEditing ? (
-          <EditableDateField
-            form={form}
-            field="estimatedGradDate"
-            label="Estimated grad date"
-            placeholder="YYYY-MM-DD"
-          />
-        ) : (
-          <ReadOnlyTextField
-            label="Estimated grad date"
-            value={displayDate(values.estimatedGradDate)}
-          />
+          <>
+            <ReadOnlyTextField label="Class standing" value={displayValue(detail.classStanding)} />
+            <ReadOnlyTextField label="Alt ID" value={displayValue(values.altId)} />
+            <ReadOnlyTextField
+              label="Estimated grad date"
+              value={displayDate(values.estimatedGradDate)}
+            />
+          </>
         )}
       </DetailSection>
 
       <DetailSection title="Contact">
         {isEditing ? (
-          <EditableTextField
-            form={form}
-            field="email"
-            label="Email"
-            placeholder="name@example.com"
-          />
+          <StudentContactFormFields form={form} />
         ) : (
-          <ReadOnlyTextField label="Email" value={displayValue(values.email)} />
-        )}
-        {isEditing ? (
-          <EditableTextField
-            form={form}
-            field="phone"
-            label="Phone"
-            placeholder="Enter phone number"
-          />
-        ) : (
-          <ReadOnlyTextField label="Phone" value={displayValue(values.phone)} />
+          <>
+            <ReadOnlyTextField label="Email" value={displayValue(values.email)} />
+            <ReadOnlyTextField label="Phone" value={displayValue(values.phone)} />
+          </>
         )}
       </DetailSection>
 
       <DetailSection title="Address">
         {isEditing ? (
-          <EditableTextField
-            form={form}
-            field="addressLine1"
-            label="Address line 1"
-            placeholder="Street address"
-            span={12}
-          />
+          <StudentAddressFormFields form={form} />
         ) : (
-          <ReadOnlyTextField
-            label="Address line 1"
-            value={displayValue(values.addressLine1)}
-            span={12}
-          />
-        )}
-        {isEditing ? (
-          <EditableTextField
-            form={form}
-            field="addressLine2"
-            label="Address line 2"
-            placeholder="Apartment, suite, unit, etc."
-            span={12}
-          />
-        ) : (
-          <ReadOnlyTextField
-            label="Address line 2"
-            value={displayValue(values.addressLine2)}
-            span={12}
-          />
-        )}
-        {isEditing ? (
-          <EditableTextField form={form} field="city" label="City" placeholder="Enter city" />
-        ) : (
-          <ReadOnlyTextField label="City" value={displayValue(values.city)} />
-        )}
-        {isEditing ? (
-          <EditableTextField
-            form={form}
-            field="stateRegion"
-            label="State / region"
-            placeholder="Enter state or region"
-          />
-        ) : (
-          <ReadOnlyTextField label="State / region" value={displayValue(values.stateRegion)} />
-        )}
-        {isEditing ? (
-          <EditableTextField
-            form={form}
-            field="postalCode"
-            label="Postal code"
-            placeholder="Enter postal code"
-            span={{ base: 12, md: 4 }}
-          />
-        ) : (
-          <ReadOnlyTextField
-            label="Postal code"
-            value={displayValue(values.postalCode)}
-            span={{ base: 12, md: 4 }}
-          />
-        )}
-        {isEditing ? (
-          <EditableTextField
-            form={form}
-            field="countryCode"
-            label="Country code"
-            placeholder="US"
-            span={{ base: 12, md: 4 }}
-          />
-        ) : (
-          <ReadOnlyTextField
-            label="Country code"
-            value={displayValue(values.countryCode)}
-            span={{ base: 12, md: 4 }}
-          />
+          <>
+            <ReadOnlyTextField
+              label="Address line 1"
+              value={displayValue(values.addressLine1)}
+              span={12}
+            />
+            <ReadOnlyTextField
+              label="Address line 2"
+              value={displayValue(values.addressLine2)}
+              span={12}
+            />
+            <ReadOnlyTextField label="City" value={displayValue(values.city)} />
+            <ReadOnlyTextField label="State / region" value={displayValue(values.stateRegion)} />
+            <ReadOnlyTextField
+              label="Postal code"
+              value={displayValue(values.postalCode)}
+              span={{ base: 12, md: 4 }}
+            />
+            <ReadOnlyTextField
+              label="Country code"
+              value={displayValue(values.countryCode)}
+              span={{ base: 12, md: 4 }}
+            />
+          </>
         )}
       </DetailSection>
 
@@ -607,24 +383,23 @@ export function StudentDetailPage() {
   const { studentId: studentIdParam } = useParams();
   const tokenData = useAccessTokenData();
   const canEditStudentDetail = hasAnyPortalRole(tokenData?.roles, [PORTAL_ROLES.ADMIN]);
-  const isMountedRef = useRef(true);
   const [activeTab, setActiveTab] = useState<StudentDetailTabKey>('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [pageState, setPageState] = useState<StudentDetailPageState>({ status: 'loading' });
-  const [referenceOptionsState, setReferenceOptionsState] = useState<StudentReferenceOptionsState>({
-    status: 'idle',
-  });
   const [saveState, setSaveState] = useState<StudentDetailSaveState>({ status: 'idle' });
+  const {
+    classStandingOptions,
+    ethnicityOptions,
+    genderOptions,
+    referenceOptionsError,
+    referenceOptionsLoading,
+  } = useStudentReferenceOptions({
+    enabled: canEditStudentDetail && isEditing,
+  });
 
   const form = useForm<StudentDetailFormValues>({
     initialValues: initialStudentDetailFormValues,
   });
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
 
   useEffect(() => {
     const parsedStudentId = Number(studentIdParam);
@@ -666,38 +441,6 @@ export function StudentDetailPage() {
       cancelled = true;
     };
   }, [studentIdParam]);
-
-  useEffect(() => {
-    if (!canEditStudentDetail || !isEditing || referenceOptionsState.status !== 'idle') {
-      return;
-    }
-
-    setReferenceOptionsState({ status: 'loading' });
-
-    void (async () => {
-      try {
-        const referenceOptions = await getStudentReferenceOptions();
-
-        if (!isMountedRef.current) {
-          return;
-        }
-
-        setReferenceOptionsState({
-          status: 'success',
-          classStandingOptions: mapReferenceOptionsToSelectOptions(referenceOptions.classStandings),
-          ethnicityOptions: mapReferenceOptionsToSelectOptions(referenceOptions.ethnicities),
-          genderOptions: mapReferenceOptionsToSelectOptions(referenceOptions.genders),
-        });
-      } catch (error) {
-        if (isMountedRef.current) {
-          setReferenceOptionsState({
-            status: 'error',
-            message: getErrorMessage(error, 'Failed to load student reference options.'),
-          });
-        }
-      }
-    })();
-  }, [canEditStudentDetail, isEditing, referenceOptionsState.status]);
 
   useEffect(() => {
     if (saveState.status !== 'success') {
@@ -744,15 +487,6 @@ export function StudentDetailPage() {
   const saveError = saveState.status === 'error' ? saveState.message : null;
   const saveSucceeded = saveState.status === 'success';
   const canSaveChanges = hasStudentDetailChanges(detail, form.values);
-  const classStandingOptions =
-    referenceOptionsState.status === 'success' ? referenceOptionsState.classStandingOptions : [];
-  const ethnicityOptions =
-    referenceOptionsState.status === 'success' ? referenceOptionsState.ethnicityOptions : [];
-  const genderOptions =
-    referenceOptionsState.status === 'success' ? referenceOptionsState.genderOptions : [];
-  const referenceOptionsError =
-    referenceOptionsState.status === 'error' ? referenceOptionsState.message : null;
-  const referenceOptionsLoading = referenceOptionsState.status === 'loading';
 
   async function handleSaveEdit() {
     if (saveInProgress) {

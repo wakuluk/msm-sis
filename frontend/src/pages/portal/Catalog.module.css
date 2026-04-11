@@ -1,0 +1,99 @@
+.summaryBand {
+  border: 1px dashed var(--portal-ui-surface-border-color);
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+  background: rgb(255 255 255 / 0.56);
+}
+
+.summaryLabel {
+  margin-bottom: 0.25rem;
+}
+
+.actionGroup {
+  align-items: center;
+}
+
+.primaryAction {
+  min-width: 12rem;
+}
+
+.secondaryAction {
+  min-width: 9.5rem;
+}
+
+.expandedRow td {
+  background-color: var(--portal-ui-subtle-fill-background);
+}
+
+.expandedRowCollapsed td {
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+}
+
+.expandedCell {
+  padding: 0;
+}
+
+.expandedPanel {
+  border-top: 1px solid var(--portal-ui-surface-border-color);
+  padding: 0.9rem 0.15rem 0.25rem;
+}
+
+.expandedDescription {
+  line-height: 1.55;
+}
+
+.sortButton {
+  color: var(--portal-ui-text-color);
+  cursor: pointer;
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.sortButton:hover {
+  color: var(--mantine-primary-color-filled);
+}
+
+.sortButton:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+.sortDirection {
+  flex-shrink: 0;
+  color: var(--portal-ui-muted-text-color);
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.sortDirectionActive {
+  color: var(--mantine-primary-color-filled);
+}
+
+@media (max-width: 48em) {
+  .actionGroup {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .actionGroup > * {
+    flex: 1 1 100%;
+    max-width: none;
+    width: 100%;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    min-width: 0;
+  }
+}
