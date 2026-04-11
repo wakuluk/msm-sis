@@ -1,10 +1,7 @@
 import {
   Alert,
-  Button,
   Checkbox,
-  Fieldset,
   Grid,
-  Group,
   Loader,
   MultiSelect,
   Paper,
@@ -14,14 +11,12 @@ import {
   Title,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
-import { SearchQueryControls } from '@/components/search/SearchQueryControls';
+import { SearchFormActions } from '@/components/search/SearchFormActions';
+import { SearchFormSection } from '@/components/search/SearchFormSection';
 import {
   courseOfferingSearchSizeSelectOptions,
   courseOfferingSortByOptions,
   courseOfferingSortDirectionOptions,
-  defaultCourseOfferingSearchSize,
-  defaultCourseOfferingSortBy,
-  defaultCourseOfferingSortDirection,
   parseCourseOfferingSearchSize,
   parseCourseOfferingSortBy,
   parseCourseOfferingSortDirection,
@@ -106,38 +101,32 @@ export function CatalogSearchForm({
     <Paper withBorder radius="lg" p="lg">
       <form onSubmit={form.onSubmit(onSubmit)}>
         <Stack gap="lg">
-          <Group justify="space-between" align="flex-end" gap="md" wrap="wrap">
-            <Group align="flex-end" gap="sm" wrap="wrap">
-              <Title order={1}>{title}</Title>
-            </Group>
-
-            <Group justify="flex-end" align="flex-end" gap="md" wrap="wrap" className={classes.actionGroup}>
-              <SearchQueryControls
-                size={String(pageSize)}
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                sizeOptions={courseOfferingSearchSizeSelectOptions}
-                sortByOptions={courseOfferingSortByOptions}
-                sortDirectionOptions={courseOfferingSortDirectionOptions}
-                onSizeChange={(value) => {
-                  onPageSizeChange(parseCourseOfferingSearchSize(value));
-                }}
-                onSortByChange={(value) => {
-                  onSortByChange(parseCourseOfferingSortBy(value));
-                }}
-                onSortDirectionChange={(value) => {
-                  onSortDirectionChange(parseCourseOfferingSortDirection(value));
-                }}
-                labelMode="label"
-                widths={{
-                  size: 150,
-                  sortBy: 180,
-                  sortDirection: 170,
-                }}
-              />
-            </Group>
-            {isLoadingReferenceOptions ? <Loader size="sm" /> : null}
-          </Group>
+          <SearchFormActions
+            leadingContent={<Title order={1}>{title}</Title>}
+            trailingContent={isLoadingReferenceOptions ? <Loader size="sm" /> : null}
+            size={String(pageSize)}
+            sortBy={sortBy}
+            sortDirection={sortDirection}
+            sizeOptions={courseOfferingSearchSizeSelectOptions}
+            sortByOptions={courseOfferingSortByOptions}
+            sortDirectionOptions={courseOfferingSortDirectionOptions}
+            onSizeChange={(value) => {
+              onPageSizeChange(parseCourseOfferingSearchSize(value));
+            }}
+            onSortByChange={(value) => {
+              onSortByChange(parseCourseOfferingSortBy(value));
+            }}
+            onSortDirectionChange={(value) => {
+              onSortDirectionChange(parseCourseOfferingSortDirection(value));
+            }}
+            queryControlWidths={{
+              size: 150,
+              sortBy: 180,
+              sortDirection: 170,
+            }}
+            showButtons={false}
+            actionsClassName={classes.actionGroup}
+          />
 
           {errorMessage ? (
             <Alert color="red" variant="light" radius="md">
@@ -145,137 +134,128 @@ export function CatalogSearchForm({
             </Alert>
           ) : null}
 
-          <Fieldset legend="Core Filters" radius="sm">
-            <Grid gap="md" mt="xs">
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <Select
-                  label="Academic year"
-                  placeholder="Select academic year"
-                  data={academicYearOptions}
-                  clearable
-                  searchable
-                  disabled={!hasLoadedReferenceOptions}
-                  {...form.getInputProps('academicYearCode')}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <Select
-                  label="Term"
-                  placeholder="Select term"
-                  data={termOptions}
-                  clearable
-                  searchable
-                  disabled={!hasLoadedReferenceOptions}
-                  {...form.getInputProps('termCode')}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <Select
-                  label="Department"
-                  placeholder="Select department"
-                  data={departmentOptions}
-                  clearable
-                  searchable
-                  disabled={!hasLoadedReferenceOptions}
-                  {...form.getInputProps('departmentCode')}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <Select
-                  label="Subject"
-                  placeholder="Select subject"
-                  data={subjectOptions}
-                  clearable
-                  searchable
-                  disabled={!hasLoadedReferenceOptions}
-                  {...form.getInputProps('subjectCode')}
-                />
-              </Grid.Col>
-            </Grid>
-          </Fieldset>
+          <SearchFormSection legend="Core Filters">
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <Select
+                label="Academic year"
+                placeholder="Select academic year"
+                data={academicYearOptions}
+                clearable
+                searchable
+                disabled={!hasLoadedReferenceOptions}
+                {...form.getInputProps('academicYearCode')}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <Select
+                label="Term"
+                placeholder="Select term"
+                data={termOptions}
+                clearable
+                searchable
+                disabled={!hasLoadedReferenceOptions}
+                {...form.getInputProps('termCode')}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <Select
+                label="Department"
+                placeholder="Select department"
+                data={departmentOptions}
+                clearable
+                searchable
+                disabled={!hasLoadedReferenceOptions}
+                {...form.getInputProps('departmentCode')}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <Select
+                label="Subject"
+                placeholder="Select subject"
+                data={subjectOptions}
+                clearable
+                searchable
+                disabled={!hasLoadedReferenceOptions}
+                {...form.getInputProps('subjectCode')}
+              />
+            </Grid.Col>
+          </SearchFormSection>
 
-          <Fieldset legend="Keyword Filters" radius="sm">
-            <Grid gap="md" mt="xs">
-              <Grid.Col span={{ base: 12, sm: 4 }}>
-                <TextInput
-                  label="Course code"
-                  placeholder="TOLK101"
-                  {...form.getInputProps('courseCode')}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 4 }}>
-                <TextInput
-                  label="Title"
-                  placeholder="Introduction to Tolkien Studies"
-                  {...form.getInputProps('title')}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 4 }}>
-                <TextInput
-                  label="Description"
-                  placeholder="Search by catalog description"
-                  {...form.getInputProps('description')}
-                />
-              </Grid.Col>
-            </Grid>
-          </Fieldset>
+          <SearchFormSection legend="Keyword Filters">
+            <Grid.Col span={{ base: 12, sm: 4 }}>
+              <TextInput
+                label="Course code"
+                placeholder="TOLK101"
+                {...form.getInputProps('courseCode')}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 4 }}>
+              <TextInput
+                label="Title"
+                placeholder="Introduction to Tolkien Studies"
+                {...form.getInputProps('title')}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 4 }}>
+              <TextInput
+                label="Description"
+                placeholder="Search by catalog description"
+                {...form.getInputProps('description')}
+              />
+            </Grid.Col>
+          </SearchFormSection>
 
           {showAdvancedFilters ? (
-            <Fieldset legend="Administrative Filters" radius="sm">
-              <Grid gap="md" mt="xs">
-                <Grid.Col span={{ base: 12, md: 6 }}>
-                  <MultiSelect
-                    label="Offering statuses"
-                    placeholder="Select offering statuses"
-                    data={offeringStatusOptions}
-                    searchable
-                    clearable
-                    hidePickedOptions
-                    disabled={!hasLoadedReferenceOptions}
-                    value={selectedOfferingStatusCodes}
-                    onChange={onOfferingStatusCodesChange}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, md: 6 }}>
-                  <MultiSelect
-                    label="Term statuses"
-                    placeholder="Select term statuses"
-                    data={termStatusOptions}
-                    searchable
-                    clearable
-                    hidePickedOptions
-                    disabled={!hasLoadedReferenceOptions}
-                    value={selectedTermStatusCodes}
-                    onChange={onTermStatusCodesChange}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 12 }}>
-                  <Checkbox
-                    label="Include inactive"
-                    checked={includeInactive}
-                    onChange={(event) => {
-                      onIncludeInactiveChange(event.currentTarget.checked);
-                    }}
-                  />
-                </Grid.Col>
-              </Grid>
-            </Fieldset>
+            <SearchFormSection legend="Administrative Filters">
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <MultiSelect
+                  label="Offering statuses"
+                  placeholder="Select offering statuses"
+                  data={offeringStatusOptions}
+                  searchable
+                  clearable
+                  hidePickedOptions
+                  disabled={!hasLoadedReferenceOptions}
+                  value={selectedOfferingStatusCodes}
+                  onChange={onOfferingStatusCodesChange}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <MultiSelect
+                  label="Term statuses"
+                  placeholder="Select term statuses"
+                  data={termStatusOptions}
+                  searchable
+                  clearable
+                  hidePickedOptions
+                  disabled={!hasLoadedReferenceOptions}
+                  value={selectedTermStatusCodes}
+                  onChange={onTermStatusCodesChange}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12 }}>
+                <Checkbox
+                  label="Include inactive"
+                  checked={includeInactive}
+                  onChange={(event) => {
+                    onIncludeInactiveChange(event.currentTarget.checked);
+                  }}
+                />
+              </Grid.Col>
+            </SearchFormSection>
           ) : null}
 
-          <Group justify="flex-end" align="flex-end" gap="md" wrap="wrap" className={classes.actionGroup}>
-            <Button
-              type="button"
-              variant="default"
-              className={classes.secondaryAction}
-              onClick={onClear}
-              disabled={!hasSearchValues && searchResultsIdle}
-            >
-              Clear
-            </Button>
-            <Button type="submit" loading={isSearching} className={classes.primaryAction}>
-              Search offerings
-            </Button>
-          </Group>
+          <SearchFormActions
+            showQueryControls={false}
+            clearLabel="Clear"
+            submitLabel="Search offerings"
+            clearDisabled={!hasSearchValues && searchResultsIdle}
+            isSubmitting={isSearching}
+            onClear={onClear}
+            actionsClassName={classes.actionGroup}
+            clearButtonClassName={classes.secondaryAction}
+            submitButtonClassName={classes.primaryAction}
+          />
         </Stack>
       </form>
     </Paper>

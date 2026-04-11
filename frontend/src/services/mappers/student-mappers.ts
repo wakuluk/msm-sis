@@ -4,6 +4,7 @@ import {
   type StudentCreateRequest,
   StudentPatchRequestSchema,
   type StudentDetailFormValues,
+  type StudentProfileFormValues,
   type StudentDetailResponse,
   type StudentPatchRequest,
 } from '../schemas/student-schemas';
@@ -97,6 +98,37 @@ function toNullableIsoDate(value: string, fieldLabel: string): string | null {
   }
 
   return trimmedValue;
+}
+
+type NormalizedStudentAddress = {
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  stateRegion: string | null;
+  postalCode: string | null;
+  countryCode: string | null;
+};
+
+function normalizeStudentAddress(values: StudentProfileFormValues): NormalizedStudentAddress {
+  return {
+    addressLine1: toNullableTrimmedString(values.addressLine1),
+    addressLine2: toNullableTrimmedString(values.addressLine2),
+    city: toNullableTrimmedString(values.city),
+    stateRegion: toNullableTrimmedString(values.stateRegion),
+    postalCode: toNullableTrimmedString(values.postalCode),
+    countryCode: toNullableTrimmedString(values.countryCode),
+  };
+}
+
+function validateStudentAddress(values: StudentProfileFormValues): NormalizedStudentAddress {
+  const normalizedAddress = normalizeStudentAddress(values);
+  const hasAnyAddressValue = Object.values(normalizedAddress).some((value) => value !== null);
+
+  if (hasAnyAddressValue && (!normalizedAddress.addressLine1 || !normalizedAddress.city)) {
+    throw new Error('Address line 1 and city are required.');
+  }
+
+  return normalizedAddress;
 }
 
 function defineStudentPatchField<K extends keyof StudentPatchRequest>(
@@ -223,6 +255,7 @@ export function buildPatchStudentRequest(
   detail: StudentDetailResponse,
   values: StudentDetailFormValues
 ): StudentPatchRequest {
+  validateStudentAddress(values);
   const originalValues = mapStudentDetailToFormValues(detail);
   const request: StudentPatchRequest = {};
 
@@ -234,6 +267,8 @@ export function buildPatchStudentRequest(
 }
 
 export function buildCreateStudentRequest(values: StudentCreateFormValues): StudentCreateRequest {
+  const normalizedAddress = validateStudentAddress(values);
+
   return StudentCreateRequestSchema.parse({
     lastName: toNullableTrimmedString(values.lastName),
     firstName: toNullableTrimmedString(values.firstName),
@@ -248,11 +283,11 @@ export function buildCreateStudentRequest(values: StudentCreateFormValues): Stud
     altId: toNullableTrimmedString(values.altId),
     email: toNullableTrimmedString(values.email),
     phone: toNullableTrimmedString(values.phone),
-    addressLine1: toNullableTrimmedString(values.addressLine1),
-    addressLine2: toNullableTrimmedString(values.addressLine2),
-    city: toNullableTrimmedString(values.city),
-    stateRegion: toNullableTrimmedString(values.stateRegion),
-    postalCode: toNullableTrimmedString(values.postalCode),
-    countryCode: toNullableTrimmedString(values.countryCode),
+    addressLine1: normalizedAddress.addressLine1,
+    addressLine2: normalizedAddress.addressLine2,
+    city: normalizedAddress.city,
+    stateRegion: normalizedAddress.stateRegion,
+    postalCode: normalizedAddress.postalCode,
+    countryCode: normalizedAddress.countryCode,
   });
 }

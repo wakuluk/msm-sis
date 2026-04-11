@@ -1,8 +1,14 @@
 import { Box, Select } from '@mantine/core';
 
-type StringOption<T extends string = string> = {
+export type StringOption<T extends string = string> = {
   value: T;
   label: string;
+};
+
+export type SearchQueryControlWidths = {
+  size?: number | string;
+  sortBy?: number | string;
+  sortDirection?: number | string;
 };
 
 type SearchQueryControlsProps<TSortBy extends string, TSortDirection extends string> = {
@@ -16,11 +22,7 @@ type SearchQueryControlsProps<TSortBy extends string, TSortDirection extends str
   onSortByChange: (value: string | null) => void;
   onSortDirectionChange: (value: string | null) => void;
   labelMode: 'label' | 'placeholder';
-  widths?: {
-    size?: number | string;
-    sortBy?: number | string;
-    sortDirection?: number | string;
-  };
+  widths?: SearchQueryControlWidths;
 };
 
 const queryControlStyles = {

@@ -49,7 +49,6 @@ public class CourseOfferingService {
             CourseOfferingSearchCriteria criteria,
             int page,
             int size,
-            List<String> roles,
             CourseOfferingSearchSortField sortField,
             Sort.Direction sortDirection
     ) {
@@ -64,7 +63,6 @@ public class CourseOfferingService {
                 courseOfferingAdvancedSearchCriteria,
                 page,
                 size,
-                roles,
                 sortField,
                 sortDirection
         );
@@ -74,7 +72,6 @@ public class CourseOfferingService {
             CourseOfferingAdvancedSearchCriteria criteria,
             int page,
             int size,
-            List<String> roles,
             CourseOfferingSearchSortField sortField,
             Sort.Direction sortDirection
     ) {
@@ -115,7 +112,7 @@ public class CourseOfferingService {
         return courseMapper.toCourseOfferingSearchResponse(offeringsPage);
     }
 
-    public CourseOfferingDetailResponse getCourseOfferingById(Long courseOfferingId, List<String> roles) {
+    public CourseOfferingDetailResponse getCourseOfferingById(Long courseOfferingId) {
         CatalogCourseOffering offering = catalogCourseOfferingRepository.findById(courseOfferingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 

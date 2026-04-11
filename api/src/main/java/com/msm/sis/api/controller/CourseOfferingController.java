@@ -47,7 +47,6 @@ public class CourseOfferingController {
                 criteria,
                 page,
                 size,
-                jwt.getRoles(),
                 parseCourseOfferingSearchSortField(sortBy),
                 parseSortDirection(sortDirection)
         ));
@@ -71,7 +70,6 @@ public class CourseOfferingController {
                 criteria,
                 page,
                 size,
-                jwt.getRoles(),
                 parseCourseOfferingSearchSortField(sortBy),
                 parseSortDirection(sortDirection)
         ));
@@ -94,7 +92,7 @@ public class CourseOfferingController {
             @AuthenticationPrincipal AuthenticatedJwt jwt,
             @PathVariable Long courseOfferingId
     ) {
-        return ResponseEntity.ok(courseOfferingService.getCourseOfferingById(courseOfferingId, jwt.getRoles()));
+        return ResponseEntity.ok(courseOfferingService.getCourseOfferingById(courseOfferingId));
     }
 
     private CourseOfferingSearchSortField parseCourseOfferingSearchSortField(String sortBy) {

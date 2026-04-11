@@ -60,7 +60,7 @@ export const StudentSortDirectionSchema = z.enum(['asc', 'desc']);
 
 export type StudentSortDirection = z.infer<typeof StudentSortDirectionSchema>;
 
-export const StudentCreateFormValuesSchema = z.object({
+export const StudentProfileFormValuesSchema = z.object({
   lastName: z.string(),
   firstName: z.string(),
   middleName: z.string(),
@@ -82,9 +82,9 @@ export const StudentCreateFormValuesSchema = z.object({
   countryCode: z.string(),
 });
 
-export type StudentCreateFormValues = z.infer<typeof StudentCreateFormValuesSchema>;
+export type StudentProfileFormValues = z.infer<typeof StudentProfileFormValuesSchema>;
 
-export const initialStudentCreateFormValues: StudentCreateFormValues = {
+export const initialStudentProfileFormValues: StudentProfileFormValues = {
   lastName: '',
   firstName: '',
   middleName: '',
@@ -104,6 +104,14 @@ export const initialStudentCreateFormValues: StudentCreateFormValues = {
   stateRegion: '',
   postalCode: '',
   countryCode: '',
+};
+
+export const StudentCreateFormValuesSchema = StudentProfileFormValuesSchema;
+
+export type StudentCreateFormValues = StudentProfileFormValues;
+
+export const initialStudentCreateFormValues: StudentCreateFormValues = {
+  ...initialStudentProfileFormValues,
 };
 
 export const StudentCreateRequestSchema = z.object({
@@ -196,52 +204,15 @@ export const studentDetailEditableFieldKeys = [
 
 export type StudentDetailEditableFieldKey = (typeof studentDetailEditableFieldKeys)[number];
 
-export const StudentDetailFormValuesSchema = z.object({
-  lastName: z.string(),
-  firstName: z.string(),
-  middleName: z.string(),
-  nameSuffix: z.string(),
-  genderId: z.string(),
-  ethnicityId: z.string(),
-  classStandingId: z.string(),
-  preferredName: z.string(),
-  dateOfBirth: z.string(),
-  estimatedGradDate: z.string(),
-  altId: z.string(),
-  email: z.string(),
-  phone: z.string(),
+export const StudentDetailFormValuesSchema = StudentProfileFormValuesSchema.extend({
   disabled: z.boolean(),
-  addressLine1: z.string(),
-  addressLine2: z.string(),
-  city: z.string(),
-  stateRegion: z.string(),
-  postalCode: z.string(),
-  countryCode: z.string(),
 });
 
 export type StudentDetailFormValues = z.infer<typeof StudentDetailFormValuesSchema>;
 
 export const initialStudentDetailFormValues: StudentDetailFormValues = {
-  lastName: '',
-  firstName: '',
-  middleName: '',
-  nameSuffix: '',
-  genderId: '',
-  ethnicityId: '',
-  classStandingId: '',
-  preferredName: '',
-  dateOfBirth: '',
-  estimatedGradDate: '',
-  altId: '',
-  email: '',
-  phone: '',
+  ...initialStudentProfileFormValues,
   disabled: false,
-  addressLine1: '',
-  addressLine2: '',
-  city: '',
-  stateRegion: '',
-  postalCode: '',
-  countryCode: '',
 };
 
 export const StudentPatchRequestSchema = z.object({

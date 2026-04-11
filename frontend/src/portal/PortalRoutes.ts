@@ -132,7 +132,7 @@ export const portalRoutes: PortalRouteNode[] = [
       {
         kind: 'item',
         key: 'catalog-advanced',
-        label: 'Catalog Advanced',
+        label: 'Catalog',
         path: '/catalog/search-advanced',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: true,

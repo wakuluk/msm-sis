@@ -6,6 +6,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -27,5 +28,20 @@ public class ApiValidationExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("message", message));
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, String>> handleResponseStatusException(
+            ResponseStatusException exception
+    ) {
+        HttpStatus status = HttpStatus.resolve(exception.getStatusCode().value());
+        String message = exception.getReason();
+
+        return ResponseEntity
+                .status(status == null ? HttpStatus.INTERNAL_SERVER_ERROR : status)
+                .body(Map.of(
+                        "message",
+                        message == null || message.isBlank() ? "Request failed." : message
+                ));
     }
 }
