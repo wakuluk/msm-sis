@@ -1,5 +1,6 @@
 package com.msm.sis.api.controller;
 
+import com.msm.sis.api.dto.CatalogAdvancedSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.CatalogSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.StudentReferenceOptionsResponse;
 import com.msm.sis.api.service.ReferenceDataService;
@@ -30,9 +31,16 @@ public class ReferenceController {
     }
 
     @GetMapping("/catalog-search-options")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Get catalog search reference options", description = "Returns academic years, terms, departments, subjects, and status options used by catalog search filters")
     public ResponseEntity<CatalogSearchReferenceOptionsResponse> getCatalogSearchReferenceOptions() {
         return ResponseEntity.ok(referenceDataService.getCatalogSearchReferenceOptions());
+    }
+
+    @GetMapping("/catalog-advanced-search-options")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get catalog search reference options", description = "Returns academic years, terms, departments, subjects, and status options used by catalog search filters")
+    public ResponseEntity<CatalogAdvancedSearchReferenceOptionsResponse> getCatalogAdvancedSearchReferenceOptions() {
+        return ResponseEntity.ok(referenceDataService.getCatalogAdvanceSearchReferenceOptions());
     }
 }

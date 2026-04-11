@@ -1,0 +1,22 @@
+.expandedRow td {
+  background-color: var(--portal-ui-subtle-fill-background);
+}
+
+.expandedRowCollapsed td {
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+}
+
+.expandedCell {
+  padding: 0;
+}
+
+.expandedPanel {
+  border-top: 1px solid var(--portal-ui-surface-border-color);
+  padding: 0.9rem 0.15rem 0.25rem;
+}
+
+.expandedDescription {
+  line-height: 1.55;
+}

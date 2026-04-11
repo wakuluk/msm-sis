@@ -15,6 +15,7 @@ public record CourseOfferingSearchResultResponse(
         BigDecimal minCredits,
         BigDecimal maxCredits,
         boolean variableCredit,
-        String offeringStatusCode
+        String offeringStatusCode,
+        String offeringStatusName
 ) {
 }

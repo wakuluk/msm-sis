@@ -29,7 +29,8 @@ public class CourseMapper {
                 courseVersion.getMinCredits(),
                 courseVersion.getMaxCredits(),
                 courseVersion.isVariableCredit(),
-                offering.getStatus().getCode()
+                offering.getStatus().getCode(),
+                offering.getStatus().getName()
         );
     }
 

@@ -21,16 +21,16 @@
     box-shadow 120ms ease;
 }
 
-.resultsTable tbody tr:hover > td {
+.clickableRow {
+  cursor: pointer;
+}
+
+.clickableRow:hover > td {
   background-color: var(--portal-ui-accent-active-background);
 }
 
-.resultsTable tbody tr:hover > td:first-child {
+.clickableRow:hover > td:first-child {
   box-shadow: inset 3px 0 0 var(--portal-ui-accent-active-border-color);
-}
-
-.clickableRow {
-  cursor: pointer;
 }
 
 .clickableRow:focus-visible > td {
@@ -77,24 +77,4 @@
 
 .sortDirectionActive {
   color: var(--mantine-primary-color-filled);
-}
-
-.resultsViewToggle {
-  background-color: var(--portal-ui-accent-active-background);
-  box-shadow: none;
-}
-
-.resultsViewToggleIndicator {
-  background-color: var(--mantine-color-brand-6);
-  border: 1px solid var(--mantine-color-brand-7);
-  box-shadow: none;
-}
-
-.resultsViewToggleLabel {
-  color: var(--portal-ui-text-color);
-  font-weight: 600;
-}
-
-.resultsViewToggleLabel[data-active] {
-  color: var(--mantine-color-white);
 }

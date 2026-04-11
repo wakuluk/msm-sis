@@ -8,6 +8,8 @@ import { PortalLayout } from '@/components/layout/PortalLayout';
 import { flattenPortalRoutes, portalRoutes, type PortalRouteItemKey } from '@/portal/PortalRoutes';
 import { PortalPage } from './pages/portal/Portal.page';
 import { PublicPage } from './pages/public/Public.page';
+import { CatalogAdvancedPage } from './pages/portal/CatalogAdvanced.page';
+import { CatalogSearchPage } from './pages/portal/CatalogSearch.page';
 import { SharedPage } from './pages/portal/Shared.page';
 import { SharedSecondPage } from './pages/portal/SharedSecond.page';
 import { StudentCreatePage } from './pages/portal/StudentCreate.page';
@@ -17,6 +19,8 @@ import { StudentSearchPage } from './pages/portal/StudentSearch.page';
 
 const portalRouteComponents = {
   dashboard: PortalPage,
+  catalog: CatalogSearchPage,
+  'catalog-advanced': CatalogAdvancedPage,
   shared: SharedPage,
   student: StudentProfilePage,
   studentCreate: StudentCreatePage,

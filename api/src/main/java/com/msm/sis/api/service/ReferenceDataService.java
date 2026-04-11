@@ -1,11 +1,6 @@
 package com.msm.sis.api.service;
 
-import com.msm.sis.api.dto.CatalogReferenceOptionResponse;
-import com.msm.sis.api.dto.CatalogSearchReferenceOptionsResponse;
-import com.msm.sis.api.dto.CatalogSubjectReferenceOptionResponse;
-import com.msm.sis.api.dto.CatalogTermReferenceOptionResponse;
-import com.msm.sis.api.dto.ReferenceOptionResponse;
-import com.msm.sis.api.dto.StudentReferenceOptionsResponse;
+import com.msm.sis.api.dto.*;
 import com.msm.sis.api.repository.AcademicDepartmentRepository;
 import com.msm.sis.api.repository.CatalogAcademicYearRepository;
 import com.msm.sis.api.repository.CatalogCourseOfferingStatusRepository;
@@ -67,8 +62,8 @@ public class ReferenceDataService {
         );
     }
 
-    public CatalogSearchReferenceOptionsResponse getCatalogSearchReferenceOptions() {
-        return new CatalogSearchReferenceOptionsResponse(
+    public CatalogAdvancedSearchReferenceOptionsResponse getCatalogAdvanceSearchReferenceOptions() {
+        return new CatalogAdvancedSearchReferenceOptionsResponse(
                 catalogAcademicYearRepository.findAllByActiveTrueOrderByStartDateAsc().stream()
                         .map(academicYear -> new CatalogReferenceOptionResponse(
                                 academicYear.getId(),
@@ -115,6 +110,45 @@ public class ReferenceDataService {
                                 status.getId(),
                                 status.getCode(),
                                 status.getName()
+                        ))
+                        .toList()
+        );
+    }
+
+    public CatalogSearchReferenceOptionsResponse getCatalogSearchReferenceOptions() {
+        return new CatalogSearchReferenceOptionsResponse(
+                catalogAcademicYearRepository.findAllByActiveTrueOrderByStartDateAsc().stream()
+                        .map(academicYear -> new CatalogReferenceOptionResponse(
+                                academicYear.getId(),
+                                academicYear.getCode(),
+                                academicYear.getName()
+                        ))
+                        .toList(),
+                catalogTermRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(term -> new CatalogTermReferenceOptionResponse(
+                                term.getId(),
+                                term.getCode(),
+                                term.getName(),
+                                term.getAcademicYear().getId(),
+                                term.getAcademicYear().getCode(),
+                                term.getAcademicYear().getName()
+                        ))
+                        .toList(),
+                academicDepartmentRepository.findAllByActiveTrueOrderByNameAsc().stream()
+                        .map(department -> new CatalogReferenceOptionResponse(
+                                department.getId(),
+                                department.getCode(),
+                                department.getName()
+                        ))
+                        .toList(),
+                catalogSubjectRepository.findAllByActiveTrueOrderByCodeAsc().stream()
+                        .map(subject -> new CatalogSubjectReferenceOptionResponse(
+                                subject.getId(),
+                                subject.getCode(),
+                                subject.getName(),
+                                subject.getDepartment().getId(),
+                                subject.getDepartment().getCode(),
+                                subject.getDepartment().getName()
                         ))
                         .toList()
         );

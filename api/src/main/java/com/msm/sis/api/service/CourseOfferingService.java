@@ -1,11 +1,9 @@
 package com.msm.sis.api.service;
 
-import com.msm.sis.api.dto.CourseOfferingDetailResponse;
-import com.msm.sis.api.dto.CourseOfferingSearchCriteria;
-import com.msm.sis.api.dto.CourseOfferingSearchResponse;
-import com.msm.sis.api.dto.CourseOfferingSearchSortField;
+import com.msm.sis.api.dto.*;
 import com.msm.sis.api.entity.CatalogCourseOffering;
 import com.msm.sis.api.mapper.CourseMapper;
+import com.msm.sis.api.mapper.CourseOfferingAdvancedSearchCriteriaMapper;
 import com.msm.sis.api.repository.CatalogCourseOfferingRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,19 +20,58 @@ import static com.msm.sis.api.util.TextUtils.trimToNull;
 @Service
 public class CourseOfferingService {
 
+    private final List<String> publicTermStatusCodes = List.of(
+            "REGISTRATION_OPEN",
+            "REGISTRATION_CLOSED",
+            "ACTIVE",
+            "COMPLETED");
+
+    private final List<String> publicOfferingStatusCodes = List.of(
+            "OPEN_FOR_DISPLAY",
+            "OPEN_FOR_REGISTRATION",
+            "CLOSED");
+
     private final CatalogCourseOfferingRepository catalogCourseOfferingRepository;
     private final CourseMapper courseMapper;
+    private final CourseOfferingAdvancedSearchCriteriaMapper courseOfferingSearchCriteriaMapper;
 
     public CourseOfferingService(
             CatalogCourseOfferingRepository catalogCourseOfferingRepository,
-            CourseMapper courseMapper
+            CourseMapper courseMapper,
+            CourseOfferingAdvancedSearchCriteriaMapper courseOfferingSearchCriteriaMapper
     ) {
         this.catalogCourseOfferingRepository = catalogCourseOfferingRepository;
         this.courseMapper = courseMapper;
+        this.courseOfferingSearchCriteriaMapper = courseOfferingSearchCriteriaMapper;
+    }
+
+    public CourseOfferingSearchResponse searchPublicCourseOfferings(
+            CourseOfferingSearchCriteria criteria,
+            int page,
+            int size,
+            List<String> roles,
+            CourseOfferingSearchSortField sortField,
+            Sort.Direction sortDirection
+    ) {
+        CourseOfferingAdvancedSearchCriteria courseOfferingAdvancedSearchCriteria = courseOfferingSearchCriteriaMapper.toCourseOfferingAdvancedSearchCriteria(criteria);
+
+        courseOfferingAdvancedSearchCriteria.setIncludeInactive(true);
+        courseOfferingAdvancedSearchCriteria.setTermStatusCodes(publicTermStatusCodes);
+        courseOfferingAdvancedSearchCriteria.setOfferingStatusCodes(publicOfferingStatusCodes);
+
+
+        return searchCourseOfferings(
+                courseOfferingAdvancedSearchCriteria,
+                page,
+                size,
+                roles,
+                sortField,
+                sortDirection
+        );
     }
 
     public CourseOfferingSearchResponse searchCourseOfferings(
-            CourseOfferingSearchCriteria criteria,
+            CourseOfferingAdvancedSearchCriteria criteria,
             int page,
             int size,
             List<String> roles,
@@ -50,7 +87,6 @@ public class CourseOfferingService {
         }
 
         boolean includeInactive = Boolean.TRUE.equals(criteria.getIncludeInactive());
-        validateIncludeInactiveAccess(includeInactive, roles);
 
         Pageable pageable = PageRequest.of(
                 page,
@@ -70,8 +106,8 @@ public class CourseOfferingService {
                 criteria.getMinCredits(),
                 criteria.getMaxCredits(),
                 criteria.getVariableCredit(),
-                trimToNull(criteria.getOfferingStatusCode()),
-                trimToNull(criteria.getTermStatusCode()),
+                normalizeStatusCodes(criteria.getOfferingStatusCodes()),
+                normalizeStatusCodes(criteria.getTermStatusCodes()),
                 includeInactive,
                 pageable
         );
@@ -83,42 +119,30 @@ public class CourseOfferingService {
         CatalogCourseOffering offering = catalogCourseOfferingRepository.findById(courseOfferingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (hasInactiveCatalogData(offering) && !canAccessInactiveCatalogData(roles)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+        return courseMapper.toCourseOfferingDetailResponse(offering);
+    }
+
+    public CourseOfferingDetailResponse getPublicCourseOfferingById(Long courseOfferingId) {
+        CatalogCourseOffering offering = catalogCourseOfferingRepository.findPublicVisibleById(
+                        courseOfferingId,
+                        publicOfferingStatusCodes,
+                        publicTermStatusCodes
+                )
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         return courseMapper.toCourseOfferingDetailResponse(offering);
     }
 
-    private void validateIncludeInactiveAccess(boolean includeInactive, List<String> roles) {
-        if (!includeInactive) {
-            return;
+    private List<String> normalizeStatusCodes(List<String> statusCodes) {
+        if (statusCodes == null || statusCodes.isEmpty()) {
+            return List.of();
         }
 
-        if (canAccessInactiveCatalogData(roles)) {
-            return;
-        }
-
-        throw new ResponseStatusException(
-                HttpStatus.FORBIDDEN,
-                "Only admins and professors can include inactive catalog records."
-        );
-    }
-
-    private boolean canAccessInactiveCatalogData(List<String> roles) {
-        List<String> safeRoles = roles == null ? List.of() : roles;
-        return safeRoles.contains("ADMIN") || safeRoles.contains("PROFESSOR");
-    }
-
-    private boolean hasInactiveCatalogData(CatalogCourseOffering offering) {
-        return !offering.getCourseVersion().getCourse().getSubject().getDepartment().isActive()
-                || !offering.getCourseVersion().getCourse().getSubject().isActive()
-                || !offering.getCourseVersion().getCourse().isActive()
-                || !offering.getCourseVersion().isActive()
-                || !offering.getTerm().getAcademicYear().isActive()
-                || !offering.getTerm().isActive()
-                || !offering.getTerm().getStatus().isActive()
-                || !offering.getStatus().isActive();
+        return statusCodes.stream()
+                .map(com.msm.sis.api.util.TextUtils::trimToNull)
+                .filter(java.util.Objects::nonNull)
+                .map(statusCode -> statusCode.toUpperCase(java.util.Locale.ROOT))
+                .toList();
     }
 
     private Sort buildSearchSort(CourseOfferingSearchSortField sortField, Sort.Direction sortDirection) {
