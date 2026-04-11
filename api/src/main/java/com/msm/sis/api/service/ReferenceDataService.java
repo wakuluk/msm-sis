@@ -64,7 +64,7 @@ public class ReferenceDataService {
 
     public CatalogAdvancedSearchReferenceOptionsResponse getCatalogAdvanceSearchReferenceOptions() {
         return new CatalogAdvancedSearchReferenceOptionsResponse(
-                catalogAcademicYearRepository.findAllByActiveTrueOrderByStartDateAsc().stream()
+                catalogAcademicYearRepository.findAllAcademicYears().stream()
                         .map(academicYear -> new CatalogReferenceOptionResponse(
                                 academicYear.getId(),
                                 academicYear.getCode(),
@@ -117,14 +117,14 @@ public class ReferenceDataService {
 
     public CatalogSearchReferenceOptionsResponse getCatalogSearchReferenceOptions() {
         return new CatalogSearchReferenceOptionsResponse(
-                catalogAcademicYearRepository.findAllByActiveTrueOrderByStartDateAsc().stream()
+                catalogAcademicYearRepository.findAllPublishedActiveOrderByStartDateAsc().stream()
                         .map(academicYear -> new CatalogReferenceOptionResponse(
                                 academicYear.getId(),
                                 academicYear.getCode(),
                                 academicYear.getName()
                         ))
                         .toList(),
-                catalogTermRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                catalogTermRepository.findAllForStudentCatalogSearchOrderBySortOrderAsc().stream()
                         .map(term -> new CatalogTermReferenceOptionResponse(
                                 term.getId(),
                                 term.getCode(),

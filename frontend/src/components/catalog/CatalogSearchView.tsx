@@ -84,6 +84,7 @@ export function CatalogSearchView({ variant, title }: CatalogSearchViewProps) {
     selectedOfferingStatusCodes,
     selectedTermStatusCodes,
     includeInactive,
+    publishedOnly,
     searchResultsState,
     resultsView,
     expandedCourseOfferingId,
@@ -96,6 +97,7 @@ export function CatalogSearchView({ variant, title }: CatalogSearchViewProps) {
     setSelectedOfferingStatusCodes,
     setSelectedTermStatusCodes,
     setIncludeInactive,
+    setPublishedOnly,
     toggleExpandedCourseOffering,
     handlePageSizeChange,
     handleSortByChange,
@@ -140,11 +142,13 @@ export function CatalogSearchView({ variant, title }: CatalogSearchViewProps) {
           selectedOfferingStatusCodes={selectedOfferingStatusCodes}
           selectedTermStatusCodes={selectedTermStatusCodes}
           includeInactive={includeInactive}
+          publishedOnly={publishedOnly}
           errorMessage={referenceOptionsErrorMessage}
           searchResultsIdle={searchResultsIdle}
           onOfferingStatusCodesChange={setSelectedOfferingStatusCodes}
           onTermStatusCodesChange={setSelectedTermStatusCodes}
           onIncludeInactiveChange={setIncludeInactive}
+          onPublishedOnlyChange={setPublishedOnly}
           onPageSizeChange={handlePageSizeChange}
           onSortByChange={handleSortByChange}
           onSortDirectionChange={handleSortDirectionChange}

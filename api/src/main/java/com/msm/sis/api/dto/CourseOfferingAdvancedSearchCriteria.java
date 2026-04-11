@@ -11,4 +11,5 @@ public class CourseOfferingAdvancedSearchCriteria extends CourseOfferingSearchCr
     private List<String> offeringStatusCodes;
     private List<String> termStatusCodes;
     private Boolean includeInactive;
+    private Boolean isPublished;
 }

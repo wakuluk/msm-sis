@@ -100,6 +100,18 @@ function toNullableIsoDate(value: string, fieldLabel: string): string | null {
   return trimmedValue;
 }
 
+function validateMaxLength(
+  value: string | null,
+  maxLength: number,
+  fieldLabel: string
+): string | null {
+  if (value !== null && value.length > maxLength) {
+    throw new Error(`${fieldLabel} must be ${maxLength} characters or fewer.`);
+  }
+
+  return value;
+}
+
 type NormalizedStudentAddress = {
   addressLine1: string | null;
   addressLine2: string | null;
@@ -128,7 +140,14 @@ function validateStudentAddress(values: StudentProfileFormValues): NormalizedStu
     throw new Error('Address line 1 and city are required.');
   }
 
-  return normalizedAddress;
+  return {
+    addressLine1: validateMaxLength(normalizedAddress.addressLine1, 255, 'Address line 1'),
+    addressLine2: validateMaxLength(normalizedAddress.addressLine2, 255, 'Address line 2'),
+    city: validateMaxLength(normalizedAddress.city, 100, 'City'),
+    stateRegion: validateMaxLength(normalizedAddress.stateRegion, 100, 'State / region'),
+    postalCode: validateMaxLength(normalizedAddress.postalCode, 20, 'Postal code'),
+    countryCode: validateMaxLength(normalizedAddress.countryCode, 2, 'Country code'),
+  };
 }
 
 function defineStudentPatchField<K extends keyof StudentPatchRequest>(

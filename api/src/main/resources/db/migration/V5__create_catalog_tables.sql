@@ -34,7 +34,7 @@ INSERT INTO catalog_course_offering_status (code, name) VALUES
     ('CLOSED', 'Closed'),
     ('CANCELLED', 'Cancelled');
 
-CREATE TABLE catalog_academic_year (
+CREATE TABLE academic_year (
     academic_year_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     code VARCHAR(20) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
@@ -43,6 +43,8 @@ CREATE TABLE catalog_academic_year (
     end_date DATE NOT NULL,
 
     active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_published BOOLEAN NOT NULL DEFAULT FALSE,
+
 
     CONSTRAINT chk_catalog_academic_year_date_range
        CHECK (start_date <= end_date)
@@ -129,7 +131,7 @@ CREATE TABLE catalog_term (
     active BOOLEAN NOT NULL DEFAULT TRUE,
 
     CONSTRAINT fk_catalog_term_academic_year
-      FOREIGN KEY (academic_year_id) REFERENCES catalog_academic_year(academic_year_id),
+      FOREIGN KEY (academic_year_id) REFERENCES academic_year(academic_year_id),
 
     CONSTRAINT fk_catalog_term_status
       FOREIGN KEY (term_status_id) REFERENCES catalog_term_status(term_status_id),

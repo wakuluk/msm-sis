@@ -69,6 +69,7 @@ export type CourseOfferingSearchRequest = {
   offeringStatusCodes?: string[];
   termStatusCodes?: string[];
   includeInactive?: boolean;
+  isPublished?: boolean;
   page?: number;
   size?: number;
   sortBy?: CourseOfferingSearchSortBy;
@@ -287,6 +288,7 @@ export function buildCourseOfferingSearchQueryParams({
   offeringStatusCodes,
   termStatusCodes,
   includeInactive,
+  isPublished,
   page = 0,
   size = defaultCourseOfferingSearchSize,
   sortBy = defaultCourseOfferingSortBy,
@@ -322,6 +324,10 @@ export function buildCourseOfferingSearchQueryParams({
     queryParams.set('includeInactive', String(includeInactive));
   }
 
+  if (isPublished !== undefined) {
+    queryParams.set('isPublished', String(isPublished));
+  }
+
   queryParams.set('page', String(page));
   queryParams.set('size', String(size));
   queryParams.set('sortBy', sortBy);
@@ -337,6 +343,7 @@ async function fetchCourseOfferingSearch(
     offeringStatusCodes,
     termStatusCodes,
     includeInactive,
+    isPublished,
     page = 0,
     size = defaultCourseOfferingSearchSize,
     sortBy = defaultCourseOfferingSortBy,
@@ -350,6 +357,7 @@ async function fetchCourseOfferingSearch(
       offeringStatusCodes,
       termStatusCodes,
       includeInactive,
+      isPublished,
       page,
       size,
       sortBy,
@@ -387,6 +395,7 @@ export async function searchCourseOfferings({
   offeringStatusCodes,
   termStatusCodes,
   includeInactive,
+  isPublished,
   page = 0,
   size = defaultCourseOfferingSearchSize,
   sortBy = defaultCourseOfferingSortBy,
@@ -398,6 +407,7 @@ export async function searchCourseOfferings({
     offeringStatusCodes,
     termStatusCodes,
     includeInactive,
+    isPublished,
     page,
     size,
     sortBy,

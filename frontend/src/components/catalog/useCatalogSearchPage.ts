@@ -63,6 +63,7 @@ type AppliedAdvancedFilters = {
   offeringStatusCodes: string[];
   termStatusCodes: string[];
   includeInactive: boolean;
+  isPublished?: boolean;
 };
 
 export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
@@ -96,6 +97,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
   const [selectedOfferingStatusCodes, setSelectedOfferingStatusCodes] = useState<string[]>([]);
   const [selectedTermStatusCodes, setSelectedTermStatusCodes] = useState<string[]>([]);
   const [includeInactive, setIncludeInactive] = useState(variant === 'advanced');
+  const [publishedOnly, setPublishedOnly] = useState(variant === 'advanced');
   const [resultsView, setResultsView] = useState<CatalogResultsView>('standard');
   const [expandedCourseOfferingId, setExpandedCourseOfferingId] = useState<number | null>(null);
   const [detailStateByCourseOfferingId, setDetailStateByCourseOfferingId] = useState<
@@ -151,6 +153,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
             variant === 'advanced' ? appliedAdvancedFilters?.termStatusCodes : undefined,
           includeInactive:
             variant === 'advanced' ? appliedAdvancedFilters?.includeInactive : undefined,
+          isPublished: variant === 'advanced' ? appliedAdvancedFilters?.isPublished : undefined,
           page,
           size,
           sortBy,
@@ -232,7 +235,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     hasCourseOfferingSearchValues(form.values) ||
     selectedOfferingStatusCodes.length > 0 ||
     selectedTermStatusCodes.length > 0 ||
-    (variant === 'advanced' && includeInactive !== true);
+    (variant === 'advanced' && (includeInactive !== true || publishedOnly !== true));
   const isSearching = searchResultsState.status === 'loading';
 
   const academicYearOptions: SelectOption[] = hasLoadedReferenceOptions
@@ -335,6 +338,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     setSelectedOfferingStatusCodes([]);
     setSelectedTermStatusCodes([]);
     setIncludeInactive(variant === 'advanced');
+    setPublishedOnly(variant === 'advanced');
     setAppliedFilters(null);
     setAppliedAdvancedFilters(null);
   }
@@ -348,6 +352,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
             offeringStatusCodes: [...selectedOfferingStatusCodes],
             termStatusCodes: [...selectedTermStatusCodes],
             includeInactive,
+            isPublished: publishedOnly ? true : undefined,
           }
         : null
     );
@@ -379,6 +384,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     selectedOfferingStatusCodes,
     selectedTermStatusCodes,
     includeInactive,
+    publishedOnly,
     searchResultsState,
     resultsView,
     expandedCourseOfferingId,
@@ -392,6 +398,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     setSelectedOfferingStatusCodes,
     setSelectedTermStatusCodes,
     setIncludeInactive,
+    setPublishedOnly,
     toggleExpandedCourseOffering,
     handlePageSizeChange,
     handleSortByChange,

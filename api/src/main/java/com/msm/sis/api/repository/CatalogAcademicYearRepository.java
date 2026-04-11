@@ -1,13 +1,28 @@
 package com.msm.sis.api.repository;
 
-import com.msm.sis.api.entity.CatalogAcademicYear;
+import com.msm.sis.api.entity.AcademicYear;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface CatalogAcademicYearRepository extends JpaRepository<CatalogAcademicYear, Long> {
-    Optional<CatalogAcademicYear> findByCode(String code);
+public interface CatalogAcademicYearRepository extends JpaRepository<AcademicYear, Long> {
+    Optional<AcademicYear> findByCode(String code);
     boolean existsByCode(String code);
-    List<CatalogAcademicYear> findAllByActiveTrueOrderByStartDateAsc();
+    @Query("""
+            select academicYear
+            from AcademicYear academicYear
+            order by academicYear.startDate asc
+            """)
+    List<AcademicYear> findAllAcademicYears();
+
+    @Query("""
+            select academicYear
+            from AcademicYear academicYear
+            where academicYear.active = true
+              and academicYear.is_published = true
+            order by academicYear.startDate
+            """)
+    List<AcademicYear> findAllPublishedActiveOrderByStartDateAsc();
 }

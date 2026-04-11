@@ -54,11 +54,13 @@ type CatalogSearchFormProps = {
   selectedOfferingStatusCodes: string[];
   selectedTermStatusCodes: string[];
   includeInactive: boolean;
+  publishedOnly: boolean;
   errorMessage: string | null;
   searchResultsIdle: boolean;
   onOfferingStatusCodesChange: (values: string[]) => void;
   onTermStatusCodesChange: (values: string[]) => void;
   onIncludeInactiveChange: (value: boolean) => void;
+  onPublishedOnlyChange: (value: boolean) => void;
   onPageSizeChange: (size: CourseOfferingSearchSize) => void;
   onSortByChange: (sortBy: CourseOfferingSearchSortBy) => void;
   onSortDirectionChange: (sortDirection: CourseOfferingSortDirection) => void;
@@ -86,11 +88,13 @@ export function CatalogSearchForm({
   selectedOfferingStatusCodes,
   selectedTermStatusCodes,
   includeInactive,
+  publishedOnly,
   errorMessage,
   searchResultsIdle,
   onOfferingStatusCodesChange,
   onTermStatusCodesChange,
   onIncludeInactiveChange,
+  onPublishedOnlyChange,
   onPageSizeChange,
   onSortByChange,
   onSortDirectionChange,
@@ -239,6 +243,15 @@ export function CatalogSearchForm({
                   checked={includeInactive}
                   onChange={(event) => {
                     onIncludeInactiveChange(event.currentTarget.checked);
+                  }}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12 }}>
+                <Checkbox
+                  label="Published only"
+                  checked={publishedOnly}
+                  onChange={(event) => {
+                    onPublishedOnlyChange(event.currentTarget.checked);
                   }}
                 />
               </Grid.Col>

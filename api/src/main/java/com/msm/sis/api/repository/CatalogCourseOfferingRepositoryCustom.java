@@ -25,6 +25,7 @@ public interface CatalogCourseOfferingRepositoryCustom {
             List<String> offeringStatusCodes,
             List<String> termStatusCodes,
             boolean includeInactive,
+            Boolean isPublished,
             Pageable pageable
     );
 

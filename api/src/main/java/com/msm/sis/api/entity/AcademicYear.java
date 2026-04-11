@@ -13,8 +13,8 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "catalog_academic_year")
-public class CatalogAcademicYear {
+@Table(name = "academic_year")
+public class AcademicYear {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,4 +37,7 @@ public class CatalogAcademicYear {
 
     @Column(name = "active", nullable = false)
     private boolean active = true;
+
+    @Column(name = "is_published", nullable = false)
+    private boolean is_published;
 }

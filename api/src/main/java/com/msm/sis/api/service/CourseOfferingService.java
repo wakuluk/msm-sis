@@ -55,6 +55,7 @@ public class CourseOfferingService {
         CourseOfferingAdvancedSearchCriteria courseOfferingAdvancedSearchCriteria = courseOfferingSearchCriteriaMapper.toCourseOfferingAdvancedSearchCriteria(criteria);
 
         courseOfferingAdvancedSearchCriteria.setIncludeInactive(true);
+        courseOfferingAdvancedSearchCriteria.setIsPublished(true);
         courseOfferingAdvancedSearchCriteria.setTermStatusCodes(publicTermStatusCodes);
         courseOfferingAdvancedSearchCriteria.setOfferingStatusCodes(publicOfferingStatusCodes);
 
@@ -106,6 +107,7 @@ public class CourseOfferingService {
                 normalizeStatusCodes(criteria.getOfferingStatusCodes()),
                 normalizeStatusCodes(criteria.getTermStatusCodes()),
                 includeInactive,
+                criteria.getIsPublished(),
                 pageable
         );
 

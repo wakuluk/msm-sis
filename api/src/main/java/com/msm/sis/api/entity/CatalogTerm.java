@@ -28,7 +28,7 @@ public class CatalogTerm {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "academic_year_id", nullable = false)
-    private CatalogAcademicYear academicYear;
+    private AcademicYear academicYear;
 
     @Column(name = "code", nullable = false, unique = true)
     private String code;

@@ -1,7 +1,7 @@
 package com.msm.sis.api.repository;
 
 import com.msm.sis.api.entity.AcademicDepartment;
-import com.msm.sis.api.entity.CatalogAcademicYear;
+import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.CatalogCourse;
 import com.msm.sis.api.entity.CatalogCourseOffering;
 import com.msm.sis.api.entity.CatalogCourseOfferingStatus;
@@ -58,6 +58,7 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
             List<String> offeringStatusCodes,
             List<String> termStatusCodes,
             boolean includeInactive,
+            Boolean isPublished,
             Pageable pageable
     ) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
@@ -83,7 +84,8 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
                 variableCredit,
                 offeringStatusCodes,
                 termStatusCodes,
-                includeInactive
+                includeInactive,
+                isPublished
         );
 
         query.select(root)
@@ -117,7 +119,8 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
                 variableCredit,
                 offeringStatusCodes,
                 termStatusCodes,
-                includeInactive
+                includeInactive,
+                isPublished
         );
 
         countQuery.select(criteriaBuilder.count(countRoot))
@@ -166,7 +169,7 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
         Join<CatalogCourse, CatalogSubject> subject = course.join("subject", JoinType.INNER);
         Join<CatalogSubject, AcademicDepartment> department = subject.join("department", JoinType.INNER);
         Join<CatalogCourseOffering, CatalogTerm> term = root.join("term", JoinType.INNER);
-        Join<CatalogTerm, CatalogAcademicYear> academicYear = term.join("academicYear", JoinType.INNER);
+        Join<CatalogTerm, AcademicYear> academicYear = term.join("academicYear", JoinType.INNER);
         Join<CatalogTerm, CatalogTermStatus> termStatus = term.join("status", JoinType.INNER);
         Join<CatalogCourseOffering, CatalogCourseOfferingStatus> status = root.join("status", JoinType.INNER);
 
@@ -190,7 +193,8 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
             Boolean variableCredit,
             List<String> offeringStatusCodes,
             List<String> termStatusCodes,
-            boolean includeInactive
+            boolean includeInactive,
+            Boolean isPublished
     ) {
         List<Predicate> predicates = new ArrayList<>();
 
@@ -217,6 +221,10 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
 
         addStatusInPredicate(criteriaBuilder, predicates, joins.status.get("code"), offeringStatusCodes);
         addStatusInPredicate(criteriaBuilder, predicates, joins.termStatus.get("code"), termStatusCodes);
+
+        if (isPublished != null) {
+            predicates.add(criteriaBuilder.equal(joins.academicYear.get("is_published"), isPublished));
+        }
 
         if (!includeInactive) {
             predicates.add(criteriaBuilder.isTrue(joins.department.get("active")));
@@ -379,7 +387,7 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
             Join<CatalogCourse, CatalogSubject> subject,
             Join<CatalogSubject, AcademicDepartment> department,
             Join<CatalogCourseOffering, CatalogTerm> term,
-            Join<CatalogTerm, CatalogAcademicYear> academicYear,
+            Join<CatalogTerm, AcademicYear> academicYear,
             Join<CatalogTerm, CatalogTermStatus> termStatus,
             Join<CatalogCourseOffering, CatalogCourseOfferingStatus> status
     ) {

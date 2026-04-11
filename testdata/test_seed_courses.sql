@@ -55,26 +55,42 @@ WHERE d.code = 'HIST'
       WHERE code = 'MEH'
   );
 
-INSERT INTO catalog_academic_year (code, name, start_date, end_date, active)
-SELECT 'AY-2026-2027', 'Academic Year 2026-2027', '2026-08-01', '2027-05-31', TRUE
+INSERT INTO academic_year (code, name, start_date, end_date, active, is_published)
+SELECT 'AY-2026-2027', 'Academic Year 2026-2027', '2026-08-01', '2027-05-31', TRUE, TRUE
 WHERE NOT EXISTS (
     SELECT 1
-    FROM catalog_academic_year
+    FROM academic_year
     WHERE code = 'AY-2026-2027'
 );
 
-INSERT INTO catalog_academic_year (code, name, start_date, end_date, active)
-SELECT 'AY-2027-2028', 'Academic Year 2027-2028', '2027-08-01', '2028-05-31', TRUE
+INSERT INTO academic_year (code, name, start_date, end_date, active, is_published)
+SELECT 'AY-2027-2028', 'Academic Year 2027-2028', '2027-08-01', '2028-05-31', FALSE, FALSE
 WHERE NOT EXISTS (
     SELECT 1
-    FROM catalog_academic_year
+    FROM academic_year
     WHERE code = 'AY-2027-2028'
 );
+
+UPDATE academic_year
+SET name = 'Academic Year 2026-2027',
+    start_date = '2026-08-01',
+    end_date = '2027-05-31',
+    active = TRUE,
+    is_published = TRUE
+WHERE code = 'AY-2026-2027';
+
+UPDATE academic_year
+SET name = 'Academic Year 2027-2028',
+    start_date = '2027-08-01',
+    end_date = '2028-05-31',
+    active = FALSE,
+    is_published = FALSE
+WHERE code = 'AY-2027-2028';
 
 INSERT INTO catalog_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
 SELECT ay.academic_year_id, 'FALL-2026', 'Fall 2026', '2026-08-24', '2026-12-11', 202630, ts.term_status_id, TRUE
 FROM catalog_term_status ts
-JOIN catalog_academic_year ay ON ay.code = 'AY-2026-2027'
+JOIN academic_year ay ON ay.code = 'AY-2026-2027'
 WHERE ts.code = 'REGISTRATION_OPEN'
   AND NOT EXISTS (
       SELECT 1
@@ -85,7 +101,7 @@ WHERE ts.code = 'REGISTRATION_OPEN'
 INSERT INTO catalog_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
 SELECT ay.academic_year_id, 'SPRING-2027', 'Spring 2027', '2027-01-19', '2027-05-07', 202710, ts.term_status_id, TRUE
 FROM catalog_term_status ts
-JOIN catalog_academic_year ay ON ay.code = 'AY-2026-2027'
+JOIN academic_year ay ON ay.code = 'AY-2026-2027'
 WHERE ts.code = 'PLANNED'
   AND NOT EXISTS (
       SELECT 1
@@ -96,13 +112,26 @@ WHERE ts.code = 'PLANNED'
 INSERT INTO catalog_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
 SELECT ay.academic_year_id, 'FALL-2027', 'Fall 2027', '2027-08-23', '2027-12-10', 202730, ts.term_status_id, TRUE
 FROM catalog_term_status ts
-JOIN catalog_academic_year ay ON ay.code = 'AY-2027-2028'
+JOIN academic_year ay ON ay.code = 'AY-2027-2028'
 WHERE ts.code = 'PLANNED'
   AND NOT EXISTS (
       SELECT 1
       FROM catalog_term
       WHERE code = 'FALL-2027'
   );
+
+UPDATE catalog_term term
+JOIN academic_year ay ON ay.code = 'AY-2026-2027'
+JOIN catalog_term_status ts ON ts.code = 'REGISTRATION_OPEN'
+SET term.academic_year_id = ay.academic_year_id,
+    term.name = 'Fall 2026',
+    term.start_date = '2026-08-24',
+    term.end_date = '2026-12-11',
+    term.sort_order = 202630,
+    term.term_status_id = ts.term_status_id,
+    term.active = TRUE
+WHERE term.code = 'FALL-2026'
+;
 
 INSERT INTO catalog_course (subject_id, course_number, active)
 SELECT s.subject_id, '101', TRUE
