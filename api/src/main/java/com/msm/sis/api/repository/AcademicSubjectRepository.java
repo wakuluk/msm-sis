@@ -1,21 +1,21 @@
 package com.msm.sis.api.repository;
 
-import com.msm.sis.api.entity.CatalogSubject;
+import com.msm.sis.api.entity.AcademicSubject;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface CatalogSubjectRepository extends JpaRepository<CatalogSubject, Long> {
+public interface CatalogSubjectRepository extends JpaRepository<AcademicSubject, Long> {
     @EntityGraph(attributePaths = {"department"})
-    Optional<CatalogSubject> findByCode(String code);
+    Optional<AcademicSubject> findByCode(String code);
 
     boolean existsByCode(String code);
 
     @EntityGraph(attributePaths = {"department"})
-    List<CatalogSubject> findAllByActiveTrueOrderByCodeAsc();
+    List<AcademicSubject> findAllByActiveTrueOrderByCodeAsc();
 
     @EntityGraph(attributePaths = {"department"})
-    List<CatalogSubject> findAllByDepartment_CodeAndActiveTrueOrderByCodeAsc(String departmentCode);
+    List<AcademicSubject> findAllByDepartment_CodeAndActiveTrueOrderByCodeAsc(String departmentCode);
 }
