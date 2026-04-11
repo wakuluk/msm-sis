@@ -11,30 +11,43 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "catalog_course")
-public class CatalogCourse {
+@Table(
+        name = "course_offering",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_course_offering_version_term", columnNames = {"course_version_id", "term_id"})
+        }
+)
+public class CourseOffering {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "course_id")
+    @Column(name = "course_offering_id")
     private Long id;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subject_id", nullable = false)
-    private AcademicSubject subject;
+    @JoinColumn(name = "course_version_id", nullable = false)
+    private CourseVersion courseVersion;
 
-    @Column(name = "course_number", nullable = false)
-    private String courseNumber;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "term_id", nullable = false)
+    private AcademicTerm term;
 
-    @Column(name = "active", nullable = false)
-    private boolean active = true;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_offering_status_id", nullable = false)
+    private CourseOfferingStatus status;
+
+    @Column(name = "notes")
+    private String notes;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "created_at", insertable = false, updatable = false)

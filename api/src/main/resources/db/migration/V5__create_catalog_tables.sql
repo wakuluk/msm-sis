@@ -61,7 +61,7 @@ CREATE TABLE academic_subject (
         FOREIGN KEY (department_id) REFERENCES academic_department(department_id)
 );
 
-CREATE TABLE catalog_course (
+CREATE TABLE course (
     course_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     subject_id BIGINT NOT NULL,
     course_number VARCHAR(20) NOT NULL,
@@ -71,14 +71,14 @@ CREATE TABLE catalog_course (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_catalog_course_subject
-        FOREIGN KEY (subject_id) REFERENCES academic_subject(subject_id),
+    CONSTRAINT fk_course_subject
+        FOREIGN KEY (subject_id) REFERENCES academic_subject (subject_id),
 
-    CONSTRAINT uq_catalog_course_subject_number
+    CONSTRAINT uq_course_subject_number
         UNIQUE (subject_id, course_number)
 );
 
-CREATE TABLE catalog_course_version (
+CREATE TABLE course_version (
     course_version_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     course_id BIGINT NOT NULL,
 
@@ -97,50 +97,56 @@ CREATE TABLE catalog_course_version (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_catalog_course_version_course
-        FOREIGN KEY (course_id) REFERENCES catalog_course(course_id),
+    CONSTRAINT fk_course_version_course
+        FOREIGN KEY (course_id) REFERENCES course(course_id),
 
-    CONSTRAINT uq_catalog_course_version_course_version
+    CONSTRAINT uq_course_version_course_version
         UNIQUE (course_id, version_number),
 
-    CONSTRAINT chk_catalog_course_version_variable_credit
+    CONSTRAINT chk_course_version_variable_credit
         CHECK (
             (is_variable_credit = TRUE AND min_credits <= max_credits)
             OR
             (is_variable_credit = FALSE AND min_credits = max_credits)
         ),
 
-    CONSTRAINT chk_catalog_course_version_default_active
+    CONSTRAINT chk_course_version_default_active
         CHECK (is_default = FALSE OR active = TRUE)
 );
 
 CREATE TABLE academic_term (
-    term_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+   term_id BIGINT PRIMARY KEY AUTO_INCREMENT,
 
-    academic_year_id BIGINT NOT NULL,
+   academic_year_id BIGINT NOT NULL,
 
-    code VARCHAR(20) NOT NULL UNIQUE,
-    name VARCHAR(100) NOT NULL,
+   code VARCHAR(20) NOT NULL,
+   name VARCHAR(100) NOT NULL,
 
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
+   start_date DATE NOT NULL,
+   end_date DATE NOT NULL,
 
-    sort_order INT NOT NULL UNIQUE,
+   sort_order INT NOT NULL,
 
-    term_status_id BIGINT NOT NULL,
-    active BOOLEAN NOT NULL DEFAULT TRUE,
+   term_status_id BIGINT NOT NULL,
+   active BOOLEAN NOT NULL DEFAULT TRUE,
 
-    CONSTRAINT fk_academic_term_academic_year
-      FOREIGN KEY (academic_year_id) REFERENCES academic_year(academic_year_id),
+   CONSTRAINT fk_academic_term_academic_year
+       FOREIGN KEY (academic_year_id) REFERENCES academic_year(academic_year_id),
 
-    CONSTRAINT fk_academic_term_status
-      FOREIGN KEY (term_status_id) REFERENCES academic_term_status(term_status_id),
+   CONSTRAINT fk_academic_term_status
+       FOREIGN KEY (term_status_id) REFERENCES academic_term_status(term_status_id),
 
-    CONSTRAINT chk_academic_term_date_range
-      CHECK (start_date <= end_date)
+   CONSTRAINT uq_academic_term_year_code
+       UNIQUE (academic_year_id, code),
+
+   CONSTRAINT uq_academic_term_year_sort_order
+       UNIQUE (academic_year_id, sort_order),
+
+   CONSTRAINT chk_academic_term_date_range
+       CHECK (start_date <= end_date)
 );
 
-CREATE TABLE catalog_course_offering (
+CREATE TABLE course_offering (
     course_offering_id BIGINT PRIMARY KEY AUTO_INCREMENT,
 
     course_version_id BIGINT NOT NULL,
@@ -157,13 +163,13 @@ CREATE TABLE catalog_course_offering (
         FOREIGN KEY (course_offering_status_id)
             REFERENCES course_offering_status(course_offering_status_id),
 
-    CONSTRAINT fk_catalog_course_offering_course_version
+    CONSTRAINT fk_course_offering_course_version
         FOREIGN KEY (course_version_id)
-            REFERENCES catalog_course_version(course_version_id),
+            REFERENCES course_version(course_version_id),
 
-    CONSTRAINT fk_catalog_course_offering_term
+    CONSTRAINT fk_course_offering_term
         FOREIGN KEY (term_id) REFERENCES academic_term(term_id),
 
-    CONSTRAINT uq_catalog_course_offering_version_term
+    CONSTRAINT uq_course_offering_version_term
         UNIQUE (course_version_id, term_id)
 );

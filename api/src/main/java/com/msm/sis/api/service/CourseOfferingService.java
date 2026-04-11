@@ -1,10 +1,10 @@
 package com.msm.sis.api.service;
 
-import com.msm.sis.api.dto.catalog.*;
-import com.msm.sis.api.entity.CatalogCourseOffering;
+import com.msm.sis.api.dto.course.*;
+import com.msm.sis.api.entity.CourseOffering;
 import com.msm.sis.api.mapper.CourseMapper;
 import com.msm.sis.api.mapper.CourseOfferingAdvancedSearchCriteriaMapper;
-import com.msm.sis.api.repository.CatalogCourseOfferingRepository;
+import com.msm.sis.api.repository.CourseOfferingRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,16 +31,16 @@ public class CourseOfferingService {
             "OPEN_FOR_REGISTRATION",
             "CLOSED");
 
-    private final CatalogCourseOfferingRepository catalogCourseOfferingRepository;
+    private final CourseOfferingRepository courseOfferingRepository;
     private final CourseMapper courseMapper;
     private final CourseOfferingAdvancedSearchCriteriaMapper courseOfferingSearchCriteriaMapper;
 
     public CourseOfferingService(
-            CatalogCourseOfferingRepository catalogCourseOfferingRepository,
+            CourseOfferingRepository courseOfferingRepository,
             CourseMapper courseMapper,
             CourseOfferingAdvancedSearchCriteriaMapper courseOfferingSearchCriteriaMapper
     ) {
-        this.catalogCourseOfferingRepository = catalogCourseOfferingRepository;
+        this.courseOfferingRepository = courseOfferingRepository;
         this.courseMapper = courseMapper;
         this.courseOfferingSearchCriteriaMapper = courseOfferingSearchCriteriaMapper;
     }
@@ -92,7 +92,7 @@ public class CourseOfferingService {
                 buildSearchSort(sortField, sortDirection)
         );
 
-        Page<CatalogCourseOffering> offeringsPage = catalogCourseOfferingRepository.searchCourseOfferings(
+        Page<CourseOffering> offeringsPage = courseOfferingRepository.searchCourseOfferings(
                 trimToNull(criteria.getAcademicYearCode()),
                 trimToNull(criteria.getTermCode()),
                 trimToNull(criteria.getDepartmentCode()),
@@ -115,14 +115,14 @@ public class CourseOfferingService {
     }
 
     public CourseOfferingDetailResponse getCourseOfferingById(Long courseOfferingId) {
-        CatalogCourseOffering offering = catalogCourseOfferingRepository.findById(courseOfferingId)
+        CourseOffering offering = courseOfferingRepository.findById(courseOfferingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         return courseMapper.toCourseOfferingDetailResponse(offering);
     }
 
     public CourseOfferingDetailResponse getPublicCourseOfferingById(Long courseOfferingId) {
-        CatalogCourseOffering offering = catalogCourseOfferingRepository.findPublicVisibleById(
+        CourseOffering offering = courseOfferingRepository.findPublicVisibleById(
                         courseOfferingId,
                         publicOfferingStatusCodes,
                         publicTermStatusCodes

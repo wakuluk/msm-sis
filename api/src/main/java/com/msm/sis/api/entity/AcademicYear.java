@@ -36,8 +36,8 @@ public class AcademicYear {
     private LocalDate endDate;
 
     @Column(name = "active", nullable = false)
-    private boolean active = true;
+    private boolean active = false;
 
     @Column(name = "is_published", nullable = false)
-    private boolean is_published;
+    private boolean isPublished = false;
 }

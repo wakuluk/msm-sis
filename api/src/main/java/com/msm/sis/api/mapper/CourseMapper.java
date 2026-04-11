@@ -1,20 +1,20 @@
 package com.msm.sis.api.mapper;
 
-import com.msm.sis.api.dto.catalog.CourseOfferingDetailResponse;
-import com.msm.sis.api.dto.catalog.CourseOfferingSearchResponse;
-import com.msm.sis.api.dto.catalog.CourseOfferingSearchResultResponse;
-import com.msm.sis.api.entity.CatalogCourse;
-import com.msm.sis.api.entity.CatalogCourseOffering;
-import com.msm.sis.api.entity.CatalogCourseVersion;
+import com.msm.sis.api.dto.course.CourseOfferingDetailResponse;
+import com.msm.sis.api.dto.course.CourseOfferingSearchResponse;
+import com.msm.sis.api.dto.course.CourseOfferingSearchResultResponse;
+import com.msm.sis.api.entity.Course;
+import com.msm.sis.api.entity.CourseOffering;
+import com.msm.sis.api.entity.CourseVersion;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CourseMapper {
 
-    public CourseOfferingSearchResultResponse toCourseOfferingSearchResultResponse(CatalogCourseOffering offering) {
-        CatalogCourseVersion courseVersion = offering.getCourseVersion();
-        CatalogCourse course = courseVersion.getCourse();
+    public CourseOfferingSearchResultResponse toCourseOfferingSearchResultResponse(CourseOffering offering) {
+        CourseVersion courseVersion = offering.getCourseVersion();
+        Course course = courseVersion.getCourse();
 
         return new CourseOfferingSearchResultResponse(
                 offering.getId(),
@@ -34,9 +34,9 @@ public class CourseMapper {
         );
     }
 
-    public CourseOfferingDetailResponse toCourseOfferingDetailResponse(CatalogCourseOffering offering) {
-        CatalogCourseVersion courseVersion = offering.getCourseVersion();
-        CatalogCourse course = courseVersion.getCourse();
+    public CourseOfferingDetailResponse toCourseOfferingDetailResponse(CourseOffering offering) {
+        CourseVersion courseVersion = offering.getCourseVersion();
+        Course course = courseVersion.getCourse();
 
         return new CourseOfferingDetailResponse(
                 offering.getId(),
@@ -54,7 +54,7 @@ public class CourseMapper {
         );
     }
 
-    public CourseOfferingSearchResponse toCourseOfferingSearchResponse(Page<CatalogCourseOffering> offeringsPage) {
+    public CourseOfferingSearchResponse toCourseOfferingSearchResponse(Page<CourseOffering> offeringsPage) {
         return new CourseOfferingSearchResponse(
                 offeringsPage.getContent().stream().map(this::toCourseOfferingSearchResultResponse).toList(),
                 offeringsPage.getNumber(),
@@ -64,7 +64,7 @@ public class CourseMapper {
         );
     }
 
-    private String buildCourseCode(CatalogCourse course) {
+    private String buildCourseCode(Course course) {
         return course.getSubject().getCode() + course.getCourseNumber();
     }
 }

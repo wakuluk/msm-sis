@@ -8,7 +8,6 @@ import com.msm.sis.api.entity.AcademicTerm;
 import com.msm.sis.api.entity.AcademicTermStatus;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -34,8 +33,8 @@ class AcademicYearMapperTest {
         assertThat(academicYear.getName()).isEqualTo("Academic Year 2026-2027");
         assertThat(academicYear.getStartDate()).isEqualTo(LocalDate.of(2026, 8, 1));
         assertThat(academicYear.getEndDate()).isEqualTo(LocalDate.of(2027, 5, 31));
-        assertThat(academicYear.isActive()).isTrue();
-        assertThat(readPublished(academicYear)).isFalse();
+        assertThat(academicYear.isActive()).isFalse();
+        assertThat(academicYear.isPublished()).isFalse();
     }
 
     @Test
@@ -111,7 +110,7 @@ class AcademicYearMapperTest {
         academicYear.setStartDate(LocalDate.of(2026, 8, 1));
         academicYear.setEndDate(LocalDate.of(2027, 5, 31));
         academicYear.setActive(true);
-        writePublished(academicYear, true);
+        academicYear.setPublished(true);
 
         AcademicTermStatus planned = new AcademicTermStatus();
         planned.setCode("PLANNED");
@@ -145,25 +144,5 @@ class AcademicYearMapperTest {
         assertThat(response.isPublished()).isTrue();
         assertThat(response.terms()).extracting(term -> term.code())
                 .containsExactly("FALL-2026", "SPRING-2027");
-    }
-
-    private boolean readPublished(AcademicYear academicYear) {
-        try {
-            Field publishedField = AcademicYear.class.getDeclaredField("is_published");
-            publishedField.setAccessible(true);
-            return publishedField.getBoolean(academicYear);
-        } catch (NoSuchFieldException | IllegalAccessException exception) {
-            throw new IllegalStateException("Failed to read academic year published state.", exception);
-        }
-    }
-
-    private void writePublished(AcademicYear academicYear, boolean published) {
-        try {
-            Field publishedField = AcademicYear.class.getDeclaredField("is_published");
-            publishedField.setAccessible(true);
-            publishedField.setBoolean(academicYear, published);
-        } catch (NoSuchFieldException | IllegalAccessException exception) {
-            throw new IllegalStateException("Failed to write academic year published state.", exception);
-        }
     }
 }

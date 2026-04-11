@@ -1,14 +1,14 @@
 package com.msm.sis.api.repository;
 
-import com.msm.sis.api.entity.CatalogCourseOffering;
+import com.msm.sis.api.entity.CourseOffering;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface CatalogCourseOfferingRepository
-        extends JpaRepository<CatalogCourseOffering, Long>, CatalogCourseOfferingRepositoryCustom {
+public interface CourseOfferingRepository
+        extends JpaRepository<CourseOffering, Long>, CourseOfferingRepositoryCustom {
     @Override
     @EntityGraph(attributePaths = {
             "courseVersion",
@@ -20,7 +20,7 @@ public interface CatalogCourseOfferingRepository
             "term.status",
             "status"
     })
-    Optional<CatalogCourseOffering> findById(Long id);
+    Optional<CourseOffering> findById(Long id);
 
     @EntityGraph(attributePaths = {
             "courseVersion",
@@ -32,7 +32,7 @@ public interface CatalogCourseOfferingRepository
             "term.status",
             "status"
     })
-    List<CatalogCourseOffering> findAllByTerm_Code(String termCode);
+    List<CourseOffering> findAllByTerm_Code(String termCode);
 
     @EntityGraph(attributePaths = {
             "courseVersion",
@@ -44,7 +44,7 @@ public interface CatalogCourseOfferingRepository
             "term.status",
             "status"
     })
-    List<CatalogCourseOffering> findAllByCourseVersion_Course_Id(Long courseId);
+    List<CourseOffering> findAllByCourseVersion_Course_Id(Long courseId);
 
     @EntityGraph(attributePaths = {
             "courseVersion",
@@ -56,5 +56,5 @@ public interface CatalogCourseOfferingRepository
             "term.status",
             "status"
     })
-    Optional<CatalogCourseOffering> findByCourseVersion_IdAndTerm_Id(Long courseVersionId, Long termId);
+    Optional<CourseOffering> findByCourseVersion_IdAndTerm_Id(Long courseVersionId, Long termId);
 }

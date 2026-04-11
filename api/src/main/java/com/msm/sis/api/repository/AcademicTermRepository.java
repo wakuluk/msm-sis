@@ -10,9 +10,11 @@ import java.util.Optional;
 
 public interface AcademicTermRepository extends JpaRepository<AcademicTerm, Long> {
     @EntityGraph(attributePaths = {"academicYear", "status"})
-    Optional<AcademicTerm> findByCode(String code);
+    Optional<AcademicTerm> findByAcademicYear_IdAndCode(Long academicYearId, String code);
 
-    boolean existsByCode(String code);
+    boolean existsByAcademicYear_IdAndCode(Long academicYearId, String code);
+
+    boolean existsByAcademicYear_IdAndSortOrder(Long academicYearId, Integer sortOrder);
 
     @EntityGraph(attributePaths = {"academicYear", "status"})
     List<AcademicTerm> findAllByActiveTrueOrderBySortOrderAsc();
@@ -24,7 +26,7 @@ public interface AcademicTermRepository extends JpaRepository<AcademicTerm, Long
             join term.academicYear academicYear
             where term.active = true
               and academicYear.active = true
-              and academicYear.is_published = true
+              and academicYear.isPublished = true
             order by term.sortOrder asc
             """)
     List<AcademicTerm> findAllForStudentCatalogSearchOrderBySortOrderAsc();

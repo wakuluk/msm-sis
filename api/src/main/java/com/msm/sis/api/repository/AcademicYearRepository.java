@@ -21,7 +21,7 @@ public interface AcademicYearRepository extends JpaRepository<AcademicYear, Long
             select academicYear
             from AcademicYear academicYear
             where academicYear.active = true
-              and academicYear.is_published = true
+              and academicYear.isPublished = true
             order by academicYear.startDate
             """)
     List<AcademicYear> findAllPublishedActiveOrderByStartDateAsc();

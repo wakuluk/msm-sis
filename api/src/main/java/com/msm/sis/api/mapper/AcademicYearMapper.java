@@ -10,7 +10,6 @@ import com.msm.sis.api.entity.AcademicTerm;
 import com.msm.sis.api.entity.AcademicTermStatus;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Field;
 import java.util.Comparator;
 import java.util.List;
 
@@ -25,8 +24,8 @@ public class AcademicYearMapper {
         academicYear.setName(trimToNull(request.name()));
         academicYear.setStartDate(request.startDate());
         academicYear.setEndDate(request.endDate());
-        academicYear.setActive(true);
-        setPublished(academicYear, false);
+        academicYear.setActive(false);
+        academicYear.setPublished(false);
         return academicYear;
     }
 
@@ -94,28 +93,8 @@ public class AcademicYearMapper {
                 academicYear.getStartDate(),
                 academicYear.getEndDate(),
                 academicYear.isActive(),
-                isPublished(academicYear),
+                academicYear.isPublished(),
                 termResponses
         );
-    }
-
-    private void setPublished(AcademicYear academicYear, boolean published) {
-        try {
-            Field publishedField = AcademicYear.class.getDeclaredField("is_published");
-            publishedField.setAccessible(true);
-            publishedField.setBoolean(academicYear, published);
-        } catch (NoSuchFieldException | IllegalAccessException exception) {
-            throw new IllegalStateException("Failed to set academic year published state.", exception);
-        }
-    }
-
-    private boolean isPublished(AcademicYear academicYear) {
-        try {
-            Field publishedField = AcademicYear.class.getDeclaredField("is_published");
-            publishedField.setAccessible(true);
-            return publishedField.getBoolean(academicYear);
-        } catch (NoSuchFieldException | IllegalAccessException exception) {
-            throw new IllegalStateException("Failed to read academic year published state.", exception);
-        }
     }
 }

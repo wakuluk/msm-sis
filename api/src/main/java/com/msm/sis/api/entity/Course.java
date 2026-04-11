@@ -11,49 +11,36 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "catalog_course_version")
-public class CatalogCourseVersion {
+@Table(
+        name = "course",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_course_subject_number", columnNames = {"subject_id", "course_number"})
+        }
+)
+public class Course {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "course_version_id")
+    @Column(name = "course_id")
     private Long id;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "course_id", nullable = false)
-    private CatalogCourse course;
+    @JoinColumn(name = "subject_id", nullable = false)
+    private AcademicSubject subject;
 
-    @Column(name = "version_number", nullable = false)
-    private Integer versionNumber;
-
-    @Column(name = "title", nullable = false)
-    private String title;
-
-    @Column(name = "catalog_description")
-    private String catalogDescription;
-
-    @Column(name = "min_credits", nullable = false, precision = 4, scale = 2)
-    private BigDecimal minCredits;
-
-    @Column(name = "max_credits", nullable = false, precision = 4, scale = 2)
-    private BigDecimal maxCredits;
-
-    @Column(name = "is_variable_credit", nullable = false)
-    private boolean variableCredit;
+    @Column(name = "course_number", nullable = false)
+    private String courseNumber;
 
     @Column(name = "active", nullable = false)
     private boolean active = true;
-
-    @Column(name = "is_default", nullable = false)
-    private boolean defaultVersion;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "created_at", insertable = false, updatable = false)

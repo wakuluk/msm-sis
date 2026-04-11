@@ -11,13 +11,20 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
 import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "academic_term")
+@Table(
+        name = "academic_term",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_academic_term_year_code", columnNames = {"academic_year_id", "code"}),
+                @UniqueConstraint(name = "uq_academic_term_year_sort_order", columnNames = {"academic_year_id", "sort_order"})
+        }
+)
 public class AcademicTerm {
 
     @Id
@@ -30,7 +37,7 @@ public class AcademicTerm {
     @JoinColumn(name = "academic_year_id", nullable = false)
     private AcademicYear academicYear;
 
-    @Column(name = "code", nullable = false, unique = true)
+    @Column(name = "code", nullable = false)
     private String code;
 
     @Column(name = "name", nullable = false)

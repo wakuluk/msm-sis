@@ -1,5 +1,7 @@
 package com.msm.sis.api.service;
 
+import com.msm.sis.api.dto.academic.AcademicSubjectReferenceOptionResponse;
+import com.msm.sis.api.dto.academic.AcademicTermReferenceOptionResponse;
 import com.msm.sis.api.dto.catalog.*;
 import com.msm.sis.api.dto.reference.ReferenceOptionResponse;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;

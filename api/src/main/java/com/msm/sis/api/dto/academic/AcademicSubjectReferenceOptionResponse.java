@@ -1,4 +1,4 @@
-package com.msm.sis.api.dto.catalog;
+package com.msm.sis.api.dto.academic;
 
 public record AcademicSubjectReferenceOptionResponse(
         Long id,

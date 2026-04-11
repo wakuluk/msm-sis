@@ -1,6 +1,6 @@
 package com.msm.sis.api.repository;
 
-import com.msm.sis.api.entity.CatalogCourseOffering;
+import com.msm.sis.api.entity.CourseOffering;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -8,9 +8,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-public interface CatalogCourseOfferingRepositoryCustom {
+public interface CourseOfferingRepositoryCustom {
 
-    Page<CatalogCourseOffering> searchCourseOfferings(
+    Page<CourseOffering> searchCourseOfferings(
             String academicYearCode,
             String termCode,
             String departmentCode,
@@ -29,7 +29,7 @@ public interface CatalogCourseOfferingRepositoryCustom {
             Pageable pageable
     );
 
-    Optional<CatalogCourseOffering> findPublicVisibleById(
+    Optional<CourseOffering> findPublicVisibleById(
             Long courseOfferingId,
             List<String> offeringStatusCodes,
             List<String> termStatusCodes

@@ -2,10 +2,10 @@ package com.msm.sis.api.repository;
 
 import com.msm.sis.api.entity.AcademicDepartment;
 import com.msm.sis.api.entity.AcademicYear;
-import com.msm.sis.api.entity.CatalogCourse;
-import com.msm.sis.api.entity.CatalogCourseOffering;
+import com.msm.sis.api.entity.Course;
+import com.msm.sis.api.entity.CourseOffering;
 import com.msm.sis.api.entity.CourseOfferingStatus;
-import com.msm.sis.api.entity.CatalogCourseVersion;
+import com.msm.sis.api.entity.CourseVersion;
 import com.msm.sis.api.entity.AcademicSubject;
 import com.msm.sis.api.entity.AcademicTerm;
 import com.msm.sis.api.entity.AcademicTermStatus;
@@ -37,13 +37,13 @@ import java.util.Map;
 import java.util.Optional;
 
 @Repository
-public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferingRepositoryCustom {
+public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCustom {
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Override
-    public Page<CatalogCourseOffering> searchCourseOfferings(
+    public Page<CourseOffering> searchCourseOfferings(
             String academicYearCode,
             String termCode,
             String departmentCode,
@@ -63,8 +63,8 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
     ) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
 
-        CriteriaQuery<CatalogCourseOffering> query = criteriaBuilder.createQuery(CatalogCourseOffering.class);
-        Root<CatalogCourseOffering> root = query.from(CatalogCourseOffering.class);
+        CriteriaQuery<CourseOffering> query = criteriaBuilder.createQuery(CourseOffering.class);
+        Root<CourseOffering> root = query.from(CourseOffering.class);
         SearchJoins joins = createSearchJoins(root);
 
         List<Predicate> predicates = buildPredicates(
@@ -92,15 +92,15 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
                 .where(predicates.toArray(Predicate[]::new))
                 .orderBy(buildOrders(criteriaBuilder, root, joins, pageable.getSort()));
 
-        TypedQuery<CatalogCourseOffering> typedQuery = entityManager.createQuery(query);
+        TypedQuery<CourseOffering> typedQuery = entityManager.createQuery(query);
         typedQuery.setHint("jakarta.persistence.loadgraph", createSearchEntityGraph());
         typedQuery.setFirstResult((int) pageable.getOffset());
         typedQuery.setMaxResults(pageable.getPageSize());
 
-        List<CatalogCourseOffering> results = typedQuery.getResultList();
+        List<CourseOffering> results = typedQuery.getResultList();
 
         CriteriaQuery<Long> countQuery = criteriaBuilder.createQuery(Long.class);
-        Root<CatalogCourseOffering> countRoot = countQuery.from(CatalogCourseOffering.class);
+        Root<CourseOffering> countRoot = countQuery.from(CourseOffering.class);
         SearchJoins countJoins = createSearchJoins(countRoot);
         List<Predicate> countPredicates = buildPredicates(
                 criteriaBuilder,
@@ -132,14 +132,14 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
     }
 
     @Override
-    public Optional<CatalogCourseOffering> findPublicVisibleById(
+    public Optional<CourseOffering> findPublicVisibleById(
             Long courseOfferingId,
             List<String> offeringStatusCodes,
             List<String> termStatusCodes
     ) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<CatalogCourseOffering> query = criteriaBuilder.createQuery(CatalogCourseOffering.class);
-        Root<CatalogCourseOffering> root = query.from(CatalogCourseOffering.class);
+        CriteriaQuery<CourseOffering> query = criteriaBuilder.createQuery(CourseOffering.class);
+        Root<CourseOffering> root = query.from(CourseOffering.class);
         SearchJoins joins = createSearchJoins(root);
 
         List<Predicate> predicates = new ArrayList<>();
@@ -157,28 +157,28 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
 
         query.select(root).where(predicates.toArray(Predicate[]::new));
 
-        TypedQuery<CatalogCourseOffering> typedQuery = entityManager.createQuery(query);
+        TypedQuery<CourseOffering> typedQuery = entityManager.createQuery(query);
         typedQuery.setHint("jakarta.persistence.loadgraph", createSearchEntityGraph());
 
         return typedQuery.getResultList().stream().findFirst();
     }
 
-    private SearchJoins createSearchJoins(Root<CatalogCourseOffering> root) {
-        Join<CatalogCourseOffering, CatalogCourseVersion> courseVersion = root.join("courseVersion", JoinType.INNER);
-        Join<CatalogCourseVersion, CatalogCourse> course = courseVersion.join("course", JoinType.INNER);
-        Join<CatalogCourse, AcademicSubject> subject = course.join("subject", JoinType.INNER);
+    private SearchJoins createSearchJoins(Root<CourseOffering> root) {
+        Join<CourseOffering, CourseVersion> courseVersion = root.join("courseVersion", JoinType.INNER);
+        Join<CourseVersion, Course> course = courseVersion.join("course", JoinType.INNER);
+        Join<Course, AcademicSubject> subject = course.join("subject", JoinType.INNER);
         Join<AcademicSubject, AcademicDepartment> department = subject.join("department", JoinType.INNER);
-        Join<CatalogCourseOffering, AcademicTerm> term = root.join("term", JoinType.INNER);
+        Join<CourseOffering, AcademicTerm> term = root.join("term", JoinType.INNER);
         Join<AcademicTerm, AcademicYear> academicYear = term.join("academicYear", JoinType.INNER);
         Join<AcademicTerm, AcademicTermStatus> termStatus = term.join("status", JoinType.INNER);
-        Join<CatalogCourseOffering, CourseOfferingStatus> status = root.join("status", JoinType.INNER);
+        Join<CourseOffering, CourseOfferingStatus> status = root.join("status", JoinType.INNER);
 
         return new SearchJoins(courseVersion, course, subject, department, term, academicYear, termStatus, status);
     }
 
     private List<Predicate> buildPredicates(
             CriteriaBuilder criteriaBuilder,
-            Root<CatalogCourseOffering> root,
+            Root<CourseOffering> root,
             SearchJoins joins,
             String academicYearCode,
             String termCode,
@@ -223,7 +223,7 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
         addStatusInPredicate(criteriaBuilder, predicates, joins.termStatus.get("code"), termStatusCodes);
 
         if (isPublished != null) {
-            predicates.add(criteriaBuilder.equal(joins.academicYear.get("is_published"), isPublished));
+            predicates.add(criteriaBuilder.equal(joins.academicYear.get("isPublished"), isPublished));
         }
 
         if (!includeInactive) {
@@ -311,7 +311,7 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
 
     private List<Order> buildOrders(
             CriteriaBuilder criteriaBuilder,
-            Root<CatalogCourseOffering> root,
+            Root<CourseOffering> root,
             SearchJoins joins,
             Sort sort
     ) {
@@ -325,7 +325,7 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
         return orders;
     }
 
-    private Path<?> resolvePath(Root<CatalogCourseOffering> root, SearchJoins joins, String propertyPath) {
+    private Path<?> resolvePath(Root<CourseOffering> root, SearchJoins joins, String propertyPath) {
         Map<String, From<?, ?>> fromByPrefix = Map.of(
                 "", root,
                 "courseVersion", joins.courseVersion,
@@ -350,8 +350,8 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
         return from.get(attribute);
     }
 
-    private EntityGraph<CatalogCourseOffering> createSearchEntityGraph() {
-        EntityGraph<CatalogCourseOffering> graph = entityManager.createEntityGraph(CatalogCourseOffering.class);
+    private EntityGraph<CourseOffering> createSearchEntityGraph() {
+        EntityGraph<CourseOffering> graph = entityManager.createEntityGraph(CourseOffering.class);
         graph.addAttributeNodes("term", "status", "courseVersion");
 
         var termGraph = graph.addSubgraph("term");
@@ -382,14 +382,14 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
     }
 
     private record SearchJoins(
-            Join<CatalogCourseOffering, CatalogCourseVersion> courseVersion,
-            Join<CatalogCourseVersion, CatalogCourse> course,
-            Join<CatalogCourse, AcademicSubject> subject,
+            Join<CourseOffering, CourseVersion> courseVersion,
+            Join<CourseVersion, Course> course,
+            Join<Course, AcademicSubject> subject,
             Join<AcademicSubject, AcademicDepartment> department,
-            Join<CatalogCourseOffering, AcademicTerm> term,
+            Join<CourseOffering, AcademicTerm> term,
             Join<AcademicTerm, AcademicYear> academicYear,
             Join<AcademicTerm, AcademicTermStatus> termStatus,
-            Join<CatalogCourseOffering, CourseOfferingStatus> status
+            Join<CourseOffering, CourseOfferingStatus> status
     ) {
     }
 }

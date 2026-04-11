@@ -1,4 +1,4 @@
-package com.msm.sis.api.dto.catalog;
+package com.msm.sis.api.dto.course;
 
 import java.math.BigDecimal;
 
