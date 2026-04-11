@@ -4,7 +4,7 @@ import com.msm.sis.api.entity.AcademicDepartment;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.CatalogCourse;
 import com.msm.sis.api.entity.CatalogCourseOffering;
-import com.msm.sis.api.entity.CatalogCourseOfferingStatus;
+import com.msm.sis.api.entity.CourseOfferingStatus;
 import com.msm.sis.api.entity.CatalogCourseVersion;
 import com.msm.sis.api.entity.AcademicSubject;
 import com.msm.sis.api.entity.AcademicTerm;
@@ -171,7 +171,7 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
         Join<CatalogCourseOffering, AcademicTerm> term = root.join("term", JoinType.INNER);
         Join<AcademicTerm, AcademicYear> academicYear = term.join("academicYear", JoinType.INNER);
         Join<AcademicTerm, AcademicTermStatus> termStatus = term.join("status", JoinType.INNER);
-        Join<CatalogCourseOffering, CatalogCourseOfferingStatus> status = root.join("status", JoinType.INNER);
+        Join<CatalogCourseOffering, CourseOfferingStatus> status = root.join("status", JoinType.INNER);
 
         return new SearchJoins(courseVersion, course, subject, department, term, academicYear, termStatus, status);
     }
@@ -389,7 +389,7 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
             Join<CatalogCourseOffering, AcademicTerm> term,
             Join<AcademicTerm, AcademicYear> academicYear,
             Join<AcademicTerm, AcademicTermStatus> termStatus,
-            Join<CatalogCourseOffering, CatalogCourseOfferingStatus> status
+            Join<CatalogCourseOffering, CourseOfferingStatus> status
     ) {
     }
 }

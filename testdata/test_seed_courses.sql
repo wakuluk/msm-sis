@@ -388,7 +388,7 @@ FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
 JOIN academic_subject s ON s.subject_id = c.subject_id
 JOIN academic_term t ON t.code = 'FALL-2026'
-JOIN catalog_course_offering_status cos ON cos.code = 'OPEN_FOR_REGISTRATION'
+JOIN course_offering_status cos ON cos.code = 'OPEN_FOR_REGISTRATION'
 WHERE s.code = 'TOLK'
   AND c.course_number = '101'
   AND cv.version_number = 1
@@ -413,7 +413,7 @@ FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
 JOIN academic_subject s ON s.subject_id = c.subject_id
 JOIN academic_term t ON t.code = 'SPRING-2027'
-JOIN catalog_course_offering_status cos ON cos.code = 'OPEN_FOR_DISPLAY'
+JOIN course_offering_status cos ON cos.code = 'OPEN_FOR_DISPLAY'
 WHERE s.code = 'TOLK'
   AND c.course_number = '101'
   AND cv.version_number = 2
@@ -438,7 +438,7 @@ FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
 JOIN academic_subject s ON s.subject_id = c.subject_id
 JOIN academic_term t ON t.code = 'FALL-2026'
-JOIN catalog_course_offering_status cos ON cos.code = 'OPEN_FOR_DISPLAY'
+JOIN course_offering_status cos ON cos.code = 'OPEN_FOR_DISPLAY'
 WHERE s.code = 'TOLK'
   AND c.course_number = '240'
   AND cv.version_number = 1
@@ -463,7 +463,7 @@ FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
 JOIN academic_subject s ON s.subject_id = c.subject_id
 JOIN academic_term t ON t.code = 'SPRING-2027'
-JOIN catalog_course_offering_status cos ON cos.code = 'PLANNED'
+JOIN course_offering_status cos ON cos.code = 'PLANNED'
 WHERE s.code = 'ELV'
   AND c.course_number = '201'
   AND cv.version_number = 1
@@ -488,7 +488,7 @@ FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
 JOIN academic_subject s ON s.subject_id = c.subject_id
 JOIN academic_term t ON t.code = 'FALL-2027'
-JOIN catalog_course_offering_status cos ON cos.code = 'PLANNED'
+JOIN course_offering_status cos ON cos.code = 'PLANNED'
 WHERE s.code = 'MEH'
   AND c.course_number = '310'
   AND cv.version_number = 1
@@ -513,7 +513,7 @@ FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
 JOIN academic_subject s ON s.subject_id = c.subject_id
 JOIN academic_term t ON t.code = 'SPRING-2027'
-JOIN catalog_course_offering_status cos ON cos.code = 'OPEN_FOR_DISPLAY'
+JOIN course_offering_status cos ON cos.code = 'OPEN_FOR_DISPLAY'
 WHERE s.code = 'TOLK'
   AND c.course_number = '480'
   AND cv.version_number = 1

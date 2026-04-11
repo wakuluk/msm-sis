@@ -38,7 +38,7 @@ public class CatalogCourseOffering {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_offering_status_id", nullable = false)
-    private CatalogCourseOfferingStatus status;
+    private CourseOfferingStatus status;
 
     @Column(name = "notes")
     private String notes;

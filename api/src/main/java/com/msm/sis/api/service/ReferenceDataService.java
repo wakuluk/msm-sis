@@ -5,7 +5,7 @@ import com.msm.sis.api.dto.reference.ReferenceOptionResponse;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
 import com.msm.sis.api.repository.AcademicDepartmentRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
-import com.msm.sis.api.repository.CatalogCourseOfferingStatusRepository;
+import com.msm.sis.api.repository.CourseOfferingStatusRepository;
 import com.msm.sis.api.repository.AcademicSubjectRepository;
 import com.msm.sis.api.repository.AcademicTermRepository;
 import com.msm.sis.api.repository.AcademicTermStatusRepository;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 public class ReferenceDataService {
 
     private final AcademicYearRepository catalogAcademicYearRepository;
-    private final CatalogCourseOfferingStatusRepository catalogCourseOfferingStatusRepository;
+    private final CourseOfferingStatusRepository courseOfferingStatusRepository;
     private final AcademicDepartmentRepository academicDepartmentRepository;
     private final AcademicSubjectRepository academicSubjectRepository;
     private final AcademicTermRepository AcademicTermRepository;
@@ -30,7 +30,7 @@ public class ReferenceDataService {
 
     public ReferenceDataService(
             AcademicYearRepository catalogAcademicYearRepository,
-            CatalogCourseOfferingStatusRepository catalogCourseOfferingStatusRepository,
+            CourseOfferingStatusRepository courseOfferingStatusRepository,
             AcademicDepartmentRepository academicDepartmentRepository,
             AcademicSubjectRepository academicSubjectRepository,
             AcademicTermRepository AcademicTermRepository,
@@ -40,7 +40,7 @@ public class ReferenceDataService {
             ClassStandingRepository classStandingRepository
     ) {
         this.catalogAcademicYearRepository = catalogAcademicYearRepository;
-        this.catalogCourseOfferingStatusRepository = catalogCourseOfferingStatusRepository;
+        this.courseOfferingStatusRepository = courseOfferingStatusRepository;
         this.academicDepartmentRepository = academicDepartmentRepository;
         this.academicSubjectRepository = academicSubjectRepository;
         this.AcademicTermRepository = AcademicTermRepository;
@@ -100,7 +100,7 @@ public class ReferenceDataService {
                                 subject.getDepartment().getName()
                         ))
                         .toList(),
-                catalogCourseOfferingStatusRepository.findAllByActiveTrueOrderByNameAsc().stream()
+                courseOfferingStatusRepository.findAllByActiveTrueOrderByNameAsc().stream()
                         .map(status -> new CatalogReferenceOptionResponse(
                                 status.getId(),
                                 status.getCode(),

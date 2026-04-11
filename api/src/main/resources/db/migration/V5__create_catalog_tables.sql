@@ -12,7 +12,7 @@ CREATE TABLE academic_term_status (
     active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE TABLE catalog_course_offering_status (
+CREATE TABLE course_offering_status (
     course_offering_status_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
@@ -27,7 +27,7 @@ INSERT INTO academic_term_status (code, name) VALUES
     ('COMPLETED', 'Completed'),
     ('CANCELLED', 'Cancelled');
 
-INSERT INTO catalog_course_offering_status (code, name) VALUES
+INSERT INTO course_offering_status (code, name) VALUES
     ('PLANNED', 'Planned'),
     ('OPEN_FOR_DISPLAY', 'Open for Display'),
     ('OPEN_FOR_REGISTRATION', 'Open for Registration'),
@@ -42,11 +42,11 @@ CREATE TABLE academic_year (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
 
-    active BOOLEAN NOT NULL DEFAULT TRUE,
+    active BOOLEAN NOT NULL DEFAULT FALSE,
     is_published BOOLEAN NOT NULL DEFAULT FALSE,
 
 
-    CONSTRAINT chk_catalog_academic_year_date_range
+    CONSTRAINT chk_academic_year_date_range
        CHECK (start_date <= end_date)
 );
 
@@ -153,9 +153,9 @@ CREATE TABLE catalog_course_offering (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_catalog_course_offering_status
+    CONSTRAINT fk_course_offering_status
         FOREIGN KEY (course_offering_status_id)
-            REFERENCES catalog_course_offering_status(course_offering_status_id),
+            REFERENCES course_offering_status(course_offering_status_id),
 
     CONSTRAINT fk_catalog_course_offering_course_version
         FOREIGN KEY (course_version_id)
