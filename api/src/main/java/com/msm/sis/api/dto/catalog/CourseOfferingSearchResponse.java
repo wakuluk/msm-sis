@@ -1,4 +1,4 @@
-package com.msm.sis.api.dto;
+package com.msm.sis.api.dto.catalog;
 
 import java.util.List;
 

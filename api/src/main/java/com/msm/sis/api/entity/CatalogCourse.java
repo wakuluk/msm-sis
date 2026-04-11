@@ -28,7 +28,7 @@ public class CatalogCourse {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id", nullable = false)
-    private CatalogSubject subject;
+    private AcademicSubject subject;
 
     @Column(name = "course_number", nullable = false)
     private String courseNumber;

@@ -5,7 +5,7 @@ CREATE TABLE academic_department (
     active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE TABLE catalog_term_status (
+CREATE TABLE academic_term_status (
     term_status_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE catalog_course_offering_status (
     active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-INSERT INTO catalog_term_status (code, name) VALUES
+INSERT INTO academic_term_status (code, name) VALUES
     ('PLANNED', 'Planned'),
     ('REGISTRATION_OPEN', 'Registration Open'),
     ('REGISTRATION_CLOSED', 'Registration Closed'),
@@ -50,14 +50,14 @@ CREATE TABLE academic_year (
        CHECK (start_date <= end_date)
 );
 
-CREATE TABLE catalog_subject (
+CREATE TABLE academic_subject (
     subject_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     department_id BIGINT NOT NULL,
     code VARCHAR(20) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
 
-    CONSTRAINT fk_catalog_subject_department
+    CONSTRAINT fk_academic_subject_department
         FOREIGN KEY (department_id) REFERENCES academic_department(department_id)
 );
 
@@ -72,7 +72,7 @@ CREATE TABLE catalog_course (
         ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_catalog_course_subject
-        FOREIGN KEY (subject_id) REFERENCES catalog_subject(subject_id),
+        FOREIGN KEY (subject_id) REFERENCES academic_subject(subject_id),
 
     CONSTRAINT uq_catalog_course_subject_number
         UNIQUE (subject_id, course_number)
@@ -114,7 +114,7 @@ CREATE TABLE catalog_course_version (
         CHECK (is_default = FALSE OR active = TRUE)
 );
 
-CREATE TABLE catalog_term (
+CREATE TABLE academic_term (
     term_id BIGINT PRIMARY KEY AUTO_INCREMENT,
 
     academic_year_id BIGINT NOT NULL,
@@ -130,13 +130,13 @@ CREATE TABLE catalog_term (
     term_status_id BIGINT NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
 
-    CONSTRAINT fk_catalog_term_academic_year
+    CONSTRAINT fk_academic_term_academic_year
       FOREIGN KEY (academic_year_id) REFERENCES academic_year(academic_year_id),
 
-    CONSTRAINT fk_catalog_term_status
-      FOREIGN KEY (term_status_id) REFERENCES catalog_term_status(term_status_id),
+    CONSTRAINT fk_academic_term_status
+      FOREIGN KEY (term_status_id) REFERENCES academic_term_status(term_status_id),
 
-    CONSTRAINT chk_catalog_term_date_range
+    CONSTRAINT chk_academic_term_date_range
       CHECK (start_date <= end_date)
 );
 
@@ -162,7 +162,7 @@ CREATE TABLE catalog_course_offering (
             REFERENCES catalog_course_version(course_version_id),
 
     CONSTRAINT fk_catalog_course_offering_term
-        FOREIGN KEY (term_id) REFERENCES catalog_term(term_id),
+        FOREIGN KEY (term_id) REFERENCES academic_term(term_id),
 
     CONSTRAINT uq_catalog_course_offering_version_term
         UNIQUE (course_version_id, term_id)

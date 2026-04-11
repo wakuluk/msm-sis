@@ -2,7 +2,7 @@ package com.msm.sis.api.mapper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.msm.sis.api.dto.StudentProfileResponse;
+import com.msm.sis.api.dto.student.StudentProfileResponse;
 import com.msm.sis.api.entity.Student;
 import org.junit.jupiter.api.Test;
 

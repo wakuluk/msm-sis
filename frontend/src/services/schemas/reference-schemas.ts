@@ -23,7 +23,7 @@ export const CatalogReferenceOptionSchema = z.object({
 
 export type CatalogReferenceOption = z.infer<typeof CatalogReferenceOptionSchema>;
 
-export const CatalogTermReferenceOptionSchema = z.object({
+export const AcademicTermReferenceOptionSchema = z.object({
   id: z.number(),
   code: z.string(),
   name: z.string(),
@@ -32,9 +32,9 @@ export const CatalogTermReferenceOptionSchema = z.object({
   academicYearName: z.string(),
 });
 
-export type CatalogTermReferenceOption = z.infer<typeof CatalogTermReferenceOptionSchema>;
+export type AcademicTermReferenceOption = z.infer<typeof AcademicTermReferenceOptionSchema>;
 
-export const CatalogSubjectReferenceOptionSchema = z.object({
+export const AcademicSubjectReferenceOptionSchema = z.object({
   id: z.number(),
   code: z.string(),
   name: z.string(),
@@ -43,13 +43,13 @@ export const CatalogSubjectReferenceOptionSchema = z.object({
   departmentName: z.string(),
 });
 
-export type CatalogSubjectReferenceOption = z.infer<typeof CatalogSubjectReferenceOptionSchema>;
+export type AcademicSubjectReferenceOption = z.infer<typeof AcademicSubjectReferenceOptionSchema>;
 
 export const CatalogSearchReferenceOptionsResponseSchema = z.object({
   academicYears: z.array(CatalogReferenceOptionSchema),
-  terms: z.array(CatalogTermReferenceOptionSchema),
+  terms: z.array(AcademicTermReferenceOptionSchema),
   departments: z.array(CatalogReferenceOptionSchema),
-  subjects: z.array(CatalogSubjectReferenceOptionSchema),
+  subjects: z.array(AcademicSubjectReferenceOptionSchema),
   offeringStatuses: z.array(CatalogReferenceOptionSchema).default([]),
   termStatuses: z.array(CatalogReferenceOptionSchema).default([]),
 });

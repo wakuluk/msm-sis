@@ -33,7 +33,7 @@ public class CatalogCourseOffering {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "term_id", nullable = false)
-    private CatalogTerm term;
+    private AcademicTerm term;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)

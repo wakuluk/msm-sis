@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
 
-public interface CatalogAcademicYearRepository extends JpaRepository<AcademicYear, Long> {
+public interface AcademicYearRepository extends JpaRepository<AcademicYear, Long> {
     Optional<AcademicYear> findByCode(String code);
     boolean existsByCode(String code);
     @Query("""

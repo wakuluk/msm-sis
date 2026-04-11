@@ -1,6 +1,6 @@
 package com.msm.sis.api.dto.catalog;
 
-public record CatalogSubjectReferenceOptionResponse(
+public record AcademicSubjectReferenceOptionResponse(
         Long id,
         String code,
         String name,

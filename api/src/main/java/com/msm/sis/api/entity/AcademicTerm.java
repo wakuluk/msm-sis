@@ -17,8 +17,8 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "catalog_term")
-public class CatalogTerm {
+@Table(name = "academic_term")
+public class AcademicTerm {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,7 +50,7 @@ public class CatalogTerm {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "term_status_id", nullable = false)
-    private CatalogTermStatus status;
+    private AcademicTermStatus status;
 
     @Column(name = "active", nullable = false)
     private boolean active = true;

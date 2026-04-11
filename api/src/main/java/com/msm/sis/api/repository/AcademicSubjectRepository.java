@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-public interface CatalogSubjectRepository extends JpaRepository<AcademicSubject, Long> {
+public interface AcademicSubjectRepository extends JpaRepository<AcademicSubject, Long> {
     @EntityGraph(attributePaths = {"department"})
     Optional<AcademicSubject> findByCode(String code);
 

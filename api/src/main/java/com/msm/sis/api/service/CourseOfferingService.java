@@ -1,6 +1,6 @@
 package com.msm.sis.api.service;
 
-import com.msm.sis.api.dto.*;
+import com.msm.sis.api.dto.catalog.*;
 import com.msm.sis.api.entity.CatalogCourseOffering;
 import com.msm.sis.api.mapper.CourseMapper;
 import com.msm.sis.api.mapper.CourseOfferingAdvancedSearchCriteriaMapper;

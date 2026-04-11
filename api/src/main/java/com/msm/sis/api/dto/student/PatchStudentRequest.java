@@ -1,4 +1,4 @@
-package com.msm.sis.api.dto;
+package com.msm.sis.api.dto.student;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.msm.sis.api.patch.PatchValue;

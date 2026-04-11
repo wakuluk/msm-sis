@@ -1,11 +1,11 @@
 package com.msm.sis.api.mapper;
 
-import com.msm.sis.api.dto.CreateStudentRequest;
-import com.msm.sis.api.dto.PatchStudentRequest;
-import com.msm.sis.api.dto.StudentDetailResponse;
-import com.msm.sis.api.dto.StudentProfileResponse;
-import com.msm.sis.api.dto.StudentSearchResponse;
-import com.msm.sis.api.dto.StudentSearchResultResponse;
+import com.msm.sis.api.dto.student.CreateStudentRequest;
+import com.msm.sis.api.dto.student.PatchStudentRequest;
+import com.msm.sis.api.dto.student.StudentDetailResponse;
+import com.msm.sis.api.dto.student.StudentProfileResponse;
+import com.msm.sis.api.dto.student.StudentSearchResponse;
+import com.msm.sis.api.dto.student.StudentSearchResultResponse;
 import com.msm.sis.api.entity.Address;
 import com.msm.sis.api.entity.Student;
 import com.msm.sis.api.patch.PatchValue;

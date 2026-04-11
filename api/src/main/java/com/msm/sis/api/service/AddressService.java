@@ -1,7 +1,7 @@
 package com.msm.sis.api.service;
 
-import com.msm.sis.api.dto.CreateStudentRequest;
-import com.msm.sis.api.dto.PatchStudentRequest;
+import com.msm.sis.api.dto.student.CreateStudentRequest;
+import com.msm.sis.api.dto.student.PatchStudentRequest;
 import com.msm.sis.api.entity.Address;
 import com.msm.sis.api.patch.PatchValue;
 import com.msm.sis.api.repository.AddressRepository;

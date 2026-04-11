@@ -14,8 +14,8 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "catalog_subject")
-public class CatalogSubject {
+@Table(name = "academic_subject")
+public class AcademicSubject {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

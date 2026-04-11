@@ -25,33 +25,33 @@ WHERE NOT EXISTS (
     WHERE code = 'HIST'
 );
 
-INSERT INTO catalog_subject (department_id, code, name, active)
+INSERT INTO academic_subject (department_id, code, name, active)
 SELECT d.department_id, 'TOLK', 'Tolkien Studies', TRUE
 FROM academic_department d
 WHERE d.code = 'HUM'
   AND NOT EXISTS (
       SELECT 1
-      FROM catalog_subject
+      FROM academic_subject
       WHERE code = 'TOLK'
   );
 
-INSERT INTO catalog_subject (department_id, code, name, active)
+INSERT INTO academic_subject (department_id, code, name, active)
 SELECT d.department_id, 'ELV', 'Elvish Languages', TRUE
 FROM academic_department d
 WHERE d.code = 'LANG'
   AND NOT EXISTS (
       SELECT 1
-      FROM catalog_subject
+      FROM academic_subject
       WHERE code = 'ELV'
   );
 
-INSERT INTO catalog_subject (department_id, code, name, active)
+INSERT INTO academic_subject (department_id, code, name, active)
 SELECT d.department_id, 'MEH', 'Middle-earth History', TRUE
 FROM academic_department d
 WHERE d.code = 'HIST'
   AND NOT EXISTS (
       SELECT 1
-      FROM catalog_subject
+      FROM academic_subject
       WHERE code = 'MEH'
   );
 
@@ -87,42 +87,42 @@ SET name = 'Academic Year 2027-2028',
     is_published = FALSE
 WHERE code = 'AY-2027-2028';
 
-INSERT INTO catalog_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
+INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
 SELECT ay.academic_year_id, 'FALL-2026', 'Fall 2026', '2026-08-24', '2026-12-11', 202630, ts.term_status_id, TRUE
-FROM catalog_term_status ts
+FROM academic_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2026-2027'
 WHERE ts.code = 'REGISTRATION_OPEN'
   AND NOT EXISTS (
       SELECT 1
-      FROM catalog_term
+      FROM academic_term
       WHERE code = 'FALL-2026'
   );
 
-INSERT INTO catalog_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
+INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
 SELECT ay.academic_year_id, 'SPRING-2027', 'Spring 2027', '2027-01-19', '2027-05-07', 202710, ts.term_status_id, TRUE
-FROM catalog_term_status ts
+FROM academic_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2026-2027'
 WHERE ts.code = 'PLANNED'
   AND NOT EXISTS (
       SELECT 1
-      FROM catalog_term
+      FROM academic_term
       WHERE code = 'SPRING-2027'
   );
 
-INSERT INTO catalog_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
+INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
 SELECT ay.academic_year_id, 'FALL-2027', 'Fall 2027', '2027-08-23', '2027-12-10', 202730, ts.term_status_id, TRUE
-FROM catalog_term_status ts
+FROM academic_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2027-2028'
 WHERE ts.code = 'PLANNED'
   AND NOT EXISTS (
       SELECT 1
-      FROM catalog_term
+      FROM academic_term
       WHERE code = 'FALL-2027'
   );
 
-UPDATE catalog_term term
+UPDATE academic_term term
 JOIN academic_year ay ON ay.code = 'AY-2026-2027'
-JOIN catalog_term_status ts ON ts.code = 'REGISTRATION_OPEN'
+JOIN academic_term_status ts ON ts.code = 'REGISTRATION_OPEN'
 SET term.academic_year_id = ay.academic_year_id,
     term.name = 'Fall 2026',
     term.start_date = '2026-08-24',
@@ -135,7 +135,7 @@ WHERE term.code = 'FALL-2026'
 
 INSERT INTO catalog_course (subject_id, course_number, active)
 SELECT s.subject_id, '101', TRUE
-FROM catalog_subject s
+FROM academic_subject s
 WHERE s.code = 'TOLK'
   AND NOT EXISTS (
       SELECT 1
@@ -146,7 +146,7 @@ WHERE s.code = 'TOLK'
 
 INSERT INTO catalog_course (subject_id, course_number, active)
 SELECT s.subject_id, '240', TRUE
-FROM catalog_subject s
+FROM academic_subject s
 WHERE s.code = 'TOLK'
   AND NOT EXISTS (
       SELECT 1
@@ -157,7 +157,7 @@ WHERE s.code = 'TOLK'
 
 INSERT INTO catalog_course (subject_id, course_number, active)
 SELECT s.subject_id, '201', TRUE
-FROM catalog_subject s
+FROM academic_subject s
 WHERE s.code = 'ELV'
   AND NOT EXISTS (
       SELECT 1
@@ -168,7 +168,7 @@ WHERE s.code = 'ELV'
 
 INSERT INTO catalog_course (subject_id, course_number, active)
 SELECT s.subject_id, '310', TRUE
-FROM catalog_subject s
+FROM academic_subject s
 WHERE s.code = 'MEH'
   AND NOT EXISTS (
       SELECT 1
@@ -179,7 +179,7 @@ WHERE s.code = 'MEH'
 
 INSERT INTO catalog_course (subject_id, course_number, active)
 SELECT s.subject_id, '480', TRUE
-FROM catalog_subject s
+FROM academic_subject s
 WHERE s.code = 'TOLK'
   AND NOT EXISTS (
       SELECT 1
@@ -209,7 +209,7 @@ SELECT c.course_id,
        TRUE,
        TRUE
 FROM catalog_course c
-JOIN catalog_subject s ON s.subject_id = c.subject_id
+JOIN academic_subject s ON s.subject_id = c.subject_id
 WHERE s.code = 'TOLK'
   AND c.course_number = '101'
   AND NOT EXISTS (
@@ -240,7 +240,7 @@ SELECT c.course_id,
        TRUE,
        FALSE
 FROM catalog_course c
-JOIN catalog_subject s ON s.subject_id = c.subject_id
+JOIN academic_subject s ON s.subject_id = c.subject_id
 WHERE s.code = 'TOLK'
   AND c.course_number = '101'
   AND NOT EXISTS (
@@ -271,7 +271,7 @@ SELECT c.course_id,
        TRUE,
        TRUE
 FROM catalog_course c
-JOIN catalog_subject s ON s.subject_id = c.subject_id
+JOIN academic_subject s ON s.subject_id = c.subject_id
 WHERE s.code = 'TOLK'
   AND c.course_number = '240'
   AND NOT EXISTS (
@@ -302,7 +302,7 @@ SELECT c.course_id,
        TRUE,
        TRUE
 FROM catalog_course c
-JOIN catalog_subject s ON s.subject_id = c.subject_id
+JOIN academic_subject s ON s.subject_id = c.subject_id
 WHERE s.code = 'ELV'
   AND c.course_number = '201'
   AND NOT EXISTS (
@@ -333,7 +333,7 @@ SELECT c.course_id,
        TRUE,
        TRUE
 FROM catalog_course c
-JOIN catalog_subject s ON s.subject_id = c.subject_id
+JOIN academic_subject s ON s.subject_id = c.subject_id
 WHERE s.code = 'MEH'
   AND c.course_number = '310'
   AND NOT EXISTS (
@@ -364,7 +364,7 @@ SELECT c.course_id,
        TRUE,
        TRUE
 FROM catalog_course c
-JOIN catalog_subject s ON s.subject_id = c.subject_id
+JOIN academic_subject s ON s.subject_id = c.subject_id
 WHERE s.code = 'TOLK'
   AND c.course_number = '480'
   AND NOT EXISTS (
@@ -386,8 +386,8 @@ SELECT cv.course_version_id,
        'Featured in the Great Books cluster.'
 FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
-JOIN catalog_subject s ON s.subject_id = c.subject_id
-JOIN catalog_term t ON t.code = 'FALL-2026'
+JOIN academic_subject s ON s.subject_id = c.subject_id
+JOIN academic_term t ON t.code = 'FALL-2026'
 JOIN catalog_course_offering_status cos ON cos.code = 'OPEN_FOR_REGISTRATION'
 WHERE s.code = 'TOLK'
   AND c.course_number = '101'
@@ -411,8 +411,8 @@ SELECT cv.course_version_id,
        'Includes a weekend film-comparison workshop.'
 FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
-JOIN catalog_subject s ON s.subject_id = c.subject_id
-JOIN catalog_term t ON t.code = 'SPRING-2027'
+JOIN academic_subject s ON s.subject_id = c.subject_id
+JOIN academic_term t ON t.code = 'SPRING-2027'
 JOIN catalog_course_offering_status cos ON cos.code = 'OPEN_FOR_DISPLAY'
 WHERE s.code = 'TOLK'
   AND c.course_number = '101'
@@ -436,8 +436,8 @@ SELECT cv.course_version_id,
        'Seminar format with weekly textual analysis.'
 FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
-JOIN catalog_subject s ON s.subject_id = c.subject_id
-JOIN catalog_term t ON t.code = 'FALL-2026'
+JOIN academic_subject s ON s.subject_id = c.subject_id
+JOIN academic_term t ON t.code = 'FALL-2026'
 JOIN catalog_course_offering_status cos ON cos.code = 'OPEN_FOR_DISPLAY'
 WHERE s.code = 'TOLK'
   AND c.course_number = '240'
@@ -461,8 +461,8 @@ SELECT cv.course_version_id,
        'Cross-listed with linguistics discussion groups.'
 FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
-JOIN catalog_subject s ON s.subject_id = c.subject_id
-JOIN catalog_term t ON t.code = 'SPRING-2027'
+JOIN academic_subject s ON s.subject_id = c.subject_id
+JOIN academic_term t ON t.code = 'SPRING-2027'
 JOIN catalog_course_offering_status cos ON cos.code = 'PLANNED'
 WHERE s.code = 'ELV'
   AND c.course_number = '201'
@@ -486,8 +486,8 @@ SELECT cv.course_version_id,
        'Focuses on Gondor, Arnor, and the long defeat.'
 FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
-JOIN catalog_subject s ON s.subject_id = c.subject_id
-JOIN catalog_term t ON t.code = 'FALL-2027'
+JOIN academic_subject s ON s.subject_id = c.subject_id
+JOIN academic_term t ON t.code = 'FALL-2027'
 JOIN catalog_course_offering_status cos ON cos.code = 'PLANNED'
 WHERE s.code = 'MEH'
   AND c.course_number = '310'
@@ -511,8 +511,8 @@ SELECT cv.course_version_id,
        'Independent projects require faculty approval.'
 FROM catalog_course_version cv
 JOIN catalog_course c ON c.course_id = cv.course_id
-JOIN catalog_subject s ON s.subject_id = c.subject_id
-JOIN catalog_term t ON t.code = 'SPRING-2027'
+JOIN academic_subject s ON s.subject_id = c.subject_id
+JOIN academic_term t ON t.code = 'SPRING-2027'
 JOIN catalog_course_offering_status cos ON cos.code = 'OPEN_FOR_DISPLAY'
 WHERE s.code = 'TOLK'
   AND c.course_number = '480'

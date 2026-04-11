@@ -1,8 +1,8 @@
 package com.msm.sis.api.mapper;
 
-import com.msm.sis.api.dto.CourseOfferingDetailResponse;
-import com.msm.sis.api.dto.CourseOfferingSearchResponse;
-import com.msm.sis.api.dto.CourseOfferingSearchResultResponse;
+import com.msm.sis.api.dto.catalog.CourseOfferingDetailResponse;
+import com.msm.sis.api.dto.catalog.CourseOfferingSearchResponse;
+import com.msm.sis.api.dto.catalog.CourseOfferingSearchResultResponse;
 import com.msm.sis.api.entity.CatalogCourse;
 import com.msm.sis.api.entity.CatalogCourseOffering;
 import com.msm.sis.api.entity.CatalogCourseVersion;

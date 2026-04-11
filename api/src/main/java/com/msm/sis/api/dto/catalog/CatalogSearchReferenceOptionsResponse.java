@@ -1,11 +1,11 @@
-package com.msm.sis.api.dto;
+package com.msm.sis.api.dto.catalog;
 
 import java.util.List;
 
 public record CatalogSearchReferenceOptionsResponse(
         List<CatalogReferenceOptionResponse> academicYears,
-        List<CatalogTermReferenceOptionResponse> terms,
+        List<AcademicTermReferenceOptionResponse> terms,
         List<CatalogReferenceOptionResponse> departments,
-        List<CatalogSubjectReferenceOptionResponse> subjects
+        List<AcademicSubjectReferenceOptionResponse> subjects
 ) {
 }

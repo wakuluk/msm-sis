@@ -1,12 +1,14 @@
 package com.msm.sis.api.service;
 
-import com.msm.sis.api.dto.*;
+import com.msm.sis.api.dto.catalog.*;
+import com.msm.sis.api.dto.reference.ReferenceOptionResponse;
+import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
 import com.msm.sis.api.repository.AcademicDepartmentRepository;
-import com.msm.sis.api.repository.CatalogAcademicYearRepository;
+import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.repository.CatalogCourseOfferingStatusRepository;
-import com.msm.sis.api.repository.CatalogSubjectRepository;
-import com.msm.sis.api.repository.CatalogTermRepository;
-import com.msm.sis.api.repository.CatalogTermStatusRepository;
+import com.msm.sis.api.repository.AcademicSubjectRepository;
+import com.msm.sis.api.repository.AcademicTermRepository;
+import com.msm.sis.api.repository.AcademicTermStatusRepository;
 import com.msm.sis.api.repository.ClassStandingRepository;
 import com.msm.sis.api.repository.EthnicityRepository;
 import com.msm.sis.api.repository.GenderRepository;
@@ -16,23 +18,23 @@ import org.springframework.stereotype.Service;
 @Service
 public class ReferenceDataService {
 
-    private final CatalogAcademicYearRepository catalogAcademicYearRepository;
+    private final AcademicYearRepository catalogAcademicYearRepository;
     private final CatalogCourseOfferingStatusRepository catalogCourseOfferingStatusRepository;
     private final AcademicDepartmentRepository academicDepartmentRepository;
-    private final CatalogSubjectRepository catalogSubjectRepository;
-    private final CatalogTermRepository catalogTermRepository;
-    private final CatalogTermStatusRepository catalogTermStatusRepository;
+    private final AcademicSubjectRepository academicSubjectRepository;
+    private final AcademicTermRepository AcademicTermRepository;
+    private final AcademicTermStatusRepository AcademicTermStatusRepository;
     private final EthnicityRepository ethnicityRepository;
     private final ClassStandingRepository classStandingRepository;
     private final GenderRepository genderRepository;
 
     public ReferenceDataService(
-            CatalogAcademicYearRepository catalogAcademicYearRepository,
+            AcademicYearRepository catalogAcademicYearRepository,
             CatalogCourseOfferingStatusRepository catalogCourseOfferingStatusRepository,
             AcademicDepartmentRepository academicDepartmentRepository,
-            CatalogSubjectRepository catalogSubjectRepository,
-            CatalogTermRepository catalogTermRepository,
-            CatalogTermStatusRepository catalogTermStatusRepository,
+            AcademicSubjectRepository academicSubjectRepository,
+            AcademicTermRepository AcademicTermRepository,
+            AcademicTermStatusRepository AcademicTermStatusRepository,
             GenderRepository genderRepository,
             EthnicityRepository ethnicityRepository,
             ClassStandingRepository classStandingRepository
@@ -40,9 +42,9 @@ public class ReferenceDataService {
         this.catalogAcademicYearRepository = catalogAcademicYearRepository;
         this.catalogCourseOfferingStatusRepository = catalogCourseOfferingStatusRepository;
         this.academicDepartmentRepository = academicDepartmentRepository;
-        this.catalogSubjectRepository = catalogSubjectRepository;
-        this.catalogTermRepository = catalogTermRepository;
-        this.catalogTermStatusRepository = catalogTermStatusRepository;
+        this.academicSubjectRepository = academicSubjectRepository;
+        this.AcademicTermRepository = AcademicTermRepository;
+        this.AcademicTermStatusRepository = AcademicTermStatusRepository;
         this.genderRepository = genderRepository;
         this.ethnicityRepository = ethnicityRepository;
         this.classStandingRepository = classStandingRepository;
@@ -71,8 +73,8 @@ public class ReferenceDataService {
                                 academicYear.getName()
                         ))
                         .toList(),
-                catalogTermRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(term -> new CatalogTermReferenceOptionResponse(
+                AcademicTermRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(term -> new AcademicTermReferenceOptionResponse(
                                 term.getId(),
                                 term.getCode(),
                                 term.getName(),
@@ -88,8 +90,8 @@ public class ReferenceDataService {
                                 department.getName()
                         ))
                         .toList(),
-                catalogSubjectRepository.findAllByActiveTrueOrderByCodeAsc().stream()
-                        .map(subject -> new CatalogSubjectReferenceOptionResponse(
+                academicSubjectRepository.findAllByActiveTrueOrderByCodeAsc().stream()
+                        .map(subject -> new AcademicSubjectReferenceOptionResponse(
                                 subject.getId(),
                                 subject.getCode(),
                                 subject.getName(),
@@ -105,7 +107,7 @@ public class ReferenceDataService {
                                 status.getName()
                         ))
                         .toList(),
-                catalogTermStatusRepository.findAllByActiveTrueOrderByNameAsc().stream()
+                AcademicTermStatusRepository.findAllByActiveTrueOrderByNameAsc().stream()
                         .map(status -> new CatalogReferenceOptionResponse(
                                 status.getId(),
                                 status.getCode(),
@@ -124,8 +126,8 @@ public class ReferenceDataService {
                                 academicYear.getName()
                         ))
                         .toList(),
-                catalogTermRepository.findAllForStudentCatalogSearchOrderBySortOrderAsc().stream()
-                        .map(term -> new CatalogTermReferenceOptionResponse(
+                AcademicTermRepository.findAllForStudentCatalogSearchOrderBySortOrderAsc().stream()
+                        .map(term -> new AcademicTermReferenceOptionResponse(
                                 term.getId(),
                                 term.getCode(),
                                 term.getName(),
@@ -141,8 +143,8 @@ public class ReferenceDataService {
                                 department.getName()
                         ))
                         .toList(),
-                catalogSubjectRepository.findAllByActiveTrueOrderByCodeAsc().stream()
-                        .map(subject -> new CatalogSubjectReferenceOptionResponse(
+                academicSubjectRepository.findAllByActiveTrueOrderByCodeAsc().stream()
+                        .map(subject -> new AcademicSubjectReferenceOptionResponse(
                                 subject.getId(),
                                 subject.getCode(),
                                 subject.getName(),

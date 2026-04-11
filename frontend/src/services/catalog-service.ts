@@ -2,8 +2,8 @@ import { getAccessToken } from '@/auth/auth-store';
 import type {
   CatalogReferenceOption,
   CatalogSearchReferenceOptionsResponse,
-  CatalogSubjectReferenceOption,
-  CatalogTermReferenceOption,
+  AcademicSubjectReferenceOption,
+  AcademicTermReferenceOption,
 } from './schemas/reference-schemas';
 import { CatalogSearchReferenceOptionsResponseSchema } from './schemas/reference-schemas';
 import {
@@ -150,15 +150,15 @@ export function getCourseOfferingSearchFilterSummary(filters: CourseOfferingSear
   ].filter(Boolean) as string[];
 }
 
-export function filterCatalogTermsByAcademicYear(
-  terms: ReadonlyArray<CatalogTermReferenceOption>,
+export function filterAcademicTermsByAcademicYear(
+  terms: ReadonlyArray<AcademicTermReferenceOption>,
   academicYearCode: string | null
 ) {
   return terms.filter((term) => !academicYearCode || term.academicYearCode === academicYearCode);
 }
 
-export function filterCatalogSubjectsByDepartment(
-  subjects: ReadonlyArray<CatalogSubjectReferenceOption>,
+export function filterAcademicSubjectsByDepartment(
+  subjects: ReadonlyArray<AcademicSubjectReferenceOption>,
   departmentCode: string | null
 ) {
   return subjects.filter((subject) => !departmentCode || subject.departmentCode === departmentCode);
@@ -182,8 +182,8 @@ export function mapCatalogAcademicYearOptionsToSelectOptions(
   }));
 }
 
-export function mapCatalogTermOptionsToSelectOptions(
-  options: ReadonlyArray<CatalogTermReferenceOption>
+export function mapAcademicTermOptionsToSelectOptions(
+  options: ReadonlyArray<AcademicTermReferenceOption>
 ) {
   return options.map((option) => ({
     value: option.code,
@@ -191,8 +191,8 @@ export function mapCatalogTermOptionsToSelectOptions(
   }));
 }
 
-export function mapCatalogSubjectOptionsToSelectOptions(
-  options: ReadonlyArray<CatalogSubjectReferenceOption>
+export function mapAcademicSubjectOptionsToSelectOptions(
+  options: ReadonlyArray<AcademicSubjectReferenceOption>
 ) {
   return options.map((option) => ({
     value: option.code,

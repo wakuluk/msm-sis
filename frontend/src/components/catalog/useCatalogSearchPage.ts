@@ -9,8 +9,8 @@ import {
   defaultCourseOfferingSearchSize,
   defaultCourseOfferingSortBy,
   defaultCourseOfferingSortDirection,
-  filterCatalogSubjectsByDepartment,
-  filterCatalogTermsByAcademicYear,
+  filterAcademicSubjectsByDepartment,
+  filterAcademicTermsByAcademicYear,
   getAdvancedCatalogSearchReferenceOptions,
   getAdvancedCourseOfferingById,
   getPublicCatalogSearchReferenceOptions,
@@ -18,8 +18,8 @@ import {
   hasCourseOfferingSearchValues,
   mapCatalogAcademicYearOptionsToSelectOptions,
   mapCatalogReferenceOptionsToSelectOptions,
-  mapCatalogSubjectOptionsToSelectOptions,
-  mapCatalogTermOptionsToSelectOptions,
+  mapAcademicSubjectOptionsToSelectOptions,
+  mapAcademicTermOptionsToSelectOptions,
   searchAdvancedCourseOfferings,
   searchPublicCourseOfferings,
   type CourseOfferingSearchSize,
@@ -247,8 +247,8 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     : [];
 
   const termOptions: SelectOption[] = hasLoadedReferenceOptions
-    ? mapCatalogTermOptionsToSelectOptions(
-        filterCatalogTermsByAcademicYear(
+    ? mapAcademicTermOptionsToSelectOptions(
+        filterAcademicTermsByAcademicYear(
           referenceOptionsState.response.terms,
           form.values.academicYearCode
         )
@@ -256,8 +256,8 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     : [];
 
   const subjectOptions: SelectOption[] = hasLoadedReferenceOptions
-    ? mapCatalogSubjectOptionsToSelectOptions(
-        filterCatalogSubjectsByDepartment(
+    ? mapAcademicSubjectOptionsToSelectOptions(
+          filterAcademicSubjectsByDepartment(
           referenceOptionsState.response.subjects,
           form.values.departmentCode
         )

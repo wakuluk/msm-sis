@@ -1,14 +1,14 @@
 package com.msm.sis.api.controller;
 
 import com.msm.sis.api.config.AuthenticatedJwt;
-import com.msm.sis.api.dto.CreateStudentRequest;
-import com.msm.sis.api.dto.CreateStudentResponse;
-import com.msm.sis.api.dto.PatchStudentRequest;
-import com.msm.sis.api.dto.StudentDetailResponse;
-import com.msm.sis.api.dto.StudentProfileResponse;
-import com.msm.sis.api.dto.StudentSearchCriteria;
-import com.msm.sis.api.dto.StudentSearchResponse;
-import com.msm.sis.api.dto.StudentSearchSortField;
+import com.msm.sis.api.dto.student.CreateStudentRequest;
+import com.msm.sis.api.dto.student.CreateStudentResponse;
+import com.msm.sis.api.dto.student.PatchStudentRequest;
+import com.msm.sis.api.dto.student.StudentDetailResponse;
+import com.msm.sis.api.dto.student.StudentProfileResponse;
+import com.msm.sis.api.dto.student.StudentSearchCriteria;
+import com.msm.sis.api.dto.student.StudentSearchResponse;
+import com.msm.sis.api.dto.student.StudentSearchSortField;
 import com.msm.sis.api.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

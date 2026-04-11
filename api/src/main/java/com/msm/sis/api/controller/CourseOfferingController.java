@@ -1,7 +1,7 @@
 package com.msm.sis.api.controller;
 
 import com.msm.sis.api.config.AuthenticatedJwt;
-import com.msm.sis.api.dto.*;
+import com.msm.sis.api.dto.catalog.*;
 import com.msm.sis.api.service.CourseOfferingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

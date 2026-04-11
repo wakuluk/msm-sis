@@ -6,9 +6,9 @@ import com.msm.sis.api.entity.CatalogCourse;
 import com.msm.sis.api.entity.CatalogCourseOffering;
 import com.msm.sis.api.entity.CatalogCourseOfferingStatus;
 import com.msm.sis.api.entity.CatalogCourseVersion;
-import com.msm.sis.api.entity.CatalogSubject;
-import com.msm.sis.api.entity.CatalogTerm;
-import com.msm.sis.api.entity.CatalogTermStatus;
+import com.msm.sis.api.entity.AcademicSubject;
+import com.msm.sis.api.entity.AcademicTerm;
+import com.msm.sis.api.entity.AcademicTermStatus;
 import jakarta.persistence.EntityGraph;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -166,11 +166,11 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
     private SearchJoins createSearchJoins(Root<CatalogCourseOffering> root) {
         Join<CatalogCourseOffering, CatalogCourseVersion> courseVersion = root.join("courseVersion", JoinType.INNER);
         Join<CatalogCourseVersion, CatalogCourse> course = courseVersion.join("course", JoinType.INNER);
-        Join<CatalogCourse, CatalogSubject> subject = course.join("subject", JoinType.INNER);
-        Join<CatalogSubject, AcademicDepartment> department = subject.join("department", JoinType.INNER);
-        Join<CatalogCourseOffering, CatalogTerm> term = root.join("term", JoinType.INNER);
-        Join<CatalogTerm, AcademicYear> academicYear = term.join("academicYear", JoinType.INNER);
-        Join<CatalogTerm, CatalogTermStatus> termStatus = term.join("status", JoinType.INNER);
+        Join<CatalogCourse, AcademicSubject> subject = course.join("subject", JoinType.INNER);
+        Join<AcademicSubject, AcademicDepartment> department = subject.join("department", JoinType.INNER);
+        Join<CatalogCourseOffering, AcademicTerm> term = root.join("term", JoinType.INNER);
+        Join<AcademicTerm, AcademicYear> academicYear = term.join("academicYear", JoinType.INNER);
+        Join<AcademicTerm, AcademicTermStatus> termStatus = term.join("status", JoinType.INNER);
         Join<CatalogCourseOffering, CatalogCourseOfferingStatus> status = root.join("status", JoinType.INNER);
 
         return new SearchJoins(courseVersion, course, subject, department, term, academicYear, termStatus, status);
@@ -384,11 +384,11 @@ public class CatalogCourseOfferingRepositoryImpl implements CatalogCourseOfferin
     private record SearchJoins(
             Join<CatalogCourseOffering, CatalogCourseVersion> courseVersion,
             Join<CatalogCourseVersion, CatalogCourse> course,
-            Join<CatalogCourse, CatalogSubject> subject,
-            Join<CatalogSubject, AcademicDepartment> department,
-            Join<CatalogCourseOffering, CatalogTerm> term,
-            Join<CatalogTerm, AcademicYear> academicYear,
-            Join<CatalogTerm, CatalogTermStatus> termStatus,
+            Join<CatalogCourse, AcademicSubject> subject,
+            Join<AcademicSubject, AcademicDepartment> department,
+            Join<CatalogCourseOffering, AcademicTerm> term,
+            Join<AcademicTerm, AcademicYear> academicYear,
+            Join<AcademicTerm, AcademicTermStatus> termStatus,
             Join<CatalogCourseOffering, CatalogCourseOfferingStatus> status
     ) {
     }

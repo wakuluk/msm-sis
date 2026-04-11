@@ -1,8 +1,8 @@
 package com.msm.sis.api.controller;
 
-import com.msm.sis.api.dto.CatalogAdvancedSearchReferenceOptionsResponse;
-import com.msm.sis.api.dto.CatalogSearchReferenceOptionsResponse;
-import com.msm.sis.api.dto.StudentReferenceOptionsResponse;
+import com.msm.sis.api.dto.catalog.CatalogAdvancedSearchReferenceOptionsResponse;
+import com.msm.sis.api.dto.catalog.CatalogSearchReferenceOptionsResponse;
+import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
 import com.msm.sis.api.service.ReferenceDataService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
