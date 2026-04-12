@@ -45,6 +45,9 @@ CREATE TABLE academic_year (
     active BOOLEAN NOT NULL DEFAULT FALSE,
     is_published BOOLEAN NOT NULL DEFAULT FALSE,
 
+    last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by VARCHAR(255) DEFAULT NULL,
+
 
     CONSTRAINT chk_academic_year_date_range
        CHECK (start_date <= end_date)
@@ -129,6 +132,9 @@ CREATE TABLE academic_term (
 
    term_status_id BIGINT NOT NULL,
    active BOOLEAN NOT NULL DEFAULT TRUE,
+
+   last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+   updated_by VARCHAR(255) DEFAULT NULL,
 
    CONSTRAINT fk_academic_term_academic_year
        FOREIGN KEY (academic_year_id) REFERENCES academic_year(academic_year_id),

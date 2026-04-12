@@ -23,10 +23,6 @@ public record CreateAcademicYearTermRequest(
         LocalDate endDate,
 
         @NotNull
-        Integer sortOrder,
-
-        @NotBlank
-        @Size(max = 50)
-        String termStatusCode
-        ) {
+        Integer sortOrder
+) {
 }

@@ -51,8 +51,7 @@ class AcademicYearMapperTest {
                 " Fall 2026 ",
                 LocalDate.of(2026, 8, 24),
                 LocalDate.of(2026, 12, 11),
-                202630,
-                "REGISTRATION_OPEN"
+                202630
         );
 
         AcademicTerm term = academicYearMapper.fromCreateAcademicYearTermRequest(
@@ -84,8 +83,7 @@ class AcademicYearMapperTest {
                 " Spring 2027 ",
                 LocalDate.of(2027, 1, 19),
                 LocalDate.of(2027, 5, 7),
-                202710,
-                "PLANNED"
+                202710
         );
 
         AcademicTerm term = academicYearMapper.fromCreateAcademicTermRequest(

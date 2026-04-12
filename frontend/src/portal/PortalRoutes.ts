@@ -9,7 +9,10 @@ export type PortalRouteItemKey =
   | 'studentSearch'
   | 'sharedSecond'
   | 'catalog'
-  | 'catalog-advanced';
+  | 'catalog-advanced'
+  | 'academic-years-search'
+  | 'academic-years-create'
+  | 'academic-years-detail';
 export type PortalRoutePath =
   | '/portal'
   | '/shared'
@@ -19,9 +22,12 @@ export type PortalRoutePath =
   | '/students/:studentId'
   | '/student-search'
   | '/catalog/search'
-  | '/catalog/search-advanced';
+  | '/catalog/search-advanced'
+  | '/academics/academic-years/search'
+  | '/academics/academic-years/create'
+  | '/academics/academic-years/:academicYearId';
 
-export type PortalRouteGroupKey = 'people' | 'sharing' | 'catalog';
+export type PortalRouteGroupKey = 'people' | 'sharing' | 'catalog' | 'academics';
 
 export type PortalRouteItem = {
   kind: 'item';
@@ -136,6 +142,38 @@ export const portalRoutes: PortalRouteNode[] = [
         path: '/catalog/search-advanced',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: true,
+      },
+    ],
+  },
+  {
+    kind: 'group',
+    key: 'academics',
+    label: 'Academics',
+    showInNav: true,
+    children: [
+      {
+        kind: 'item',
+        key: 'academic-years-search',
+        label: 'Academic Years',
+        path: '/academics/academic-years/search',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-years-create',
+        label: 'Create Academic Year',
+        path: '/academics/academic-years/create',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-years-detail',
+        label: 'Academic Year Detail',
+        path: '/academics/academic-years/:academicYearId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
       },
     ],
   },

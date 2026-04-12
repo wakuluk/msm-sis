@@ -16,11 +16,17 @@ import { StudentCreatePage } from './pages/portal/StudentCreate.page';
 import { StudentDetailPage } from './pages/portal/StudentDetail.page';
 import { StudentProfilePage } from './pages/portal/StudentProfile.page';
 import { StudentSearchPage } from './pages/portal/StudentSearch.page';
+import { AcademicYearsSearchPage } from './pages/portal/AcademicYearsSearch.page';
+import { AcademicYearCreatePage } from './pages/portal/AcademicYearCreate.page';
+import { AcademicYearDetailPage } from './pages/portal/AcademicYearDetail.page';
 
 const portalRouteComponents = {
   dashboard: PortalPage,
   catalog: CatalogSearchPage,
   'catalog-advanced': CatalogAdvancedPage,
+  'academic-years-create': AcademicYearCreatePage,
+  'academic-years-detail': AcademicYearDetailPage,
+  'academic-years-search': AcademicYearsSearchPage,
   shared: SharedPage,
   student: StudentProfilePage,
   studentCreate: StudentCreatePage,

@@ -1,5 +1,6 @@
 package com.msm.sis.api.dto.academic.term;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record AcademicTermResponse(
 
@@ -21,7 +22,11 @@ public record AcademicTermResponse(
 
         String termStatusName,
 
-        boolean active
+        boolean active,
+
+        LocalDateTime lastUpdated,
+
+        String updatedBy
 
 ) {
 }

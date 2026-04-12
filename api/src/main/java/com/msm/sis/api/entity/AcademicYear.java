@@ -10,6 +10,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -40,4 +41,11 @@ public class AcademicYear {
 
     @Column(name = "is_published", nullable = false)
     private boolean isPublished = false;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Column(name = "last_updated", insertable = false, updatable = false)
+    private LocalDateTime lastUpdated;
+
+    @Column(name = "updated_by")
+    private String updatedBy;
 }

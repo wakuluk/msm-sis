@@ -23,6 +23,7 @@ import {
   StudentIdentityFormFields,
   StudentRecordFormFields,
 } from '@/components/student/StudentProfileFormFields';
+import createClasses from '@/components/create/RecordPageLayout.module.css';
 import { StudentReferenceOptionsAlert } from '@/components/student/StudentReferenceOptionsAlert';
 import { useStudentReferenceOptions } from '@/components/student/useStudentReferenceOptions';
 import { hasAnyPortalRole, PORTAL_ROLES, type PortalRole } from '@/portal/PortalRoles';
@@ -37,7 +38,6 @@ import {
   type StudentDetailResponse,
 } from '@/services/schemas/student-schemas';
 import { getStudentById, patchStudent } from '@/services/student-service';
-import createClasses from './StudentCreate.module.css';
 import classes from './StudentDetail.module.css';
 
 type StudentDetailPageState =

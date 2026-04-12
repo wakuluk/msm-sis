@@ -15,6 +15,7 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -61,4 +62,11 @@ public class AcademicTerm {
 
     @Column(name = "active", nullable = false)
     private boolean active = true;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Column(name = "last_updated", insertable = false, updatable = false)
+    private LocalDateTime lastUpdated;
+
+    @Column(name = "updated_by")
+    private String updatedBy;
 }

@@ -1,9 +1,9 @@
 import { Grid, Loader, Select, TextInput } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import type { UseFormReturnType } from '@mantine/form';
+import createClasses from '@/components/create/RecordPageLayout.module.css';
 import type { StudentProfileFormValues } from '@/services/schemas/student-schemas';
 import standardInputClasses from '@/styles/StandardInput.module.css';
-import createClasses from '@/pages/portal/StudentCreate.module.css';
 import type { StudentReferenceSelectOption } from './useStudentReferenceOptions';
 
 type SharedFormProps<TValues extends StudentProfileFormValues> = {
