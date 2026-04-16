@@ -18,4 +18,6 @@ public interface AcademicSubjectRepository extends JpaRepository<AcademicSubject
 
     @EntityGraph(attributePaths = {"department"})
     List<AcademicSubject> findAllByDepartment_CodeAndActiveTrueOrderByCodeAsc(String departmentCode);
+
+    List<AcademicSubject> findAllByDepartment_Id(Long departmentId, org.springframework.data.domain.Sort sort);
 }

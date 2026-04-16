@@ -8,6 +8,8 @@ public record AcademicYearSearchResponse(
     String name,
     LocalDate startDate,
     LocalDate endDate,
+    String yearStatusCode,
+    String yearStatusName,
     boolean active,
     boolean isPublished
 ){

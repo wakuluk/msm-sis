@@ -10,12 +10,12 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "course_offering_status")
-public class CourseOfferingStatus {
+@Table(name = "Academic_Year_Status")
+public class AcademicYearStatus {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "course_offering_status_id")
+    @Column(name = "year_status_id")
     private Long id;
 
     @Column(name = "code", nullable = false, unique = true)

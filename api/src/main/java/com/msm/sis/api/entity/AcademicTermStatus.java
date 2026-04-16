@@ -26,4 +26,10 @@ public class AcademicTermStatus {
 
     @Column(name = "active", nullable = false)
     private boolean active = true;
+
+    @Column(name = "sort_order", nullable = false)
+    private Integer sortOrder;
+
+    @Column(name = "allow_linear_shift", nullable = false)
+    private boolean allowLinearShift = true;
 }

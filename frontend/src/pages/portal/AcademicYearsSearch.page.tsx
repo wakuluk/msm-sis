@@ -10,6 +10,7 @@ import {
   defaultAcademicYearSearchSize,
   defaultAcademicYearSortBy,
   defaultAcademicYearSortDirection,
+  getAcademicYearStatuses,
   parseAcademicYearSearchSize,
   parseAcademicYearSortBy,
   parseAcademicYearSortDirection,
@@ -46,11 +47,6 @@ const academicYearResultsViewOptions = [
   { value: 'system', label: 'System' },
 ] satisfies ReadonlyArray<{ label: string; value: AcademicYearResultsView }>;
 
-const academicYearActiveOptions = [
-  { value: 'true', label: 'Active only' },
-  { value: 'false', label: 'Inactive only' },
-] satisfies ReadonlyArray<StringOption<'true' | 'false'>>;
-
 const emptyAcademicYearResults: AcademicYearSearchResultResponse[] = [];
 
 const academicYearResultsColumns: ColumnDef<AcademicYearSearchResultResponse>[] = [
@@ -79,12 +75,11 @@ const academicYearResultsColumns: ColumnDef<AcademicYearSearchResultResponse>[] 
     meta: { sortBy: 'endDate' satisfies AcademicYearSortBy },
   },
   {
-    id: 'active',
-    accessorFn: (academicYear) => academicYear.active,
-    header: 'Active',
-    size: 100,
-    cell: ({ getValue }) => (getValue<boolean>() ? 'Yes' : 'No'),
-    meta: { sortBy: 'active' satisfies AcademicYearSortBy },
+    accessorKey: 'yearStatusName',
+    header: 'Year Status',
+    size: 160,
+    cell: ({ row }) => row.original.yearStatusName ?? row.original.yearStatusCode ?? '—',
+    meta: { sortBy: 'yearStatus' satisfies AcademicYearSortBy },
   },
   {
     id: 'isPublished',
@@ -96,8 +91,8 @@ const academicYearResultsColumns: ColumnDef<AcademicYearSearchResultResponse>[] 
   },
 ];
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Failed to search academic years.';
+function getErrorMessage(error: unknown, fallbackMessage = 'Failed to search academic years.'): string {
+  return error instanceof Error ? error.message : fallbackMessage;
 }
 
 function getResultsSummary(
@@ -158,10 +153,49 @@ export function AcademicYearsSearchPage() {
     defaultAcademicYearSortDirection
   );
   const [resultsView, setResultsView] = useState<AcademicYearResultsView>('standard');
+  const [academicYearStatusOptions, setAcademicYearStatusOptions] = useState<
+    ReadonlyArray<StringOption>
+  >([]);
+  const [academicYearStatusOptionsLoading, setAcademicYearStatusOptionsLoading] = useState(true);
+  const [academicYearStatusOptionsError, setAcademicYearStatusOptionsError] = useState<
+    string | null
+  >(null);
   const [submittedFilters, setSubmittedFilters] = useState<AcademicYearSearchFilters | null>(null);
   const [searchResultsState, setSearchResultsState] = useState<AcademicYearSearchResultsState>({
     status: 'idle',
   });
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    setAcademicYearStatusOptionsLoading(true);
+    setAcademicYearStatusOptionsError(null);
+
+    getAcademicYearStatuses({ signal: abortController.signal })
+      .then((response) => {
+        setAcademicYearStatusOptions(
+          response.map((status) => ({
+            value: status.code,
+            label: status.name,
+          }))
+        );
+        setAcademicYearStatusOptionsLoading(false);
+      })
+      .catch((error) => {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        setAcademicYearStatusOptions([]);
+        setAcademicYearStatusOptionsError(
+          getErrorMessage(error, 'Failed to load academic year statuses.')
+        );
+        setAcademicYearStatusOptionsLoading(false);
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (!submittedFilters) {
@@ -214,7 +248,7 @@ export function AcademicYearsSearchPage() {
     getRowId: (row) => String(row.academicYearId),
     state: {
       columnVisibility: {
-        active: resultsView === 'system',
+        yearStatusName: resultsView === 'system',
         isPublished: resultsView === 'system',
       },
     },
@@ -294,12 +328,14 @@ export function AcademicYearsSearchPage() {
                 <Grid.Col span={{ base: 12, md: 3 }}>
                   <Select
                     clearable
-                    label="Active status"
+                    label="Year Status"
                     placeholder="All years"
-                    data={academicYearActiveOptions}
-                    value={form.values.active || null}
+                    data={academicYearStatusOptions}
+                    value={form.values.yearStatusCode || null}
+                    loading={academicYearStatusOptionsLoading}
+                    error={academicYearStatusOptionsError ?? undefined}
                     onChange={(value) => {
-                      form.setFieldValue('active', (value as 'true' | 'false' | null) ?? '');
+                      form.setFieldValue('yearStatusCode', value ?? '');
                     }}
                   />
                 </Grid.Col>

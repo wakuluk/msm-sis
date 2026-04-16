@@ -10,6 +10,9 @@ import java.util.Optional;
 
 public interface AcademicTermRepository extends JpaRepository<AcademicTerm, Long> {
     @EntityGraph(attributePaths = {"academicYear", "status"})
+    Optional<AcademicTerm> findDetailedById(Long termId);
+
+    @EntityGraph(attributePaths = {"academicYear", "status"})
     Optional<AcademicTerm> findByAcademicYear_IdAndCode(Long academicYearId, String code);
 
     boolean existsByAcademicYear_IdAndCode(Long academicYearId, String code);

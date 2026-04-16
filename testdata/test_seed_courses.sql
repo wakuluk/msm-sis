@@ -55,37 +55,47 @@ WHERE d.code = 'HIST'
       WHERE code = 'MEH'
   );
 
-INSERT INTO academic_year (code, name, start_date, end_date, active, is_published)
-SELECT 'AY-2026-2027', 'Academic Year 2026-2027', '2026-08-01', '2027-05-31', TRUE, TRUE
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM academic_year
-    WHERE code = 'AY-2026-2027'
-);
+-- Academic year, academic term, and course offering statuses come from migrations.
 
-INSERT INTO academic_year (code, name, start_date, end_date, active, is_published)
-SELECT 'AY-2027-2028', 'Academic Year 2027-2028', '2027-08-01', '2028-05-31', FALSE, FALSE
-WHERE NOT EXISTS (
+INSERT INTO academic_year (code, name, start_date, end_date, active, is_published, year_status_id)
+SELECT 'AY-2026-2027', 'Academic Year 2026-2027', '2026-08-01', '2027-05-31', TRUE, TRUE, ys.year_status_id
+FROM academic_year_status ys
+WHERE ys.code = 'ACTIVE'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM academic_year
+      WHERE code = 'AY-2026-2027'
+  );
+
+INSERT INTO academic_year (code, name, start_date, end_date, active, is_published, year_status_id)
+SELECT 'AY-2027-2028', 'Academic Year 2027-2028', '2027-08-01', '2028-05-31', FALSE, FALSE, ys.year_status_id
+FROM academic_year_status ys
+WHERE ys.code = 'PLANNED'
+  AND NOT EXISTS (
     SELECT 1
     FROM academic_year
     WHERE code = 'AY-2027-2028'
 );
 
-UPDATE academic_year
-SET name = 'Academic Year 2026-2027',
-    start_date = '2026-08-01',
-    end_date = '2027-05-31',
-    active = TRUE,
-    is_published = TRUE
-WHERE code = 'AY-2026-2027';
+UPDATE academic_year ay
+JOIN academic_year_status ys ON ys.code = 'ACTIVE'
+SET ay.name = 'Academic Year 2026-2027',
+    ay.start_date = '2026-08-01',
+    ay.end_date = '2027-05-31',
+    ay.active = TRUE,
+    ay.is_published = TRUE,
+    ay.year_status_id = ys.year_status_id
+WHERE ay.code = 'AY-2026-2027';
 
-UPDATE academic_year
-SET name = 'Academic Year 2027-2028',
-    start_date = '2027-08-01',
-    end_date = '2028-05-31',
-    active = FALSE,
-    is_published = FALSE
-WHERE code = 'AY-2027-2028';
+UPDATE academic_year ay
+JOIN academic_year_status ys ON ys.code = 'PLANNED'
+SET ay.name = 'Academic Year 2027-2028',
+    ay.start_date = '2027-08-01',
+    ay.end_date = '2028-05-31',
+    ay.active = FALSE,
+    ay.is_published = FALSE,
+    ay.year_status_id = ys.year_status_id
+WHERE ay.code = 'AY-2027-2028';
 
 INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
 SELECT ay.academic_year_id, 'FALL-2026', 'Fall 2026', '2026-08-24', '2026-12-11', 202630, ts.term_status_id, TRUE

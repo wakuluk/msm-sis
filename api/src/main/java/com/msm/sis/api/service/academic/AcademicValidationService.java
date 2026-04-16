@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
@@ -41,14 +42,60 @@ public class AcademicValidationService {
         }
     }
 
-    public void validatePatchAcademicYear(AcademicYear academicYear) {
-        validateAcademicYearFields(academicYear);
+    public void validatePatchAcademicYear(
+            AcademicYear existingAcademicYear,
+            AcademicYear candidateAcademicYear
+    ) {
+        validateAcademicYearFields(candidateAcademicYear);
 
-        academicYearRepository.findByCode(academicYear.getCode())
-                .filter(existingAcademicYear -> !existingAcademicYear.getId().equals(academicYear.getId()))
-                .ifPresent(existingAcademicYear -> {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Academic year code already exists.");
-                });
+        String existingCode = trimToNull(existingAcademicYear.getCode());
+        String candidateCode = trimToNull(candidateAcademicYear.getCode());
+        if (!Objects.equals(existingCode, candidateCode)
+                && academicYearRepository.existsByCode(candidateCode)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Academic year code already exists.");
+        }
+    }
+
+    public void validatePatchAcademicTerm(
+            AcademicTerm existingAcademicTerm,
+            AcademicTerm candidateAcademicTerm
+    ) {
+        AcademicYear academicYear = existingAcademicTerm.getAcademicYear();
+
+        validateAcademicTermFieldsWithoutUniqueness(
+                academicYear,
+                candidateAcademicTerm.getCode(),
+                candidateAcademicTerm.getName(),
+                candidateAcademicTerm.getStartDate(),
+                candidateAcademicTerm.getEndDate(),
+                candidateAcademicTerm.getSortOrder()
+        );
+
+        if (academicYear == null || academicYear.getId() == null) {
+            return;
+        }
+
+        Long academicYearId = academicYear.getId();
+        String existingCode = trimToNull(existingAcademicTerm.getCode());
+        String candidateCode = trimToNull(candidateAcademicTerm.getCode());
+        Integer existingSortOrder = existingAcademicTerm.getSortOrder();
+        Integer candidateSortOrder = candidateAcademicTerm.getSortOrder();
+
+        if (!Objects.equals(existingCode, candidateCode)
+                && academicTermRepository.existsByAcademicYear_IdAndCode(academicYearId, candidateCode)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic term code must be unique within an academic year."
+            );
+        }
+
+        if (!Objects.equals(existingSortOrder, candidateSortOrder)
+                && academicTermRepository.existsByAcademicYear_IdAndSortOrder(academicYearId, candidateSortOrder)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic term sort order must be unique within an academic year."
+            );
+        }
     }
 
     public void validatePatchedAcademicTerms(
@@ -203,6 +250,42 @@ public class AcademicValidationService {
             LocalDate endDate,
             Integer sortOrder
     ) {
+        validateAcademicTermFieldsWithoutUniqueness(
+                academicYear,
+                code,
+                name,
+                startDate,
+                endDate,
+                sortOrder
+        );
+
+        if (academicYear.getId() != null) {
+            String normalizedCode = trimToNull(code);
+
+            if (academicTermRepository.existsByAcademicYear_IdAndCode(academicYear.getId(), normalizedCode)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Academic term code must be unique within an academic year."
+                );
+            }
+
+            if (academicTermRepository.existsByAcademicYear_IdAndSortOrder(academicYear.getId(), sortOrder)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Academic term sort order must be unique within an academic year."
+                );
+            }
+        }
+    }
+
+    private void validateAcademicTermFieldsWithoutUniqueness(
+            AcademicYear academicYear,
+            String code,
+            String name,
+            LocalDate startDate,
+            LocalDate endDate,
+            Integer sortOrder
+    ) {
         String normalizedCode = trimToNull(code);
         String normalizedName = trimToNull(name);
 
@@ -227,22 +310,6 @@ public class AcademicValidationService {
                     HttpStatus.BAD_REQUEST,
                     "Academic term dates must fall within the academic year date range."
             );
-        }
-
-        if (academicYear.getId() != null) {
-            if (academicTermRepository.existsByAcademicYear_IdAndCode(academicYear.getId(), normalizedCode)) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Academic term code must be unique within an academic year."
-                );
-            }
-
-            if (academicTermRepository.existsByAcademicYear_IdAndSortOrder(academicYear.getId(), sortOrder)) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Academic term sort order must be unique within an academic year."
-                );
-            }
         }
     }
 

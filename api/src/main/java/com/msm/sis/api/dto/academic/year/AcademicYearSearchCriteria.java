@@ -12,7 +12,7 @@ public class AcademicYearSearchCriteria {
     private String query;
 
     // 🎛️ Filters
-    private Boolean active;        // true = active, false = inactive, null = all
+    private String yearStatusCode;
     private Boolean currentOnly;   // true = only current year
 
     // ↕️ Sorting

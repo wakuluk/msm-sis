@@ -1,5 +1,5 @@
-import { CatalogSearchView } from '@/components/catalog/CatalogSearchView';
+import { CatalogUnavailableView } from '@/components/catalog/CatalogUnavailableView';
 
 export function CatalogSearchPage() {
-  return <CatalogSearchView variant="public" title="Catalog Search" />;
+  return <CatalogUnavailableView title="Catalog Search" />;
 }

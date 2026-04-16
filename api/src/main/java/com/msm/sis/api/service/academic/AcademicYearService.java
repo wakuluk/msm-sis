@@ -1,13 +1,12 @@
 package com.msm.sis.api.service.academic;
 
-import com.msm.sis.api.dto.academic.term.AcademicTermResponse;
 import com.msm.sis.api.dto.academic.year.*;
-import com.msm.sis.api.entity.AcademicTerm;
 import com.msm.sis.api.entity.AcademicYear;
+import com.msm.sis.api.entity.AcademicYearStatus;
 import com.msm.sis.api.mapper.AcademicYearMapper;
 import com.msm.sis.api.repository.AcademicTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
-import com.msm.sis.api.patch.PatchValue;
+import com.msm.sis.api.repository.AcademicYearStatusRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
@@ -21,20 +20,18 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 @Service
 public class AcademicYearService {
+    private static final String DRAFT_ACADEMIC_YEAR_STATUS_CODE = "DRAFT";
 
     private final AcademicYearRepository academicYearRepository;
+    private final AcademicYearStatusRepository academicYearStatusRepository;
     private final AcademicTermRepository academicTermRepository;
     private final AcademicValidationService academicValidationService;
     private final AcademicTermService academicTermService;
@@ -43,6 +40,7 @@ public class AcademicYearService {
 
     public AcademicYearService(
             AcademicYearRepository academicYearRepository,
+            AcademicYearStatusRepository academicYearStatusRepository,
             AcademicTermRepository academicTermRepository,
             AcademicValidationService academicValidationService,
             AcademicTermService academicTermService,
@@ -50,6 +48,7 @@ public class AcademicYearService {
             EntityManager entityManager
     ) {
         this.academicYearRepository = academicYearRepository;
+        this.academicYearStatusRepository = academicYearStatusRepository;
         this.academicTermRepository = academicTermRepository;
         this.academicValidationService = academicValidationService;
         this.academicTermService = academicTermService;
@@ -60,6 +59,7 @@ public class AcademicYearService {
     @Transactional
     public AcademicYearResponse createAcademicYear(CreateAcademicYearRequest createAcademicYearRequest){
         AcademicYear academicYear = academicYearMapper.fromCreateAcademicYearRequest(createAcademicYearRequest);
+        academicYear.setStatus(getDraftAcademicYearStatus());
         academicValidationService.validateCreateAcademicYear(academicYear);
 
         AcademicYear savedAcademicYear = academicYearRepository.save(academicYear);
@@ -79,15 +79,85 @@ public class AcademicYearService {
             PatchAcademicYearRequest patchAcademicYearRequest,
             String updatedBy
     ){
+        AcademicYear existingAcademicYear = getAcademicYearEntity(id);
+        AcademicYear candidateAcademicYear = academicYearMapper.copy(existingAcademicYear);
+
+        academicYearMapper.applyPatch(candidateAcademicYear, patchAcademicYearRequest);
+        academicValidationService.validatePatchAcademicYear(existingAcademicYear, candidateAcademicYear);
+
+        if (!hasPatchableChanges(existingAcademicYear, candidateAcademicYear)) {
+            return getAcademicYear(id);
+        }
+
+        academicYearMapper.copyPatchableFields(candidateAcademicYear, existingAcademicYear);
+        existingAcademicYear.setUpdatedBy(updatedBy);
+        academicYearRepository.save(existingAcademicYear);
+        entityManager.flush();
+        entityManager.clear();
+        return getAcademicYear(id);
+    }
+
+    @Transactional
+    public AcademicYearResponse shiftAcademicYearStatus(
+            Long id,
+            AcademicYearStatusShiftDirection direction,
+            String updatedBy
+    ) {
+        if (direction == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Status shift direction is required."
+            );
+        }
+
         AcademicYear academicYear = getAcademicYearEntity(id);
-        List<AcademicTerm> academicTerms = academicTermRepository.findAllByAcademicYear_IdOrderBySortOrderAsc(id);
+        AcademicYearStatus currentStatus = academicYear.getStatus();
 
-        academicYearMapper.applyPatch(academicYear, patchAcademicYearRequest);
-        applyAcademicTermPatches(academicYear, academicTerms, patchAcademicYearRequest.getPatchAcademicTermRequest(), updatedBy);
+        if (currentStatus == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic year does not have a current status."
+            );
+        }
 
-        academicValidationService.validatePatchAcademicYear(academicYear);
-        academicValidationService.validatePatchedAcademicTerms(academicYear, academicTerms);
+        if (!currentStatus.isActive() || !currentStatus.isAllowLinearShift()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Current academic year status cannot be shifted linearly."
+            );
+        }
 
+        List<AcademicYearStatus> linearStatuses = academicYearStatusRepository
+                .findAllByActiveTrueAndAllowLinearShiftTrueOrderBySortOrderAsc();
+
+        int currentIndex = findAcademicYearStatusIndex(linearStatuses, currentStatus.getId());
+
+        if (currentIndex < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Current academic year status is not part of the linear status flow."
+            );
+        }
+
+        int targetIndex = direction == AcademicYearStatusShiftDirection.UP
+                ? currentIndex + 1
+                : currentIndex - 1;
+
+        if (targetIndex < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic year is already at the first workflow step."
+            );
+        }
+
+        if (targetIndex >= linearStatuses.size()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic year is already at the final workflow step."
+            );
+        }
+
+        academicYear.setStatus(linearStatuses.get(targetIndex));
         academicYear.setUpdatedBy(updatedBy);
         academicYearRepository.save(academicYear);
         entityManager.flush();
@@ -111,52 +181,18 @@ public class AcademicYearService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
-    private void applyAcademicTermPatches(
-            AcademicYear academicYear,
-            List<AcademicTerm> academicTerms,
-            PatchValue<List<PatchAcademicYearTermRequest>> patchAcademicTermRequests,
+    @Transactional
+    public AcademicYearResponse postAcademicYearTerm(
+            Long id,
+            List<CreateAcademicYearTermRequest> createAcademicTermRequestList,
             String updatedBy
-    ) {
-        if (!patchAcademicTermRequests.isPresent()) {
-            return;
-        }
-
-        List<PatchAcademicYearTermRequest> requestedTermPatches = patchAcademicTermRequests.orElse(List.of());
-        if (requestedTermPatches == null || requestedTermPatches.isEmpty()) {
-            return;
-        }
-
-        Map<Long, AcademicTerm> academicTermsById = academicTerms.stream()
-                .collect(Collectors.toMap(AcademicTerm::getId, Function.identity()));
-        Set<Long> seenTermIds = new HashSet<>();
-
-        for (PatchAcademicYearTermRequest requestedTermPatch : requestedTermPatches) {
-            Long termId = requestedTermPatch.getTermId();
-            if (termId == null) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Academic term ID is required when patching academic terms."
-                );
-            }
-
-            if (!seenTermIds.add(termId)) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Academic term patch list contains duplicate term IDs."
-                );
-            }
-
-            AcademicTerm academicTerm = academicTermsById.get(termId);
-            if (academicTerm == null || !academicYear.getId().equals(academicTerm.getAcademicYear().getId())) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Academic term does not belong to the target academic year."
-                );
-            }
-
-            academicYearMapper.applyPatch(academicTerm, requestedTermPatch);
-            academicTerm.setUpdatedBy(updatedBy);
-        }
+    ){
+        AcademicYear academicYear = getAcademicYearEntity(id);
+        academicTermService.createAcademicTerms(
+                academicYear,
+                createAcademicTermRequestList
+        );
+        return getAcademicYear(id);
     }
 
     public List<AcademicYearSearchResponse> searchAcademicYears(AcademicYearSearchCriteria criteria){
@@ -187,6 +223,17 @@ public class AcademicYearService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<AcademicYearStatusResponse> getAcademicYearStatuses() {
+        return academicYearStatusRepository.findAllByOrderBySortOrderAsc().stream()
+                .map(status -> new AcademicYearStatusResponse(
+                        status.getCode(),
+                        status.getName(),
+                        status.getSortOrder()
+                ))
+                .toList();
+    }
+
     private Specification<AcademicYear> buildSearchSpecification(AcademicYearSearchCriteria criteria) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new java.util.ArrayList<>();
@@ -200,8 +247,12 @@ public class AcademicYearService {
                 ));
             }
 
-            if (criteria.getActive() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("active"), criteria.getActive()));
+            String normalizedYearStatusCode = trimToNull(criteria.getYearStatusCode());
+            if (normalizedYearStatusCode != null) {
+                predicates.add(criteriaBuilder.equal(
+                        criteriaBuilder.upper(root.join("status").get("code")),
+                        normalizedYearStatusCode.toUpperCase(Locale.ROOT)
+                ));
             }
 
             if (Boolean.TRUE.equals(criteria.getCurrentOnly())) {
@@ -223,11 +274,11 @@ public class AcademicYearService {
             case "name" -> "name";
             case "startDate" -> "startDate";
             case "endDate" -> "endDate";
-            case "active" -> "active";
+            case "yearStatus", "status", "yearStatusCode" -> "status.sortOrder";
             case "isPublished", "published" -> "isPublished";
             default -> throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Sort by must be one of: code, name, startDate, endDate, active, isPublished."
+                    "Sort by must be one of: code, name, startDate, endDate, yearStatus, isPublished."
             );
         };
 
@@ -250,5 +301,34 @@ public class AcademicYearService {
                     "Sort direction must be 'asc' or 'desc'."
             );
         }
+    }
+
+    private boolean hasPatchableChanges(
+            AcademicYear existingAcademicYear,
+            AcademicYear candidateAcademicYear
+    ) {
+        return !Objects.equals(existingAcademicYear.getCode(), candidateAcademicYear.getCode())
+                || !Objects.equals(existingAcademicYear.getName(), candidateAcademicYear.getName())
+                || !Objects.equals(existingAcademicYear.getStartDate(), candidateAcademicYear.getStartDate())
+                || !Objects.equals(existingAcademicYear.getEndDate(), candidateAcademicYear.getEndDate());
+    }
+
+    private int findAcademicYearStatusIndex(List<AcademicYearStatus> statuses, Long statusId) {
+        for (int index = 0; index < statuses.size(); index += 1) {
+            if (Objects.equals(statuses.get(index).getId(), statusId)) {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    private AcademicYearStatus getDraftAcademicYearStatus() {
+        return academicYearStatusRepository.findByCode(trimToNull(DRAFT_ACADEMIC_YEAR_STATUS_CODE))
+                .filter(AcademicYearStatus::isActive)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Academic year status 'DRAFT' must exist and be active."
+                ));
     }
 }

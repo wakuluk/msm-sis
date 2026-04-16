@@ -18,6 +18,14 @@ public record AcademicYearResponse(
 
         LocalDate endDate,
 
+        Long yearStatusId,
+
+        String yearStatusCode,
+
+        String yearStatusName,
+
+        Integer yearStatusOrder,
+
         boolean active,
 
         boolean isPublished,

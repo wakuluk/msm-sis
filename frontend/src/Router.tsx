@@ -16,6 +16,9 @@ import { StudentCreatePage } from './pages/portal/StudentCreate.page';
 import { StudentDetailPage } from './pages/portal/StudentDetail.page';
 import { StudentProfilePage } from './pages/portal/StudentProfile.page';
 import { StudentSearchPage } from './pages/portal/StudentSearch.page';
+import { AcademicTermDetailPage } from './pages/portal/AcademicTermDetail.page';
+import { AcademicDepartmentsPage } from './pages/portal/AcademicDepartments.page';
+import { AcademicDepartmentDetailPage } from './pages/portal/AcademicDepartmentDetail.page';
 import { AcademicYearsSearchPage } from './pages/portal/AcademicYearsSearch.page';
 import { AcademicYearCreatePage } from './pages/portal/AcademicYearCreate.page';
 import { AcademicYearDetailPage } from './pages/portal/AcademicYearDetail.page';
@@ -24,8 +27,11 @@ const portalRouteComponents = {
   dashboard: PortalPage,
   catalog: CatalogSearchPage,
   'catalog-advanced': CatalogAdvancedPage,
+  'academic-departments': AcademicDepartmentsPage,
+  'academic-department-detail': AcademicDepartmentDetailPage,
   'academic-years-create': AcademicYearCreatePage,
   'academic-years-detail': AcademicYearDetailPage,
+  'academic-term-detail': AcademicTermDetailPage,
   'academic-years-search': AcademicYearsSearchPage,
   shared: SharedPage,
   student: StudentProfilePage,

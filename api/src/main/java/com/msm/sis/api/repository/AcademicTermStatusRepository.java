@@ -8,5 +8,12 @@ import java.util.Optional;
 
 public interface AcademicTermStatusRepository extends JpaRepository<AcademicTermStatus, Long> {
     Optional<AcademicTermStatus> findByCode(String code);
+
+    List<AcademicTermStatus> findAllByOrderBySortOrderAsc();
+
+    List<AcademicTermStatus> findAllByActiveTrueAndAllowLinearShiftTrueOrderBySortOrderAsc();
+
+    List<AcademicTermStatus> findAllByActiveTrueOrderBySortOrderAsc();
+
     List<AcademicTermStatus> findAllByActiveTrueOrderByNameAsc();
 }

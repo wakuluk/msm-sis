@@ -3,7 +3,7 @@ package com.msm.sis.api.mapper;
 import com.msm.sis.api.dto.academic.term.AcademicTermResponse;
 import com.msm.sis.api.dto.academic.term.CreateAcademicTermRequest;
 import com.msm.sis.api.dto.academic.year.PatchAcademicYearRequest;
-import com.msm.sis.api.dto.academic.year.PatchAcademicYearTermRequest;
+import com.msm.sis.api.dto.academic.term.PatchAcademicTermRequest;
 import com.msm.sis.api.dto.academic.year.AcademicYearResponse;
 import com.msm.sis.api.dto.academic.year.AcademicYearSearchResponse;
 import com.msm.sis.api.dto.academic.year.CreateAcademicYearRequest;
@@ -92,6 +92,8 @@ public class AcademicYearMapper {
                 academicYear.getName(),
                 academicYear.getStartDate(),
                 academicYear.getEndDate(),
+                academicYear.getStatus() == null ? null : academicYear.getStatus().getCode(),
+                academicYear.getStatus() == null ? null : academicYear.getStatus().getName(),
                 academicYear.isActive(),
                 academicYear.isPublished()
         );
@@ -111,6 +113,10 @@ public class AcademicYearMapper {
                 academicYear.getName(),
                 academicYear.getStartDate(),
                 academicYear.getEndDate(),
+                academicYear.getStatus() == null ? null : academicYear.getStatus().getId(),
+                academicYear.getStatus() == null ? null : academicYear.getStatus().getCode(),
+                academicYear.getStatus() == null ? null : academicYear.getStatus().getName(),
+                academicYear.getStatus() == null ? null : academicYear.getStatus().getSortOrder(),
                 academicYear.isActive(),
                 academicYear.isPublished(),
                 academicYear.getLastUpdated(),
@@ -135,12 +141,38 @@ public class AcademicYearMapper {
                 academicYear.getName(),
                 academicYear.getStartDate(),
                 academicYear.getEndDate(),
+                academicYear.getStatus() == null ? null : academicYear.getStatus().getId(),
+                academicYear.getStatus() == null ? null : academicYear.getStatus().getCode(),
+                academicYear.getStatus() == null ? null : academicYear.getStatus().getName(),
+                academicYear.getStatus() == null ? null : academicYear.getStatus().getSortOrder(),
                 academicYear.isActive(),
                 academicYear.isPublished(),
                 academicYear.getLastUpdated(),
                 academicYear.getUpdatedBy(),
                 termResponses
         );
+    }
+
+    public AcademicYear copy(AcademicYear academicYear) {
+        AcademicYear copy = new AcademicYear();
+        copy.setId(academicYear.getId());
+        copy.setCode(academicYear.getCode());
+        copy.setName(academicYear.getName());
+        copy.setStartDate(academicYear.getStartDate());
+        copy.setEndDate(academicYear.getEndDate());
+        copy.setStatus(academicYear.getStatus());
+        copy.setActive(academicYear.isActive());
+        copy.setPublished(academicYear.isPublished());
+        copy.setLastUpdated(academicYear.getLastUpdated());
+        copy.setUpdatedBy(academicYear.getUpdatedBy());
+        return copy;
+    }
+
+    public void copyPatchableFields(AcademicYear source, AcademicYear target) {
+        target.setCode(source.getCode());
+        target.setName(source.getName());
+        target.setStartDate(source.getStartDate());
+        target.setEndDate(source.getEndDate());
     }
 
     public void applyPatch(AcademicYear academicYear, PatchAcademicYearRequest request) {
@@ -150,7 +182,7 @@ public class AcademicYearMapper {
         applyDirect(request.getEndDate(), academicYear::setEndDate);
     }
 
-    public void applyPatch(AcademicTerm academicTerm, PatchAcademicYearTermRequest request) {
+    public void applyPatch(AcademicTerm academicTerm, PatchAcademicTermRequest request) {
         applyTrimmed(request.getCode(), academicTerm::setCode);
         applyTrimmed(request.getName(), academicTerm::setName);
         applyDirect(request.getStartDate(), academicTerm::setStartDate);

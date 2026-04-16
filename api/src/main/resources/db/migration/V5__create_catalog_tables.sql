@@ -5,34 +5,58 @@ CREATE TABLE academic_department (
     active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+CREATE TABLE academic_year_status (
+    year_status_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL,
+    allow_linear_shift BOOLEAN NOT NULL DEFAULT TRUE
+);
+
 CREATE TABLE academic_term_status (
     term_status_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
-    active BOOLEAN NOT NULL DEFAULT TRUE
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL,
+    allow_linear_shift BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE course_offering_status (
     course_offering_status_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
-    active BOOLEAN NOT NULL DEFAULT TRUE
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL,
+    allow_linear_shift BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-INSERT INTO academic_term_status (code, name) VALUES
-    ('PLANNED', 'Planned'),
-    ('REGISTRATION_OPEN', 'Registration Open'),
-    ('REGISTRATION_CLOSED', 'Registration Closed'),
-    ('ACTIVE', 'Active'),
-    ('COMPLETED', 'Completed'),
-    ('CANCELLED', 'Cancelled');
+INSERT INTO academic_year_status (code, name, sort_order, allow_linear_shift) VALUES
+    ('DRAFT', 'Draft', 1, TRUE),
+    ('PLANNED', 'Planned', 2, TRUE),
+    ('OPEN', 'Open', 3, TRUE),
+    ('ACTIVE', 'Active', 4, TRUE),
+    ('CLOSED', 'Closed', 5, TRUE),
+    ('CANCELLED', 'Cancelled', 6, FALSE);
 
-INSERT INTO course_offering_status (code, name) VALUES
-    ('PLANNED', 'Planned'),
-    ('OPEN_FOR_DISPLAY', 'Open for Display'),
-    ('OPEN_FOR_REGISTRATION', 'Open for Registration'),
-    ('CLOSED', 'Closed'),
-    ('CANCELLED', 'Cancelled');
+INSERT INTO academic_term_status (code, name, sort_order, allow_linear_shift) VALUES
+    ('DRAFT', 'Draft', 1, TRUE),
+    ('PLANNED', 'Planned', 2, TRUE),
+    ('OPEN_FOR_DISPLAY', 'Open for display', 3, TRUE),
+    ('OPEN_FOR_REGISTRATION', 'Open for registration', 4, TRUE),
+    ('REGISTRATION_CLOSED', 'Registration closed', 5, TRUE),
+    ('ACTIVE', 'Active', 6, TRUE),
+    ('COMPLETED', 'Completed', 7, TRUE),
+    ('CANCELLED', 'Cancelled', 8, FALSE);
+
+INSERT INTO course_offering_status (code, name, sort_order, allow_linear_shift) VALUES
+    ('DRAFT', 'Draft', 1, TRUE),
+    ('PLANNED', 'Planned', 2, TRUE),
+    ('OPEN_FOR_DISPLAY', 'Open for Display', 3, TRUE),
+    ('OPEN_FOR_REGISTRATION', 'Open for Registration', 4, TRUE),
+    ('CLOSED', 'Closed', 5, TRUE),
+    ('CANCELLED', 'Cancelled', 6, FALSE);
 
 CREATE TABLE academic_year (
     academic_year_id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -44,6 +68,8 @@ CREATE TABLE academic_year (
 
     active BOOLEAN NOT NULL DEFAULT FALSE,
     is_published BOOLEAN NOT NULL DEFAULT FALSE,
+
+    year_status_id BIGINT NOT NULL,
 
     last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by VARCHAR(255) DEFAULT NULL,

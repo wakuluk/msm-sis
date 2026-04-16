@@ -11,8 +11,11 @@ export type PortalRouteItemKey =
   | 'catalog'
   | 'catalog-advanced'
   | 'academic-years-search'
+  | 'academic-departments'
+  | 'academic-department-detail'
   | 'academic-years-create'
-  | 'academic-years-detail';
+  | 'academic-years-detail'
+  | 'academic-term-detail';
 export type PortalRoutePath =
   | '/portal'
   | '/shared'
@@ -24,8 +27,11 @@ export type PortalRoutePath =
   | '/catalog/search'
   | '/catalog/search-advanced'
   | '/academics/academic-years/search'
+  | '/academics/departments'
+  | '/academics/departments/:departmentId'
   | '/academics/academic-years/create'
-  | '/academics/academic-years/:academicYearId';
+  | '/academics/academic-years/:academicYearId'
+  | '/academics/academic-term/:academicTermId';
 
 export type PortalRouteGroupKey = 'people' | 'sharing' | 'catalog' | 'academics';
 
@@ -125,7 +131,7 @@ export const portalRoutes: PortalRouteNode[] = [
     kind: 'group',
     key: 'catalog',
     label: 'Catalog',
-    showInNav: true,
+    showInNav: false,
     children: [
       {
         kind: 'item',
@@ -133,7 +139,7 @@ export const portalRoutes: PortalRouteNode[] = [
         label: 'Catalog',
         path: '/catalog/search',
         requiredRoles: [PORTAL_ROLES.STUDENT],
-        showInNav: true,
+        showInNav: false,
       },
       {
         kind: 'item',
@@ -141,7 +147,7 @@ export const portalRoutes: PortalRouteNode[] = [
         label: 'Catalog',
         path: '/catalog/search-advanced',
         requiredRoles: [PORTAL_ROLES.ADMIN],
-        showInNav: true,
+        showInNav: false,
       },
     ],
   },
@@ -151,6 +157,22 @@ export const portalRoutes: PortalRouteNode[] = [
     label: 'Academics',
     showInNav: true,
     children: [
+      {
+        kind: 'item',
+        key: 'academic-departments',
+        label: 'Academic Departments',
+        path: '/academics/departments',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-department-detail',
+        label: 'Academic Department Detail',
+        path: '/academics/departments/:departmentId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
       {
         kind: 'item',
         key: 'academic-years-search',
@@ -172,6 +194,14 @@ export const portalRoutes: PortalRouteNode[] = [
         key: 'academic-years-detail',
         label: 'Academic Year Detail',
         path: '/academics/academic-years/:academicYearId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-term-detail',
+        label: 'Academic Term Detail',
+        path: '/academics/academic-term/:academicTermId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
       },
