@@ -395,6 +395,7 @@ public class ReferenceDataService {
         AcademicDepartment department = subject == null ? null : subject.getDepartment();
         AcademicSchool school = department == null ? null : department.getSchool();
 
+        //TODO this feels wrong / off.
         return new CourseReferenceOptionResponse(
                 course.getId(),
                 school == null ? null : school.getId(),

@@ -117,6 +117,9 @@ export async function searchCourses({
     sortDirection,
   });
 
+  /** TODO
+   * I don't like these strings.
+    */
   if (schoolId !== undefined) {
     queryParams.set('schoolId', String(schoolId));
   }

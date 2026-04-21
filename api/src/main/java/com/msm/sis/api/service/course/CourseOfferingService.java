@@ -42,6 +42,7 @@ import static com.msm.sis.api.util.TextUtils.trimToNull;
 public class CourseOfferingService {
     private static final String DEFAULT_CREATE_STATUS_CODE = "PLANNED";
 
+    //TODO yea... we need a better solution than this.
     private final List<String> publicTermStatusCodes = List.of(
             "REGISTRATION_OPEN",
             "REGISTRATION_CLOSED",
