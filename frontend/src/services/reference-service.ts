@@ -1,12 +1,64 @@
-import { getAccessToken } from '@/auth/auth-store';
+import { apiRequest } from './api-client';
 import {
+  AcademicSchoolDepartmentSearchReferenceOptionsResponseSchema,
+  CoursePickerReferenceOptionsResponseSchema,
+  CourseSearchReferenceOptionsResponseSchema,
   StudentReferenceOptionsResponseSchema,
+  type AcademicSchoolDepartmentSearchReferenceOptionsResponse,
+  type CatalogReferenceOption,
+  type CoursePickerReferenceOptionsResponse,
+  type CourseSearchReferenceOptionsResponse,
   type ReferenceOption,
   type StudentReferenceOptionsResponse,
 } from './schemas/reference-schemas';
 
-let cachedStudentReferenceOptions: StudentReferenceOptionsResponse | null = null;
-let studentReferenceOptionsPromise: Promise<StudentReferenceOptionsResponse> | null = null;
+type ReferenceLoaderOptions = {
+  forceRefresh?: boolean;
+};
+
+type ResponseParser<TResponse> = {
+  parse: (payload: unknown) => TResponse;
+};
+
+function createCachedReferenceLoader<TResponse>({
+  path,
+  parser,
+  fallbackMessage,
+}: {
+  path: string;
+  parser: ResponseParser<TResponse>;
+  fallbackMessage: string;
+}) {
+  let cachedResponse: TResponse | null = null;
+  let inFlightPromise: Promise<TResponse> | null = null;
+
+  return async (options?: ReferenceLoaderOptions): Promise<TResponse> => {
+    if (!options?.forceRefresh && cachedResponse) {
+      return cachedResponse;
+    }
+
+    if (!options?.forceRefresh && inFlightPromise) {
+      return inFlightPromise;
+    }
+
+    const requestPromise = apiRequest({
+      path,
+      parser,
+      fallbackMessage,
+    }).then((response) => {
+      cachedResponse = response;
+      return response;
+    });
+
+    inFlightPromise = requestPromise;
+
+    try {
+      return await requestPromise;
+    } finally {
+      inFlightPromise = null;
+    }
+  };
+}
 
 export function mapReferenceOptionsToSelectOptions(options: ReadonlyArray<ReferenceOption>) {
   return options.map((option) => ({
@@ -15,48 +67,40 @@ export function mapReferenceOptionsToSelectOptions(options: ReadonlyArray<Refere
   }));
 }
 
-export async function getStudentReferenceOptions(options?: {
-  forceRefresh?: boolean;
-}): Promise<StudentReferenceOptionsResponse> {
-  if (!options?.forceRefresh && cachedStudentReferenceOptions) {
-    return cachedStudentReferenceOptions;
-  }
-
-  if (!options?.forceRefresh && studentReferenceOptionsPromise) {
-    return studentReferenceOptionsPromise;
-  }
-
-  const accessToken = getAccessToken();
-
-  if (!accessToken) {
-    throw new Error('Not authenticated.');
-  }
-
-  studentReferenceOptionsPromise = (async () => {
-    const response = await fetch('/api/reference/student-options', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    const payload = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(
-        typeof payload?.message === 'string'
-          ? payload.message
-          : 'Failed to load student reference options.'
-      );
-    }
-
-    const parsedResponse = StudentReferenceOptionsResponseSchema.parse(payload);
-    cachedStudentReferenceOptions = parsedResponse;
-    return parsedResponse;
-  })();
-
-  try {
-    return await studentReferenceOptionsPromise;
-  } finally {
-    studentReferenceOptionsPromise = null;
-  }
+export function mapCodeNameReferenceOptionsToSelectOptions(
+  options: ReadonlyArray<CatalogReferenceOption>
+) {
+  return options.map((option) => ({
+    value: String(option.id),
+    label: `${option.name} (${option.code})`,
+  }));
 }
+
+export const getStudentReferenceOptions = createCachedReferenceLoader<StudentReferenceOptionsResponse>(
+  {
+    path: '/api/reference/student-options',
+    parser: StudentReferenceOptionsResponseSchema,
+    fallbackMessage: 'Failed to load student reference options.',
+  }
+);
+
+export const getAcademicSchoolDepartmentReferenceOptions =
+  createCachedReferenceLoader<AcademicSchoolDepartmentSearchReferenceOptionsResponse>({
+    path: '/api/reference/academic-school-department-options',
+    parser: AcademicSchoolDepartmentSearchReferenceOptionsResponseSchema,
+    fallbackMessage: 'Failed to load academic school reference options.',
+  });
+
+export const getCourseSearchReferenceOptions =
+  createCachedReferenceLoader<CourseSearchReferenceOptionsResponse>({
+    path: '/api/reference/course-search-options',
+    parser: CourseSearchReferenceOptionsResponseSchema,
+    fallbackMessage: 'Failed to load course search reference options.',
+  });
+
+export const getCoursePickerReferenceOptions =
+  createCachedReferenceLoader<CoursePickerReferenceOptionsResponse>({
+    path: '/api/reference/course-picker-options',
+    parser: CoursePickerReferenceOptionsResponseSchema,
+    fallbackMessage: 'Failed to load course picker reference options.',
+  });

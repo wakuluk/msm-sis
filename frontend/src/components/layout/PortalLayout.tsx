@@ -31,7 +31,7 @@ export function PortalLayout() {
         <Group h="100%" px="lg" justify="space-between">
           <Group gap="sm">
             <Burger opened={opened} onClick={toggle} size="sm" />
-            <Text fw={600}>WSIS</Text>
+            <Text fw={600}>Mount St. Mary's University</Text>
           </Group>
         </Group>
       </AppShell.Header>

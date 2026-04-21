@@ -1,0 +1,15 @@
+.chevronButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mantine-color-dimmed);
+}
+
+.chevronIcon {
+  transition: transform 180ms ease;
+  transform: rotate(0deg);
+}
+
+.chevronIconExpanded {
+  transform: rotate(180deg);
+}

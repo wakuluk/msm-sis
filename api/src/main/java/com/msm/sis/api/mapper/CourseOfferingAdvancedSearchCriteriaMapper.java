@@ -1,7 +1,7 @@
 package com.msm.sis.api.mapper;
 
-import com.msm.sis.api.dto.CourseOfferingSearchCriteria;
-import com.msm.sis.api.dto.CourseOfferingAdvancedSearchCriteria;
+import com.msm.sis.api.dto.course.CourseOfferingSearchCriteria;
+import com.msm.sis.api.dto.course.CourseOfferingAdvancedSearchCriteria;
 import org.springframework.stereotype.Component;
 
 @Component

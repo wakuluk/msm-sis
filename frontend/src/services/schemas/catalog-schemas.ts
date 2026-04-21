@@ -65,6 +65,14 @@ export type CourseOfferingSearchResultResponse = z.infer<
   typeof CourseOfferingSearchResultResponseSchema
 >;
 
+export const CourseOfferingSearchResultsListSchema = z.array(
+  CourseOfferingSearchResultResponseSchema
+);
+
+export type CourseOfferingSearchResultsList = z.infer<
+  typeof CourseOfferingSearchResultsListSchema
+>;
+
 export const CourseOfferingSearchResponseSchema = z.object({
   results: z.array(CourseOfferingSearchResultResponseSchema),
   page: z.number(),

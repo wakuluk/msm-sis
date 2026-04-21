@@ -1,7 +1,7 @@
 package com.msm.sis.api.service;
 
-import com.msm.sis.api.dto.LoginRequest;
-import com.msm.sis.api.dto.LoginResponse;
+import com.msm.sis.api.dto.auth.LoginRequest;
+import com.msm.sis.api.dto.auth.LoginResponse;
 import com.msm.sis.api.entity.SisUser;
 import com.msm.sis.api.repository.SisUserRepository;
 import org.springframework.security.authentication.BadCredentialsException;

@@ -1,9 +1,9 @@
 package com.msm.sis.api.controller;
 
 import com.msm.sis.api.config.AuthenticatedJwt;
-import com.msm.sis.api.dto.CurrentUserResponse;
-import com.msm.sis.api.dto.LoginRequest;
-import com.msm.sis.api.dto.LoginResponse;
+import com.msm.sis.api.dto.auth.CurrentUserResponse;
+import com.msm.sis.api.dto.auth.LoginRequest;
+import com.msm.sis.api.dto.auth.LoginResponse;
 import com.msm.sis.api.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

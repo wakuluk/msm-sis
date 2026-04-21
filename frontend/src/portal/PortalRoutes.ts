@@ -2,26 +2,46 @@ import { type PortalRole, PORTAL_ROLES } from './PortalRoles';
 
 export type PortalRouteItemKey =
   | 'dashboard'
-  | 'shared'
   | 'student'
   | 'studentCreate'
   | 'studentDetail'
   | 'studentSearch'
-  | 'sharedSecond'
   | 'catalog'
-  | 'catalog-advanced';
+  | 'catalog-advanced'
+  | 'academic-years-search'
+  | 'academic-schools'
+  | 'academic-school-detail'
+  | 'academic-departments'
+  | 'academic-department-detail'
+  | 'course-search'
+  | 'course-detail'
+  | 'academic-years-create'
+  | 'academic-years-detail'
+  | 'academic-year-catalog'
+  | 'academic-term-detail'
+  | 'academic-term-group-detail';
 export type PortalRoutePath =
   | '/portal'
-  | '/shared'
-  | '/sharedSecond'
   | '/student/profile'
   | '/students/new'
   | '/students/:studentId'
   | '/student-search'
   | '/catalog/search'
-  | '/catalog/search-advanced';
+  | '/catalog/search-advanced'
+  | '/academics/academic-years/search'
+  | '/academics/schools'
+  | '/academics/schools/:schoolId'
+  | '/academics/departments'
+  | '/academics/departments/:departmentId'
+  | '/academics/courses/search'
+  | '/academics/courses/:courseId'
+  | '/academics/academic-years/create'
+  | '/academics/academic-years/:academicYearId'
+  | '/academics/academic-years/:academicYearId/catalog'
+  | '/academics/academic-term/:academicTermId'
+  | '/academics/academic-term-group/:termGroupId';
 
-export type PortalRouteGroupKey = 'people' | 'sharing' | 'catalog';
+export type PortalRouteGroupKey = 'people' | 'catalog' | 'academics' | 'calendar';
 
 export type PortalRouteItem = {
   kind: 'item';
@@ -50,22 +70,6 @@ export const portalRoutes: PortalRouteNode[] = [
     label: 'Dashboard',
     path: '/portal',
     showInNav: true,
-  },
-  {
-    kind: 'group',
-    key: 'sharing',
-    label: 'Sharing',
-    showInNav: true,
-    children: [
-      {
-        kind: 'item',
-        key: 'shared',
-        label: 'Shared page',
-        path: '/shared',
-        requiredRoles: [PORTAL_ROLES.STUDENT, PORTAL_ROLES.ADMIN],
-        showInNav: true,
-      },
-    ],
   },
   {
     kind: 'group',
@@ -105,21 +109,13 @@ export const portalRoutes: PortalRouteNode[] = [
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
       },
-      {
-        kind: 'item',
-        key: 'sharedSecond',
-        label: 'Shared page Second',
-        path: '/sharedSecond',
-        requiredRoles: [PORTAL_ROLES.STUDENT, PORTAL_ROLES.ADMIN],
-        showInNav: true,
-      },
     ],
   },
   {
     kind: 'group',
     key: 'catalog',
     label: 'Catalog',
-    showInNav: true,
+    showInNav: false,
     children: [
       {
         kind: 'item',
@@ -127,13 +123,125 @@ export const portalRoutes: PortalRouteNode[] = [
         label: 'Catalog',
         path: '/catalog/search',
         requiredRoles: [PORTAL_ROLES.STUDENT],
-        showInNav: true,
+        showInNav: false,
       },
       {
         kind: 'item',
         key: 'catalog-advanced',
         label: 'Catalog',
         path: '/catalog/search-advanced',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+    ],
+  },
+  {
+    kind: 'group',
+    key: 'academics',
+    label: 'Academics',
+    showInNav: true,
+    children: [
+      {
+        kind: 'item',
+        key: 'academic-schools',
+        label: 'Academic School Search',
+        path: '/academics/schools',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-school-detail',
+        label: 'Academic School Detail',
+        path: '/academics/schools/:schoolId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-departments',
+        label: 'Academic Departments',
+        path: '/academics/departments',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-department-detail',
+        label: 'Academic Department Detail',
+        path: '/academics/departments/:departmentId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'course-search',
+        label: 'Course Search',
+        path: '/academics/courses/search',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'course-detail',
+        label: 'Course Detail',
+        path: '/academics/courses/:courseId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-years-detail',
+        label: 'Academic Year Detail',
+        path: '/academics/academic-years/:academicYearId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-year-catalog',
+        label: 'Academic Year Catalog',
+        path: '/academics/academic-years/:academicYearId/catalog',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-term-detail',
+        label: 'Academic Term Detail',
+        path: '/academics/academic-term/:academicTermId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-term-group-detail',
+        label: 'Academic Term Group Detail',
+        path: '/academics/academic-term-group/:termGroupId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+    ],
+  },
+  {
+    kind: 'group',
+    key: 'calendar',
+    label: 'Calendar',
+    showInNav: true,
+    children: [
+      {
+        kind: 'item',
+        key: 'academic-years-search',
+        label: 'Academic Years',
+        path: '/academics/academic-years/search',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-years-create',
+        label: 'Create Academic Year',
+        path: '/academics/academic-years/create',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: true,
       },

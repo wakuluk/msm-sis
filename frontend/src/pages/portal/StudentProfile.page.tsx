@@ -1,28 +1,12 @@
-import { useEffect, useEffectEvent, useState } from 'react';
+import { type ComponentProps, useEffect, useEffectEvent, useState } from 'react';
 import { useForm } from '@mantine/form';
-import {
-  Alert,
-  Badge,
-  Button,
-  Container,
-  Group,
-  Loader,
-  Paper,
-  SimpleGrid,
-  Stack,
-  Tabs,
-  Text,
-  Title,
-} from '@mantine/core';
-import {
-  DetailsTableSection,
-  type DetailsTableSectionConfig,
-} from '@/components/profile/DetailsTableSection';
+import { Alert, Badge, Button, Grid, Group, Loader, Stack, Text, TextInput } from '@mantine/core';
+import { RecordPageSection } from '@/components/create/RecordPageSection';
+import { RecordPageShell } from '@/components/create/RecordPageShell';
 import {
   fetchStudentProfile,
   type StudentProfileResponse,
 } from '@/services/student-profile-service';
-import classes from './StudentProfile.module.css';
 
 const editableFieldKeys = [
   'preferredName',
@@ -35,13 +19,8 @@ const editableFieldKeys = [
 ] as const;
 
 type EditableStudentProfileKey = (typeof editableFieldKeys)[number];
-
 type EditableStudentProfileValues = Record<EditableStudentProfileKey, string>;
-
-type ProfileTableSectionConfig = DetailsTableSectionConfig<
-  StudentProfileResponse,
-  EditableStudentProfileValues
->;
+type GridSpan = ComponentProps<typeof Grid.Col>['span'];
 
 const emptyEditableProfileValues: EditableStudentProfileValues = {
   preferredName: '',
@@ -91,14 +70,6 @@ function displayDate(value: string | null) {
   return formatDate(value) || '—';
 }
 
-function getEditablePlaceholder(label: string) {
-  if (label === 'Address line 2') {
-    return 'Optional';
-  }
-
-  return `Enter ${label.toLowerCase()}`;
-}
-
 function getEditableProfileValues(profile: StudentProfileResponse): EditableStudentProfileValues {
   return {
     preferredName: profile.preferredName ?? '',
@@ -113,7 +84,7 @@ function getEditableProfileValues(profile: StudentProfileResponse): EditableStud
 
 function applyEditableProfileValues(
   profile: StudentProfileResponse,
-  editableValues: EditableStudentProfileValues,
+  editableValues: EditableStudentProfileValues
 ): StudentProfileResponse {
   return {
     ...profile,
@@ -123,112 +94,73 @@ function applyEditableProfileValues(
 
 function hasEditableProfileChanges(
   profile: StudentProfileResponse,
-  editableValues: EditableStudentProfileValues,
+  editableValues: EditableStudentProfileValues
 ) {
   return editableFieldKeys.some((key) => (profile[key] ?? '') !== editableValues[key]);
 }
 
-const personalSections: ProfileTableSectionConfig[] = [
-  {
-    title: 'Identity',
-    fields: [
-      { label: 'First name', value: (profile) => displayValue(profile.firstName) },
-      { label: 'Middle name', value: (profile) => displayValue(profile.middleName) },
-      { label: 'Last name', value: (profile) => displayValue(profile.lastName) },
-      { label: 'Name suffix', value: (profile) => displayValue(profile.nameSuffix) },
-      {
-        editKey: 'preferredName',
-        label: 'Preferred name',
-        value: (profile) => displayValue(profile.preferredName),
-      },
-    ],
-  },
-  {
-    title: 'Background',
-    fields: [
-      { label: 'Date of birth', value: (profile) => displayDate(profile.dateOfBirth) },
-      { label: 'Gender', value: (profile) => displayValue(profile.gender) },
-      { label: 'Ethnicity', value: (profile) => displayValue(profile.ethnicity) },
-    ],
-  },
-];
+function getErrorMessage(error: unknown, fallbackMessage: string) {
+  return error instanceof Error ? error.message : fallbackMessage;
+}
 
-const studentSections: ProfileTableSectionConfig[] = [
-  {
-    title: 'Student Record',
-    fields: [
-      { label: 'Student ID', value: (profile) => displayValue(profile.studentId) },
-      { label: 'Class standing', value: (profile) => displayValue(profile.classStanding) },
-      { label: 'Estimated grad date', value: (profile) => displayDate(profile.estimatedGradDate) },
-      { label: 'Class of', value: (profile) => displayValue(profile.classOf) },
-    ],
-  },
-];
+function ReadOnlyField({
+  label,
+  value,
+  span = { base: 12, md: 6 },
+}: {
+  label: string;
+  value: string;
+  span?: GridSpan;
+}) {
+  const isEmptyValue = value === '—';
 
-const contactSections: ProfileTableSectionConfig[] = [
-  {
-    title: 'Contact',
-    fields: [
-      {
-        inputType: 'email',
-        label: 'Email',
-        value: (profile) => displayValue(profile.email),
-      },
-      {
-        inputType: 'tel',
-        label: 'Phone',
-        value: (profile) => displayValue(profile.phone),
-      },
-    ],
-  },
-  {
-    title: 'Address',
-    fields: [
-      {
-        editKey: 'addressLine1',
-        label: 'Address line 1',
-        value: (profile) => displayValue(profile.addressLine1),
-      },
-      {
-        editKey: 'addressLine2',
-        label: 'Address line 2',
-        value: (profile) => displayValue(profile.addressLine2),
-      },
-      {
-        editKey: 'city',
-        label: 'City',
-        value: (profile) => displayValue(profile.city),
-      },
-      {
-        editKey: 'stateRegion',
-        label: 'State / region',
-        value: (profile) => displayValue(profile.stateRegion),
-      },
-      {
-        editKey: 'postalCode',
-        label: 'Postal code',
-        value: (profile) => displayValue(profile.postalCode),
-      },
-      {
-        editKey: 'countryCode',
-        label: 'Country',
-        value: (profile) => displayValue(profile.countryCode),
-      },
-    ],
-  },
-];
+  return (
+    <Grid.Col span={span}>
+      <TextInput
+        label={label}
+        value={isEmptyValue ? '' : value}
+        placeholder={isEmptyValue ? '—' : undefined}
+        readOnly
+      />
+    </Grid.Col>
+  );
+}
 
-const summaryBadges = [
-  { color: 'blue', label: 'Class standing' },
-  { color: 'indigo', label: 'Class of' },
-  { color: 'gray', label: 'Preferred name' },
-] as const;
+function EditableField({
+  formKey,
+  formValues,
+  label,
+  onChange,
+  placeholder,
+  span = { base: 12, md: 6 },
+}: {
+  formKey: EditableStudentProfileKey;
+  formValues: EditableStudentProfileValues;
+  label: string;
+  onChange: (nextValue: string) => void;
+  placeholder: string;
+  span?: GridSpan;
+}) {
+  return (
+    <Grid.Col span={span}>
+      <TextInput
+        label={label}
+        value={formValues[formKey]}
+        onChange={(event) => {
+          onChange(event.currentTarget.value);
+        }}
+        placeholder={placeholder}
+      />
+    </Grid.Col>
+  );
+}
 
 export function StudentProfilePage() {
   const [profile, setProfile] = useState<StudentProfileResponse | null>(null);
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [applySucceeded, setApplySucceeded] = useState(false);
 
   const form = useForm<EditableStudentProfileValues>({
     initialValues: emptyEditableProfileValues,
@@ -239,6 +171,7 @@ export function StudentProfilePage() {
 
     setProfile(studentProfile);
     form.setValues(editableValues);
+    setApplySucceeded(false);
   });
 
   useEffect(() => {
@@ -256,9 +189,7 @@ export function StudentProfilePage() {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(
-            loadError instanceof Error ? loadError.message : 'Failed to load student profile.',
-          );
+          setError(getErrorMessage(loadError, 'Failed to load student profile.'));
         }
       } finally {
         if (!cancelled) {
@@ -274,173 +205,288 @@ export function StudentProfilePage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!applySucceeded) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setApplySucceeded(false);
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [applySucceeded]);
+
   if (isLoading) {
     return (
-      <Container size="xl" py="xl">
-        <Group justify="center" py="xl">
-          <Loader />
-        </Group>
-      </Container>
+      <RecordPageShell
+        size="xl"
+        eyebrow="Student Profile"
+        title="Profile"
+        description="Loading your student profile."
+      >
+        <Stack gap={0}>
+          <RecordPageSection title="Student Profile" description="Your profile data is loading.">
+            <Grid.Col span={12}>
+              <Group justify="center" py="md">
+                <Loader />
+              </Group>
+            </Grid.Col>
+          </RecordPageSection>
+        </Stack>
+      </RecordPageShell>
     );
   }
 
   if (error || !profile) {
     return (
-      <Container size="xl" py="xl">
-        <Alert color="red" title="Unable to load profile">
-          {error || 'Student profile is unavailable.'}
-        </Alert>
-      </Container>
+      <RecordPageShell
+        size="xl"
+        eyebrow="Student Profile"
+        title="Profile"
+        description="Your student profile could not be loaded."
+      >
+        <Stack gap={0}>
+          <RecordPageSection
+            title="Student Profile"
+            description="The profile service did not return student data."
+          >
+            <Grid.Col span={12}>
+              <Alert color="red" title="Unable to load profile">
+                {error || 'Student profile is unavailable.'}
+              </Alert>
+            </Grid.Col>
+          </RecordPageSection>
+        </Stack>
+      </RecordPageShell>
     );
   }
 
-  const currentProfile = isEditing ? applyEditableProfileValues(profile, form.values) : profile;
-  const hasLocalChanges = hasEditableProfileChanges(profile, form.values);
+  const loadedProfile = profile;
+  const currentProfile = isEditing
+    ? applyEditableProfileValues(loadedProfile, form.values)
+    : loadedProfile;
+  const hasLocalChanges = hasEditableProfileChanges(loadedProfile, form.values);
 
-  const handleStartEditing = () => {
-    form.setValues(getEditableProfileValues(profile));
+  function handleStartEditing() {
+    form.setValues(getEditableProfileValues(loadedProfile));
     setIsEditing(true);
-  };
+    setApplySucceeded(false);
+  }
 
-  const handleCancelEditing = () => {
-    form.setValues(getEditableProfileValues(profile));
+  function handleCancelEditing() {
+    form.setValues(getEditableProfileValues(loadedProfile));
     setIsEditing(false);
-  };
+    setApplySucceeded(false);
+  }
 
-  const handleApplyLocally = () => {
-    const nextProfile = applyEditableProfileValues(profile, form.values);
+  function handleApplyLocally() {
+    const nextProfile = applyEditableProfileValues(loadedProfile, form.values);
 
     setProfile(nextProfile);
     form.setValues(getEditableProfileValues(nextProfile));
     setIsEditing(false);
-  };
+    setApplySucceeded(true);
+  }
 
   return (
-    <Container size="xl" py="xl">
-      <Stack className={classes.page}>
-        <Paper className={classes.summaryCard}>
-          <Stack gap="lg">
-            <Group justify="space-between" gap="lg" className={classes.summaryHeader}>
-              <Stack gap="xs">
-                <Group gap="xs" wrap="wrap">
-                  <Text className="portal-ui-eyebrow-text">Student profile</Text>
-                </Group>
-                <Title order={2} className={classes.summaryTitle}>
-                  {displayValue(currentProfile.fullName)}
-                </Title>
-              </Stack>
-            </Group>
-
-            <Group gap="sm" wrap="wrap" className={classes.summaryMeta}>
-              <Badge
-                color={summaryBadges[0].color}
-                variant="filled"
-                radius="sm"
-                classNames={{ label: classes.metaBadgeLabel, root: classes.metaBadge }}
-              >
-                {displayValue(currentProfile.classStanding)}
-              </Badge>
-              <Badge
-                color={summaryBadges[1].color}
-                variant="filled"
-                radius="sm"
-                classNames={{ label: classes.metaBadgeLabel, root: classes.metaBadge }}
-              >
-                {summaryBadges[1].label}: {displayValue(currentProfile.classOf)}
-              </Badge>
-              <Badge
-                color={summaryBadges[2].color}
-                variant="filled"
-                radius="sm"
-                classNames={{ label: classes.metaBadgeLabel, root: classes.metaBadge }}
-              >
-                {summaryBadges[2].label}: {displayValue(currentProfile.preferredName)}
-              </Badge>
-            </Group>
-          </Stack>
-        </Paper>
-
-        <Paper className={classes.sectionsPanel}>
-          <Tabs
-            defaultValue="personal"
-            classNames={{
-              list: classes.tabsList,
-              panel: classes.tabPanel,
-              tab: classes.tab,
-            }}
+    <RecordPageShell
+      size="xl"
+      eyebrow="Student Profile"
+      title={displayValue(currentProfile.fullName)}
+      description="Review your personal, student, and contact details."
+      badge={
+        <Group gap="sm" wrap="wrap">
+          <Badge color="blue" variant="light">
+            Class standing: {displayValue(currentProfile.classStanding)}
+          </Badge>
+          <Badge color="indigo" variant="light">
+            Class of: {displayValue(currentProfile.classOf)}
+          </Badge>
+          <Badge color="gray" variant="light">
+            Preferred name: {displayValue(currentProfile.preferredName)}
+          </Badge>
+        </Group>
+      }
+    >
+      <Stack gap={0}>
+        {isEditing ? (
+          <RecordPageSection
+            title="Editing"
+            description="Profile edits on this page are still local only."
           >
-            <Group justify="space-between" align="flex-end" gap="md" className={classes.sectionsHeader}>
-              <Tabs.List className={classes.tabsHeaderList}>
-                <Tabs.Tab value="personal">Personal</Tabs.Tab>
-                <Tabs.Tab value="student">Student</Tabs.Tab>
-                <Tabs.Tab value="contact">Contact</Tabs.Tab>
-              </Tabs.List>
+            <Grid.Col span={12}>
+              <Alert color="blue" title="Local edit mode">
+                Changes on this page are not saved to the backend yet.
+              </Alert>
+            </Grid.Col>
+          </RecordPageSection>
+        ) : null}
 
-              <Group justify="flex-end" gap="sm" className={classes.sectionActions}>
-                {isEditing ? (
-                  <>
-                    <Button onClick={handleApplyLocally} disabled={!hasLocalChanges}>
-                      Apply locally
-                    </Button>
-                    <Button variant="default" onClick={handleCancelEditing}>
-                      Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <Button color="blue" onClick={handleStartEditing}>
-                    Edit details
-                  </Button>
-                )}
+        <RecordPageSection
+          title="Identity"
+          description="Core identity and background details from your student record."
+          action={
+            isEditing ? (
+              <Group gap="sm" wrap="wrap" justify="flex-end">
+                <Button onClick={handleCancelEditing} variant="default">
+                  Cancel
+                </Button>
+                <Button onClick={handleApplyLocally} disabled={!hasLocalChanges}>
+                  Apply locally
+                </Button>
               </Group>
-            </Group>
+            ) : (
+              <Group gap="sm" wrap="wrap" justify="flex-end">
+                {applySucceeded ? <Text size="sm" c="green">Changes applied.</Text> : null}
+                <Button onClick={handleStartEditing} variant="light">
+                  Edit details
+                </Button>
+              </Group>
+            )
+          }
+        >
+          <ReadOnlyField label="Last name" value={displayValue(currentProfile.lastName)} />
+          <ReadOnlyField label="First name" value={displayValue(currentProfile.firstName)} />
+          <ReadOnlyField label="Middle name" value={displayValue(currentProfile.middleName)} />
+          <ReadOnlyField label="Name suffix" value={displayValue(currentProfile.nameSuffix)} />
+          {isEditing ? (
+            <EditableField
+              formKey="preferredName"
+              formValues={form.values}
+              label="Preferred name"
+              onChange={(nextValue) => {
+                form.setFieldValue('preferredName', nextValue);
+              }}
+              placeholder="Enter preferred name"
+            />
+          ) : (
+            <ReadOnlyField label="Preferred name" value={displayValue(currentProfile.preferredName)} />
+          )}
+          <ReadOnlyField label="Gender" value={displayValue(currentProfile.gender)} />
+          <ReadOnlyField label="Ethnicity" value={displayValue(currentProfile.ethnicity)} />
+          <ReadOnlyField label="Date of birth" value={displayDate(currentProfile.dateOfBirth)} />
+        </RecordPageSection>
 
-            <Tabs.Panel value="personal">
-              <SimpleGrid cols={{ base: 1, xl: 2 }} spacing="lg" className={classes.panelGrid}>
-                {personalSections.map((section) => (
-                  <DetailsTableSection
-                    key={section.title}
-                    form={form}
-                    getInputPlaceholder={(field) => getEditablePlaceholder(field.label)}
-                    isEditing={isEditing}
-                    record={currentProfile}
-                    section={section}
-                  />
-                ))}
-              </SimpleGrid>
-            </Tabs.Panel>
+        <RecordPageSection
+          title="Student"
+          description="Student record fields and graduation planning details."
+        >
+          <ReadOnlyField label="Student ID" value={displayValue(currentProfile.studentId)} />
+          <ReadOnlyField label="Class standing" value={displayValue(currentProfile.classStanding)} />
+          <ReadOnlyField
+            label="Estimated grad date"
+            value={displayDate(currentProfile.estimatedGradDate)}
+          />
+          <ReadOnlyField label="Class of" value={displayValue(currentProfile.classOf)} />
+        </RecordPageSection>
 
-            <Tabs.Panel value="student">
-              <SimpleGrid cols={{ base: 1, xl: 2 }} spacing="lg" className={classes.panelGrid}>
-                {studentSections.map((section) => (
-                  <DetailsTableSection
-                    key={section.title}
-                    form={form}
-                    getInputPlaceholder={(field) => getEditablePlaceholder(field.label)}
-                    isEditing={isEditing}
-                    record={currentProfile}
-                    section={section}
-                  />
-                ))}
-              </SimpleGrid>
-            </Tabs.Panel>
+        <RecordPageSection
+          title="Contact"
+          description="Contact information associated with your student profile."
+        >
+          <ReadOnlyField label="Email" value={displayValue(currentProfile.email)} />
+          <ReadOnlyField label="Phone" value={displayValue(currentProfile.phone)} />
+        </RecordPageSection>
 
-            <Tabs.Panel value="contact">
-              <SimpleGrid cols={{ base: 1, xl: 2 }} spacing="lg" className={classes.panelGrid}>
-                {contactSections.map((section) => (
-                  <DetailsTableSection
-                    key={section.title}
-                    form={form}
-                    getInputPlaceholder={(field) => getEditablePlaceholder(field.label)}
-                    isEditing={isEditing}
-                    record={currentProfile}
-                    section={section}
-                  />
-                ))}
-              </SimpleGrid>
-            </Tabs.Panel>
-          </Tabs>
-        </Paper>
+        <RecordPageSection
+          title="Address"
+          description="Mailing address information associated with your profile."
+        >
+          {isEditing ? (
+            <>
+              <EditableField
+                formKey="addressLine1"
+                formValues={form.values}
+                label="Address line 1"
+                onChange={(nextValue) => {
+                  form.setFieldValue('addressLine1', nextValue);
+                }}
+                placeholder="Street address"
+                span={12}
+              />
+              <EditableField
+                formKey="addressLine2"
+                formValues={form.values}
+                label="Address line 2"
+                onChange={(nextValue) => {
+                  form.setFieldValue('addressLine2', nextValue);
+                }}
+                placeholder="Apartment, suite, unit, etc."
+                span={12}
+              />
+              <EditableField
+                formKey="city"
+                formValues={form.values}
+                label="City"
+                onChange={(nextValue) => {
+                  form.setFieldValue('city', nextValue);
+                }}
+                placeholder="Enter city"
+              />
+              <EditableField
+                formKey="stateRegion"
+                formValues={form.values}
+                label="State / region"
+                onChange={(nextValue) => {
+                  form.setFieldValue('stateRegion', nextValue);
+                }}
+                placeholder="Enter state or region"
+              />
+              <EditableField
+                formKey="postalCode"
+                formValues={form.values}
+                label="Postal code"
+                onChange={(nextValue) => {
+                  form.setFieldValue('postalCode', nextValue);
+                }}
+                placeholder="Enter postal code"
+                span={{ base: 12, md: 4 }}
+              />
+              <EditableField
+                formKey="countryCode"
+                formValues={form.values}
+                label="Country code"
+                onChange={(nextValue) => {
+                  form.setFieldValue('countryCode', nextValue);
+                }}
+                placeholder="US"
+                span={{ base: 12, md: 4 }}
+              />
+            </>
+          ) : (
+            <>
+              <ReadOnlyField
+                label="Address line 1"
+                value={displayValue(currentProfile.addressLine1)}
+                span={12}
+              />
+              <ReadOnlyField
+                label="Address line 2"
+                value={displayValue(currentProfile.addressLine2)}
+                span={12}
+              />
+              <ReadOnlyField label="City" value={displayValue(currentProfile.city)} />
+              <ReadOnlyField
+                label="State / region"
+                value={displayValue(currentProfile.stateRegion)}
+              />
+              <ReadOnlyField
+                label="Postal code"
+                value={displayValue(currentProfile.postalCode)}
+                span={{ base: 12, md: 4 }}
+              />
+              <ReadOnlyField
+                label="Country code"
+                value={displayValue(currentProfile.countryCode)}
+                span={{ base: 12, md: 4 }}
+              />
+            </>
+          )}
+        </RecordPageSection>
       </Stack>
-    </Container>
+    </RecordPageShell>
   );
 }

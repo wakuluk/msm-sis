@@ -1,5 +1,6 @@
 package com.msm.sis.api.dto;
 
+import com.msm.sis.api.dto.student.PatchStudentRequest;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 

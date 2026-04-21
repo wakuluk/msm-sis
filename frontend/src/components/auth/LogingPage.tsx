@@ -30,7 +30,7 @@ export function LogingPage() {
   return (
     <Container size={420} my={40}>
       <Title ta="center" className={classes.title}>
-        WSIS
+        Mount St. Mary's University
       </Title>
       <Paper p={22} mt={30}>
         <form onSubmit={handleSubmit}>

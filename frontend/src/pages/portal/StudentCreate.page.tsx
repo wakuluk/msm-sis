@@ -1,18 +1,11 @@
 import { useState } from 'react';
-import {
-  Alert,
-  Badge,
-  Button,
-  Container,
-  Grid,
-  Group,
-  Paper,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Alert, Badge, Button, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { RecordPageFooter } from '@/components/create/RecordPageFooter';
+import { RecordPageSection } from '@/components/create/RecordPageSection';
+import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import {
   StudentAddressFormFields,
   StudentContactFormFields,
@@ -27,7 +20,6 @@ import {
   type StudentCreateFormValues,
 } from '@/services/schemas/student-schemas';
 import { createStudent } from '@/services/student-service';
-import classes from './StudentCreate.module.css';
 
 type StudentCreateSubmitState =
   | { status: 'idle' }
@@ -40,6 +32,7 @@ function getErrorMessage(error: unknown, fallbackMessage: string): string {
 
 export function StudentCreatePage() {
   const navigate = useNavigate();
+  const { handleBack } = usePortalBackNavigation({ fallbackPath: '/student-search' });
   const [submitState, setSubmitState] = useState<StudentCreateSubmitState>({ status: 'idle' });
   const {
     classStandingOptions,
@@ -79,133 +72,82 @@ export function StudentCreatePage() {
   }
 
   return (
-    <Container size="lg" py="lg">
-      <Stack className={classes.page}>
-        <Paper className={classes.summaryCard}>
-          <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">
-            <Stack gap="xs" className={classes.summaryCopy}>
-              <Text className="portal-ui-eyebrow-text">Admin Workflow</Text>
-              <Title order={1} className={classes.summaryTitle}>
-                Create Student
-              </Title>
-              <Text size="sm" c="dimmed" className={classes.summaryText}>
-                Capture the core student record here. After save, the app will redirect straight to
-                the new student detail page so you can continue with the full profile.
-              </Text>
-            </Stack>
-            <Badge variant="light" size="lg">
-              Admin only
-            </Badge>
-          </Group>
-        </Paper>
+    <RecordPageShell
+      eyebrow="Admin Workflow"
+      title="Create Student"
+      description="Capture the core student record here. After save, the app will redirect straight to the new student detail page so you can continue with the full profile."
+      badge={
+        <Badge variant="light" size="lg">
+          Admin only
+        </Badge>
+      }
+      beforeForm={
+        <>
+          {submitError ? (
+            <Alert color="red" title="Unable to create student">
+              {submitError}
+            </Alert>
+          ) : null}
 
-        {submitError ? (
-          <Alert color="red" title="Unable to create student">
-            {submitError}
-          </Alert>
-        ) : null}
+          {referenceOptionsError ? (
+            <StudentReferenceOptionsAlert>
+              {referenceOptionsError} You can still create the student, but the gender, ethnicity,
+              and class standing lists are unavailable until the reference request succeeds.
+            </StudentReferenceOptionsAlert>
+          ) : null}
+        </>
+      }
+    >
+      <form onSubmit={form.onSubmit(handleSubmit)}>
+        <Stack gap={0}>
+          <RecordPageSection
+            title="Identity"
+            description="Required name fields plus personal identifiers used throughout the portal."
+          >
+            <StudentIdentityFormFields
+              form={form}
+              genderOptions={genderOptions}
+              ethnicityOptions={ethnicityOptions}
+              referenceOptionsLoading={referenceOptionsLoading}
+              showRequiredNames
+            />
+          </RecordPageSection>
 
-        {referenceOptionsError ? (
-          <StudentReferenceOptionsAlert>
-            {referenceOptionsError} You can still create the student, but the gender, ethnicity, and
-            class standing lists are unavailable until the reference request succeeds.
-          </StudentReferenceOptionsAlert>
-        ) : null}
+          <RecordPageSection
+            title="Student"
+            description="Enrollment-facing fields that help staff place the record correctly once it opens in detail view."
+          >
+            <StudentRecordFormFields
+              form={form}
+              classStandingOptions={classStandingOptions}
+              referenceOptionsLoading={referenceOptionsLoading}
+            />
+          </RecordPageSection>
 
-        <Paper className={classes.formPanel}>
-          <form onSubmit={form.onSubmit(handleSubmit)}>
-            <Stack gap={0}>
-              <section className={classes.section}>
-                <div className={classes.sectionHeader}>
-                  <Title order={3} className={classes.sectionTitle}>
-                    Identity
-                  </Title>
-                  <Text size="sm" c="dimmed">
-                    Required name fields plus personal identifiers used throughout the portal.
-                  </Text>
-                </div>
-                <Grid gap="md">
-                  <StudentIdentityFormFields
-                    form={form}
-                    genderOptions={genderOptions}
-                    ethnicityOptions={ethnicityOptions}
-                    referenceOptionsLoading={referenceOptionsLoading}
-                    showRequiredNames
-                  />
-                </Grid>
-              </section>
+          <RecordPageSection
+            title="Contact"
+            description="Basic communication fields for the first pass of the record."
+          >
+            <StudentContactFormFields form={form} />
+          </RecordPageSection>
 
-              <section className={classes.section}>
-                <div className={classes.sectionHeader}>
-                  <Title order={3} className={classes.sectionTitle}>
-                    Student
-                  </Title>
-                  <Text size="sm" c="dimmed">
-                    Enrollment-facing fields that help staff place the record correctly once it
-                    opens in detail view.
-                  </Text>
-                </div>
-                <Grid gap="md">
-                  <StudentRecordFormFields
-                    form={form}
-                    classStandingOptions={classStandingOptions}
-                    referenceOptionsLoading={referenceOptionsLoading}
-                  />
-                </Grid>
-              </section>
+          <RecordPageSection
+            title="Address"
+            description="Address fields are optional. Leave them blank if the student should start without an address on file."
+          >
+            <StudentAddressFormFields form={form} />
+          </RecordPageSection>
 
-              <section className={classes.section}>
-                <div className={classes.sectionHeader}>
-                  <Title order={3} className={classes.sectionTitle}>
-                    Contact
-                  </Title>
-                  <Text size="sm" c="dimmed">
-                    Basic communication fields for the first pass of the record.
-                  </Text>
-                </div>
-                <Grid gap="md">
-                  <StudentContactFormFields form={form} />
-                </Grid>
-              </section>
-
-              <section className={classes.section}>
-                <div className={classes.sectionHeader}>
-                  <Title order={3} className={classes.sectionTitle}>
-                    Address
-                  </Title>
-                  <Text size="sm" c="dimmed">
-                    Address fields are optional. Leave them blank if the student should start
-                    without an address on file.
-                  </Text>
-                </div>
-                <Grid gap="md">
-                  <StudentAddressFormFields form={form} />
-                </Grid>
-              </section>
-
-              <div className={classes.footerBar}>
-                <Text size="sm" c="dimmed" className={classes.footerText}>
-                  The student ID is assigned on save. Once the record is created, you will land on
-                  the student detail page to continue editing.
-                </Text>
-                <Group gap="sm" wrap="wrap" justify="flex-end">
-                  <Button
-                    component={Link}
-                    to="/student-search"
-                    variant="default"
-                    disabled={isSubmitting}
-                  >
-                    Back to search
-                  </Button>
-                  <Button type="submit" loading={isSubmitting}>
-                    Create student
-                  </Button>
-                </Group>
-              </div>
-            </Stack>
-          </form>
-        </Paper>
-      </Stack>
-    </Container>
+          <RecordPageFooter description="The student ID is assigned on save. Once the record is created, you will land on the student detail page to continue editing.">
+            <Button type="button" onClick={handleBack} variant="default" disabled={isSubmitting}>
+              Back
+            </Button>
+            <Button type="submit" loading={isSubmitting}>
+              Create student
+            </Button>
+          </RecordPageFooter>
+        </Stack>
+      </form>
+    </RecordPageShell>
   );
 }

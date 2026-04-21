@@ -10,23 +10,43 @@ import { PortalPage } from './pages/portal/Portal.page';
 import { PublicPage } from './pages/public/Public.page';
 import { CatalogAdvancedPage } from './pages/portal/CatalogAdvanced.page';
 import { CatalogSearchPage } from './pages/portal/CatalogSearch.page';
-import { SharedPage } from './pages/portal/Shared.page';
-import { SharedSecondPage } from './pages/portal/SharedSecond.page';
 import { StudentCreatePage } from './pages/portal/StudentCreate.page';
 import { StudentDetailPage } from './pages/portal/StudentDetail.page';
 import { StudentProfilePage } from './pages/portal/StudentProfile.page';
 import { StudentSearchPage } from './pages/portal/StudentSearch.page';
+import { AcademicTermDetailPage } from './pages/portal/AcademicTermDetail.page';
+import { AcademicSchoolsPage } from './pages/portal/AcademicSchools.page';
+import { AcademicSchoolDetailPage } from './pages/portal/AcademicSchoolDetail.page';
+import { AcademicDepartmentsPage } from './pages/portal/AcademicDepartments.page';
+import { AcademicDepartmentDetailPage } from './pages/portal/AcademicDepartmentDetail.page';
+import { CourseSearchPage } from './pages/portal/CourseSearch.page';
+import { CourseDetailPage } from './pages/portal/CourseDetail.page';
+import { AcademicYearsSearchPage } from './pages/portal/AcademicYearsSearch.page';
+import { AcademicYearCreatePage } from './pages/portal/AcademicYearCreate.page';
+import { AcademicYearDetailPage } from './pages/portal/AcademicYearDetail.page';
+import { AcademicYearCatalogPage } from './pages/portal/AcademicYearCatalog.page';
+import { AcademicTermGroupDetailPage } from './pages/portal/AcademicTermGroupDetail.page';
 
 const portalRouteComponents = {
   dashboard: PortalPage,
   catalog: CatalogSearchPage,
   'catalog-advanced': CatalogAdvancedPage,
-  shared: SharedPage,
+  'academic-schools': AcademicSchoolsPage,
+  'academic-school-detail': AcademicSchoolDetailPage,
+  'academic-departments': AcademicDepartmentsPage,
+  'academic-department-detail': AcademicDepartmentDetailPage,
+  'course-search': CourseSearchPage,
+  'course-detail': CourseDetailPage,
+  'academic-years-create': AcademicYearCreatePage,
+  'academic-years-detail': AcademicYearDetailPage,
+  'academic-year-catalog': AcademicYearCatalogPage,
+  'academic-term-detail': AcademicTermDetailPage,
+  'academic-term-group-detail': AcademicTermGroupDetailPage,
+  'academic-years-search': AcademicYearsSearchPage,
   student: StudentProfilePage,
   studentCreate: StudentCreatePage,
   studentDetail: StudentDetailPage,
   studentSearch: StudentSearchPage,
-  sharedSecond: SharedSecondPage,
 } satisfies Record<PortalRouteItemKey, ComponentType>;
 
 const portalChildren = flattenPortalRoutes(portalRoutes).map((route) => {

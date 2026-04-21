@@ -1,9 +1,9 @@
 import { Grid, Loader, Select, TextInput } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import type { UseFormReturnType } from '@mantine/form';
+import createClasses from '@/components/create/RecordPageLayout.module.css';
 import type { StudentProfileFormValues } from '@/services/schemas/student-schemas';
 import standardInputClasses from '@/styles/StandardInput.module.css';
-import createClasses from '@/pages/portal/StudentCreate.module.css';
 import type { StudentReferenceSelectOption } from './useStudentReferenceOptions';
 
 type SharedFormProps<TValues extends StudentProfileFormValues> = {
@@ -196,6 +196,7 @@ export function StudentAddressFormFields<TValues extends StudentProfileFormValue
         <TextInput
           label="Address line 1"
           placeholder="Street address"
+          maxLength={255}
           {...form.getInputProps('addressLine1')}
         />
       </Grid.Col>
@@ -203,16 +204,23 @@ export function StudentAddressFormFields<TValues extends StudentProfileFormValue
         <TextInput
           label="Address line 2"
           placeholder="Apartment, suite, unit, etc."
+          maxLength={255}
           {...form.getInputProps('addressLine2')}
         />
       </Grid.Col>
       <Grid.Col span={{ base: 12, md: 6 }}>
-        <TextInput label="City" placeholder="Enter city" {...form.getInputProps('city')} />
+        <TextInput
+          label="City"
+          placeholder="Enter city"
+          maxLength={100}
+          {...form.getInputProps('city')}
+        />
       </Grid.Col>
       <Grid.Col span={{ base: 12, md: 6 }}>
         <TextInput
           label="State / region"
           placeholder="Enter state or region"
+          maxLength={100}
           {...form.getInputProps('stateRegion')}
         />
       </Grid.Col>
@@ -220,11 +228,17 @@ export function StudentAddressFormFields<TValues extends StudentProfileFormValue
         <TextInput
           label="Postal code"
           placeholder="Enter postal code"
+          maxLength={20}
           {...form.getInputProps('postalCode')}
         />
       </Grid.Col>
       <Grid.Col span={{ base: 12, md: 4 }}>
-        <TextInput label="Country code" placeholder="US" {...form.getInputProps('countryCode')} />
+        <TextInput
+          label="Country code"
+          placeholder="US"
+          maxLength={2}
+          {...form.getInputProps('countryCode')}
+        />
       </Grid.Col>
     </>
   );
