@@ -287,6 +287,7 @@ export const AcademicTermResponseSchema = z.object({
   termStatusCode: z.string().nullable(),
   termStatusName: z.string().nullable(),
   active: z.boolean(),
+  courseOfferingCount: z.number(),
   lastUpdated: z.string().nullable().optional(),
   updatedBy: z.string().nullable().optional(),
 });
@@ -326,3 +327,39 @@ export const AcademicYearCreateResponseSchema = z.object({
 });
 
 export type AcademicYearCreateResponse = z.infer<typeof AcademicYearCreateResponseSchema>;
+
+export const AcademicYearCatalogTermSummarySchema = z.object({
+  termId: z.number(),
+  code: z.string(),
+  name: z.string(),
+  courseOfferingCount: z.number(),
+});
+
+export type AcademicYearCatalogTermSummary = z.infer<typeof AcademicYearCatalogTermSummarySchema>;
+
+export const AcademicYearCatalogTermGroupSummarySchema = z.object({
+  termGroupId: z.number(),
+  code: z.string(),
+  name: z.string(),
+  termCount: z.number(),
+  courseOfferingCount: z.number(),
+  terms: z.array(AcademicYearCatalogTermSummarySchema),
+});
+
+export type AcademicYearCatalogTermGroupSummary = z.infer<
+  typeof AcademicYearCatalogTermGroupSummarySchema
+>;
+
+export const AcademicYearCatalogSummaryResponseSchema = z.object({
+  academicYearId: z.number(),
+  academicYearCode: z.string(),
+  academicYearName: z.string(),
+  termGroupCount: z.number(),
+  termCount: z.number(),
+  courseOfferingCount: z.number(),
+  termGroups: z.array(AcademicYearCatalogTermGroupSummarySchema),
+});
+
+export type AcademicYearCatalogSummaryResponse = z.infer<
+  typeof AcademicYearCatalogSummaryResponseSchema
+>;

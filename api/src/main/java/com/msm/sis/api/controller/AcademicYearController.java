@@ -4,7 +4,16 @@ import com.msm.sis.api.config.AuthenticatedJwt;
 import com.msm.sis.api.dto.academic.term.AcademicTermGroupResponse;
 import com.msm.sis.api.dto.academic.term.CreateAcademicTermGroupRequest;
 import com.msm.sis.api.dto.academic.year.*;
+import com.msm.sis.api.dto.catalog.AcademicYearCatalogResponse;
+import com.msm.sis.api.dto.catalog.AcademicYearCatalogSummaryResponse;
+import com.msm.sis.api.dto.course.AcademicYearCourseOfferingSearchCriteria;
+import com.msm.sis.api.dto.course.AcademicYearCourseOfferingSearchResponse;
+import com.msm.sis.api.dto.course.CourseOfferingDetailResponse;
+import com.msm.sis.api.dto.course.CreateCourseOfferingRequest;
+import com.msm.sis.api.dto.course.ImportAcademicYearCourseOfferingsResponse;
+import com.msm.sis.api.dto.course.SyncAcademicYearCourseOfferingsResponse;
 import com.msm.sis.api.service.academic.AcademicYearService;
+import com.msm.sis.api.service.course.CourseOfferingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,9 +32,14 @@ import java.util.List;
 public class AcademicYearController {
 
     private final AcademicYearService academicYearService;
+    private final CourseOfferingService courseOfferingService;
 
-    public AcademicYearController(AcademicYearService academicYearService) {
+    public AcademicYearController(
+            AcademicYearService academicYearService,
+            CourseOfferingService courseOfferingService
+    ) {
         this.academicYearService = academicYearService;
+        this.courseOfferingService = courseOfferingService;
     }
 
     @PostMapping("/create")
@@ -86,6 +100,82 @@ public class AcademicYearController {
                         jwt.getEmail()
                 )
         );
+    }
+
+    @GetMapping("/{academicYearId}/catalog/summary")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AcademicYearCatalogSummaryResponse> getAcademicYearCatalogSummary(
+            @PathVariable Long academicYearId,
+            @AuthenticationPrincipal AuthenticatedJwt jwt)
+    {
+        return ResponseEntity.ok(academicYearService.getCatalogSummary(academicYearId));
+    }
+
+    @GetMapping("/{academicYearId}/catalog")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Get academic year catalog",
+            description = "Returns the academic year catalog grouped by term groups and terms, with course offerings under each term."
+    )
+    public ResponseEntity<AcademicYearCatalogResponse> getAcademicYearCatalog(
+            @PathVariable Long academicYearId
+    ) {
+        return ResponseEntity.ok(academicYearService.getCatalog(academicYearId));
+    }
+
+    @PostMapping("/{academicYearId}/course-offerings")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Create academic year course offering",
+            description = "Creates a year-scoped course offering and assigns it to one or more academic terms within the academic year."
+    )
+    public ResponseEntity<CourseOfferingDetailResponse> postAcademicYearCourseOffering(
+            @PathVariable Long academicYearId,
+            @Valid @NotNull @RequestBody CreateCourseOfferingRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(courseOfferingService.createCourseOffering(academicYearId, request));
+    }
+
+    @PostMapping("/{academicYearId}/course-offerings/import-current-course-versions")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Import current course versions into academic year catalog",
+            description = "Creates year-scoped course offerings for all current course versions whose courses are active and do not already have an offering in the academic year."
+    )
+    public ResponseEntity<ImportAcademicYearCourseOfferingsResponse> importCurrentCourseVersionsIntoAcademicYear(
+            @PathVariable Long academicYearId
+    ) {
+        return ResponseEntity.ok(
+                courseOfferingService.importCurrentCourseVersionsIntoAcademicYear(academicYearId)
+        );
+    }
+
+    @PostMapping("/{academicYearId}/course-offerings/sync-current-course-versions")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Sync academic year course offerings to current course versions",
+            description = "Repoints stale academic year course offerings to their course's current version when possible and reports the number updated, already current, or skipped."
+    )
+    public ResponseEntity<SyncAcademicYearCourseOfferingsResponse> syncAcademicYearCourseOfferingsToCurrentCourseVersions(
+            @PathVariable Long academicYearId
+    ) {
+        return ResponseEntity.ok(
+                courseOfferingService.syncAcademicYearCourseOfferingsToCurrentCourseVersions(academicYearId)
+        );
+    }
+
+    @GetMapping("/{academicYearId}/course-offerings/search")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Search academic year course offerings",
+            description = "Returns paged academic year course offerings filtered by school, department, subject, course code, and title."
+    )
+    public ResponseEntity<AcademicYearCourseOfferingSearchResponse> searchAcademicYearCourseOfferings(
+            @PathVariable Long academicYearId,
+            @ModelAttribute AcademicYearCourseOfferingSearchCriteria criteria
+    ) {
+        return ResponseEntity.ok(courseOfferingService.searchAcademicYearCourseOfferings(academicYearId, criteria));
     }
 
     @PostMapping("/{academicYearId}/terms")

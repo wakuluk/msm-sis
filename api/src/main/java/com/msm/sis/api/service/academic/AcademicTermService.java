@@ -149,15 +149,15 @@ public class AcademicTermService {
             String sortBy,
             String sortDirection
     ) {
-        getAcademicTermEntity(termId);
+        AcademicTerm academicTerm = getAcademicTermEntity(termId);
         CourseOfferingSearchSortField sortField = parseCourseOfferingSortField(sortBy);
         Sort.Direction direction = parseSortDirection(sortDirection);
 
-        return courseOfferingRepository.findAllByTerm_Id(
+        return courseOfferingRepository.findAllByAcademicTermId(
                         termId,
                         buildCourseOfferingSort(sortField, direction)
                 ).stream()
-                .map(courseMapper::toCourseOfferingSearchResultResponse)
+                .map(courseOffering -> courseMapper.toCourseOfferingSearchResultResponse(courseOffering, academicTerm))
                 .toList();
     }
 

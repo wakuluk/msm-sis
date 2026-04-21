@@ -20,7 +20,7 @@ import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import {
   AcademicYearCreateWithTermGroupsError,
   createAcademicYearWithTermGroups,
-} from '@/services/academic-years-service';
+} from '@/services/academic-year-service';
 import {
   initialAcademicTermGroupFormValues,
   initialAcademicYearCreateFormValues,

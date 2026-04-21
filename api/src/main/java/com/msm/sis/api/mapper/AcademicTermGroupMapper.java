@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
@@ -39,6 +40,13 @@ public class AcademicTermGroupMapper {
     }
 
     public AcademicTermGroupResponse toAcademicTermGroupResponse(AcademicTermGroup academicTermGroup) {
+        return toAcademicTermGroupResponse(academicTermGroup, Map.of());
+    }
+
+    public AcademicTermGroupResponse toAcademicTermGroupResponse(
+            AcademicTermGroup academicTermGroup,
+            Map<Long, Long> courseOfferingCountsByTermId
+    ) {
         AcademicTermGroupResponse response = new AcademicTermGroupResponse();
         response.setTermGroupId(academicTermGroup.getId());
         response.setAcademicYearId(
@@ -48,7 +56,9 @@ public class AcademicTermGroupMapper {
         response.setName(academicTermGroup.getName());
         response.setStartDate(academicTermGroup.getStartDate());
         response.setEndDate(academicTermGroup.getEndDate());
-        response.setAcademicTerms(toAcademicTermResponses(academicTermGroup.getAcademicTerms()));
+        response.setAcademicTerms(
+                toAcademicTermResponses(academicTermGroup.getAcademicTerms(), courseOfferingCountsByTermId)
+        );
         return response;
     }
 
@@ -78,14 +88,20 @@ public class AcademicTermGroupMapper {
         applyDirect(request.getEndDate(), academicTermGroup::setEndDate);
     }
 
-    private List<AcademicTermResponse> toAcademicTermResponses(List<AcademicTerm> academicTerms) {
+    private List<AcademicTermResponse> toAcademicTermResponses(
+            List<AcademicTerm> academicTerms,
+            Map<Long, Long> courseOfferingCountsByTermId
+    ) {
         if (academicTerms == null) {
             return List.of();
         }
 
         return academicTerms.stream()
                 .sorted(Comparator.comparing(AcademicTerm::getSortOrder))
-                .map(academicYearMapper::toAcademicTermResponse)
+                .map(term -> academicYearMapper.toAcademicTermResponse(
+                        term,
+                        courseOfferingCountsByTermId.getOrDefault(term.getId(), 0L)
+                ))
                 .toList();
     }
 

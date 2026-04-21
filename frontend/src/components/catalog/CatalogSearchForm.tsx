@@ -21,7 +21,7 @@ import {
   parseCourseOfferingSortBy,
   parseCourseOfferingSortDirection,
   type CourseOfferingSearchSize,
-} from '@/services/catalog-service';
+} from '@/services/course-offering-search-config';
 import type {
   CourseOfferingSearchFilters,
   CourseOfferingSearchSortBy,

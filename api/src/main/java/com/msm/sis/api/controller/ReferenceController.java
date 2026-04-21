@@ -3,6 +3,7 @@ package com.msm.sis.api.controller;
 import com.msm.sis.api.dto.academic.AcademicSchoolDepartmentSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.catalog.CatalogAdvancedSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.catalog.CatalogSearchReferenceOptionsResponse;
+import com.msm.sis.api.dto.course.CoursePickerReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CourseSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
 import com.msm.sis.api.service.ReferenceDataService;
@@ -57,6 +58,16 @@ public class ReferenceController {
     )
     public ResponseEntity<CourseSearchReferenceOptionsResponse> getCourseSearchReferenceOptions() {
         return ResponseEntity.ok(referenceDataService.getCourseSearchReferenceOptions());
+    }
+
+    @GetMapping("/course-picker-options")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Get course picker reference options",
+            description = "Returns eligible courses with current versions, plus school, department, and subject filters for the add-offering workflow."
+    )
+    public ResponseEntity<CoursePickerReferenceOptionsResponse> getCoursePickerReferenceOptions() {
+        return ResponseEntity.ok(referenceDataService.getCoursePickerReferenceOptions());
     }
 
     @GetMapping("/catalog-search-options")

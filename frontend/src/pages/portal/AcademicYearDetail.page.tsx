@@ -1,31 +1,33 @@
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useEffect, useState } from 'react';
 import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
-import {
-  Alert,
-  Badge,
-  Button,
-  Grid,
-  Group,
-  Paper,
-  Stack,
-  Table,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { Alert, Badge, Button, Grid, Group, Stack, Text, TextInput } from '@mantine/core';
 import { Link, useLocation, useParams } from 'react-router-dom';
+import { AcademicYearCatalogSummarySection } from '@/components/academic-year/AcademicYearCatalogSummarySection';
+import {
+  compareAcademicTermGroups,
+  compareAcademicTerms,
+  displayDate,
+  displayValue,
+  formatDateForFormValue,
+  normalizeDateInputValue,
+  parseDateInputValue,
+} from '@/components/academic-year/academicYearDisplay';
+import { AcademicYearTermsSection } from '@/components/academic-year/AcademicYearTermsSection';
 import { WorkflowStatusStepperSection } from '@/components/status/WorkflowStatusStepperSection';
+import { ReadOnlyField } from '@/components/fields/ReadOnlyField';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
 import {
   getAcademicYearById,
+  getAcademicYearCatalogSummary,
   getAcademicYearStatuses,
   patchAcademicYear,
   postAcademicYearTerms,
   shiftAcademicYearStatus,
-} from '@/services/academic-years-service';
+} from '@/services/academic-year-service';
 import {
   buildPostAcademicYearTermsRequest,
   buildPatchAcademicYearRequest,
@@ -35,6 +37,7 @@ import {
 } from '@/services/mappers/academic-year-mappers';
 import {
   initialAcademicYearAddTermsFormValues,
+  type AcademicYearCatalogSummaryResponse,
   initialAcademicYearDetailFormValues,
   initialAcademicYearTermFormValues,
   type AcademicYearAddTermsFormValues,
@@ -72,56 +75,13 @@ type AcademicYearStatusShiftState =
   | { status: 'success' }
   | { status: 'error'; message: string };
 
-function displayValue(value: boolean | number | string | null | undefined): string {
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-
-  if (value === null || value === undefined || value === '') {
-    return '—';
-  }
-
-  return String(value);
-}
-
-function displayDate(value: string | null | undefined): string {
-  if (!value) {
-    return '—';
-  }
-
-  const parsedDate = new Date(`${value}T00:00:00`);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat('en-US', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(parsedDate);
-}
+type AcademicYearCatalogSummaryState =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'success'; summary: AcademicYearCatalogSummaryResponse };
 
 function getErrorMessage(error: unknown, fallbackMessage: string): string {
   return error instanceof Error ? error.message : fallbackMessage;
-}
-
-function compareAcademicTerms(
-  left: Pick<AcademicYearCreateResponse['terms'][number], 'code' | 'sortOrder' | 'termId'>,
-  right: Pick<AcademicYearCreateResponse['terms'][number], 'code' | 'sortOrder' | 'termId'>
-): number {
-  return left.sortOrder - right.sortOrder || left.code.localeCompare(right.code) || left.termId - right.termId;
-}
-
-function compareAcademicTermGroups(
-  left: Pick<AcademicYearCreateResponse['groupTerms'][number], 'code' | 'startDate' | 'termGroupId'>,
-  right: Pick<AcademicYearCreateResponse['groupTerms'][number], 'code' | 'startDate' | 'termGroupId'>
-): number {
-  return (
-    left.startDate.localeCompare(right.startDate) ||
-    left.code.localeCompare(right.code) ||
-    left.termGroupId - right.termGroupId
-  );
 }
 
 function getAcademicYearStatusCode(detail: AcademicYearCreateResponse): string | null {
@@ -137,80 +97,6 @@ function isConditionalAcademicYearStatus(code: string | null | undefined): boole
   const normalizedCode = code?.trim().toUpperCase() ?? null;
 
   return normalizedCode === 'CANCELLED';
-}
-
-function formatDateForFormValue(value: Date): string {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, '0');
-  const day = String(value.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
-
-function normalizeDateInputValue(value: string | Date | null): string {
-  if (!value) {
-    return '';
-  }
-
-  if (typeof value === 'string') {
-    return value.trim();
-  }
-
-  return formatDateForFormValue(value);
-}
-
-function parseDateInputValue(value: string): Date | null {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return null;
-  }
-
-  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmedValue);
-
-  if (!dateMatch) {
-    return null;
-  }
-
-  const [, yearPart, monthPart, dayPart] = dateMatch;
-  const year = Number(yearPart);
-  const month = Number(monthPart);
-  const day = Number(dayPart);
-  const parsedDate = new Date(year, month - 1, day);
-
-  if (
-    Number.isNaN(parsedDate.getTime()) ||
-    parsedDate.getFullYear() !== year ||
-    parsedDate.getMonth() + 1 !== month ||
-    parsedDate.getDate() !== day
-  ) {
-    return null;
-  }
-
-  return parsedDate;
-}
-
-function ReadOnlyField({
-  label,
-  value,
-  span = { base: 12, md: 6 },
-}: {
-  label: string;
-  value: string;
-  span?: ComponentProps<typeof Grid.Col>['span'];
-}) {
-  const isEmptyValue = value === '—';
-
-  return (
-    <Grid.Col span={span}>
-      <TextInput
-        label={label}
-        value={isEmptyValue ? '' : value}
-        placeholder={isEmptyValue ? '—' : undefined}
-        readOnly
-      />
-    </Grid.Col>
-  );
 }
 
 export function AcademicYearDetailPage() {
@@ -237,6 +123,9 @@ export function AcademicYearDetailPage() {
   );
   const [academicYearStatusesLoading, setAcademicYearStatusesLoading] = useState(true);
   const [academicYearStatusesError, setAcademicYearStatusesError] = useState<string | null>(null);
+  const [catalogSummaryState, setCatalogSummaryState] = useState<AcademicYearCatalogSummaryState>({
+    status: 'loading',
+  });
   const form = useForm<AcademicYearDetailFormValues>({
     initialValues: initialAcademicYear
       ? mapAcademicYearDetailToFormValues(initialAcademicYear)
@@ -279,6 +168,41 @@ export function AcademicYearDetailPage() {
       abortController.abort();
     };
   }, []);
+
+  useEffect(() => {
+    if (!hasValidAcademicYearId) {
+      setCatalogSummaryState({
+        status: 'error',
+        message: 'Academic year ID is missing or invalid.',
+      });
+      return;
+    }
+
+    const abortController = new AbortController();
+    setCatalogSummaryState({ status: 'loading' });
+
+    getAcademicYearCatalogSummary({
+      academicYearId: parsedAcademicYearId,
+      signal: abortController.signal,
+    })
+      .then((summary) => {
+        setCatalogSummaryState({ status: 'success', summary });
+      })
+      .catch((error) => {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        setCatalogSummaryState({
+          status: 'error',
+          message: getErrorMessage(error, 'Failed to load academic year catalog summary.'),
+        });
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [hasValidAcademicYearId, parsedAcademicYearId]);
 
   useEffect(() => {
     if (initialAcademicYear) {
@@ -475,39 +399,6 @@ export function AcademicYearDetailPage() {
   const hasTermGroups = sortedTermGroups.length > 0;
   const sortedLegacyTerms = hasTermGroups ? [] : getAcademicYearResponseTerms(detail);
   const currentAcademicYearStatusCode = getAcademicYearStatusCode(detail);
-
-  function renderAddTermsActions() {
-    return (
-      <Group gap="sm" wrap="wrap" justify="flex-end">
-        <Button
-          type="button"
-          variant="light"
-          onClick={handleAddTermRow}
-          disabled={addTermsInProgress}
-        >
-          Add row
-        </Button>
-        <Button
-          type="button"
-          variant="default"
-          onClick={handleCancelAddingTerms}
-          disabled={addTermsInProgress}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          onClick={() => {
-            void handleSaveNewTerms();
-          }}
-          loading={addTermsInProgress}
-          disabled={addTermsForm.values.terms.length === 0}
-        >
-          Save terms
-        </Button>
-      </Group>
-    );
-  }
 
   async function handleSaveEdit() {
     if (saveInProgress) {
@@ -814,263 +705,41 @@ export function AcademicYearDetailPage() {
           />
         </RecordPageSection>
 
-        <RecordPageSection
-          title={hasTermGroups ? 'Academic Term Groups' : 'Academic Terms'}
+        <AcademicYearCatalogSummarySection
+          summary={catalogSummaryState.status === 'success' ? catalogSummaryState.summary : null}
+          isLoading={catalogSummaryState.status === 'loading'}
+          error={catalogSummaryState.status === 'error' ? catalogSummaryState.message : null}
           action={
-            isEditing || hasTermGroups ? null : isAddingTerms ? (
-              renderAddTermsActions()
-            ) : (
-              <Group gap="sm" wrap="wrap" justify="flex-end">
-                {addTermsSucceeded ? (
-                  <Text size="sm" c="teal">
-                    Terms added.
-                  </Text>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="light"
-                  onClick={handleStartAddingTerms}
-                  disabled={saveInProgress}
-                >
-                  Add terms
-                </Button>
-              </Group>
-            )
+            <Button
+              component={Link}
+              to={`/academics/academic-years/${detail.academicYearId}/catalog`}
+              variant="light"
+            >
+              Manage catalog
+            </Button>
           }
-        >
-          <Grid.Col span={12}>
-            <Stack gap="md">
-              {!hasTermGroups && addTermsError ? (
-                <Alert color="red" title="Unable to add academic terms">
-                  {addTermsError}
-                </Alert>
-              ) : null}
+        />
 
-              {hasTermGroups ? (
-                sortedTermGroups.map((termGroup) => (
-                  <Paper key={termGroup.termGroupId} withBorder p="md" radius="sm">
-                    <Stack gap="md">
-                      <Group justify="space-between" align="flex-start" wrap="wrap">
-                        <Stack gap={4}>
-                          <Text fw={600}>
-                            <Link
-                              to={`/academics/academic-term-group/${termGroup.termGroupId}`}
-                              state={{ academicYearId: detail.academicYearId }}
-                            >
-                              {termGroup.name}
-                            </Link>
-                          </Text>
-                        </Stack>
-                        <Badge variant="light" color="blue">
-                          {termGroup.academicTerms.length}{' '}
-                          {termGroup.academicTerms.length === 1 ? 'term' : 'terms'}
-                        </Badge>
-                      </Group>
-
-                      <Grid gap="md">
-                        <Grid.Col span={{ base: 12, md: 6 }}>
-                          <Text size="xs" c="dimmed" fw={600} tt="uppercase">
-                            Start date
-                          </Text>
-                          <Text>{displayDate(termGroup.startDate)}</Text>
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12, md: 6 }}>
-                          <Text size="xs" c="dimmed" fw={600} tt="uppercase">
-                            End date
-                          </Text>
-                          <Text>{displayDate(termGroup.endDate)}</Text>
-                        </Grid.Col>
-                      </Grid>
-
-                      {termGroup.academicTerms.length === 0 ? (
-                        <Alert color="gray" title="No terms in this group">
-                          This term group has not been assigned any academic terms yet.
-                        </Alert>
-                      ) : (
-                        <Table.ScrollContainer minWidth={760}>
-                          <Table withTableBorder withColumnBorders striped highlightOnHover>
-                            <Table.Thead>
-                              <Table.Tr>
-                                <Table.Th>Sort order</Table.Th>
-                                <Table.Th>Code</Table.Th>
-                                <Table.Th>Name</Table.Th>
-                                <Table.Th>Start date</Table.Th>
-                                <Table.Th>End date</Table.Th>
-                                <Table.Th>Status</Table.Th>
-                                <Table.Th>Active</Table.Th>
-                              </Table.Tr>
-                            </Table.Thead>
-                            <Table.Tbody>
-                              {termGroup.academicTerms.map((term) => (
-                                <Table.Tr key={term.termId}>
-                                  <Table.Td>{term.sortOrder}</Table.Td>
-                                  <Table.Td>
-                                    <Link
-                                      to={`/academics/academic-term/${term.termId}`}
-                                      state={{ academicYearId: detail.academicYearId }}
-                                    >
-                                      {term.code}
-                                    </Link>
-                                  </Table.Td>
-                                  <Table.Td>{term.name}</Table.Td>
-                                  <Table.Td>{displayDate(term.startDate)}</Table.Td>
-                                  <Table.Td>{displayDate(term.endDate)}</Table.Td>
-                                  <Table.Td>
-                                    {displayValue(term.termStatusName ?? term.termStatusCode)}
-                                  </Table.Td>
-                                  <Table.Td>{displayValue(term.active)}</Table.Td>
-                                </Table.Tr>
-                              ))}
-                            </Table.Tbody>
-                          </Table>
-                        </Table.ScrollContainer>
-                      )}
-                    </Stack>
-                  </Paper>
-                ))
-              ) : sortedLegacyTerms.length === 0 ? (
-                <Alert color="gray" title="No terms on this academic year">
-                  {isAddingTerms
-                    ? 'This academic year does not have any terms yet. Use the rows below to add the first ones.'
-                    : 'This academic year was created without nested academic terms.'}
-                </Alert>
-              ) : (
-                <Table.ScrollContainer minWidth={760}>
-                  <Table withTableBorder withColumnBorders striped highlightOnHover>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th>Sort order</Table.Th>
-                        <Table.Th>Code</Table.Th>
-                        <Table.Th>Name</Table.Th>
-                        <Table.Th>Start date</Table.Th>
-                        <Table.Th>End date</Table.Th>
-                        <Table.Th>Status</Table.Th>
-                        <Table.Th>Active</Table.Th>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {sortedLegacyTerms.map((term) => (
-                        <Table.Tr key={term.termId}>
-                          <Table.Td>{term.sortOrder}</Table.Td>
-                          <Table.Td>
-                            <Link
-                              to={`/academics/academic-term/${term.termId}`}
-                              state={{ academicYearId: detail.academicYearId }}
-                            >
-                              {term.code}
-                            </Link>
-                          </Table.Td>
-                          <Table.Td>{term.name}</Table.Td>
-                          <Table.Td>{displayDate(term.startDate)}</Table.Td>
-                          <Table.Td>{displayDate(term.endDate)}</Table.Td>
-                          <Table.Td>
-                            {displayValue(term.termStatusName ?? term.termStatusCode)}
-                          </Table.Td>
-                          <Table.Td>{displayValue(term.active)}</Table.Td>
-                        </Table.Tr>
-                      ))}
-                    </Table.Tbody>
-                  </Table>
-                </Table.ScrollContainer>
-              )}
-
-              {!hasTermGroups && isAddingTerms ? (
-                <>
-                  {addTermsForm.values.terms.length === 0 ? (
-                    <Alert color="gray" title="No new term rows">
-                      Add a row before saving new academic terms.
-                    </Alert>
-                  ) : null}
-
-                  {addTermsForm.values.terms.map((term, index) => (
-                    <Paper key={`new-term-${index}`} withBorder p="md" radius="sm">
-                      <Stack gap="md">
-                        <Group justify="space-between" align="center" wrap="wrap">
-                          <Text fw={600}>New term {index + 1}</Text>
-                          <Button
-                            type="button"
-                            variant="subtle"
-                            color="red"
-                            onClick={() => {
-                              handleRemoveTermRow(index);
-                            }}
-                            disabled={addTermsInProgress}
-                          >
-                            Remove
-                          </Button>
-                        </Group>
-
-                        <Grid gap="md">
-                          <Grid.Col span={{ base: 12, md: 4 }}>
-                            <TextInput
-                              withAsterisk
-                              label="Code"
-                              placeholder="FALL-2026"
-                              maxLength={20}
-                              {...addTermsForm.getInputProps(`terms.${index}.code`)}
-                            />
-                          </Grid.Col>
-                          <Grid.Col span={{ base: 12, md: 8 }}>
-                            <TextInput
-                              withAsterisk
-                              label="Name"
-                              placeholder="Fall 2026"
-                              maxLength={100}
-                              {...addTermsForm.getInputProps(`terms.${index}.name`)}
-                            />
-                          </Grid.Col>
-                          <Grid.Col span={{ base: 12, md: 4 }}>
-                            <DateInput
-                              withAsterisk
-                              value={parseDateInputValue(term.startDate)}
-                              onChange={(value) => {
-                                addTermsForm.setFieldValue(
-                                  `terms.${index}.startDate`,
-                                  normalizeDateInputValue(value)
-                                );
-                              }}
-                              valueFormat="YYYY-MM-DD"
-                              label="Start date"
-                              placeholder="YYYY-MM-DD"
-                              clearable
-                            />
-                          </Grid.Col>
-                          <Grid.Col span={{ base: 12, md: 4 }}>
-                            <DateInput
-                              withAsterisk
-                              value={parseDateInputValue(term.endDate)}
-                              onChange={(value) => {
-                                addTermsForm.setFieldValue(
-                                  `terms.${index}.endDate`,
-                                  normalizeDateInputValue(value)
-                                );
-                              }}
-                              valueFormat="YYYY-MM-DD"
-                              label="End date"
-                              placeholder="YYYY-MM-DD"
-                              clearable
-                            />
-                          </Grid.Col>
-                          <Grid.Col span={{ base: 12, md: 4 }}>
-                            <TextInput
-                              withAsterisk
-                              label="Sort order"
-                              placeholder="202630"
-                              inputMode="numeric"
-                              {...addTermsForm.getInputProps(`terms.${index}.sortOrder`)}
-                            />
-                          </Grid.Col>
-                        </Grid>
-                      </Stack>
-                    </Paper>
-                  ))}
-
-                  {renderAddTermsActions()}
-                </>
-              ) : null}
-            </Stack>
-          </Grid.Col>
-        </RecordPageSection>
+        <AcademicYearTermsSection
+          academicYearId={detail.academicYearId}
+          hasTermGroups={hasTermGroups}
+          sortedTermGroups={sortedTermGroups}
+          sortedLegacyTerms={sortedLegacyTerms}
+          isEditing={isEditing}
+          isAddingTerms={isAddingTerms}
+          addTermsInProgress={addTermsInProgress}
+          addTermsError={addTermsError}
+          addTermsSucceeded={addTermsSucceeded}
+          addTermsForm={addTermsForm}
+          saveInProgress={saveInProgress}
+          onStartAddingTerms={handleStartAddingTerms}
+          onAddTermRow={handleAddTermRow}
+          onRemoveTermRow={handleRemoveTermRow}
+          onCancelAddingTerms={handleCancelAddingTerms}
+          onSaveNewTerms={() => {
+            void handleSaveNewTerms();
+          }}
+        />
       </Stack>
     </RecordPageShell>
   );

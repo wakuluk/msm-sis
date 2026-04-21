@@ -9,6 +9,7 @@ import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.mapper.AcademicTermGroupMapper;
 import com.msm.sis.api.repository.AcademicTermGroupRepository;
 import com.msm.sis.api.repository.AcademicTermRepository;
+import com.msm.sis.api.repository.CourseOfferingRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import jakarta.persistence.EntityManager;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -27,6 +29,7 @@ public class AcademicTermGroupService {
     private final AcademicTermGroupRepository academicTermGroupRepository;
     private final AcademicYearRepository academicYearRepository;
     private final AcademicTermRepository academicTermRepository;
+    private final CourseOfferingRepository courseOfferingRepository;
     private final AcademicValidationService academicValidationService;
     private final AcademicTermGroupMapper academicTermGroupMapper;
     private final EntityManager entityManager;
@@ -35,6 +38,7 @@ public class AcademicTermGroupService {
             AcademicTermGroupRepository academicTermGroupRepository,
             AcademicYearRepository academicYearRepository,
             AcademicTermRepository academicTermRepository,
+            CourseOfferingRepository courseOfferingRepository,
             AcademicValidationService academicValidationService,
             AcademicTermGroupMapper academicTermGroupMapper,
             EntityManager entityManager
@@ -42,6 +46,7 @@ public class AcademicTermGroupService {
         this.academicTermGroupRepository = academicTermGroupRepository;
         this.academicYearRepository = academicYearRepository;
         this.academicTermRepository = academicTermRepository;
+        this.courseOfferingRepository = courseOfferingRepository;
         this.academicValidationService = academicValidationService;
         this.academicTermGroupMapper = academicTermGroupMapper;
         this.entityManager = entityManager;
@@ -78,14 +83,27 @@ public class AcademicTermGroupService {
     @Transactional(readOnly = true)
     public List<AcademicTermGroupResponse> getAcademicTermGroups(Long academicYearId) {
         getAcademicYearEntity(academicYearId);
-        return academicTermGroupRepository.findAllByAcademicYear_IdOrderByStartDateAsc(academicYearId).stream()
-                .map(academicTermGroupMapper::toAcademicTermGroupResponse)
+        List<AcademicTermGroup> academicTermGroups =
+                academicTermGroupRepository.findAllByAcademicYear_IdOrderByStartDateAsc(academicYearId);
+        Map<Long, Long> courseOfferingCountsByTermId = getCourseOfferingCountsByTermId(academicTermGroups);
+
+        return academicTermGroups.stream()
+                .map(academicTermGroup ->
+                        academicTermGroupMapper.toAcademicTermGroupResponse(
+                                academicTermGroup,
+                                courseOfferingCountsByTermId
+                        )
+                )
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public AcademicTermGroupResponse getAcademicTermGroup(Long termGroupId) {
-        return academicTermGroupMapper.toAcademicTermGroupResponse(getAcademicTermGroupEntity(termGroupId));
+        AcademicTermGroup academicTermGroup = getAcademicTermGroupEntity(termGroupId);
+        return academicTermGroupMapper.toAcademicTermGroupResponse(
+                academicTermGroup,
+                getCourseOfferingCountsByTermId(List.of(academicTermGroup))
+        );
     }
 
     @Transactional
@@ -195,6 +213,24 @@ public class AcademicTermGroupService {
     private void replaceAcademicTerms(AcademicTermGroup academicTermGroup, List<AcademicTerm> academicTerms) {
         academicTermGroup.getAcademicTerms().clear();
         academicTermGroup.getAcademicTerms().addAll(academicTerms);
+    }
+
+    private Map<Long, Long> getCourseOfferingCountsByTermId(List<AcademicTermGroup> academicTermGroups) {
+        List<Long> termIds = academicTermGroups.stream()
+                .flatMap(academicTermGroup -> academicTermGroup.getAcademicTerms().stream())
+                .map(AcademicTerm::getId)
+                .distinct()
+                .toList();
+
+        if (termIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return courseOfferingRepository.countByTermIds(termIds).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        CourseOfferingRepository.TermCourseOfferingCount::getTermId,
+                        CourseOfferingRepository.TermCourseOfferingCount::getCourseOfferingCount
+                ));
     }
 
     private boolean hasPatchableChanges(

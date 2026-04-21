@@ -1,10 +1,20 @@
 package com.msm.sis.api.service.academic;
 
+import com.msm.sis.api.dto.academic.term.AcademicTermGroupResponse;
+import com.msm.sis.api.dto.academic.term.AcademicTermResponse;
 import com.msm.sis.api.dto.academic.year.*;
+import com.msm.sis.api.dto.catalog.AcademicYearCatalogResponse;
+import com.msm.sis.api.dto.catalog.AcademicYearCatalogSummaryResponse;
+import com.msm.sis.api.dto.course.CourseOfferingSearchResultResponse;
+import com.msm.sis.api.entity.AcademicTerm;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.AcademicYearStatus;
+import com.msm.sis.api.entity.CourseOfferingTerm;
 import com.msm.sis.api.mapper.AcademicYearMapper;
+import com.msm.sis.api.mapper.CourseMapper;
+import com.msm.sis.api.entity.CourseOffering;
 import com.msm.sis.api.repository.AcademicTermRepository;
+import com.msm.sis.api.repository.CourseOfferingRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.repository.AcademicYearStatusRepository;
 import jakarta.persistence.EntityManager;
@@ -20,8 +30,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
@@ -32,30 +45,35 @@ public class AcademicYearService {
 
     private final AcademicYearRepository academicYearRepository;
     private final AcademicYearStatusRepository academicYearStatusRepository;
-    private final AcademicTermRepository academicTermRepository;
     private final AcademicValidationService academicValidationService;
     private final AcademicTermService academicTermService;
     private final AcademicTermGroupService academicTermGroupService;
+    private final AcademicTermRepository academicTermRepository;
+    private final CourseOfferingRepository courseOfferingRepository;
     private final AcademicYearMapper academicYearMapper;
+    private final CourseMapper courseMapper;
     private final EntityManager entityManager;
 
     public AcademicYearService(
             AcademicYearRepository academicYearRepository,
             AcademicYearStatusRepository academicYearStatusRepository,
-            AcademicTermRepository academicTermRepository,
             AcademicValidationService academicValidationService,
             AcademicTermService academicTermService,
             AcademicTermGroupService academicTermGroupService,
+            AcademicTermRepository academicTermRepository,
+            CourseOfferingRepository courseOfferingRepository,
             AcademicYearMapper academicYearMapper,
-            EntityManager entityManager
-    ) {
+            CourseMapper courseMapper,
+            EntityManager entityManager) {
         this.academicYearRepository = academicYearRepository;
         this.academicYearStatusRepository = academicYearStatusRepository;
         this.academicTermRepository = academicTermRepository;
         this.academicValidationService = academicValidationService;
         this.academicTermService = academicTermService;
         this.academicTermGroupService = academicTermGroupService;
+        this.courseOfferingRepository = courseOfferingRepository;
         this.academicYearMapper = academicYearMapper;
+        this.courseMapper = courseMapper;
         this.entityManager = entityManager;
     }
 
@@ -184,6 +202,68 @@ public class AcademicYearService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
+    @Transactional(readOnly = true)
+    public AcademicYearCatalogSummaryResponse getCatalogSummary(
+            Long id
+    ){
+        AcademicYear academicYear = getAcademicYearEntity(id);
+        List<AcademicTermGroupResponse> academicTermGroups = academicTermGroupService.getAcademicTermGroups(id);
+
+        List<Long> termIds = academicTermGroups.stream()
+                .flatMap(termGroup -> safeAcademicTerms(termGroup).stream())
+                .map(AcademicTermResponse::termId)
+                .toList();
+
+        java.util.Map<Long, Long> courseOfferingCountsByTermId = termIds.isEmpty()
+                ? java.util.Map.of()
+                : courseOfferingRepository.countByTermIds(termIds).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        CourseOfferingRepository.TermCourseOfferingCount::getTermId,
+                        CourseOfferingRepository.TermCourseOfferingCount::getCourseOfferingCount
+                ));
+
+        List<AcademicYearCatalogSummaryResponse.TermGroupSummary> termGroupSummaries = academicTermGroups.stream()
+                .map(termGroup -> toCatalogTermGroupSummary(termGroup, courseOfferingCountsByTermId))
+                .toList();
+
+        long termCount = termGroupSummaries.stream()
+                .mapToLong(AcademicYearCatalogSummaryResponse.TermGroupSummary::termCount)
+                .sum();
+
+        long courseOfferingCount = termGroupSummaries.stream()
+                .mapToLong(AcademicYearCatalogSummaryResponse.TermGroupSummary::courseOfferingCount)
+                .sum();
+
+        return new AcademicYearCatalogSummaryResponse(
+                academicYear.getId(),
+                academicYear.getCode(),
+                academicYear.getName(),
+                termGroupSummaries.size(),
+                termCount,
+                courseOfferingCount,
+                termGroupSummaries
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public AcademicYearCatalogResponse getCatalog(Long id) {
+        AcademicYear academicYear = getAcademicYearEntity(id);
+        List<AcademicTermGroupResponse> academicTermGroups = academicTermGroupService.getAcademicTermGroups(id);
+        Map<Long, List<CourseOfferingSearchResultResponse>> courseOfferingsByTermId =
+                getCourseOfferingsByTermId(id);
+
+        List<AcademicYearCatalogResponse.TermGroupCatalogResponse> termGroups = academicTermGroups.stream()
+                .map(termGroup -> toAcademicYearCatalogTermGroupResponse(termGroup, courseOfferingsByTermId))
+                .toList();
+
+        return new AcademicYearCatalogResponse(
+                academicYear.getId(),
+                academicYear.getCode(),
+                academicYear.getName(),
+                termGroups
+        );
+    }
+
     @Transactional
     public AcademicYearResponse postAcademicYearTerm(
             Long id,
@@ -285,6 +365,84 @@ public class AcademicYearService {
         };
     }
 
+    private AcademicYearCatalogResponse.TermGroupCatalogResponse toAcademicYearCatalogTermGroupResponse(
+            AcademicTermGroupResponse termGroup,
+            Map<Long, List<CourseOfferingSearchResultResponse>> courseOfferingsByTermId
+    ) {
+        List<AcademicYearCatalogResponse.TermCatalogResponse> terms = safeAcademicTerms(termGroup).stream()
+                .map(term -> toAcademicYearCatalogTermResponse(term, courseOfferingsByTermId))
+                .toList();
+
+        return new AcademicYearCatalogResponse.TermGroupCatalogResponse(
+                termGroup.getTermGroupId(),
+                termGroup.getCode(),
+                termGroup.getName(),
+                termGroup.getStartDate(),
+                termGroup.getEndDate(),
+                terms
+        );
+    }
+
+    private AcademicYearCatalogResponse.TermCatalogResponse toAcademicYearCatalogTermResponse(
+            AcademicTermResponse term,
+            Map<Long, List<CourseOfferingSearchResultResponse>> courseOfferingsByTermId
+    ) {
+        List<CourseOfferingSearchResultResponse> courseOfferings =
+                courseOfferingsByTermId.getOrDefault(term.termId(), List.of());
+
+        return new AcademicYearCatalogResponse.TermCatalogResponse(
+                term.termId(),
+                term.code(),
+                term.name(),
+                term.startDate(),
+                term.endDate(),
+                courseOfferings.size(),
+                courseOfferings
+        );
+    }
+
+    private Map<Long, List<CourseOfferingSearchResultResponse>> getCourseOfferingsByTermId(
+            Long academicYearId
+    ) {
+        List<CourseOffering> courseOfferings = courseOfferingRepository.findAllByAcademicYear_Id(
+                academicYearId,
+                buildCatalogOfferingSort()
+        );
+
+        Map<Long, List<CourseOfferingSearchResultResponse>> courseOfferingsByTermId =
+                new LinkedHashMap<>();
+
+        for (CourseOffering courseOffering : courseOfferings) {
+            courseOffering.getCourseOfferingTerms().stream()
+                    .map(CourseOfferingTerm::getTerm)
+                    .filter(Objects::nonNull)
+                    .filter(term -> Objects.equals(term.getAcademicYear().getId(), academicYearId))
+                    .sorted(
+                            Comparator.comparing(
+                                            AcademicTerm::getSortOrder,
+                                            Comparator.nullsLast(Integer::compareTo)
+                                    )
+                                    .thenComparing(
+                                            AcademicTerm::getCode,
+                                            Comparator.nullsLast(String::compareTo)
+                                    )
+                    )
+                    .forEach(term -> courseOfferingsByTermId
+                            .computeIfAbsent(term.getId(), ignored -> new java.util.ArrayList<>())
+                            .add(courseMapper.toCourseOfferingSearchResultResponse(courseOffering, term)));
+        }
+
+        return courseOfferingsByTermId;
+    }
+
+    private Sort buildCatalogOfferingSort() {
+        return Sort.by("courseVersion.course.subject.code").ascending()
+                .and(Sort.by("courseVersion.course.courseNumber").ascending())
+                .and(Sort.by("courseVersion.versionNumber").descending())
+                .and(Sort.by("status.sortOrder").ascending())
+                .and(Sort.by("id").ascending());
+    }
+
     private Sort buildSearchSort(AcademicYearSearchCriteria criteria) {
         String sortBy = trimToNull(criteria.getSortBy());
         Sort.Direction sortDirection = parseSortDirection(criteria.getSortDirection());
@@ -350,5 +508,43 @@ public class AcademicYearService {
                         HttpStatus.BAD_REQUEST,
                         "Academic year status 'DRAFT' must exist and be active."
                 ));
+    }
+
+    private AcademicYearCatalogSummaryResponse.TermGroupSummary toCatalogTermGroupSummary(
+            AcademicTermGroupResponse academicTermGroup,
+            java.util.Map<Long, Long> courseOfferingCountsByTermId
+    ) {
+        List<AcademicYearCatalogSummaryResponse.TermSummary> termSummaries = safeAcademicTerms(academicTermGroup).stream()
+                .map(term -> toCatalogTermSummary(term, courseOfferingCountsByTermId))
+                .toList();
+
+        long courseOfferingCount = termSummaries.stream()
+                .mapToLong(AcademicYearCatalogSummaryResponse.TermSummary::courseOfferingCount)
+                .sum();
+
+        return new AcademicYearCatalogSummaryResponse.TermGroupSummary(
+                academicTermGroup.getTermGroupId(),
+                academicTermGroup.getCode(),
+                academicTermGroup.getName(),
+                termSummaries.size(),
+                courseOfferingCount,
+                termSummaries
+        );
+    }
+
+    private AcademicYearCatalogSummaryResponse.TermSummary toCatalogTermSummary(
+            AcademicTermResponse academicTerm,
+            java.util.Map<Long, Long> courseOfferingCountsByTermId
+    ) {
+        return new AcademicYearCatalogSummaryResponse.TermSummary(
+                academicTerm.termId(),
+                academicTerm.code(),
+                academicTerm.name(),
+                courseOfferingCountsByTermId.getOrDefault(academicTerm.termId(), 0L)
+        );
+    }
+
+    private List<AcademicTermResponse> safeAcademicTerms(AcademicTermGroupResponse academicTermGroup) {
+        return academicTermGroup.getAcademicTerms() == null ? List.of() : academicTermGroup.getAcademicTerms();
     }
 }

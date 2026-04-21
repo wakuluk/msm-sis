@@ -10,7 +10,7 @@ import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import {
   getAcademicTermGroupById,
   patchAcademicTermGroup,
-} from '@/services/academic-years-service';
+} from '@/services/academic-term-group-service';
 import {
   buildPatchAcademicTermGroupRequest,
   hasAcademicTermGroupDetailChanges,

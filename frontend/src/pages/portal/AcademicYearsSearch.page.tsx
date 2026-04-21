@@ -10,13 +10,12 @@ import {
   defaultAcademicYearSearchSize,
   defaultAcademicYearSortBy,
   defaultAcademicYearSortDirection,
-  getAcademicYearStatuses,
   parseAcademicYearSearchSize,
   parseAcademicYearSortBy,
   parseAcademicYearSortDirection,
-  searchAcademicYears,
   type AcademicYearSearchSize,
-} from '@/services/academic-years-service';
+} from '@/services/academic-year-search-config';
+import { getAcademicYearStatuses, searchAcademicYears } from '@/services/academic-year-service';
 import {
   initialAcademicYearSearchFilters,
   type AcademicYearSearchFilters,

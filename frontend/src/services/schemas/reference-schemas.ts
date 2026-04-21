@@ -75,6 +75,39 @@ export type CourseSearchReferenceOptionsResponse = z.infer<
   typeof CourseSearchReferenceOptionsResponseSchema
 >;
 
+export const CourseReferenceOptionSchema = z.object({
+  courseId: z.number(),
+  schoolId: z.number(),
+  schoolCode: z.string(),
+  schoolName: z.string(),
+  departmentId: z.number(),
+  departmentCode: z.string(),
+  departmentName: z.string(),
+  subjectId: z.number(),
+  subjectCode: z.string(),
+  subjectName: z.string(),
+  courseNumber: z.string(),
+  courseCode: z.string(),
+  currentCourseVersionId: z.number().nullable(),
+  currentVersionTitle: z.string().nullable(),
+  minCredits: z.number().nullable(),
+  maxCredits: z.number().nullable(),
+  variableCredit: z.boolean(),
+});
+
+export type CourseReferenceOption = z.infer<typeof CourseReferenceOptionSchema>;
+
+export const CoursePickerReferenceOptionsResponseSchema = z.object({
+  schools: z.array(CatalogReferenceOptionSchema),
+  departments: z.array(AcademicDepartmentReferenceOptionSchema),
+  subjects: z.array(AcademicSubjectReferenceOptionSchema),
+  courses: z.array(CourseReferenceOptionSchema),
+});
+
+export type CoursePickerReferenceOptionsResponse = z.infer<
+  typeof CoursePickerReferenceOptionsResponseSchema
+>;
+
 export const CatalogSearchReferenceOptionsResponseSchema = z.object({
   academicYears: z.array(CatalogReferenceOptionSchema),
   terms: z.array(AcademicTermReferenceOptionSchema),

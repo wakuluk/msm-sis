@@ -16,7 +16,7 @@ import {
   getAcademicTermStatuses,
   patchAcademicTerm,
   shiftAcademicTermStatus,
-} from '@/services/academic-years-service';
+} from '@/services/academic-term-service';
 import {
   buildPatchAcademicTermRequest,
   hasAcademicTermDetailChanges,

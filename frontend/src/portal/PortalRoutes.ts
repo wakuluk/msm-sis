@@ -2,12 +2,10 @@ import { type PortalRole, PORTAL_ROLES } from './PortalRoles';
 
 export type PortalRouteItemKey =
   | 'dashboard'
-  | 'shared'
   | 'student'
   | 'studentCreate'
   | 'studentDetail'
   | 'studentSearch'
-  | 'sharedSecond'
   | 'catalog'
   | 'catalog-advanced'
   | 'academic-years-search'
@@ -19,12 +17,11 @@ export type PortalRouteItemKey =
   | 'course-detail'
   | 'academic-years-create'
   | 'academic-years-detail'
+  | 'academic-year-catalog'
   | 'academic-term-detail'
   | 'academic-term-group-detail';
 export type PortalRoutePath =
   | '/portal'
-  | '/shared'
-  | '/sharedSecond'
   | '/student/profile'
   | '/students/new'
   | '/students/:studentId'
@@ -40,10 +37,11 @@ export type PortalRoutePath =
   | '/academics/courses/:courseId'
   | '/academics/academic-years/create'
   | '/academics/academic-years/:academicYearId'
+  | '/academics/academic-years/:academicYearId/catalog'
   | '/academics/academic-term/:academicTermId'
   | '/academics/academic-term-group/:termGroupId';
 
-export type PortalRouteGroupKey = 'people' | 'sharing' | 'catalog' | 'academics' | 'calendar';
+export type PortalRouteGroupKey = 'people' | 'catalog' | 'academics' | 'calendar';
 
 export type PortalRouteItem = {
   kind: 'item';
@@ -72,22 +70,6 @@ export const portalRoutes: PortalRouteNode[] = [
     label: 'Dashboard',
     path: '/portal',
     showInNav: true,
-  },
-  {
-    kind: 'group',
-    key: 'sharing',
-    label: 'Sharing',
-    showInNav: true,
-    children: [
-      {
-        kind: 'item',
-        key: 'shared',
-        label: 'Shared page',
-        path: '/shared',
-        requiredRoles: [PORTAL_ROLES.STUDENT, PORTAL_ROLES.ADMIN],
-        showInNav: true,
-      },
-    ],
   },
   {
     kind: 'group',
@@ -126,14 +108,6 @@ export const portalRoutes: PortalRouteNode[] = [
         path: '/students/:studentId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
-      },
-      {
-        kind: 'item',
-        key: 'sharedSecond',
-        label: 'Shared page Second',
-        path: '/sharedSecond',
-        requiredRoles: [PORTAL_ROLES.STUDENT, PORTAL_ROLES.ADMIN],
-        showInNav: true,
       },
     ],
   },
@@ -220,6 +194,14 @@ export const portalRoutes: PortalRouteNode[] = [
         key: 'academic-years-detail',
         label: 'Academic Year Detail',
         path: '/academics/academic-years/:academicYearId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-year-catalog',
+        label: 'Academic Year Catalog',
+        path: '/academics/academic-years/:academicYearId/catalog',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
       },

@@ -10,18 +10,21 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
 @Table(
         name = "course_offering",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uq_course_offering_version_term", columnNames = {"course_version_id", "term_id"})
+                @UniqueConstraint(name = "uq_course_offering_version_year", columnNames = {"course_version_id", "academic_year_id"})
         }
 )
 public class CourseOffering {
@@ -38,13 +41,17 @@ public class CourseOffering {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "term_id", nullable = false)
-    private AcademicTerm term;
+    @JoinColumn(name = "academic_year_id", nullable = false)
+    private AcademicYear academicYear;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_offering_status_id", nullable = false)
     private CourseOfferingStatus status;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "courseOffering")
+    private List<CourseOfferingTerm> courseOfferingTerms = new ArrayList<>();
 
     @Column(name = "notes")
     private String notes;

@@ -69,6 +69,10 @@ public class AcademicYearMapper {
     }
 
     public AcademicTermResponse toAcademicTermResponse(AcademicTerm term) {
+        return toAcademicTermResponse(term, 0L);
+    }
+
+    public AcademicTermResponse toAcademicTermResponse(AcademicTerm term, long courseOfferingCount) {
         return new AcademicTermResponse(
                 term.getId(),
                 term.getAcademicYear() == null ? null : term.getAcademicYear().getId(),
@@ -80,6 +84,7 @@ public class AcademicYearMapper {
                 term.getStatus() == null ? null : term.getStatus().getCode(),
                 term.getStatus() == null ? null : term.getStatus().getName(),
                 term.isActive(),
+                courseOfferingCount,
                 term.getLastUpdated(),
                 term.getUpdatedBy()
         );

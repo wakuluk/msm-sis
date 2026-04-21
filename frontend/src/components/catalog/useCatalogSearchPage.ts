@@ -6,24 +6,30 @@ import type {
   CourseOfferingDetailState,
 } from '@/components/catalog/CatalogSearchResultsSection';
 import {
-  defaultCourseOfferingSearchSize,
-  defaultCourseOfferingSortBy,
-  defaultCourseOfferingSortDirection,
   filterAcademicSubjectsByDepartment,
   filterAcademicTermsByAcademicYear,
-  getAdvancedCatalogSearchReferenceOptions,
-  getAdvancedCourseOfferingById,
-  getPublicCatalogSearchReferenceOptions,
-  getPublicCourseOfferingById,
   hasCourseOfferingSearchValues,
   mapCatalogAcademicYearOptionsToSelectOptions,
   mapCatalogReferenceOptionsToSelectOptions,
   mapAcademicSubjectOptionsToSelectOptions,
   mapAcademicTermOptionsToSelectOptions,
+} from '@/services/catalog-search-helpers';
+import {
+  getAdvancedCatalogSearchReferenceOptions,
+  getPublicCatalogSearchReferenceOptions,
+} from '@/services/catalog-reference-service';
+import {
+  getAdvancedCourseOfferingById,
+  getPublicCourseOfferingById,
   searchAdvancedCourseOfferings,
   searchPublicCourseOfferings,
-  type CourseOfferingSearchSize,
 } from '@/services/catalog-service';
+import {
+  defaultCourseOfferingSearchSize,
+  defaultCourseOfferingSortBy,
+  defaultCourseOfferingSortDirection,
+  type CourseOfferingSearchSize,
+} from '@/services/course-offering-search-config';
 import {
   initialCourseOfferingSearchFilters,
   type CourseOfferingSearchFilters,

@@ -1,14 +1,15 @@
 package com.msm.sis.api.repository;
 
 import com.msm.sis.api.entity.AcademicDepartment;
+import com.msm.sis.api.entity.AcademicTermStatus;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.Course;
 import com.msm.sis.api.entity.CourseOffering;
 import com.msm.sis.api.entity.CourseOfferingStatus;
+import com.msm.sis.api.entity.CourseOfferingTerm;
 import com.msm.sis.api.entity.CourseVersion;
 import com.msm.sis.api.entity.AcademicSubject;
 import com.msm.sis.api.entity.AcademicTerm;
-import com.msm.sis.api.entity.AcademicTermStatus;
 import jakarta.persistence.EntityGraph;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -89,6 +90,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
         );
 
         query.select(root)
+                .distinct(true)
                 .where(predicates.toArray(Predicate[]::new))
                 .orderBy(buildOrders(criteriaBuilder, root, joins, pageable.getSort()));
 
@@ -123,7 +125,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
                 isPublished
         );
 
-        countQuery.select(criteriaBuilder.count(countRoot))
+        countQuery.select(criteriaBuilder.countDistinct(countRoot))
                 .where(countPredicates.toArray(Predicate[]::new));
 
         long total = entityManager.createQuery(countQuery).getSingleResult();
@@ -154,7 +156,9 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
         predicates.add(criteriaBuilder.isTrue(joins.termStatus.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.status.get("active")));
 
-        query.select(root).where(predicates.toArray(Predicate[]::new));
+        query.select(root)
+                .distinct(true)
+                .where(predicates.toArray(Predicate[]::new));
 
         TypedQuery<CourseOffering> typedQuery = entityManager.createQuery(query);
         typedQuery.setHint("jakarta.persistence.loadgraph", createSearchEntityGraph());
@@ -167,12 +171,23 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
         Join<CourseVersion, Course> course = courseVersion.join("course", JoinType.INNER);
         Join<Course, AcademicSubject> subject = course.join("subject", JoinType.INNER);
         Join<AcademicSubject, AcademicDepartment> department = subject.join("department", JoinType.INNER);
-        Join<CourseOffering, AcademicTerm> term = root.join("term", JoinType.INNER);
-        Join<AcademicTerm, AcademicYear> academicYear = term.join("academicYear", JoinType.INNER);
-        Join<AcademicTerm, AcademicTermStatus> termStatus = term.join("status", JoinType.INNER);
+        Join<CourseOffering, AcademicYear> academicYear = root.join("academicYear", JoinType.INNER);
+        Join<CourseOffering, CourseOfferingTerm> courseOfferingTerm = root.join("courseOfferingTerms", JoinType.LEFT);
+        Join<CourseOfferingTerm, AcademicTerm> term = courseOfferingTerm.join("term", JoinType.LEFT);
+        Join<AcademicTerm, AcademicTermStatus> termStatus = term.join("status", JoinType.LEFT);
         Join<CourseOffering, CourseOfferingStatus> status = root.join("status", JoinType.INNER);
 
-        return new SearchJoins(courseVersion, course, subject, department, term, academicYear, termStatus, status);
+        return new SearchJoins(
+                courseVersion,
+                course,
+                subject,
+                department,
+                academicYear,
+                courseOfferingTerm,
+                term,
+                termStatus,
+                status
+        );
     }
 
     private List<Predicate> buildPredicates(
@@ -324,16 +339,19 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
     }
 
     private Path<?> resolvePath(Root<CourseOffering> root, SearchJoins joins, String propertyPath) {
-        Map<String, From<?, ?>> fromByPrefix = Map.of(
-                "", root,
-                "courseVersion", joins.courseVersion,
-                "courseVersion.course", joins.course,
-                "courseVersion.course.subject", joins.subject,
-                "courseVersion.course.subject.department", joins.department,
-                "term", joins.term,
-                "term.academicYear", joins.academicYear,
-                "term.status", joins.termStatus,
-                "status", joins.status
+        Map<String, From<?, ?>> fromByPrefix = Map.ofEntries(
+                Map.entry("", root),
+                Map.entry("courseVersion", joins.courseVersion),
+                Map.entry("courseVersion.course", joins.course),
+                Map.entry("courseVersion.course.subject", joins.subject),
+                Map.entry("courseVersion.course.subject.department", joins.department),
+                Map.entry("academicYear", joins.academicYear),
+                Map.entry("courseOfferingTerms", joins.courseOfferingTerm),
+                Map.entry("courseOfferingTerms.term", joins.term),
+                Map.entry("term", joins.term),
+                Map.entry("term.status", joins.termStatus),
+                Map.entry("courseOfferingTerms.term.status", joins.termStatus),
+                Map.entry("status", joins.status)
         );
 
         int lastDotIndex = propertyPath.lastIndexOf('.');
@@ -350,9 +368,12 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
 
     private EntityGraph<CourseOffering> createSearchEntityGraph() {
         EntityGraph<CourseOffering> graph = entityManager.createEntityGraph(CourseOffering.class);
-        graph.addAttributeNodes("term", "status", "courseVersion");
+        graph.addAttributeNodes("academicYear", "status", "courseVersion", "courseOfferingTerms");
 
-        var termGraph = graph.addSubgraph("term");
+        var courseOfferingTermGraph = graph.addSubgraph("courseOfferingTerms");
+        courseOfferingTermGraph.addAttributeNodes("term");
+
+        var termGraph = courseOfferingTermGraph.addSubgraph("term");
         termGraph.addAttributeNodes("academicYear", "status");
 
         var courseVersionGraph = graph.addSubgraph("courseVersion");
@@ -384,8 +405,9 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             Join<CourseVersion, Course> course,
             Join<Course, AcademicSubject> subject,
             Join<AcademicSubject, AcademicDepartment> department,
-            Join<CourseOffering, AcademicTerm> term,
-            Join<AcademicTerm, AcademicYear> academicYear,
+            Join<CourseOffering, AcademicYear> academicYear,
+            Join<CourseOffering, CourseOfferingTerm> courseOfferingTerm,
+            Join<CourseOfferingTerm, AcademicTerm> term,
             Join<AcademicTerm, AcademicTermStatus> termStatus,
             Join<CourseOffering, CourseOfferingStatus> status
     ) {

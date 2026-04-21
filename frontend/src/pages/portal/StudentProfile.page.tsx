@@ -264,23 +264,26 @@ export function StudentProfilePage() {
     );
   }
 
-  const currentProfile = isEditing ? applyEditableProfileValues(profile, form.values) : profile;
-  const hasLocalChanges = hasEditableProfileChanges(profile, form.values);
+  const loadedProfile = profile;
+  const currentProfile = isEditing
+    ? applyEditableProfileValues(loadedProfile, form.values)
+    : loadedProfile;
+  const hasLocalChanges = hasEditableProfileChanges(loadedProfile, form.values);
 
   function handleStartEditing() {
-    form.setValues(getEditableProfileValues(profile));
+    form.setValues(getEditableProfileValues(loadedProfile));
     setIsEditing(true);
     setApplySucceeded(false);
   }
 
   function handleCancelEditing() {
-    form.setValues(getEditableProfileValues(profile));
+    form.setValues(getEditableProfileValues(loadedProfile));
     setIsEditing(false);
     setApplySucceeded(false);
   }
 
   function handleApplyLocally() {
-    const nextProfile = applyEditableProfileValues(profile, form.values);
+    const nextProfile = applyEditableProfileValues(loadedProfile, form.values);
 
     setProfile(nextProfile);
     form.setValues(getEditableProfileValues(nextProfile));

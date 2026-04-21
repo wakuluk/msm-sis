@@ -8,8 +8,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public enum CourseOfferingSearchSortField {
-    ACADEMIC_YEAR_CODE("academicYearCode", "term.academicYear.code"),
-    TERM_CODE("termCode", "term.sortOrder"),
+    ACADEMIC_YEAR_CODE("academicYearCode", "academicYear.code"),
+    TERM_CODE("termCode", "courseOfferingTerms.term.sortOrder"),
     DEPARTMENT_CODE("departmentCode", "courseVersion.course.subject.department.code"),
     SUBJECT_CODE("subjectCode", "courseVersion.course.subject.code"),
     COURSE_NUMBER("courseNumber", "courseVersion.course.courseNumber"),
