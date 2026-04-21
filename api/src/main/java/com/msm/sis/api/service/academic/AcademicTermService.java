@@ -9,10 +9,12 @@ import com.msm.sis.api.dto.academic.year.CreateAcademicYearTermRequest;
 import com.msm.sis.api.dto.course.CourseOfferingSearchSortField;
 import com.msm.sis.api.dto.course.CourseOfferingSearchResultResponse;
 import com.msm.sis.api.entity.AcademicTerm;
+import com.msm.sis.api.entity.AcademicTermGroup;
 import com.msm.sis.api.entity.AcademicTermStatus;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.mapper.AcademicYearMapper;
 import com.msm.sis.api.mapper.CourseMapper;
+import com.msm.sis.api.repository.AcademicTermGroupRepository;
 import com.msm.sis.api.repository.AcademicTermRepository;
 import com.msm.sis.api.repository.AcademicTermStatusRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
@@ -34,6 +36,7 @@ public class AcademicTermService {
     private static final String PLANNED_TERM_STATUS_CODE = "PLANNED";
 
     private final AcademicValidationService academicValidationService;
+    private final AcademicTermGroupRepository academicTermGroupRepository;
     private final AcademicTermRepository academicTermRepository;
     private final AcademicTermStatusRepository academicTermStatusRepository;
     private final AcademicYearRepository academicYearRepository;
@@ -44,6 +47,7 @@ public class AcademicTermService {
 
     public AcademicTermService(
             AcademicValidationService academicValidationService,
+            AcademicTermGroupRepository academicTermGroupRepository,
             AcademicTermRepository academicTermRepository,
             AcademicTermStatusRepository academicTermStatusRepository,
             AcademicYearRepository academicYearRepository,
@@ -53,6 +57,7 @@ public class AcademicTermService {
             EntityManager entityManager
     ) {
         this.academicValidationService = academicValidationService;
+        this.academicTermGroupRepository = academicTermGroupRepository;
         this.academicTermRepository = academicTermRepository;
         this.academicTermStatusRepository = academicTermStatusRepository;
         this.academicYearRepository = academicYearRepository;
@@ -124,6 +129,7 @@ public class AcademicTermService {
                 existingAcademicTerm,
                 candidateAcademicTerm
         );
+        validateAcademicTermGroupConstraints(candidateAcademicTerm);
 
         if (!hasPatchableChanges(existingAcademicTerm, candidateAcademicTerm)) {
             return getAcademicTerm(termId);
@@ -343,6 +349,17 @@ public class AcademicTermService {
                 || !Objects.equals(existingAcademicTerm.getStartDate(), candidateAcademicTerm.getStartDate())
                 || !Objects.equals(existingAcademicTerm.getEndDate(), candidateAcademicTerm.getEndDate())
                 || !Objects.equals(existingAcademicTerm.getSortOrder(), candidateAcademicTerm.getSortOrder());
+    }
+
+    private void validateAcademicTermGroupConstraints(AcademicTerm academicTerm) {
+        if (academicTerm.getId() == null) {
+            return;
+        }
+
+        AcademicTermGroup academicTermGroup = academicTermGroupRepository.findByAcademicTerms_Id(academicTerm.getId())
+                .orElse(null);
+
+        academicValidationService.validateAcademicTermWithinContainingGroup(academicTermGroup, academicTerm);
     }
 
     private CourseOfferingSearchSortField parseCourseOfferingSortField(String sortBy) {

@@ -57,7 +57,7 @@ public interface CourseOfferingRepository
             "term.status",
             "status"
     })
-    List<CourseOffering> findAllByCourseVersion_Course_Id(Long courseId);
+    List<CourseOffering> findAllByCourseVersion_Course_Id(Long courseId, Sort sort);
 
     @EntityGraph(attributePaths = {
             "courseVersion",

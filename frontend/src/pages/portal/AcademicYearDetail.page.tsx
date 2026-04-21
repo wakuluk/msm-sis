@@ -15,6 +15,7 @@ import {
 } from '@mantine/core';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { WorkflowStatusStepperSection } from '@/components/status/WorkflowStatusStepperSection';
+import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
@@ -28,6 +29,7 @@ import {
 import {
   buildPostAcademicYearTermsRequest,
   buildPatchAcademicYearRequest,
+  getAcademicYearResponseTerms,
   hasAcademicYearDetailChanges,
   mapAcademicYearDetailToFormValues,
 } from '@/services/mappers/academic-year-mappers';
@@ -44,6 +46,7 @@ import {
 
 type AcademicYearDetailLocationState = {
   academicYear?: AcademicYearCreateResponse;
+  creationNotice?: string;
 };
 
 type AcademicYearDetailPageState =
@@ -101,6 +104,24 @@ function displayDate(value: string | null | undefined): string {
 
 function getErrorMessage(error: unknown, fallbackMessage: string): string {
   return error instanceof Error ? error.message : fallbackMessage;
+}
+
+function compareAcademicTerms(
+  left: Pick<AcademicYearCreateResponse['terms'][number], 'code' | 'sortOrder' | 'termId'>,
+  right: Pick<AcademicYearCreateResponse['terms'][number], 'code' | 'sortOrder' | 'termId'>
+): number {
+  return left.sortOrder - right.sortOrder || left.code.localeCompare(right.code) || left.termId - right.termId;
+}
+
+function compareAcademicTermGroups(
+  left: Pick<AcademicYearCreateResponse['groupTerms'][number], 'code' | 'startDate' | 'termGroupId'>,
+  right: Pick<AcademicYearCreateResponse['groupTerms'][number], 'code' | 'startDate' | 'termGroupId'>
+): number {
+  return (
+    left.startDate.localeCompare(right.startDate) ||
+    left.code.localeCompare(right.code) ||
+    left.termGroupId - right.termGroupId
+  );
 }
 
 function getAcademicYearStatusCode(detail: AcademicYearCreateResponse): string | null {
@@ -195,7 +216,11 @@ function ReadOnlyField({
 export function AcademicYearDetailPage() {
   const { academicYearId } = useParams<{ academicYearId: string }>();
   const location = useLocation();
-  const { academicYear } = (location.state as AcademicYearDetailLocationState | null) ?? {};
+  const { handleBack } = usePortalBackNavigation({
+    fallbackPath: '/academics/academic-years/search',
+  });
+  const { academicYear, creationNotice } =
+    (location.state as AcademicYearDetailLocationState | null) ?? {};
   const parsedAcademicYearId = Number(academicYearId);
   const hasValidAcademicYearId = Number.isInteger(parsedAcademicYearId) && parsedAcademicYearId > 0;
   const initialAcademicYear =
@@ -378,9 +403,9 @@ export function AcademicYearDetailPage() {
             </Grid.Col>
           </RecordPageSection>
 
-          <RecordPageFooter description="Use academic year search to locate the record again, or return to create to add another one.">
-            <Button component={Link} to="/academics/academic-years/search" variant="default">
-              Back to search
+          <RecordPageFooter description="Return to the previous page or create a new academic year.">
+            <Button onClick={handleBack} variant="default">
+              Back
             </Button>
             <Button component={Link} to="/academics/academic-years/create">
               Create academic year
@@ -416,9 +441,9 @@ export function AcademicYearDetailPage() {
             </Grid.Col>
           </RecordPageSection>
 
-          <RecordPageFooter description="Return to academic year search or create a new academic year.">
-            <Button component={Link} to="/academics/academic-years/search" variant="default">
-              Back to search
+          <RecordPageFooter description="Return to the previous page or create a new academic year.">
+            <Button onClick={handleBack} variant="default">
+              Back
             </Button>
             <Button component={Link} to="/academics/academic-years/create">
               Create academic year
@@ -441,7 +466,14 @@ export function AcademicYearDetailPage() {
   const addTermsSucceeded = addTermsState.status === 'success';
   const hasPendingMutation = saveInProgress || statusShiftInProgress || addTermsInProgress;
   const canSaveChanges = hasAcademicYearDetailChanges(detail, form.values);
-  const sortedTerms = [...detail.terms].sort((left, right) => left.sortOrder - right.sortOrder);
+  const sortedTermGroups = [...detail.groupTerms]
+    .sort(compareAcademicTermGroups)
+    .map((termGroup) => ({
+      ...termGroup,
+      academicTerms: [...termGroup.academicTerms].sort(compareAcademicTerms),
+    }));
+  const hasTermGroups = sortedTermGroups.length > 0;
+  const sortedLegacyTerms = hasTermGroups ? [] : getAcademicYearResponseTerms(detail);
   const currentAcademicYearStatusCode = getAcademicYearStatusCode(detail);
 
   function renderAddTermsActions() {
@@ -597,6 +629,19 @@ export function AcademicYearDetailPage() {
       }
     >
       <Stack gap={0}>
+        {creationNotice ? (
+          <RecordPageSection
+            title="Creation Notice"
+            description="The academic year record was created, but follow-up setup needs attention."
+          >
+            <Grid.Col span={12}>
+              <Alert color="yellow" title="Academic year created with follow-up issue">
+                {creationNotice}
+              </Alert>
+            </Grid.Col>
+          </RecordPageSection>
+        ) : null}
+
         {saveError ? (
           <RecordPageSection
             title="Save Status"
@@ -770,9 +815,9 @@ export function AcademicYearDetailPage() {
         </RecordPageSection>
 
         <RecordPageSection
-          title="Academic Terms"
+          title={hasTermGroups ? 'Academic Term Groups' : 'Academic Terms'}
           action={
-            isEditing ? null : isAddingTerms ? (
+            isEditing || hasTermGroups ? null : isAddingTerms ? (
               renderAddTermsActions()
             ) : (
               <Group gap="sm" wrap="wrap" justify="flex-end">
@@ -795,13 +840,95 @@ export function AcademicYearDetailPage() {
         >
           <Grid.Col span={12}>
             <Stack gap="md">
-              {addTermsError ? (
+              {!hasTermGroups && addTermsError ? (
                 <Alert color="red" title="Unable to add academic terms">
                   {addTermsError}
                 </Alert>
               ) : null}
 
-              {sortedTerms.length === 0 ? (
+              {hasTermGroups ? (
+                sortedTermGroups.map((termGroup) => (
+                  <Paper key={termGroup.termGroupId} withBorder p="md" radius="sm">
+                    <Stack gap="md">
+                      <Group justify="space-between" align="flex-start" wrap="wrap">
+                        <Stack gap={4}>
+                          <Text fw={600}>
+                            <Link
+                              to={`/academics/academic-term-group/${termGroup.termGroupId}`}
+                              state={{ academicYearId: detail.academicYearId }}
+                            >
+                              {termGroup.name}
+                            </Link>
+                          </Text>
+                        </Stack>
+                        <Badge variant="light" color="blue">
+                          {termGroup.academicTerms.length}{' '}
+                          {termGroup.academicTerms.length === 1 ? 'term' : 'terms'}
+                        </Badge>
+                      </Group>
+
+                      <Grid gap="md">
+                        <Grid.Col span={{ base: 12, md: 6 }}>
+                          <Text size="xs" c="dimmed" fw={600} tt="uppercase">
+                            Start date
+                          </Text>
+                          <Text>{displayDate(termGroup.startDate)}</Text>
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, md: 6 }}>
+                          <Text size="xs" c="dimmed" fw={600} tt="uppercase">
+                            End date
+                          </Text>
+                          <Text>{displayDate(termGroup.endDate)}</Text>
+                        </Grid.Col>
+                      </Grid>
+
+                      {termGroup.academicTerms.length === 0 ? (
+                        <Alert color="gray" title="No terms in this group">
+                          This term group has not been assigned any academic terms yet.
+                        </Alert>
+                      ) : (
+                        <Table.ScrollContainer minWidth={760}>
+                          <Table withTableBorder withColumnBorders striped highlightOnHover>
+                            <Table.Thead>
+                              <Table.Tr>
+                                <Table.Th>Sort order</Table.Th>
+                                <Table.Th>Code</Table.Th>
+                                <Table.Th>Name</Table.Th>
+                                <Table.Th>Start date</Table.Th>
+                                <Table.Th>End date</Table.Th>
+                                <Table.Th>Status</Table.Th>
+                                <Table.Th>Active</Table.Th>
+                              </Table.Tr>
+                            </Table.Thead>
+                            <Table.Tbody>
+                              {termGroup.academicTerms.map((term) => (
+                                <Table.Tr key={term.termId}>
+                                  <Table.Td>{term.sortOrder}</Table.Td>
+                                  <Table.Td>
+                                    <Link
+                                      to={`/academics/academic-term/${term.termId}`}
+                                      state={{ academicYearId: detail.academicYearId }}
+                                    >
+                                      {term.code}
+                                    </Link>
+                                  </Table.Td>
+                                  <Table.Td>{term.name}</Table.Td>
+                                  <Table.Td>{displayDate(term.startDate)}</Table.Td>
+                                  <Table.Td>{displayDate(term.endDate)}</Table.Td>
+                                  <Table.Td>
+                                    {displayValue(term.termStatusName ?? term.termStatusCode)}
+                                  </Table.Td>
+                                  <Table.Td>{displayValue(term.active)}</Table.Td>
+                                </Table.Tr>
+                              ))}
+                            </Table.Tbody>
+                          </Table>
+                        </Table.ScrollContainer>
+                      )}
+                    </Stack>
+                  </Paper>
+                ))
+              ) : sortedLegacyTerms.length === 0 ? (
                 <Alert color="gray" title="No terms on this academic year">
                   {isAddingTerms
                     ? 'This academic year does not have any terms yet. Use the rows below to add the first ones.'
@@ -822,7 +949,7 @@ export function AcademicYearDetailPage() {
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
-                      {sortedTerms.map((term) => (
+                      {sortedLegacyTerms.map((term) => (
                         <Table.Tr key={term.termId}>
                           <Table.Td>{term.sortOrder}</Table.Td>
                           <Table.Td>
@@ -847,7 +974,7 @@ export function AcademicYearDetailPage() {
                 </Table.ScrollContainer>
               )}
 
-              {isAddingTerms ? (
+              {!hasTermGroups && isAddingTerms ? (
                 <>
                   {addTermsForm.values.terms.length === 0 ? (
                     <Alert color="gray" title="No new term rows">

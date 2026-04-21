@@ -23,6 +23,9 @@ public interface AcademicTermRepository extends JpaRepository<AcademicTerm, Long
     List<AcademicTerm> findAllByAcademicYear_IdOrderBySortOrderAsc(Long academicYearId);
 
     @EntityGraph(attributePaths = {"academicYear", "status"})
+    List<AcademicTerm> findAllByIdInOrderBySortOrderAsc(List<Long> termIds);
+
+    @EntityGraph(attributePaths = {"academicYear", "status"})
     List<AcademicTerm> findAllByActiveTrueOrderBySortOrderAsc();
 
     @EntityGraph(attributePaths = {"academicYear", "status"})

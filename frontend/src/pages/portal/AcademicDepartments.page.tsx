@@ -120,7 +120,9 @@ export function AcademicDepartmentsPage() {
   }
 
   function handleOpenAcademicDepartmentDetail(departmentId: number) {
-    navigate(`/academics/departments/${departmentId}`);
+    navigate(`/academics/departments/${departmentId}`, {
+      state: { source: 'search' },
+    });
   }
 
   const tableData =

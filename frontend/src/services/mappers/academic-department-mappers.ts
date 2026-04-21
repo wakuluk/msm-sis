@@ -1,8 +1,10 @@
 import {
   AcademicDepartmentPatchRequestSchema,
+  CreateAcademicSubjectRequestSchema,
   type AcademicDepartmentDetailFormValues,
   type AcademicDepartmentPatchRequest,
   type AcademicDepartmentResponse,
+  type CreateAcademicSubjectRequest,
 } from '../schemas/academic-department-schemas';
 
 function normalizeComparableString(value: string): string {
@@ -89,4 +91,21 @@ export function buildPatchAcademicDepartmentRequest(
   }
 
   return AcademicDepartmentPatchRequestSchema.parse(request);
+}
+
+export function buildCreateAcademicSubjectRequest(
+  values: CreateAcademicSubjectRequest
+): CreateAcademicSubjectRequest {
+  return CreateAcademicSubjectRequestSchema.parse({
+    code: validateMaxLength(
+      trimRequiredString(values.code, 'Academic subject code'),
+      20,
+      'Academic subject code'
+    ),
+    name: validateMaxLength(
+      trimRequiredString(values.name, 'Academic subject name'),
+      255,
+      'Academic subject name'
+    ),
+  });
 }

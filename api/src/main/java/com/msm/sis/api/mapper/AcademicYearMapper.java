@@ -1,5 +1,6 @@
 package com.msm.sis.api.mapper;
 
+import com.msm.sis.api.dto.academic.term.AcademicTermGroupResponse;
 import com.msm.sis.api.dto.academic.term.AcademicTermResponse;
 import com.msm.sis.api.dto.academic.term.CreateAcademicTermRequest;
 import com.msm.sis.api.dto.academic.year.PatchAcademicYearRequest;
@@ -14,7 +15,6 @@ import com.msm.sis.api.entity.AcademicTermStatus;
 import com.msm.sis.api.patch.PatchValue;
 import org.springframework.stereotype.Component;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -99,14 +99,10 @@ public class AcademicYearMapper {
         );
     }
 
-    public AcademicYearResponse toAcademicYearResponse(AcademicYear academicYear, List<AcademicTerm> terms) {
-        List<AcademicTermResponse> termResponses = terms == null
-                ? List.of()
-                : terms.stream()
-                .sorted(Comparator.comparing(AcademicTerm::getSortOrder))
-                .map(this::toAcademicTermResponse)
-                .toList();
-
+    public AcademicYearResponse toAcademicYearResponse(
+            AcademicYear academicYear,
+            List<AcademicTermGroupResponse> groupTerms
+    ) {
         return new AcademicYearResponse(
                 academicYear.getId(),
                 academicYear.getCode(),
@@ -121,20 +117,14 @@ public class AcademicYearMapper {
                 academicYear.isPublished(),
                 academicYear.getLastUpdated(),
                 academicYear.getUpdatedBy(),
-                termResponses
+                groupTerms == null ? List.of() : groupTerms
         );
     }
 
     public AcademicYearResponse toAcademicYearResponseFromTermResponses(
             AcademicYear academicYear,
-            List<AcademicTermResponse> terms
+            List<AcademicTermGroupResponse> groupTerms
     ) {
-        List<AcademicTermResponse> termResponses = terms == null
-                ? List.of()
-                : terms.stream()
-                .sorted(Comparator.comparing(AcademicTermResponse::sortOrder))
-                .toList();
-
         return new AcademicYearResponse(
                 academicYear.getId(),
                 academicYear.getCode(),
@@ -149,7 +139,7 @@ public class AcademicYearMapper {
                 academicYear.isPublished(),
                 academicYear.getLastUpdated(),
                 academicYear.getUpdatedBy(),
-                termResponses
+                groupTerms == null ? List.of() : groupTerms
         );
     }
 

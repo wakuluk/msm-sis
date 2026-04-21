@@ -149,7 +149,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
         predicates.add(criteriaBuilder.isTrue(joins.department.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.subject.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.course.get("active")));
-        predicates.add(criteriaBuilder.isTrue(joins.courseVersion.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.academicYear.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.term.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.termStatus.get("active")));
@@ -230,7 +229,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             predicates.add(criteriaBuilder.isTrue(joins.department.get("active")));
             predicates.add(criteriaBuilder.isTrue(joins.subject.get("active")));
             predicates.add(criteriaBuilder.isTrue(joins.course.get("active")));
-            predicates.add(criteriaBuilder.isTrue(joins.courseVersion.get("active")));
             predicates.add(criteriaBuilder.isTrue(joins.academicYear.get("active")));
             predicates.add(criteriaBuilder.isTrue(joins.term.get("active")));
             predicates.add(criteriaBuilder.isTrue(joins.termStatus.get("active")));

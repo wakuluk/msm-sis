@@ -1,17 +1,17 @@
 services:
   msm-sis-db:
-    image: mysql:8.4
+    image: postgres:17
     restart: unless-stopped
-    command: --sql_mode=""
     environment:
-      MYSQL_ROOT_PASSWORD: msmsisdb
-      MYSQL_DATABASE: msmsisdb
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: msmsisdb
+      POSTGRES_DB: msmsisdb
     ports:
-      - "3307:3306"
+      - "5433:5432"
     volumes:
-      - msm_sis_db_data:/var/lib/mysql
+      - msm_sis_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pmsmsisdb"]
+      test: ["CMD-SHELL", "pg_isready -U root -d msmsisdb"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -43,7 +43,7 @@ services:
       - ./msm-sis-file-share:/app/files
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:mysql://msm-sis-db:3306/msmsisdb
+      SPRING_DATASOURCE_URL: jdbc:postgresql://msm-sis-db:5432/msmsisdb
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: msmsisdb
       APP_STORAGE_ROOT_DIR: /app/files

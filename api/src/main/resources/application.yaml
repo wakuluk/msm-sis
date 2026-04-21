@@ -3,10 +3,10 @@ spring:
     name: api
 
   datasource:
-    url: jdbc:mysql://msm-sis-db:3306/msmsisdb
+    url: jdbc:postgresql://msm-sis-db:5432/msmsisdb
     username: root
     password: msmsisdb
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:

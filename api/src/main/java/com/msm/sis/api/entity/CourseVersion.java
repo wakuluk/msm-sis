@@ -55,11 +55,8 @@ public class CourseVersion {
     @Column(name = "is_variable_credit", nullable = false)
     private boolean variableCredit;
 
-    @Column(name = "active", nullable = false)
-    private boolean active = true;
-
-    @Column(name = "is_default", nullable = false)
-    private boolean defaultVersion;
+    @Column(name = "is_current", nullable = false)
+    private boolean currentVersion;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "created_at", insertable = false, updatable = false)

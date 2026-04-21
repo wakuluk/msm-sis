@@ -1,0 +1,25 @@
+package com.msm.sis.api.dto.course;
+
+import java.math.BigDecimal;
+
+public record CourseSearchResultResponse(
+        Long courseId,
+        Long schoolId,
+        String schoolCode,
+        String schoolName,
+        Long departmentId,
+        String departmentCode,
+        String departmentName,
+        Long subjectId,
+        String subjectCode,
+        String subjectName,
+        String courseNumber,
+        String courseCode,
+        Long currentCourseVersionId,
+        String currentVersionTitle,
+        BigDecimal minCredits,
+        BigDecimal maxCredits,
+        boolean variableCredit,
+        boolean active
+) {
+}

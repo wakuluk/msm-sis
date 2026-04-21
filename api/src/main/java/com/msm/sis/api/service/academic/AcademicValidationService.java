@@ -4,7 +4,9 @@ package com.msm.sis.api.service.academic;
 import com.msm.sis.api.dto.academic.term.CreateAcademicTermRequest;
 import com.msm.sis.api.dto.academic.year.CreateAcademicYearTermRequest;
 import com.msm.sis.api.entity.AcademicTerm;
+import com.msm.sis.api.entity.AcademicTermGroup;
 import com.msm.sis.api.entity.AcademicYear;
+import com.msm.sis.api.repository.AcademicTermGroupRepository;
 import com.msm.sis.api.repository.AcademicTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.validation.ValidationUtils;
@@ -25,13 +27,16 @@ public class AcademicValidationService {
 
     private final AcademicYearRepository academicYearRepository;
     private final AcademicTermRepository academicTermRepository;
+    private final AcademicTermGroupRepository academicTermGroupRepository;
 
     public AcademicValidationService(
             AcademicYearRepository academicYearRepository,
-            AcademicTermRepository academicTermRepository
+            AcademicTermRepository academicTermRepository,
+            AcademicTermGroupRepository academicTermGroupRepository
     ) {
         this.academicYearRepository = academicYearRepository;
         this.academicTermRepository = academicTermRepository;
+        this.academicTermGroupRepository = academicTermGroupRepository;
     }
 
     public void validateCreateAcademicYear(AcademicYear academicYear) {
@@ -94,6 +99,86 @@ public class AcademicValidationService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Academic term sort order must be unique within an academic year."
+            );
+        }
+    }
+
+    public void validateCreateAcademicTermGroup(
+            AcademicYear academicYear,
+            AcademicTermGroup academicTermGroup,
+            List<Long> termIds,
+            List<AcademicTerm> academicTerms
+    ) {
+        validateAcademicTermGroupFields(
+                academicYear,
+                academicTermGroup.getCode(),
+                academicTermGroup.getName(),
+                academicTermGroup.getStartDate(),
+                academicTermGroup.getEndDate()
+        );
+
+        if (academicYear.getId() != null
+                && academicTermGroupRepository.existsByAcademicYear_IdAndCode(
+                        academicYear.getId(),
+                        trimToNull(academicTermGroup.getCode())
+                )) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic term group code must be unique within an academic year."
+            );
+        }
+
+        validateAcademicTermGroupTerms(academicYear, academicTermGroup, termIds, academicTerms, null);
+    }
+
+    public void validatePatchAcademicTermGroup(
+            AcademicTermGroup existingAcademicTermGroup,
+            AcademicTermGroup candidateAcademicTermGroup,
+            List<Long> termIds,
+            List<AcademicTerm> academicTerms
+    ) {
+        AcademicYear academicYear = existingAcademicTermGroup.getAcademicYear();
+
+        validateAcademicTermGroupFields(
+                academicYear,
+                candidateAcademicTermGroup.getCode(),
+                candidateAcademicTermGroup.getName(),
+                candidateAcademicTermGroup.getStartDate(),
+                candidateAcademicTermGroup.getEndDate()
+        );
+
+        String existingCode = trimToNull(existingAcademicTermGroup.getCode());
+        String candidateCode = trimToNull(candidateAcademicTermGroup.getCode());
+        if (!Objects.equals(existingCode, candidateCode)
+                && academicTermGroupRepository.existsByAcademicYear_IdAndCode(academicYear.getId(), candidateCode)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic term group code must be unique within an academic year."
+            );
+        }
+
+        validateAcademicTermGroupTerms(
+                academicYear,
+                candidateAcademicTermGroup,
+                termIds,
+                academicTerms,
+                existingAcademicTermGroup.getId()
+        );
+    }
+
+    public void validateAcademicTermWithinContainingGroup(
+            AcademicTermGroup academicTermGroup,
+            AcademicTerm academicTerm
+    ) {
+        if (academicTermGroup == null || academicTerm == null) {
+            return;
+        }
+
+        if (academicTerm.getStartDate().isBefore(academicTermGroup.getStartDate())
+                || academicTerm.getEndDate().isAfter(academicTermGroup.getEndDate())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic term dates must fall within the academic term group date range."
             );
         }
     }
@@ -309,6 +394,92 @@ public class AcademicValidationService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Academic term dates must fall within the academic year date range."
+            );
+        }
+    }
+
+    private void validateAcademicTermGroupFields(
+            AcademicYear academicYear,
+            String code,
+            String name,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        String normalizedCode = trimToNull(code);
+        String normalizedName = trimToNull(name);
+
+        if (normalizedCode == null || normalizedName == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic term group code and name are required."
+            );
+        }
+
+        ValidationUtils.validateMaxLength(normalizedCode, 20, "Academic term group code");
+        ValidationUtils.validateMaxLength(normalizedName, 100, "Academic term group name");
+        validateDateRange(startDate, endDate, "Academic term group");
+
+        if (academicYear.getStartDate() == null || academicYear.getEndDate() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Academic year dates are required.");
+        }
+
+        if (startDate.isBefore(academicYear.getStartDate()) || endDate.isAfter(academicYear.getEndDate())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic term group dates must fall within the academic year date range."
+            );
+        }
+    }
+
+    private void validateAcademicTermGroupTerms(
+            AcademicYear academicYear,
+            AcademicTermGroup academicTermGroup,
+            List<Long> termIds,
+            List<AcademicTerm> academicTerms,
+            Long currentTermGroupId
+    ) {
+        if (termIds == null || termIds.isEmpty()) {
+            return;
+        }
+
+        Set<Long> uniqueTermIds = new HashSet<>(termIds);
+        if (uniqueTermIds.size() != termIds.size()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic term IDs must be unique within an academic term group."
+            );
+        }
+
+        if (academicTerms.size() != termIds.size()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "All academic terms in an academic term group must exist."
+            );
+        }
+
+        for (AcademicTerm academicTerm : academicTerms) {
+            if (academicTerm.getAcademicYear() == null
+                    || academicTerm.getAcademicYear().getId() == null
+                    || !Objects.equals(academicTerm.getAcademicYear().getId(), academicYear.getId())) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Academic term group terms must belong to the target academic year."
+                );
+            }
+
+            validateAcademicTermWithinContainingGroup(academicTermGroup, academicTerm);
+        }
+
+        List<AcademicTermGroup> existingAcademicTermGroups = academicTermGroupRepository
+                .findDistinctByAcademicTerms_IdIn(termIds);
+
+        boolean assignedToAnotherGroup = existingAcademicTermGroups.stream()
+                .anyMatch(group -> !Objects.equals(group.getId(), currentTermGroupId));
+
+        if (assignedToAnotherGroup) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "One or more academic terms are already assigned to another academic term group."
             );
         }
     }

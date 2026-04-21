@@ -1,6 +1,8 @@
 package com.msm.sis.api.controller;
 
 import com.msm.sis.api.config.AuthenticatedJwt;
+import com.msm.sis.api.dto.academic.term.AcademicTermGroupResponse;
+import com.msm.sis.api.dto.academic.term.CreateAcademicTermGroupRequest;
 import com.msm.sis.api.dto.academic.year.*;
 import com.msm.sis.api.service.academic.AcademicYearService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -95,6 +97,26 @@ public class AcademicYearController {
             @Valid @NotNull @RequestBody List<CreateAcademicYearTermRequest> request)
     {
         return ResponseEntity.ok(academicYearService.postAcademicYearTerm(academicYearId, request, jwt.getEmail()));
+    }
+
+    @PostMapping("/{academicYearId}/term-groups")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create academic term group", description = "Creates an academic term group within an academic year")
+    public ResponseEntity<AcademicTermGroupResponse> postAcademicYearTermGroup(
+            @PathVariable Long academicYearId,
+            @Valid @NotNull @RequestBody CreateAcademicTermGroupRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(academicYearService.postAcademicYearTermGroup(academicYearId, request));
+    }
+
+    @GetMapping("/{academicYearId}/term-groups")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get academic term groups", description = "Gets academic term groups for a single academic year")
+    public ResponseEntity<List<AcademicTermGroupResponse>> getAcademicYearTermGroups(
+            @PathVariable Long academicYearId
+    ) {
+        return ResponseEntity.ok(academicYearService.getAcademicYearTermGroups(academicYearId));
     }
 
     @GetMapping("/statuses")

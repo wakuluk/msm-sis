@@ -1,11 +1,18 @@
 import { getAccessToken } from '@/auth/auth-store';
 import {
+  buildCreateAcademicYearSubmissionPlan,
+  getAcademicYearResponseTerms,
+} from './mappers/academic-year-mappers';
+import {
   CourseOfferingSearchResultsListSchema,
   type CourseOfferingSearchSortBy,
   type CourseOfferingSortDirection,
   type CourseOfferingSearchResultsList,
 } from './schemas/catalog-schemas';
 import {
+  AcademicTermGroupCreateRequestSchema,
+  AcademicTermGroupPatchRequestSchema,
+  AcademicTermGroupResponseSchema,
   AcademicTermResponseSchema,
   AcademicTermPatchRequestSchema,
   AcademicTermStatusesResponseSchema,
@@ -21,6 +28,9 @@ import {
   AcademicYearSortDirectionSchema,
   type AcademicTermResponse,
   type AcademicTermPatchRequest,
+  type AcademicTermGroupCreateRequest,
+  type AcademicTermGroupPatchRequest,
+  type AcademicTermGroupResponse,
   type AcademicTermStatusesResponse,
   type AcademicTermStatusShiftDirection,
   type AcademicYearCreateFormValues,
@@ -97,6 +107,11 @@ export type GetAcademicTermRequest = {
   signal?: AbortSignal;
 };
 
+export type GetAcademicTermGroupRequest = {
+  academicTermGroupId: number;
+  signal?: AbortSignal;
+};
+
 export type GetAcademicTermCourseOfferingsRequest = {
   academicTermId: number;
   sortBy?: CourseOfferingSearchSortBy;
@@ -124,6 +139,12 @@ export type PatchAcademicTermRequest = {
   signal?: AbortSignal;
 };
 
+export type PatchAcademicTermGroupRequest = {
+  academicTermGroupId: number;
+  request: AcademicTermGroupPatchRequest;
+  signal?: AbortSignal;
+};
+
 export type ShiftAcademicYearStatusRequest = {
   academicYearId: number;
   direction: AcademicYearStatusShiftDirection;
@@ -142,47 +163,27 @@ export type PostAcademicYearTermsRequest = {
   signal?: AbortSignal;
 };
 
+export type PostAcademicYearTermGroupRequest = {
+  academicYearId: number;
+  request: AcademicTermGroupCreateRequest;
+  signal?: AbortSignal;
+};
+
+export class AcademicYearCreateWithTermGroupsError extends Error {
+  academicYear: AcademicYearCreateResponse;
+
+  constructor(message: string, academicYear: AcademicYearCreateResponse) {
+    super(message);
+    Object.setPrototypeOf(this, AcademicYearCreateWithTermGroupsError.prototype);
+    this.name = 'AcademicYearCreateWithTermGroupsError';
+    this.academicYear = academicYear;
+  }
+}
+
 function trimToUndefined(value: string): string | undefined {
   const trimmedValue = value.trim();
 
   return trimmedValue ? trimmedValue : undefined;
-}
-
-function trimRequiredString(value: string, fieldLabel: string): string {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    throw new Error(`${fieldLabel} is required.`);
-  }
-
-  return trimmedValue;
-}
-
-function trimRequiredIsoDate(value: string, fieldLabel: string): string {
-  const trimmedValue = trimRequiredString(value, fieldLabel);
-
-  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmedValue);
-
-  if (!dateMatch) {
-    throw new Error(`${fieldLabel} must be in YYYY-MM-DD format.`);
-  }
-
-  const [, yearPart, monthPart, dayPart] = dateMatch;
-  const year = Number(yearPart);
-  const month = Number(monthPart);
-  const day = Number(dayPart);
-  const parsedDate = new Date(year, month - 1, day);
-
-  if (
-    Number.isNaN(parsedDate.getTime()) ||
-    parsedDate.getFullYear() !== year ||
-    parsedDate.getMonth() + 1 !== month ||
-    parsedDate.getDate() !== day
-  ) {
-    throw new Error(`${fieldLabel} must be a valid calendar date.`);
-  }
-
-  return trimmedValue;
 }
 
 export function parseAcademicYearSortBy(value: string | null | undefined): AcademicYearSortBy {
@@ -241,38 +242,6 @@ export function buildAcademicYearSearchQueryParams({
   queryParams.set('sortDirection', sortDirection);
 
   return queryParams;
-}
-
-function parseRequiredWholeNumber(value: string, fieldLabel: string): number {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    throw new Error(`${fieldLabel} is required.`);
-  }
-
-  if (!/^\d+$/.test(trimmedValue)) {
-    throw new Error(`${fieldLabel} must be a whole number.`);
-  }
-
-  return Number(trimmedValue);
-}
-
-export function buildCreateAcademicYearRequest(
-  values: AcademicYearCreateFormValues
-): AcademicYearCreateRequest {
-  return AcademicYearCreateRequestSchema.parse({
-    code: trimRequiredString(values.code, 'Academic year code'),
-    name: trimRequiredString(values.name, 'Academic year name'),
-    startDate: trimRequiredIsoDate(values.startDate, 'Academic year start date'),
-    endDate: trimRequiredIsoDate(values.endDate, 'Academic year end date'),
-    terms: values.terms.map((term, index) => ({
-      code: trimRequiredString(term.code, `Term ${index + 1} code`),
-      name: trimRequiredString(term.name, `Term ${index + 1} name`),
-      startDate: trimRequiredIsoDate(term.startDate, `Term ${index + 1} start date`),
-      endDate: trimRequiredIsoDate(term.endDate, `Term ${index + 1} end date`),
-      sortOrder: parseRequiredWholeNumber(term.sortOrder, `Term ${index + 1} sort order`),
-    })),
-  });
 }
 
 export async function searchAcademicYears({
@@ -342,6 +311,67 @@ export async function createAcademicYear(
   }
 
   return AcademicYearCreateResponseSchema.parse(payload);
+}
+
+export async function createAcademicYearWithTermGroups(
+  values: AcademicYearCreateFormValues
+): Promise<AcademicYearCreateResponse> {
+  const submissionPlan = buildCreateAcademicYearSubmissionPlan(values);
+  const createdAcademicYear = await createAcademicYear(submissionPlan.academicYearRequest);
+
+  if (submissionPlan.termGroups.length === 0) {
+    return createdAcademicYear;
+  }
+
+  const createdTerms = getAcademicYearResponseTerms(createdAcademicYear);
+  const createdTermIdByCode = new Map(
+    createdTerms.map((term) => [term.code.trim(), term.termId] as const)
+  );
+
+  if (createdTermIdByCode.size === 0) {
+    throw new Error(
+      'Academic year was created, but the response did not include academic terms needed to create term groups.'
+    );
+  }
+
+  try {
+    for (const termGroup of submissionPlan.termGroups) {
+      const termIds = termGroup.termCodes.map((termCode) => {
+        const matchedTermId = createdTermIdByCode.get(termCode);
+
+        if (matchedTermId === undefined) {
+          throw new Error(
+            `Created academic term "${termCode}" could not be matched while creating term group "${termGroup.code}".`
+          );
+        }
+
+        return matchedTermId;
+      });
+
+      await postAcademicYearTermGroup({
+        academicYearId: createdAcademicYear.academicYearId,
+        request: {
+          code: termGroup.code,
+          name: termGroup.name,
+          startDate: termGroup.startDate,
+          endDate: termGroup.endDate,
+          termIds,
+        },
+      });
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'One or more academic term groups could not be created.';
+
+    throw new AcademicYearCreateWithTermGroupsError(
+      `Academic year was created, but term group setup did not finish. ${message}`,
+      createdAcademicYear
+    );
+  }
+
+  return createdAcademicYear;
 }
 
 export async function getAcademicYearById({
@@ -427,6 +457,34 @@ export async function getAcademicTermById({
   }
 
   return AcademicTermResponseSchema.parse(payload);
+}
+
+export async function getAcademicTermGroupById({
+  academicTermGroupId,
+  signal,
+}: GetAcademicTermGroupRequest): Promise<AcademicTermGroupResponse> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error('Not authenticated.');
+  }
+
+  const response = await fetch(`/api/academic-term-group/${academicTermGroupId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    signal,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.message === 'string' ? payload.message : 'Failed to load academic term group.'
+    );
+  }
+
+  return AcademicTermGroupResponseSchema.parse(payload);
 }
 
 export async function getAcademicTermCourseOfferings({
@@ -566,6 +624,40 @@ export async function patchAcademicTerm({
   return AcademicTermResponseSchema.parse(payload);
 }
 
+export async function patchAcademicTermGroup({
+  academicTermGroupId,
+  request,
+  signal,
+}: PatchAcademicTermGroupRequest): Promise<AcademicTermGroupResponse> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error('Not authenticated.');
+  }
+
+  const response = await fetch(`/api/academic-term-group/${academicTermGroupId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(AcademicTermGroupPatchRequestSchema.parse(request)),
+    signal,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.message === 'string'
+        ? payload.message
+        : 'Failed to save academic term group detail.'
+    );
+  }
+
+  return AcademicTermGroupResponseSchema.parse(payload);
+}
+
 export async function patchAcademicYear({
   academicYearId,
   request,
@@ -664,4 +756,38 @@ export async function postAcademicYearTerms({
   }
 
   return AcademicYearCreateResponseSchema.parse(payload);
+}
+
+export async function postAcademicYearTermGroup({
+  academicYearId,
+  request,
+  signal,
+}: PostAcademicYearTermGroupRequest): Promise<AcademicTermGroupResponse> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error('Not authenticated.');
+  }
+
+  const response = await fetch(`/api/academic-year/${academicYearId}/term-groups`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(AcademicTermGroupCreateRequestSchema.parse(request)),
+    signal,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.message === 'string'
+        ? payload.message
+        : 'Failed to create academic term group.'
+    );
+  }
+
+  return AcademicTermGroupResponseSchema.parse(payload);
 }

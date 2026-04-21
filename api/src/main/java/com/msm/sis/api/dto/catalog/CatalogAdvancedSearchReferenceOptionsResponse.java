@@ -6,11 +6,11 @@ import com.msm.sis.api.dto.academic.AcademicTermReferenceOptionResponse;
 import java.util.List;
 
 public record CatalogAdvancedSearchReferenceOptionsResponse(
-        List<CatalogReferenceOptionResponse> academicYears,
+        List<CodeNameReferenceOptionResponse> academicYears,
         List<AcademicTermReferenceOptionResponse> terms,
-        List<CatalogReferenceOptionResponse> departments,
+        List<CodeNameReferenceOptionResponse> departments,
         List<AcademicSubjectReferenceOptionResponse> subjects,
-        List<CatalogReferenceOptionResponse> offeringStatuses,
-        List<CatalogReferenceOptionResponse> termStatuses
+        List<CodeNameReferenceOptionResponse> offeringStatuses,
+        List<CodeNameReferenceOptionResponse> termStatuses
 ){
 }

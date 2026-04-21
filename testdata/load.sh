@@ -21,11 +21,13 @@ fi
 echo "Loading base seed data from: $SEED_FILE"
 echo "Target database: $DB_NAME on docker service $DB_SERVICE"
 
-docker compose exec -T "$DB_SERVICE" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$SEED_FILE"
+docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
+  psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$SEED_FILE"
 
 if [[ -n "$COURSE_SEED_FILE" ]]; then
   echo "Loading course seed data from: $COURSE_SEED_FILE"
-  docker compose exec -T "$DB_SERVICE" mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$COURSE_SEED_FILE"
+  docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
+    psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$COURSE_SEED_FILE"
 fi
 
 echo "Seed load complete."

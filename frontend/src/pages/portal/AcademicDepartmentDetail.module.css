@@ -1,0 +1,33 @@
+.subjectExpandedRow > td {
+  background-color: light-dark(rgb(245 247 250), rgb(38 42 48)) !important;
+}
+
+.subjectExpandedRow > td:first-child {
+  box-shadow: inset 3px 0 0 light-dark(rgb(210 218 226), rgb(79 86 97)) !important;
+}
+
+.expandedCoursesRow > td {
+  background-color: light-dark(rgb(245 247 250), rgb(38 42 48));
+  border-top: 0;
+}
+
+.expandedCoursesCell {
+  padding-top: 0;
+  padding-bottom: 0.85rem;
+}
+
+.expandedCoursesContent {
+  padding-top: 0.15rem;
+  padding-left: 4.25rem;
+}
+
+@media (width <= 48rem) {
+  .expandedCoursesContent {
+    padding-left: 2.75rem;
+  }
+}
+
+.expandedCoursesContent :global(th),
+.expandedCoursesContent :global(td) {
+  background-color: transparent;
+}

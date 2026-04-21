@@ -1,29 +1,93 @@
 -- Tolkien-themed catalog seed data for local development and manual testing.
 -- This script is written to be rerunnable without duplicating rows.
 
-INSERT INTO academic_department (code, name, active)
-SELECT 'HUM', 'Humanities', TRUE
+INSERT INTO academic_school (code, name, active)
+SELECT 'SLL', 'School of Lore and Letters', TRUE
 WHERE NOT EXISTS (
     SELECT 1
-    FROM academic_department
-    WHERE code = 'HUM'
+    FROM academic_school
+    WHERE code = 'SLL'
 );
 
-INSERT INTO academic_department (code, name, active)
-SELECT 'LANG', 'Languages', TRUE
+INSERT INTO academic_school (code, name, active)
+SELECT 'SHS', 'School of Historical Studies', TRUE
 WHERE NOT EXISTS (
     SELECT 1
-    FROM academic_department
-    WHERE code = 'LANG'
+    FROM academic_school
+    WHERE code = 'SHS'
 );
 
-INSERT INTO academic_department (code, name, active)
-SELECT 'HIST', 'History', TRUE
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM academic_department
-    WHERE code = 'HIST'
-);
+UPDATE academic_school
+SET name = 'School of Lore and Letters',
+    active = TRUE
+WHERE code = 'SLL'
+;
+
+UPDATE academic_school
+SET name = 'School of Historical Studies',
+    active = TRUE
+WHERE code = 'SHS'
+;
+
+INSERT INTO academic_department (school_id, code, name, active)
+SELECT s.school_id, 'HUM', 'Humanities', TRUE
+FROM academic_school s
+WHERE s.code = 'SLL'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM academic_department d
+      WHERE d.school_id = s.school_id
+        AND d.code = 'HUM'
+  );
+
+INSERT INTO academic_department (school_id, code, name, active)
+SELECT s.school_id, 'LANG', 'Languages', TRUE
+FROM academic_school s
+WHERE s.code = 'SLL'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM academic_department d
+      WHERE d.school_id = s.school_id
+        AND d.code = 'LANG'
+  );
+
+INSERT INTO academic_department (school_id, code, name, active)
+SELECT s.school_id, 'HIST', 'History', TRUE
+FROM academic_school s
+WHERE s.code = 'SHS'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM academic_department d
+      WHERE d.school_id = s.school_id
+        AND d.code = 'HIST'
+  );
+
+UPDATE academic_department d
+SET school_id = s.school_id,
+    name = 'Humanities',
+    active = TRUE
+FROM academic_school s
+WHERE s.code = 'SLL'
+  AND d.code = 'HUM'
+;
+
+UPDATE academic_department d
+SET school_id = s.school_id,
+    name = 'Languages',
+    active = TRUE
+FROM academic_school s
+WHERE s.code = 'SLL'
+  AND d.code = 'LANG'
+;
+
+UPDATE academic_department d
+SET school_id = s.school_id,
+    name = 'History',
+    active = TRUE
+FROM academic_school s
+WHERE s.code = 'SHS'
+  AND d.code = 'HIST'
+;
 
 INSERT INTO academic_subject (department_id, code, name, active)
 SELECT d.department_id, 'TOLK', 'Tolkien Studies', TRUE
@@ -78,30 +142,32 @@ WHERE ys.code = 'PLANNED'
 );
 
 UPDATE academic_year ay
-JOIN academic_year_status ys ON ys.code = 'ACTIVE'
-SET ay.name = 'Academic Year 2026-2027',
-    ay.start_date = '2026-08-01',
-    ay.end_date = '2027-05-31',
-    ay.active = TRUE,
-    ay.is_published = TRUE,
-    ay.year_status_id = ys.year_status_id
-WHERE ay.code = 'AY-2026-2027';
+SET name = 'Academic Year 2026-2027',
+    start_date = '2026-08-01',
+    end_date = '2027-05-31',
+    active = TRUE,
+    is_published = TRUE,
+    year_status_id = ys.year_status_id
+FROM academic_year_status ys
+WHERE ys.code = 'ACTIVE'
+  AND ay.code = 'AY-2026-2027';
 
 UPDATE academic_year ay
-JOIN academic_year_status ys ON ys.code = 'PLANNED'
-SET ay.name = 'Academic Year 2027-2028',
-    ay.start_date = '2027-08-01',
-    ay.end_date = '2028-05-31',
-    ay.active = FALSE,
-    ay.is_published = FALSE,
-    ay.year_status_id = ys.year_status_id
-WHERE ay.code = 'AY-2027-2028';
+SET name = 'Academic Year 2027-2028',
+    start_date = '2027-08-01',
+    end_date = '2028-05-31',
+    active = FALSE,
+    is_published = FALSE,
+    year_status_id = ys.year_status_id
+FROM academic_year_status ys
+WHERE ys.code = 'PLANNED'
+  AND ay.code = 'AY-2027-2028';
 
 INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
 SELECT ay.academic_year_id, 'FALL-2026', 'Fall 2026', '2026-08-24', '2026-12-11', 202630, ts.term_status_id, TRUE
 FROM academic_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2026-2027'
-WHERE ts.code = 'REGISTRATION_OPEN'
+WHERE ts.code = 'OPEN_FOR_REGISTRATION'
   AND NOT EXISTS (
       SELECT 1
       FROM academic_term term
@@ -134,42 +200,113 @@ WHERE ts.code = 'PLANNED'
   );
 
 UPDATE academic_term term
-JOIN academic_year ay ON ay.code = 'AY-2026-2027'
-JOIN academic_term_status ts ON ts.code = 'REGISTRATION_OPEN'
-SET term.academic_year_id = ay.academic_year_id,
-    term.name = 'Fall 2026',
-    term.start_date = '2026-08-24',
-    term.end_date = '2026-12-11',
-    term.sort_order = 202630,
-    term.term_status_id = ts.term_status_id,
-    term.active = TRUE
-WHERE term.code = 'FALL-2026'
+SET academic_year_id = ay.academic_year_id,
+    name = 'Fall 2026',
+    start_date = '2026-08-24',
+    end_date = '2026-12-11',
+    sort_order = 202630,
+    term_status_id = ts.term_status_id,
+    active = TRUE
+FROM academic_year ay, academic_term_status ts
+WHERE ay.code = 'AY-2026-2027'
+  AND ts.code = 'OPEN_FOR_REGISTRATION'
+  AND term.code = 'FALL-2026'
 ;
 
 UPDATE academic_term term
-JOIN academic_year ay ON ay.code = 'AY-2026-2027'
-JOIN academic_term_status ts ON ts.code = 'PLANNED'
-SET term.academic_year_id = ay.academic_year_id,
-    term.name = 'Spring 2027',
-    term.start_date = '2027-01-19',
-    term.end_date = '2027-05-07',
-    term.sort_order = 202710,
-    term.term_status_id = ts.term_status_id,
-    term.active = TRUE
-WHERE term.code = 'SPRING-2027'
+SET academic_year_id = ay.academic_year_id,
+    name = 'Spring 2027',
+    start_date = '2027-01-19',
+    end_date = '2027-05-07',
+    sort_order = 202710,
+    term_status_id = ts.term_status_id,
+    active = TRUE
+FROM academic_year ay, academic_term_status ts
+WHERE ay.code = 'AY-2026-2027'
+  AND ts.code = 'PLANNED'
+  AND term.code = 'SPRING-2027'
 ;
 
 UPDATE academic_term term
-JOIN academic_year ay ON ay.code = 'AY-2027-2028'
-JOIN academic_term_status ts ON ts.code = 'PLANNED'
-SET term.academic_year_id = ay.academic_year_id,
-    term.name = 'Fall 2027',
-    term.start_date = '2027-08-23',
-    term.end_date = '2027-12-10',
-    term.sort_order = 202730,
-    term.term_status_id = ts.term_status_id,
-    term.active = TRUE
-WHERE term.code = 'FALL-2027'
+SET academic_year_id = ay.academic_year_id,
+    name = 'Fall 2027',
+    start_date = '2027-08-23',
+    end_date = '2027-12-10',
+    sort_order = 202730,
+    term_status_id = ts.term_status_id,
+    active = TRUE
+FROM academic_year ay, academic_term_status ts
+WHERE ay.code = 'AY-2027-2028'
+  AND ts.code = 'PLANNED'
+  AND term.code = 'FALL-2027'
+;
+
+INSERT INTO academic_term_group (academic_year_id, code, name, start_date, end_date)
+SELECT ay.academic_year_id, 'MAIN-2026-2027', 'Main Terms 2026-2027', '2026-08-24', '2027-05-07'
+FROM academic_year ay
+WHERE ay.code = 'AY-2026-2027'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM academic_term_group term_group
+      WHERE term_group.academic_year_id = ay.academic_year_id
+        AND term_group.code = 'MAIN-2026-2027'
+  );
+
+INSERT INTO academic_term_group (academic_year_id, code, name, start_date, end_date)
+SELECT ay.academic_year_id, 'MAIN-2027-2028', 'Main Terms 2027-2028', '2027-08-23', '2027-12-10'
+FROM academic_year ay
+WHERE ay.code = 'AY-2027-2028'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM academic_term_group term_group
+      WHERE term_group.academic_year_id = ay.academic_year_id
+        AND term_group.code = 'MAIN-2027-2028'
+  );
+
+UPDATE academic_term_group term_group
+SET name = 'Main Terms 2026-2027',
+    start_date = '2026-08-24',
+    end_date = '2027-05-07'
+FROM academic_year ay
+WHERE ay.code = 'AY-2026-2027'
+  AND term_group.academic_year_id = ay.academic_year_id
+  AND term_group.code = 'MAIN-2026-2027'
+;
+
+UPDATE academic_term_group term_group
+SET name = 'Main Terms 2027-2028',
+    start_date = '2027-08-23',
+    end_date = '2027-12-10'
+FROM academic_year ay
+WHERE ay.code = 'AY-2027-2028'
+  AND term_group.academic_year_id = ay.academic_year_id
+  AND term_group.code = 'MAIN-2027-2028'
+;
+
+DELETE FROM academic_term_group_term term_group_term
+USING academic_term term
+WHERE term.term_id = term_group_term.term_id
+  AND term.code IN ('FALL-2026', 'SPRING-2027', 'FALL-2027')
+;
+
+INSERT INTO academic_term_group_term (term_group_id, term_id)
+SELECT term_group.term_group_id, term.term_id
+FROM academic_term_group term_group
+JOIN academic_year ay ON ay.academic_year_id = term_group.academic_year_id
+JOIN academic_term term ON term.academic_year_id = ay.academic_year_id
+WHERE ay.code = 'AY-2026-2027'
+  AND term_group.code = 'MAIN-2026-2027'
+  AND term.code IN ('FALL-2026', 'SPRING-2027')
+;
+
+INSERT INTO academic_term_group_term (term_group_id, term_id)
+SELECT term_group.term_group_id, term.term_id
+FROM academic_term_group term_group
+JOIN academic_year ay ON ay.academic_year_id = term_group.academic_year_id
+JOIN academic_term term ON term.academic_year_id = ay.academic_year_id
+WHERE ay.code = 'AY-2027-2028'
+  AND term_group.code = 'MAIN-2027-2028'
+  AND term.code = 'FALL-2027'
 ;
 
 INSERT INTO course (subject_id, course_number, active)
@@ -235,8 +372,7 @@ INSERT INTO course_version (
     min_credits,
     max_credits,
     is_variable_credit,
-    active,
-    is_default
+    is_current
 )
 SELECT c.course_id,
        1,
@@ -245,7 +381,6 @@ SELECT c.course_id,
        3.00,
        3.00,
        FALSE,
-       TRUE,
        TRUE
 FROM course c
 JOIN academic_subject s ON s.subject_id = c.subject_id
@@ -266,8 +401,7 @@ INSERT INTO course_version (
     min_credits,
     max_credits,
     is_variable_credit,
-    active,
-    is_default
+    is_current
 )
 SELECT c.course_id,
        2,
@@ -276,7 +410,6 @@ SELECT c.course_id,
        3.00,
        3.00,
        FALSE,
-       TRUE,
        FALSE
 FROM course c
 JOIN academic_subject s ON s.subject_id = c.subject_id
@@ -297,8 +430,7 @@ INSERT INTO course_version (
     min_credits,
     max_credits,
     is_variable_credit,
-    active,
-    is_default
+    is_current
 )
 SELECT c.course_id,
        1,
@@ -307,7 +439,6 @@ SELECT c.course_id,
        3.00,
        3.00,
        FALSE,
-       TRUE,
        TRUE
 FROM course c
 JOIN academic_subject s ON s.subject_id = c.subject_id
@@ -328,8 +459,7 @@ INSERT INTO course_version (
     min_credits,
     max_credits,
     is_variable_credit,
-    active,
-    is_default
+    is_current
 )
 SELECT c.course_id,
        1,
@@ -338,7 +468,6 @@ SELECT c.course_id,
        4.00,
        4.00,
        FALSE,
-       TRUE,
        TRUE
 FROM course c
 JOIN academic_subject s ON s.subject_id = c.subject_id
@@ -359,8 +488,7 @@ INSERT INTO course_version (
     min_credits,
     max_credits,
     is_variable_credit,
-    active,
-    is_default
+    is_current
 )
 SELECT c.course_id,
        1,
@@ -369,7 +497,6 @@ SELECT c.course_id,
        3.00,
        3.00,
        FALSE,
-       TRUE,
        TRUE
 FROM course c
 JOIN academic_subject s ON s.subject_id = c.subject_id
@@ -390,8 +517,7 @@ INSERT INTO course_version (
     min_credits,
     max_credits,
     is_variable_credit,
-    active,
-    is_default
+    is_current
 )
 SELECT c.course_id,
        1,
@@ -399,7 +525,6 @@ SELECT c.course_id,
        'Supervised work on maps, movement, and spatial storytelling across Tolkien''s secondary world.',
        1.00,
        3.00,
-       TRUE,
        TRUE,
        TRUE
 FROM course c

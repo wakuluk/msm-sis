@@ -6,7 +6,7 @@ type RecordPageShellProps = {
   badge?: ReactNode;
   beforeForm?: ReactNode;
   children: ReactNode;
-  description: ReactNode;
+  description?: ReactNode;
   eyebrow?: ReactNode;
   size?: ComponentProps<typeof Container>['size'];
   title: ReactNode;
@@ -31,9 +31,11 @@ export function RecordPageShell({
               <Title order={1} className={classes.summaryTitle}>
                 {title}
               </Title>
-              <Text size="sm" c="dimmed" className={classes.summaryText}>
-                {description}
-              </Text>
+              {description ? (
+                <Text size="sm" c="dimmed" className={classes.summaryText}>
+                  {description}
+                </Text>
+              ) : null}
             </Stack>
             {badge}
           </Group>

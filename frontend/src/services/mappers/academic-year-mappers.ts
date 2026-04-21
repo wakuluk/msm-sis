@@ -1,7 +1,13 @@
 import {
   AcademicYearPatchRequestSchema,
+  AcademicYearCreateRequestSchema,
   AcademicYearPostTermsRequestSchema,
+  type AcademicTermResponse,
+  type AcademicTermGroupCreateRequest,
+  type AcademicTermGroupFormValues,
+  type AcademicYearCreateFormValues,
   type AcademicYearCreateResponse,
+  type AcademicYearCreateRequest,
   type AcademicYearCreateTermRequest,
   type AcademicYearDetailFormValues,
   type AcademicYearPatchRequest,
@@ -21,6 +27,23 @@ type NormalizedAcademicYearDetail = {
   name: string;
   startDate: string;
   endDate: string;
+};
+
+type NormalizedAcademicTermGroup = {
+  code: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  terms: NormalizedAcademicYearTerm[];
+};
+
+export type AcademicTermGroupCreatePlan = Omit<AcademicTermGroupCreateRequest, 'termIds'> & {
+  termCodes: string[];
+};
+
+export type AcademicYearCreateSubmissionPlan = {
+  academicYearRequest: AcademicYearCreateRequest;
+  termGroups: AcademicTermGroupCreatePlan[];
 };
 
 function toFormString(value: number | string | null | undefined): string {
@@ -101,23 +124,23 @@ function validateDateRange(startDate: string, endDate: string, fieldLabel: strin
 
 function normalizeAcademicYearTermFormValue(
   term: AcademicYearTermFormValues,
-  index: number
+  fieldLabelPrefix: string
 ): NormalizedAcademicYearTerm {
   const code = validateMaxLength(
-    trimRequiredString(term.code, `Term ${index + 1} code`),
+    trimRequiredString(term.code, `${fieldLabelPrefix} code`),
     20,
-    `Term ${index + 1} code`
+    `${fieldLabelPrefix} code`
   );
   const name = validateMaxLength(
-    trimRequiredString(term.name, `Term ${index + 1} name`),
+    trimRequiredString(term.name, `${fieldLabelPrefix} name`),
     100,
-    `Term ${index + 1} name`
+    `${fieldLabelPrefix} name`
   );
-  const startDate = trimRequiredIsoDate(term.startDate, `Term ${index + 1} start date`);
-  const endDate = trimRequiredIsoDate(term.endDate, `Term ${index + 1} end date`);
-  const sortOrder = parseRequiredWholeNumber(term.sortOrder, `Term ${index + 1} sort order`);
+  const startDate = trimRequiredIsoDate(term.startDate, `${fieldLabelPrefix} start date`);
+  const endDate = trimRequiredIsoDate(term.endDate, `${fieldLabelPrefix} end date`);
+  const sortOrder = parseRequiredWholeNumber(term.sortOrder, `${fieldLabelPrefix} sort order`);
 
-  validateDateRange(startDate, endDate, `Term ${index + 1}`);
+  validateDateRange(startDate, endDate, fieldLabelPrefix);
 
   return {
     code,
@@ -151,6 +174,47 @@ function validateAcademicYearTermCollection(
   });
 }
 
+function normalizeAcademicTermGroupFormValue(
+  termGroup: AcademicTermGroupFormValues,
+  index: number
+): NormalizedAcademicTermGroup {
+  const fieldLabelPrefix = `Term group ${index + 1}`;
+  const code = validateMaxLength(
+    trimRequiredString(termGroup.code, `${fieldLabelPrefix} code`),
+    20,
+    `${fieldLabelPrefix} code`
+  );
+  const name = validateMaxLength(
+    trimRequiredString(termGroup.name, `${fieldLabelPrefix} name`),
+    100,
+    `${fieldLabelPrefix} name`
+  );
+  const startDate = trimRequiredIsoDate(termGroup.startDate, `${fieldLabelPrefix} start date`);
+  const endDate = trimRequiredIsoDate(termGroup.endDate, `${fieldLabelPrefix} end date`);
+
+  validateDateRange(startDate, endDate, fieldLabelPrefix);
+
+  const terms = termGroup.terms.map((term, termIndex) =>
+    normalizeAcademicYearTermFormValue(term, `${fieldLabelPrefix} term ${termIndex + 1}`)
+  );
+
+  terms.forEach((term, termIndex) => {
+    if (term.startDate < startDate || term.endDate > endDate) {
+      throw new Error(
+        `Term group ${index + 1} term ${termIndex + 1} dates must fall within the term group date range.`
+      );
+    }
+  });
+
+  return {
+    code,
+    name,
+    startDate,
+    endDate,
+    terms,
+  };
+}
+
 function normalizeAcademicYearDetailFormValues(
   values: AcademicYearDetailFormValues
 ): NormalizedAcademicYearDetail {
@@ -174,6 +238,57 @@ function normalizeAcademicYearDetailFormValues(
     startDate,
     endDate,
   };
+}
+
+function validateAcademicYearTermGroupCollection(
+  termGroups: NormalizedAcademicTermGroup[],
+  academicYearStartDate: string,
+  academicYearEndDate: string
+) {
+  const groupCodes = new Set<string>();
+
+  termGroups.forEach((termGroup, index) => {
+    if (
+      termGroup.startDate < academicYearStartDate ||
+      termGroup.endDate > academicYearEndDate
+    ) {
+      throw new Error(
+        `Term group ${index + 1} dates must fall within the academic year date range.`
+      );
+    }
+
+    if (!groupCodes.add(termGroup.code)) {
+      throw new Error('Academic term group code must be unique within an academic year.');
+    }
+  });
+}
+
+function compareAcademicTerms(left: AcademicTermResponse, right: AcademicTermResponse): number {
+  return (
+    left.sortOrder - right.sortOrder ||
+    left.code.localeCompare(right.code) ||
+    left.termId - right.termId
+  );
+}
+
+export function getAcademicYearResponseTerms(
+  detail: AcademicYearCreateResponse
+): AcademicTermResponse[] {
+  const termsById = new Map<number, AcademicTermResponse>();
+
+  detail.terms.forEach((term) => {
+    termsById.set(term.termId, term);
+  });
+
+  detail.groupTerms.forEach((termGroup) => {
+    termGroup.academicTerms.forEach((term) => {
+      if (!termsById.has(term.termId)) {
+        termsById.set(term.termId, term);
+      }
+    });
+  });
+
+  return [...termsById.values()].sort(compareAcademicTerms);
 }
 
 export function mapAcademicYearDetailToFormValues(
@@ -246,6 +361,41 @@ export function buildPatchAcademicYearRequest(
   return AcademicYearPatchRequestSchema.parse(request);
 }
 
+export function buildCreateAcademicYearSubmissionPlan(
+  values: AcademicYearCreateFormValues
+): AcademicYearCreateSubmissionPlan {
+  const normalizedAcademicYear = normalizeAcademicYearDetailFormValues(values);
+  const normalizedTermGroups = values.termGroups.map((termGroup, index) =>
+    normalizeAcademicTermGroupFormValue(termGroup, index)
+  );
+  const flattenedTerms = normalizedTermGroups.flatMap((termGroup) => termGroup.terms);
+
+  validateAcademicYearTermGroupCollection(
+    normalizedTermGroups,
+    normalizedAcademicYear.startDate,
+    normalizedAcademicYear.endDate
+  );
+  validateAcademicYearTermCollection(
+    flattenedTerms,
+    normalizedAcademicYear.startDate,
+    normalizedAcademicYear.endDate
+  );
+
+  return {
+    academicYearRequest: AcademicYearCreateRequestSchema.parse({
+      ...normalizedAcademicYear,
+      terms: flattenedTerms,
+    }),
+    termGroups: normalizedTermGroups.map((termGroup) => ({
+      code: termGroup.code,
+      name: termGroup.name,
+      startDate: termGroup.startDate,
+      endDate: termGroup.endDate,
+      termCodes: termGroup.terms.map((term) => term.code),
+    })),
+  };
+}
+
 export function buildPostAcademicYearTermsRequest(
   detail: AcademicYearCreateResponse,
   values: AcademicYearTermFormValues[]
@@ -256,11 +406,14 @@ export function buildPostAcademicYearTermsRequest(
 
   const academicYearStartDate = trimRequiredIsoDate(detail.startDate, 'Academic year start date');
   const academicYearEndDate = trimRequiredIsoDate(detail.endDate, 'Academic year end date');
-  const newTerms = values.map((term, index) => normalizeAcademicYearTermFormValue(term, index));
-  const existingTermCodes = new Set(
-    detail.terms.map((term) => normalizeComparableString(term.code))
+  const newTerms = values.map((term, index) =>
+    normalizeAcademicYearTermFormValue(term, `Term ${index + 1}`)
   );
-  const existingSortOrders = new Set(detail.terms.map((term) => term.sortOrder));
+  const existingTerms = getAcademicYearResponseTerms(detail);
+  const existingTermCodes = new Set(
+    existingTerms.map((term) => normalizeComparableString(term.code))
+  );
+  const existingSortOrders = new Set(existingTerms.map((term) => term.sortOrder));
 
   validateAcademicYearTermCollection(newTerms, academicYearStartDate, academicYearEndDate);
 

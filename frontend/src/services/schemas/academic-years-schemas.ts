@@ -10,6 +10,16 @@ export const AcademicYearTermFormValuesSchema = z.object({
 
 export type AcademicYearTermFormValues = z.infer<typeof AcademicYearTermFormValuesSchema>;
 
+export const AcademicTermGroupFormValuesSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+  terms: z.array(AcademicYearTermFormValuesSchema),
+});
+
+export type AcademicTermGroupFormValues = z.infer<typeof AcademicTermGroupFormValuesSchema>;
+
 export const AcademicYearSearchFiltersSchema = z.object({
   query: z.string(),
   yearStatusCode: z.string(),
@@ -29,7 +39,7 @@ export const AcademicYearCreateFormValuesSchema = z.object({
   name: z.string(),
   startDate: z.string(),
   endDate: z.string(),
-  terms: z.array(AcademicYearTermFormValuesSchema),
+  termGroups: z.array(AcademicTermGroupFormValuesSchema),
 });
 
 export type AcademicYearCreateFormValues = z.infer<typeof AcademicYearCreateFormValuesSchema>;
@@ -49,6 +59,17 @@ export const AcademicYearDetailFormValuesSchema = z.object({
 
 export type AcademicYearDetailFormValues = z.infer<typeof AcademicYearDetailFormValuesSchema>;
 
+export const AcademicTermGroupDetailFormValuesSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+});
+
+export type AcademicTermGroupDetailFormValues = z.infer<
+  typeof AcademicTermGroupDetailFormValuesSchema
+>;
+
 export const AcademicTermDetailFormValuesSchema = z.object({
   code: z.string(),
   name: z.string(),
@@ -67,7 +88,7 @@ export const initialAcademicYearTermFormValues: AcademicYearTermFormValues = {
   sortOrder: '',
 };
 
-export const initialAcademicYearCreateFormValues: AcademicYearCreateFormValues = {
+export const initialAcademicTermGroupFormValues: AcademicTermGroupFormValues = {
   code: '',
   name: '',
   startDate: '',
@@ -75,11 +96,26 @@ export const initialAcademicYearCreateFormValues: AcademicYearCreateFormValues =
   terms: [],
 };
 
+export const initialAcademicYearCreateFormValues: AcademicYearCreateFormValues = {
+  code: '',
+  name: '',
+  startDate: '',
+  endDate: '',
+  termGroups: [],
+};
+
 export const initialAcademicYearAddTermsFormValues: AcademicYearAddTermsFormValues = {
   terms: [],
 };
 
 export const initialAcademicYearDetailFormValues: AcademicYearDetailFormValues = {
+  code: '',
+  name: '',
+  startDate: '',
+  endDate: '',
+};
+
+export const initialAcademicTermGroupDetailFormValues: AcademicTermGroupDetailFormValues = {
   code: '',
   name: '',
   startDate: '',
@@ -103,6 +139,16 @@ export const AcademicYearCreateTermRequestSchema = z.object({
 });
 
 export type AcademicYearCreateTermRequest = z.infer<typeof AcademicYearCreateTermRequestSchema>;
+
+export const AcademicTermGroupCreateRequestSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+  termIds: z.array(z.number()),
+});
+
+export type AcademicTermGroupCreateRequest = z.infer<typeof AcademicTermGroupCreateRequestSchema>;
 
 export const AcademicYearCreateRequestSchema = z.object({
   code: z.string(),
@@ -136,6 +182,16 @@ export const AcademicTermPatchRequestSchema = z.object({
 });
 
 export type AcademicTermPatchRequest = z.infer<typeof AcademicTermPatchRequestSchema>;
+
+export const AcademicTermGroupPatchRequestSchema = z.object({
+  code: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  startDate: z.string().nullable().optional(),
+  endDate: z.string().nullable().optional(),
+  termIds: z.array(z.number()).nullable().optional(),
+});
+
+export type AcademicTermGroupPatchRequest = z.infer<typeof AcademicTermGroupPatchRequestSchema>;
 
 export const AcademicYearStatusShiftDirectionSchema = z.enum(['UP', 'DOWN']);
 
@@ -237,6 +293,18 @@ export const AcademicTermResponseSchema = z.object({
 
 export type AcademicTermResponse = z.infer<typeof AcademicTermResponseSchema>;
 
+export const AcademicTermGroupResponseSchema = z.object({
+  termGroupId: z.number(),
+  name: z.string(),
+  code: z.string(),
+  academicYearId: z.number(),
+  startDate: z.string(),
+  endDate: z.string(),
+  academicTerms: z.array(AcademicTermResponseSchema),
+});
+
+export type AcademicTermGroupResponse = z.infer<typeof AcademicTermGroupResponseSchema>;
+
 export const AcademicYearCreateResponseSchema = z.object({
   academicYearId: z.number(),
   code: z.string(),
@@ -253,7 +321,8 @@ export const AcademicYearCreateResponseSchema = z.object({
   academicYearStatusName: z.string().nullable().optional(),
   active: z.boolean(),
   isPublished: z.boolean(),
-  terms: z.array(AcademicTermResponseSchema),
+  terms: z.array(AcademicTermResponseSchema).optional().default([]),
+  groupTerms: z.array(AcademicTermGroupResponseSchema).optional().default([]),
 });
 
 export type AcademicYearCreateResponse = z.infer<typeof AcademicYearCreateResponseSchema>;

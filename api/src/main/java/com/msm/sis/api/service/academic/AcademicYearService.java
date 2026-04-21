@@ -35,6 +35,7 @@ public class AcademicYearService {
     private final AcademicTermRepository academicTermRepository;
     private final AcademicValidationService academicValidationService;
     private final AcademicTermService academicTermService;
+    private final AcademicTermGroupService academicTermGroupService;
     private final AcademicYearMapper academicYearMapper;
     private final EntityManager entityManager;
 
@@ -44,6 +45,7 @@ public class AcademicYearService {
             AcademicTermRepository academicTermRepository,
             AcademicValidationService academicValidationService,
             AcademicTermService academicTermService,
+            AcademicTermGroupService academicTermGroupService,
             AcademicYearMapper academicYearMapper,
             EntityManager entityManager
     ) {
@@ -52,6 +54,7 @@ public class AcademicYearService {
         this.academicTermRepository = academicTermRepository;
         this.academicValidationService = academicValidationService;
         this.academicTermService = academicTermService;
+        this.academicTermGroupService = academicTermGroupService;
         this.academicYearMapper = academicYearMapper;
         this.entityManager = entityManager;
     }
@@ -172,7 +175,7 @@ public class AcademicYearService {
         AcademicYear academicYear = getAcademicYearEntity(id);
         return academicYearMapper.toAcademicYearResponse(
                 academicYear,
-                academicTermRepository.findAllByAcademicYear_IdOrderBySortOrderAsc(id)
+                academicTermGroupService.getAcademicTermGroups(id)
         );
     }
 
@@ -193,6 +196,23 @@ public class AcademicYearService {
                 createAcademicTermRequestList
         );
         return getAcademicYear(id);
+    }
+
+    @Transactional
+    public com.msm.sis.api.dto.academic.term.AcademicTermGroupResponse postAcademicYearTermGroup(
+            Long academicYearId,
+            com.msm.sis.api.dto.academic.term.CreateAcademicTermGroupRequest request
+    ) {
+        getAcademicYearEntity(academicYearId);
+        return academicTermGroupService.createAcademicTermGroup(academicYearId, request);
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.msm.sis.api.dto.academic.term.AcademicTermGroupResponse> getAcademicYearTermGroups(
+            Long academicYearId
+    ) {
+        getAcademicYearEntity(academicYearId);
+        return academicTermGroupService.getAcademicTermGroups(academicYearId);
     }
 
     public List<AcademicYearSearchResponse> searchAcademicYears(AcademicYearSearchCriteria criteria){

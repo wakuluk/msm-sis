@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Alert, Badge, Button, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import {
   StudentAddressFormFields,
   StudentContactFormFields,
@@ -31,6 +32,7 @@ function getErrorMessage(error: unknown, fallbackMessage: string): string {
 
 export function StudentCreatePage() {
   const navigate = useNavigate();
+  const { handleBack } = usePortalBackNavigation({ fallbackPath: '/student-search' });
   const [submitState, setSubmitState] = useState<StudentCreateSubmitState>({ status: 'idle' });
   const {
     classStandingOptions,
@@ -137,8 +139,8 @@ export function StudentCreatePage() {
           </RecordPageSection>
 
           <RecordPageFooter description="The student ID is assigned on save. Once the record is created, you will land on the student detail page to continue editing.">
-            <Button component={Link} to="/student-search" variant="default" disabled={isSubmitting}>
-              Back to search
+            <Button type="button" onClick={handleBack} variant="default" disabled={isSubmitting}>
+              Back
             </Button>
             <Button type="submit" loading={isSubmitting}>
               Create student

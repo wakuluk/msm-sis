@@ -1,21 +1,28 @@
 package com.msm.sis.api.service.academic;
 
+import com.msm.sis.api.dto.academic.CreateAcademicSubjectRequest;
 import com.msm.sis.api.dto.academic.PatchAcademicDepartmentRequest;
 import com.msm.sis.api.dto.academic.AcademicDepartmentResponse;
-import com.msm.sis.api.dto.academic.AcademicDepartmentSubjectResponse;
+import com.msm.sis.api.dto.course.CourseResponse;
 import com.msm.sis.api.entity.AcademicDepartment;
 import com.msm.sis.api.entity.AcademicSubject;
+import com.msm.sis.api.entity.Course;
+import com.msm.sis.api.mapper.CourseMapper;
+import com.msm.sis.api.mapper.AcademicDepartmentMapper;
 import com.msm.sis.api.patch.PatchValue;
 import com.msm.sis.api.repository.AcademicDepartmentRepository;
 import com.msm.sis.api.repository.AcademicSubjectRepository;
-import com.msm.sis.api.validation.ValidationUtils;
+import com.msm.sis.api.repository.CourseRepository;
+import com.msm.sis.api.repository.CourseVersionRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -26,13 +33,28 @@ public class AcademicDepartmentService {
 
     private final AcademicDepartmentRepository academicDepartmentRepository;
     private final AcademicSubjectRepository academicSubjectRepository;
+    private final AcademicDepartmentValidationService academicDepartmentValidationService;
+    private final AcademicDepartmentMapper academicDepartmentMapper;
+    private final CourseRepository courseRepository;
+    private final CourseVersionRepository courseVersionRepository;
+    private final CourseMapper courseMapper;
 
     public AcademicDepartmentService(
             AcademicDepartmentRepository academicDepartmentRepository,
-            AcademicSubjectRepository academicSubjectRepository
+            AcademicSubjectRepository academicSubjectRepository,
+            AcademicDepartmentValidationService academicDepartmentValidationService,
+            AcademicDepartmentMapper academicDepartmentMapper,
+            CourseRepository courseRepository,
+            CourseVersionRepository courseVersionRepository,
+            CourseMapper courseMapper
     ) {
         this.academicDepartmentRepository = academicDepartmentRepository;
         this.academicSubjectRepository = academicSubjectRepository;
+        this.academicDepartmentValidationService = academicDepartmentValidationService;
+        this.academicDepartmentMapper = academicDepartmentMapper;
+        this.courseRepository = courseRepository;
+        this.courseVersionRepository = courseVersionRepository;
+        this.courseMapper = courseMapper;
     }
 
     @Transactional(readOnly = true)
@@ -41,7 +63,7 @@ public class AcademicDepartmentService {
             String sortDirection
     ) {
         return academicDepartmentRepository.findAll(buildSearchSort(sortBy, sortDirection)).stream()
-                .map(department -> toAcademicDepartmentResponse(department, List.of()))
+                .map(academicDepartmentMapper::toAcademicDepartmentResponse)
                 .toList();
     }
 
@@ -58,7 +80,7 @@ public class AcademicDepartmentService {
     ) {
         AcademicDepartment academicDepartment = getAcademicDepartmentEntity(departmentId);
 
-        return toAcademicDepartmentResponse(
+        return academicDepartmentMapper.toAcademicDepartmentResponse(
                 academicDepartment,
                 academicSubjectRepository.findAllByDepartment_Id(
                         departmentId,
@@ -76,7 +98,10 @@ public class AcademicDepartmentService {
         AcademicDepartment candidateAcademicDepartment = copyAcademicDepartment(existingAcademicDepartment);
 
         applyPatch(candidateAcademicDepartment, request);
-        validatePatchAcademicDepartment(existingAcademicDepartment, candidateAcademicDepartment);
+        academicDepartmentValidationService.validatePatchAcademicDepartment(
+                existingAcademicDepartment,
+                candidateAcademicDepartment
+        );
 
         if (!hasPatchableChanges(existingAcademicDepartment, candidateAcademicDepartment)) {
             return getAcademicDepartment(departmentId);
@@ -84,6 +109,79 @@ public class AcademicDepartmentService {
 
         copyPatchableFields(candidateAcademicDepartment, existingAcademicDepartment);
         academicDepartmentRepository.save(existingAcademicDepartment);
+        return getAcademicDepartment(departmentId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CourseResponse> getDepartmentSubjectCourses(Long departmentId, Long subjectId) {
+        AcademicDepartment academicDepartment = getAcademicDepartmentEntity(departmentId);
+
+        if (subjectId == null || subjectId < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subject ID must be greater than zero.");
+        }
+
+        academicSubjectRepository.findByIdAndDepartment_Id(subjectId, academicDepartment.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        List<com.msm.sis.api.entity.Course> courses = courseRepository.findAllBySubject_IdAndSubject_Department_Id(
+                subjectId,
+                academicDepartment.getId(),
+                Sort.by(Sort.Direction.ASC, "courseNumber")
+                        .and(Sort.by(Sort.Direction.ASC, "id"))
+        );
+
+        Map<Long, String> currentVersionTitlesByCourseId = buildCurrentVersionTitlesByCourseId(courses);
+
+        return courses.stream()
+                .map(course -> courseMapper.toCourseResponse(
+                        course,
+                        currentVersionTitlesByCourseId.get(course.getId())
+                ))
+                .toList();
+    }
+
+    private Map<Long, String> buildCurrentVersionTitlesByCourseId(List<Course> courses) {
+        List<Long> courseIds = courses.stream()
+                .map(Course::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (courseIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, String> titlesByCourseId = new LinkedHashMap<>();
+        courseVersionRepository.findCurrentCourseVersionsByCourseIds(courseIds)
+                .forEach(courseVersion -> {
+                    if (courseVersion.getCourse() == null || courseVersion.getCourse().getId() == null) {
+                        return;
+                    }
+
+                    titlesByCourseId.put(courseVersion.getCourse().getId(), courseVersion.getTitle());
+                });
+
+        return titlesByCourseId;
+    }
+
+    @Transactional
+    public AcademicDepartmentResponse createAcademicSubject(
+            Long departmentId,
+            CreateAcademicSubjectRequest request
+    ) {
+        AcademicDepartment academicDepartment = getAcademicDepartmentEntity(departmentId);
+
+        String candidateCode = trimToNull(request.code());
+        String candidateName = trimToNull(request.name());
+
+        academicDepartmentValidationService.validateCreateAcademicSubject(candidateCode, candidateName);
+
+        AcademicSubject academicSubject = new AcademicSubject();
+        academicSubject.setDepartment(academicDepartment);
+        academicSubject.setCode(candidateCode);
+        academicSubject.setName(candidateName);
+        academicSubject.setActive(true);
+
+        academicSubjectRepository.save(academicSubject);
         return getAcademicDepartment(departmentId);
     }
 
@@ -157,33 +255,6 @@ public class AcademicDepartmentService {
         applyRequiredBoolean(request.getActive(), academicDepartment::setActive, "Academic department active flag");
     }
 
-    private void validatePatchAcademicDepartment(
-            AcademicDepartment existingAcademicDepartment,
-            AcademicDepartment candidateAcademicDepartment
-    ) {
-        String candidateCode = trimToNull(candidateAcademicDepartment.getCode());
-        String candidateName = trimToNull(candidateAcademicDepartment.getName());
-
-        if (candidateCode == null || candidateName == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic department code and name are required."
-            );
-        }
-
-        ValidationUtils.validateMaxLength(candidateCode, 20, "Academic department code");
-        ValidationUtils.validateMaxLength(candidateName, 255, "Academic department name");
-
-        String existingCode = trimToNull(existingAcademicDepartment.getCode());
-        if (!Objects.equals(existingCode, candidateCode)
-                && academicDepartmentRepository.existsByCode(candidateCode)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic department code already exists."
-            );
-        }
-    }
-
     private boolean hasPatchableChanges(AcademicDepartment existing, AcademicDepartment candidate) {
         return !Objects.equals(trimToNull(existing.getCode()), trimToNull(candidate.getCode()))
                 || !Objects.equals(trimToNull(existing.getName()), trimToNull(candidate.getName()))
@@ -213,29 +284,4 @@ public class AcademicDepartmentService {
         consumer.accept(patchedValue);
     }
 
-    private AcademicDepartmentResponse toAcademicDepartmentResponse(
-            AcademicDepartment department,
-            List<AcademicSubject> subjects
-    ) {
-        return new AcademicDepartmentResponse(
-                department.getId(),
-                department.getCode(),
-                department.getName(),
-                department.isActive(),
-                subjects.stream()
-                        .map(this::toAcademicDepartmentSubjectResponse)
-                        .toList()
-        );
-    }
-
-    private AcademicDepartmentSubjectResponse toAcademicDepartmentSubjectResponse(
-            AcademicSubject subject
-    ) {
-        return new AcademicDepartmentSubjectResponse(
-                subject.getId(),
-                subject.getCode(),
-                subject.getName(),
-                subject.isActive()
-        );
-    }
 }

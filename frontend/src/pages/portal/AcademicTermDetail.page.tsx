@@ -7,6 +7,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import { SearchResultsTable } from '@/components/search/SearchResultsTable';
 import { WorkflowStatusStepperSection } from '@/components/status/WorkflowStatusStepperSection';
 import {
@@ -248,6 +249,11 @@ export function AcademicTermDetailPage() {
     typeof locationState?.academicYearId === 'number' && locationState.academicYearId > 0
       ? locationState.academicYearId
       : null;
+  const { handleBack } = usePortalBackNavigation({
+    fallbackPath: fallbackAcademicYearId
+      ? `/academics/academic-years/${fallbackAcademicYearId}`
+      : '/academics/academic-years/search',
+  });
   const parsedAcademicTermId = Number(academicTermId);
   const hasValidAcademicTermId = Number.isInteger(parsedAcademicTermId) && parsedAcademicTermId > 0;
   const [isEditing, setIsEditing] = useState(false);
@@ -507,18 +513,18 @@ export function AcademicTermDetailPage() {
             </Grid.Col>
           </RecordPageSection>
 
-          <RecordPageFooter description="Return to the parent academic year or back to academic year search.">
+          <RecordPageFooter description="Return to the previous page.">
             {fallbackAcademicYearId ? (
               <Button
                 component={Link}
                 to={`/academics/academic-years/${fallbackAcademicYearId}`}
                 variant="default"
               >
-                Back to academic year
+                View academic year
               </Button>
             ) : null}
-            <Button component={Link} to="/academics/academic-years/search">
-              Back to search
+            <Button onClick={handleBack}>
+              Back
             </Button>
           </RecordPageFooter>
         </Stack>
@@ -551,18 +557,18 @@ export function AcademicTermDetailPage() {
             </Grid.Col>
           </RecordPageSection>
 
-          <RecordPageFooter description="Return to the parent academic year or back to academic year search.">
+          <RecordPageFooter description="Return to the previous page.">
             {fallbackAcademicYearId ? (
               <Button
                 component={Link}
                 to={`/academics/academic-years/${fallbackAcademicYearId}`}
                 variant="default"
               >
-                Back to academic year
+                View academic year
               </Button>
             ) : null}
-            <Button component={Link} to="/academics/academic-years/search">
-              Back to search
+            <Button onClick={handleBack}>
+              Back
             </Button>
           </RecordPageFooter>
         </Stack>
@@ -833,12 +839,12 @@ export function AcademicTermDetailPage() {
           </Grid.Col>
         </RecordPageSection>
 
-        <RecordPageFooter description="Return to the parent academic year or back to academic year search.">
+        <RecordPageFooter description="Return to the previous page.">
           <Button component={Link} to={academicYearPath} variant="default">
-            Back to academic year
+            View academic year
           </Button>
-          <Button component={Link} to="/academics/academic-years/search">
-            Back to search
+          <Button onClick={handleBack}>
+            Back
           </Button>
         </RecordPageFooter>
       </Stack>

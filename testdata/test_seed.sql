@@ -1,13 +1,15 @@
-DELETE FROM pdf_documents;
-DELETE FROM staff;
-DELETE FROM student;
-DELETE FROM address;
-DELETE FROM gender;
-DELETE FROM class_standing;
-DELETE FROM ethnicity;
-DELETE FROM user_roles;
-DELETE FROM roles;
-DELETE FROM users;
+TRUNCATE TABLE
+    pdf_documents,
+    staff,
+    student,
+    address,
+    gender,
+    class_standing,
+    ethnicity,
+    user_roles,
+    roles,
+    users
+RESTART IDENTITY CASCADE;
 
 -- Password: Password123
 INSERT INTO users (email, password_hash, enabled)
@@ -136,6 +138,11 @@ VALUES
         'seed-script'
     );
 
+SELECT setval(pg_get_serial_sequence('ethnicity', 'ethnicity_id'), COALESCE((SELECT MAX(ethnicity_id) FROM ethnicity), 1), TRUE);
+SELECT setval(pg_get_serial_sequence('class_standing', 'class_standing_id'), COALESCE((SELECT MAX(class_standing_id) FROM class_standing), 1), TRUE);
+SELECT setval(pg_get_serial_sequence('gender', 'gender_id'), COALESCE((SELECT MAX(gender_id) FROM gender), 1), TRUE);
+SELECT setval(pg_get_serial_sequence('address', 'address_id'), COALESCE((SELECT MAX(address_id) FROM address), 1), TRUE);
+
 INSERT INTO student (
     first_name,
     last_name,
@@ -262,9 +269,10 @@ WHERE u.email IN (
 );
 
 UPDATE student s
-JOIN users u ON u.email = s.email
-SET s.user_id = u.id
-WHERE s.email IN (
+SET user_id = u.id
+FROM users u
+WHERE u.email = s.email
+  AND s.email IN (
     'samwise@shire.me',
     'merry@shire.me',
     'pippin@shire.me',

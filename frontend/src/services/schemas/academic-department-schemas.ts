@@ -11,6 +11,20 @@ export type AcademicDepartmentSubjectResponse = z.infer<
   typeof AcademicDepartmentSubjectResponseSchema
 >;
 
+export const CourseResponseSchema = z.object({
+  courseId: z.number(),
+  subjectId: z.number().nullable(),
+  courseNumber: z.string(),
+  currentVersionTitle: z.string().nullable(),
+  active: z.boolean().nullable(),
+});
+
+export type CourseResponse = z.infer<typeof CourseResponseSchema>;
+
+export const SubjectCoursesResponseSchema = z.array(CourseResponseSchema);
+
+export type SubjectCoursesResponse = z.infer<typeof SubjectCoursesResponseSchema>;
+
 export const AcademicDepartmentDetailFormValuesSchema = z.object({
   code: z.string(),
   name: z.string(),
@@ -32,6 +46,9 @@ export const AcademicDepartmentResponseSchema = z.object({
   code: z.string(),
   name: z.string(),
   active: z.boolean(),
+  schoolId: z.number().nullable(),
+  schoolCode: z.string().nullable(),
+  schoolName: z.string().nullable(),
   subjects: z.array(AcademicDepartmentSubjectResponseSchema),
 });
 
@@ -50,6 +67,18 @@ export const AcademicDepartmentPatchRequestSchema = z.object({
 export type AcademicDepartmentPatchRequest = z.infer<
   typeof AcademicDepartmentPatchRequestSchema
 >;
+
+export const CreateAcademicSubjectRequestSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+});
+
+export type CreateAcademicSubjectRequest = z.infer<typeof CreateAcademicSubjectRequestSchema>;
+
+export const initialCreateAcademicSubjectRequest: CreateAcademicSubjectRequest = {
+  code: '',
+  name: '',
+};
 
 export const AcademicDepartmentSortBySchema = z.enum(['code', 'name', 'active']);
 

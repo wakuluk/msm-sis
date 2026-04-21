@@ -1,7 +1,9 @@
 package com.msm.sis.api.controller;
 
+import com.msm.sis.api.dto.academic.AcademicSchoolDepartmentSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.catalog.CatalogAdvancedSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.catalog.CatalogSearchReferenceOptionsResponse;
+import com.msm.sis.api.dto.course.CourseSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
 import com.msm.sis.api.service.ReferenceDataService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,6 +36,27 @@ public class ReferenceController {
     @Operation(summary = "Get student reference options", description = "Returns reference options used by student detail forms")
     public ResponseEntity<StudentReferenceOptionsResponse> getStudentReferenceOptions() {
         return ResponseEntity.ok(referenceDataService.getStudentReferenceOptions());
+    }
+
+    @GetMapping("/academic-school-department-options")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Get academic school and department reference options",
+            description = "Returns active academic schools and departments used by academic search filters."
+    )
+    public ResponseEntity<AcademicSchoolDepartmentSearchReferenceOptionsResponse>
+    getAcademicSchoolDepartmentReferenceOptions() {
+        return ResponseEntity.ok(referenceDataService.getAcademicSchoolDepartmentSearchReferenceOptions());
+    }
+
+    @GetMapping("/course-search-options")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Get course search reference options",
+            description = "Returns active academic schools, departments, and subjects used by course search filters."
+    )
+    public ResponseEntity<CourseSearchReferenceOptionsResponse> getCourseSearchReferenceOptions() {
+        return ResponseEntity.ok(referenceDataService.getCourseSearchReferenceOptions());
     }
 
     @GetMapping("/catalog-search-options")

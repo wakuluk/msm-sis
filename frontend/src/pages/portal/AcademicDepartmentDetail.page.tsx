@@ -1,18 +1,33 @@
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useEffect, useRef, useState, type ComponentProps } from 'react';
 import { useForm } from '@mantine/form';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Alert, Badge, Button, Grid, Group, Stack, Switch, Text, TextInput } from '@mantine/core';
-import { Link, useParams } from 'react-router-dom';
+import { type ColumnDef, getCoreRowModel, type Row, useReactTable } from '@tanstack/react-table';
+import {
+  Alert,
+  Badge,
+  Button,
+  Grid,
+  Group,
+  Modal,
+  Stack,
+  Switch,
+  Table,
+  Text,
+  TextInput,
+} from '@mantine/core';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
 import { SearchResultsStateNotice } from '@/components/search/SearchResultsStateNotice';
 import { SearchResultsTable } from '@/components/search/SearchResultsTable';
 import {
+  createAcademicSubject,
   getAcademicDepartmentById,
+  getAcademicDepartmentSubjectCourses,
   patchAcademicDepartment,
 } from '@/services/academic-department-service';
 import {
+  buildCreateAcademicSubjectRequest,
   buildPatchAcademicDepartmentRequest,
   hasAcademicDepartmentDetailChanges,
   mapAcademicDepartmentDetailToFormValues,
@@ -23,8 +38,15 @@ import type {
   AcademicDepartmentSubjectResponse,
   AcademicDepartmentSortBy,
   AcademicDepartmentSortDirection,
+  CourseResponse,
+  CreateAcademicSubjectRequest,
 } from '@/services/schemas/academic-department-schemas';
-import { initialAcademicDepartmentDetailFormValues } from '@/services/schemas/academic-department-schemas';
+import {
+  initialAcademicDepartmentDetailFormValues,
+  initialCreateAcademicSubjectRequest,
+} from '@/services/schemas/academic-department-schemas';
+import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
+import classes from './AcademicDepartmentDetail.module.css';
 
 type AcademicDepartmentDetailPageState =
   | { status: 'loading' }
@@ -37,29 +59,23 @@ type AcademicDepartmentDetailSaveState =
   | { status: 'success' }
   | { status: 'error'; message: string };
 
-const emptyAcademicDepartmentSubjects: AcademicDepartmentSubjectResponse[] = [];
+type AcademicDepartmentCreateSubjectState =
+  | { status: 'idle' }
+  | { status: 'saving' }
+  | { status: 'error'; message: string };
 
-const academicDepartmentSubjectColumns: ColumnDef<AcademicDepartmentSubjectResponse>[] = [
-  {
-    accessorKey: 'code',
-    header: 'Code',
-    size: 180,
-    meta: { sortBy: 'code' satisfies AcademicDepartmentSortBy },
-  },
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    size: 360,
-    meta: { sortBy: 'name' satisfies AcademicDepartmentSortBy },
-  },
-  {
-    accessorKey: 'active',
-    header: 'Active',
-    size: 120,
-    cell: ({ row }) => (row.original.active ? 'Yes' : 'No'),
-    meta: { sortBy: 'active' satisfies AcademicDepartmentSortBy },
-  },
-];
+type SubjectCoursesState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'success'; courses: CourseResponse[] };
+
+type AcademicDepartmentDetailLocationState = {
+  source?: 'school' | 'search';
+  schoolId?: number;
+};
+
+const emptyAcademicDepartmentSubjects: AcademicDepartmentSubjectResponse[] = [];
 
 function displayValue(value: boolean | number | string | null | undefined): string {
   if (typeof value === 'boolean') {
@@ -101,21 +117,50 @@ function ReadOnlyField({
 }
 
 export function AcademicDepartmentDetailPage() {
+  const navigate = useNavigate();
   const { departmentId } = useParams<{ departmentId: string }>();
+  const location = useLocation();
+  const locationState = (location.state as AcademicDepartmentDetailLocationState | null) ?? null;
+  const navigationSource =
+    locationState?.source === 'school' || locationState?.source === 'search'
+      ? locationState.source
+      : null;
+  const fallbackSchoolId =
+    typeof locationState?.schoolId === 'number' && locationState.schoolId > 0
+      ? locationState.schoolId
+      : null;
+  const backPath =
+    navigationSource === 'school' && fallbackSchoolId
+      ? `/academics/schools/${fallbackSchoolId}`
+      : '/academics/schools';
+  const { handleBack } = usePortalBackNavigation({ fallbackPath: backPath });
   const parsedDepartmentId = Number(departmentId);
   const hasValidDepartmentId = Number.isInteger(parsedDepartmentId) && parsedDepartmentId > 0;
   const [isEditing, setIsEditing] = useState(false);
+  const [isCreateSubjectOpen, setIsCreateSubjectOpen] = useState(false);
   const [pageState, setPageState] = useState<AcademicDepartmentDetailPageState>({
     status: 'loading',
   });
   const [saveState, setSaveState] = useState<AcademicDepartmentDetailSaveState>({
     status: 'idle',
   });
+  const [createSubjectState, setCreateSubjectState] =
+    useState<AcademicDepartmentCreateSubjectState>({
+      status: 'idle',
+    });
+  const [expandedSubjectIds, setExpandedSubjectIds] = useState<number[]>([]);
+  const [subjectCoursesBySubjectId, setSubjectCoursesBySubjectId] = useState<
+    Record<number, SubjectCoursesState>
+  >({});
   const [subjectSortBy, setSubjectSortBy] = useState<AcademicDepartmentSortBy>('code');
   const [subjectSortDirection, setSubjectSortDirection] =
     useState<AcademicDepartmentSortDirection>('asc');
+  const subjectCourseAbortControllersRef = useRef<Record<number, AbortController>>({});
   const form = useForm<AcademicDepartmentDetailFormValues>({
     initialValues: initialAcademicDepartmentDetailFormValues,
+  });
+  const createSubjectForm = useForm<CreateAcademicSubjectRequest>({
+    initialValues: initialCreateAcademicSubjectRequest,
   });
 
   useEffect(() => {
@@ -131,6 +176,23 @@ export function AcademicDepartmentDetailPage() {
       window.clearTimeout(timeoutId);
     };
   }, [saveState.status]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(subjectCourseAbortControllersRef.current).forEach((abortController) => {
+        abortController.abort();
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    Object.values(subjectCourseAbortControllersRef.current).forEach((abortController) => {
+      abortController.abort();
+    });
+    subjectCourseAbortControllersRef.current = {};
+    setExpandedSubjectIds([]);
+    setSubjectCoursesBySubjectId({});
+  }, [parsedDepartmentId]);
 
   useEffect(() => {
     if (!hasValidDepartmentId) {
@@ -215,6 +277,43 @@ export function AcademicDepartmentDetailPage() {
     }
   }
 
+  function closeCreateSubjectModal() {
+    setIsCreateSubjectOpen(false);
+    setCreateSubjectState({ status: 'idle' });
+    createSubjectForm.reset();
+  }
+
+  async function handleCreateSubject(detail: AcademicDepartmentResponse) {
+    if (createSubjectState.status === 'saving') {
+      return;
+    }
+
+    try {
+      const request = buildCreateAcademicSubjectRequest(createSubjectForm.values);
+
+      setCreateSubjectState({ status: 'saving' });
+      await createAcademicSubject({
+        departmentId: detail.departmentId,
+        request,
+      });
+
+      const refreshedDepartment = await getAcademicDepartmentById({
+        departmentId: detail.departmentId,
+        sortBy: subjectSortBy,
+        sortDirection: subjectSortDirection,
+      });
+
+      form.setValues(mapAcademicDepartmentDetailToFormValues(refreshedDepartment));
+      setPageState({ status: 'success', department: refreshedDepartment });
+      closeCreateSubjectModal();
+    } catch (error) {
+      setCreateSubjectState({
+        status: 'error',
+        message: getErrorMessage(error, 'Failed to create academic subject.'),
+      });
+    }
+  }
+
   function handleToggleSubjectSort(nextSortBy: AcademicDepartmentSortBy) {
     if (nextSortBy === subjectSortBy) {
       setSubjectSortDirection((currentSortDirection) =>
@@ -226,6 +325,216 @@ export function AcademicDepartmentDetailPage() {
     setSubjectSortBy(nextSortBy);
     setSubjectSortDirection('asc');
   }
+
+  function isSubjectExpanded(subjectId: number): boolean {
+    return expandedSubjectIds.includes(subjectId);
+  }
+
+  async function loadSubjectCourses(subjectId: number) {
+    if (!hasValidDepartmentId) {
+      return;
+    }
+
+    const existingState = subjectCoursesBySubjectId[subjectId];
+    if (existingState?.status === 'loading' || existingState?.status === 'success') {
+      return;
+    }
+
+    subjectCourseAbortControllersRef.current[subjectId]?.abort();
+    const abortController = new AbortController();
+    subjectCourseAbortControllersRef.current[subjectId] = abortController;
+
+    setSubjectCoursesBySubjectId((current) => ({
+      ...current,
+      [subjectId]: { status: 'loading' },
+    }));
+
+    try {
+      const courses = await getAcademicDepartmentSubjectCourses({
+        departmentId: parsedDepartmentId,
+        subjectId,
+        signal: abortController.signal,
+      });
+
+      if (abortController.signal.aborted) {
+        return;
+      }
+
+      setSubjectCoursesBySubjectId((current) => ({
+        ...current,
+        [subjectId]: { status: 'success', courses },
+      }));
+    } catch (error) {
+      if (abortController.signal.aborted) {
+        return;
+      }
+
+      setSubjectCoursesBySubjectId((current) => ({
+        ...current,
+        [subjectId]: {
+          status: 'error',
+          message: getErrorMessage(error, 'Failed to load subject courses.'),
+        },
+      }));
+    } finally {
+      if (subjectCourseAbortControllersRef.current[subjectId] === abortController) {
+        delete subjectCourseAbortControllersRef.current[subjectId];
+      }
+    }
+  }
+
+  function handleToggleSubjectExpansion(subjectId: number) {
+    if (isSubjectExpanded(subjectId)) {
+      setExpandedSubjectIds((current) => current.filter((currentSubjectId) => currentSubjectId !== subjectId));
+      return;
+    }
+
+    setExpandedSubjectIds((current) => [...current, subjectId]);
+    const existingState = subjectCoursesBySubjectId[subjectId];
+    if (existingState?.status !== 'success' && existingState?.status !== 'loading') {
+      void loadSubjectCourses(subjectId);
+    }
+  }
+
+  function renderSubjectCourses(subject: AcademicDepartmentSubjectResponse) {
+    const courseState = subjectCoursesBySubjectId[subject.subjectId] ?? { status: 'idle' };
+
+    if (courseState.status === 'loading' || courseState.status === 'idle') {
+      return (
+        <SearchResultsStateNotice
+          status="loading"
+          idleTitle=""
+          idleMessage=""
+          loadingMessage={`Loading courses for ${subject.code}.`}
+          emptyTitle=""
+          emptyMessage=""
+        />
+      );
+    }
+
+    if (courseState.status === 'error') {
+      return (
+        <Stack gap="sm">
+          <SearchResultsStateNotice
+            status="error"
+            idleTitle=""
+            idleMessage=""
+            loadingMessage=""
+            errorTitle="Unable to load subject courses"
+            errorMessage={courseState.message}
+            emptyTitle=""
+            emptyMessage=""
+          />
+          <Group justify="flex-end">
+            <Button
+              size="xs"
+              variant="light"
+              onClick={() => {
+                setSubjectCoursesBySubjectId((current) => ({
+                  ...current,
+                  [subject.subjectId]: { status: 'idle' },
+                }));
+                void loadSubjectCourses(subject.subjectId);
+              }}
+            >
+              Retry
+            </Button>
+          </Group>
+        </Stack>
+      );
+    }
+
+    if (courseState.courses.length === 0) {
+      return (
+        <SearchResultsStateNotice
+          status="empty"
+          idleTitle=""
+          idleMessage=""
+          loadingMessage=""
+          emptyTitle="No courses found"
+          emptyMessage="Create courses for this subject before using this section."
+        />
+      );
+    }
+
+    return (
+      <Table highlightOnHover>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Course Number</Table.Th>
+            <Table.Th>Title</Table.Th>
+            <Table.Th>Active</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {courseState.courses.map((course) => (
+            <Table.Tr
+              key={course.courseId}
+              style={{ cursor: 'pointer' }}
+              onClick={() =>
+                navigate(`/academics/courses/${course.courseId}`, {
+                  state: {
+                    source: 'department',
+                    departmentId: parsedDepartmentId,
+                  },
+                })
+              }
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                  return;
+                }
+
+                event.preventDefault();
+                navigate(`/academics/courses/${course.courseId}`, {
+                  state: {
+                    source: 'department',
+                    departmentId: parsedDepartmentId,
+                  },
+                });
+              }}
+              tabIndex={0}
+            >
+              <Table.Td>{displayValue(course.courseNumber)}</Table.Td>
+              <Table.Td>{displayValue(course.currentVersionTitle)}</Table.Td>
+              <Table.Td>
+                <Badge size="sm" variant="light" color={course.active ? 'green' : 'gray'}>
+                  {course.active ? 'Active' : 'Inactive'}
+                </Badge>
+              </Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
+    );
+  }
+
+  const academicDepartmentSubjectColumns: ColumnDef<AcademicDepartmentSubjectResponse>[] = [
+    {
+      id: 'expand',
+      header: '',
+      size: 56,
+      cell: ({ row }) => (isSubjectExpanded(row.original.subjectId) ? '▾' : '▸'),
+    },
+    {
+      accessorKey: 'code',
+      header: 'Code',
+      size: 180,
+      meta: { sortBy: 'code' satisfies AcademicDepartmentSortBy },
+    },
+    {
+      accessorKey: 'name',
+      header: 'Name',
+      size: 360,
+      meta: { sortBy: 'name' satisfies AcademicDepartmentSortBy },
+    },
+    {
+      accessorKey: 'active',
+      header: 'Active',
+      size: 120,
+      cell: ({ row }) => (row.original.active ? 'Yes' : 'No'),
+      meta: { sortBy: 'active' satisfies AcademicDepartmentSortBy },
+    },
+  ];
 
   const subjectsTableData =
     pageState.status === 'success' ? pageState.department.subjects : emptyAcademicDepartmentSubjects;
@@ -261,9 +570,9 @@ export function AcademicDepartmentDetailPage() {
             </Grid.Col>
           </RecordPageSection>
 
-          <RecordPageFooter description="Return to academic departments to select a different record.">
-            <Button component={Link} to="/academics/departments">
-              Back to departments
+          <RecordPageFooter description="Return to the previous page.">
+            <Button onClick={handleBack}>
+              Back
             </Button>
           </RecordPageFooter>
         </Stack>
@@ -296,9 +605,9 @@ export function AcademicDepartmentDetailPage() {
             </Grid.Col>
           </RecordPageSection>
 
-          <RecordPageFooter description="Return to the academic department list.">
-            <Button component={Link} to="/academics/departments">
-              Back to departments
+          <RecordPageFooter description="Return to the previous page.">
+            <Button onClick={handleBack}>
+              Back
             </Button>
           </RecordPageFooter>
         </Stack>
@@ -310,6 +619,9 @@ export function AcademicDepartmentDetailPage() {
   const saveInProgress = saveState.status === 'saving';
   const saveError = saveState.status === 'error' ? saveState.message : null;
   const saveSucceeded = saveState.status === 'success';
+  const createSubjectError =
+    createSubjectState.status === 'error' ? createSubjectState.message : null;
+  const createSubjectInProgress = createSubjectState.status === 'saving';
   const canSaveChanges = hasAcademicDepartmentDetailChanges(detail, form.values);
 
   return (
@@ -317,7 +629,6 @@ export function AcademicDepartmentDetailPage() {
       size="xl"
       eyebrow="Admin Workflow"
       title={detail.name}
-      description="Review the academic department configuration."
       badge={
         <Group gap="sm">
           <Badge variant="light" color={detail.active ? 'green' : 'gray'}>
@@ -326,6 +637,45 @@ export function AcademicDepartmentDetailPage() {
         </Group>
       }
     >
+      <Modal
+        opened={isCreateSubjectOpen}
+        onClose={closeCreateSubjectModal}
+        title="Add academic subject"
+        centered
+      >
+        <Stack gap="md">
+          {createSubjectError ? (
+            <Alert color="red" title="Unable to create academic subject">
+              {createSubjectError}
+            </Alert>
+          ) : null}
+          <TextInput
+            withAsterisk
+            label="Code"
+            maxLength={20}
+            {...createSubjectForm.getInputProps('code')}
+          />
+          <TextInput
+            withAsterisk
+            label="Name"
+            maxLength={255}
+            {...createSubjectForm.getInputProps('name')}
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeCreateSubjectModal} disabled={createSubjectInProgress}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                void handleCreateSubject(detail);
+              }}
+              loading={createSubjectInProgress}
+            >
+              Add subject
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
       <Stack gap={0}>
         {saveError ? (
           <RecordPageSection
@@ -342,7 +692,6 @@ export function AcademicDepartmentDetailPage() {
 
         <RecordPageSection
           title="Academic Department"
-          description="These fields reflect the current academic department detail."
           action={
             isEditing ? (
               <Group gap="sm" wrap="wrap" justify="flex-end">
@@ -439,13 +788,45 @@ export function AcademicDepartmentDetailPage() {
                 value={displayValue(detail.active)}
                 span={{ base: 12, md: 4 }}
               />
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <TextInput
+                  label="Academic School"
+                  value={detail.schoolName ?? ''}
+                  placeholder={detail.schoolName ? undefined : '—'}
+                  readOnly
+                />
+              </Grid.Col>
+              {detail.schoolId ? (
+                <Grid.Col span={{ base: 12, md: 4 }}>
+                  <Button
+                    component={Link}
+                    to={`/academics/schools/${detail.schoolId}`}
+                    variant="light"
+                    mt={30}
+                  >
+                    View school
+                  </Button>
+                </Grid.Col>
+              ) : null}
             </>
           )}
         </RecordPageSection>
 
         <RecordPageSection
           title="Academic Subjects"
-          description="These subjects are currently associated with this department."
+          action={
+            <Button
+              variant="light"
+              onClick={() => {
+                createSubjectForm.reset();
+                setCreateSubjectState({ status: 'idle' });
+                setIsCreateSubjectOpen(true);
+              }}
+              disabled={isEditing || saveInProgress}
+            >
+              Add subject
+            </Button>
+          }
         >
           <Grid.Col span={12}>
             {detail.subjects.length === 0 ? (
@@ -463,14 +844,51 @@ export function AcademicDepartmentDetailPage() {
                 sortBy={subjectSortBy}
                 sortDirection={subjectSortDirection}
                 onToggleSort={handleToggleSubjectSort}
+                getRowProps={(row: Row<AcademicDepartmentSubjectResponse>) => ({
+                  'aria-expanded': isSubjectExpanded(row.original.subjectId),
+                  className: isSubjectExpanded(row.original.subjectId)
+                    ? classes.subjectExpandedRow
+                    : undefined,
+                  onClick: () => {
+                    handleToggleSubjectExpansion(row.original.subjectId);
+                  },
+                  onKeyDown: (event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') {
+                      return;
+                    }
+
+                    event.preventDefault();
+                    handleToggleSubjectExpansion(row.original.subjectId);
+                  },
+                  role: 'button',
+                  tabIndex: 0,
+                })}
+                renderExpandedRow={(row: Row<AcademicDepartmentSubjectResponse>) => {
+                  if (!isSubjectExpanded(row.original.subjectId)) {
+                    return null;
+                  }
+
+                  return (
+                    <Table.Tr key={`${row.id}-expanded`} className={classes.expandedCoursesRow}>
+                      <Table.Td
+                        colSpan={row.getVisibleCells().length}
+                        className={classes.expandedCoursesCell}
+                      >
+                        <Stack gap="sm" py="sm" className={classes.expandedCoursesContent}>
+                          {renderSubjectCourses(row.original)}
+                        </Stack>
+                      </Table.Td>
+                    </Table.Tr>
+                  );
+                }}
               />
             )}
           </Grid.Col>
         </RecordPageSection>
 
-        <RecordPageFooter description="Return to the academic department list.">
-          <Button component={Link} to="/academics/departments">
-            Back to departments
+        <RecordPageFooter>
+          <Button onClick={handleBack}>
+            Back
           </Button>
         </RecordPageFooter>
       </Stack>

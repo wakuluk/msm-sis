@@ -11,11 +11,16 @@ export type PortalRouteItemKey =
   | 'catalog'
   | 'catalog-advanced'
   | 'academic-years-search'
+  | 'academic-schools'
+  | 'academic-school-detail'
   | 'academic-departments'
   | 'academic-department-detail'
+  | 'course-search'
+  | 'course-detail'
   | 'academic-years-create'
   | 'academic-years-detail'
-  | 'academic-term-detail';
+  | 'academic-term-detail'
+  | 'academic-term-group-detail';
 export type PortalRoutePath =
   | '/portal'
   | '/shared'
@@ -27,13 +32,18 @@ export type PortalRoutePath =
   | '/catalog/search'
   | '/catalog/search-advanced'
   | '/academics/academic-years/search'
+  | '/academics/schools'
+  | '/academics/schools/:schoolId'
   | '/academics/departments'
   | '/academics/departments/:departmentId'
+  | '/academics/courses/search'
+  | '/academics/courses/:courseId'
   | '/academics/academic-years/create'
   | '/academics/academic-years/:academicYearId'
-  | '/academics/academic-term/:academicTermId';
+  | '/academics/academic-term/:academicTermId'
+  | '/academics/academic-term-group/:termGroupId';
 
-export type PortalRouteGroupKey = 'people' | 'sharing' | 'catalog' | 'academics';
+export type PortalRouteGroupKey = 'people' | 'sharing' | 'catalog' | 'academics' | 'calendar';
 
 export type PortalRouteItem = {
   kind: 'item';
@@ -159,11 +169,27 @@ export const portalRoutes: PortalRouteNode[] = [
     children: [
       {
         kind: 'item',
+        key: 'academic-schools',
+        label: 'Academic School Search',
+        path: '/academics/schools',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-school-detail',
+        label: 'Academic School Detail',
+        path: '/academics/schools/:schoolId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
         key: 'academic-departments',
         label: 'Academic Departments',
         path: '/academics/departments',
         requiredRoles: [PORTAL_ROLES.ADMIN],
-        showInNav: true,
+        showInNav: false,
       },
       {
         kind: 'item',
@@ -175,19 +201,19 @@ export const portalRoutes: PortalRouteNode[] = [
       },
       {
         kind: 'item',
-        key: 'academic-years-search',
-        label: 'Academic Years',
-        path: '/academics/academic-years/search',
+        key: 'course-search',
+        label: 'Course Search',
+        path: '/academics/courses/search',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: true,
       },
       {
         kind: 'item',
-        key: 'academic-years-create',
-        label: 'Create Academic Year',
-        path: '/academics/academic-years/create',
+        key: 'course-detail',
+        label: 'Course Detail',
+        path: '/academics/courses/:courseId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
-        showInNav: true,
+        showInNav: false,
       },
       {
         kind: 'item',
@@ -204,6 +230,38 @@ export const portalRoutes: PortalRouteNode[] = [
         path: '/academics/academic-term/:academicTermId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-term-group-detail',
+        label: 'Academic Term Group Detail',
+        path: '/academics/academic-term-group/:termGroupId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+    ],
+  },
+  {
+    kind: 'group',
+    key: 'calendar',
+    label: 'Calendar',
+    showInNav: true,
+    children: [
+      {
+        kind: 'item',
+        key: 'academic-years-search',
+        label: 'Academic Years',
+        path: '/academics/academic-years/search',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-years-create',
+        label: 'Create Academic Year',
+        path: '/academics/academic-years/create',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
       },
     ],
   },

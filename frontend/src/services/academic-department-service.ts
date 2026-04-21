@@ -3,11 +3,15 @@ import {
   AcademicDepartmentPatchRequestSchema,
   AcademicDepartmentResponseSchema,
   AcademicDepartmentsResponseSchema,
+  CreateAcademicSubjectRequestSchema,
+  SubjectCoursesResponseSchema,
   type AcademicDepartmentPatchRequest,
   type AcademicDepartmentSortBy,
   type AcademicDepartmentSortDirection,
   type AcademicDepartmentResponse,
   type AcademicDepartmentsResponse,
+  type CreateAcademicSubjectRequest,
+  type SubjectCoursesResponse,
 } from './schemas/academic-department-schemas';
 
 export type SearchAcademicDepartmentsRequest = {
@@ -26,6 +30,18 @@ export type GetAcademicDepartmentRequest = {
 export type PatchAcademicDepartmentRequest = {
   departmentId: number;
   request: AcademicDepartmentPatchRequest;
+  signal?: AbortSignal;
+};
+
+export type CreateAcademicSubjectRequestArgs = {
+  departmentId: number;
+  request: CreateAcademicSubjectRequest;
+  signal?: AbortSignal;
+};
+
+export type GetAcademicDepartmentSubjectCoursesRequest = {
+  departmentId: number;
+  subjectId: number;
   signal?: AbortSignal;
 };
 
@@ -134,4 +150,67 @@ export async function patchAcademicDepartment({
   }
 
   return AcademicDepartmentResponseSchema.parse(payload);
+}
+
+export async function createAcademicSubject({
+  departmentId,
+  request,
+  signal,
+}: CreateAcademicSubjectRequestArgs): Promise<AcademicDepartmentResponse> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error('Not authenticated.');
+  }
+
+  const response = await fetch(`/api/academic-departments/${departmentId}/subjects`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(CreateAcademicSubjectRequestSchema.parse(request)),
+    signal,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.message === 'string' ? payload.message : 'Failed to create academic subject.'
+    );
+  }
+
+  return AcademicDepartmentResponseSchema.parse(payload);
+}
+
+export async function getAcademicDepartmentSubjectCourses({
+  departmentId,
+  subjectId,
+  signal,
+}: GetAcademicDepartmentSubjectCoursesRequest): Promise<SubjectCoursesResponse> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error('Not authenticated.');
+  }
+
+  const response = await fetch(`/api/academic-departments/${departmentId}/${subjectId}/courses`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    signal,
+  });
+
+  const payload = await response.json().catch(() => []);
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.message === 'string'
+        ? payload.message
+        : 'Failed to load academic subject courses.'
+    );
+  }
+
+  return SubjectCoursesResponseSchema.parse(payload);
 }

@@ -1,4 +1,4 @@
-package com.msm.sis.api.service;
+package com.msm.sis.api.service.course;
 
 import com.msm.sis.api.dto.course.*;
 import com.msm.sis.api.entity.CourseOffering;
