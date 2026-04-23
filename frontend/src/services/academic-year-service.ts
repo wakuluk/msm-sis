@@ -7,21 +7,21 @@ import {
 } from './academic-year-search-config';
 import {
   buildCreateAcademicYearSubmissionPlan,
-  getAcademicYearResponseTerms,
+  getAcademicYearResponseSubTerms,
 } from './mappers/academic-year-mappers';
 import {
   AcademicYearCreateRequestSchema,
   AcademicYearCreateResponseSchema,
   AcademicYearCatalogSummaryResponseSchema,
   AcademicYearPatchRequestSchema,
-  AcademicYearPostTermsRequestSchema,
+  AcademicYearPostSubTermsRequestSchema,
   AcademicYearSearchResponseSchema,
   AcademicYearStatusesResponseSchema,
   ShiftAcademicYearStatusRequestSchema,
   type AcademicYearCreateFormValues,
   type AcademicYearCreateRequest,
   type AcademicYearCreateResponse,
-  type AcademicYearCreateTermRequest,
+  type AcademicYearCreateSubTermRequest,
   type AcademicYearCatalogSummaryResponse,
   type AcademicYearPatchRequest,
   type AcademicYearSearchFilters,
@@ -31,7 +31,7 @@ import {
   type AcademicYearSortBy,
   type AcademicYearSortDirection,
 } from './schemas/academic-years-schemas';
-import { postAcademicYearTermGroup } from './academic-term-group-service';
+import { postAcademicYearTerm } from './academic-term-group-service';
 
 export type AcademicYearSearchCriteriaRequest = {
   query?: string;
@@ -76,17 +76,17 @@ export type ShiftAcademicYearStatusRequest = {
 
 export type PostAcademicYearTermsRequest = {
   academicYearId: number;
-  request: AcademicYearCreateTermRequest[];
+  request: AcademicYearCreateSubTermRequest[];
   signal?: AbortSignal;
 };
 
-export class AcademicYearCreateWithTermGroupsError extends Error {
+export class AcademicYearCreateWithTermsError extends Error {
   academicYear: AcademicYearCreateResponse;
 
   constructor(message: string, academicYear: AcademicYearCreateResponse) {
     super(message);
-    Object.setPrototypeOf(this, AcademicYearCreateWithTermGroupsError.prototype);
-    this.name = 'AcademicYearCreateWithTermGroupsError';
+    Object.setPrototypeOf(this, AcademicYearCreateWithTermsError.prototype);
+    this.name = 'AcademicYearCreateWithTermsError';
     this.academicYear = academicYear;
   }
 }
@@ -167,49 +167,49 @@ export async function createAcademicYear(
   });
 }
 
-export async function createAcademicYearWithTermGroups(
+export async function createAcademicYearWithTerms(
   values: AcademicYearCreateFormValues
 ): Promise<AcademicYearCreateResponse> {
   const submissionPlan = buildCreateAcademicYearSubmissionPlan(values);
   const createdAcademicYear = await createAcademicYear(submissionPlan.academicYearRequest);
 
-  if (submissionPlan.termGroups.length === 0) {
+  if (submissionPlan.terms.length === 0) {
     return createdAcademicYear;
   }
 
-  const createdTerms = getAcademicYearResponseTerms(createdAcademicYear);
-  const createdTermIdByCode = new Map(
-    createdTerms.map((term) => [term.code.trim(), term.termId] as const)
+  const createdSubTerms = getAcademicYearResponseSubTerms(createdAcademicYear);
+  const createdSubTermIdByCode = new Map(
+    createdSubTerms.map((subTerm) => [subTerm.code.trim(), subTerm.subTermId] as const)
   );
 
-  if (createdTermIdByCode.size === 0) {
+  if (createdSubTermIdByCode.size === 0) {
     throw new Error(
       'Academic year was created, but the response did not include sub terms needed to create terms.'
     );
   }
 
   try {
-    for (const termGroup of submissionPlan.termGroups) {
-      const termIds = termGroup.termCodes.map((termCode) => {
-        const matchedTermId = createdTermIdByCode.get(termCode);
+    for (const term of submissionPlan.terms) {
+      const subTermIds = term.subTermCodes.map((subTermCode) => {
+        const matchedSubTermId = createdSubTermIdByCode.get(subTermCode);
 
-        if (matchedTermId === undefined) {
+        if (matchedSubTermId === undefined) {
           throw new Error(
-            `Created sub term "${termCode}" could not be matched while creating term "${termGroup.code}".`
+            `Created sub term "${subTermCode}" could not be matched while creating term "${term.code}".`
           );
         }
 
-        return matchedTermId;
+        return matchedSubTermId;
       });
 
-      await postAcademicYearTermGroup({
+      await postAcademicYearTerm({
         academicYearId: createdAcademicYear.academicYearId,
         request: {
-          code: termGroup.code,
-          name: termGroup.name,
-          startDate: termGroup.startDate,
-          endDate: termGroup.endDate,
-          termIds,
+          code: term.code,
+          name: term.name,
+          startDate: term.startDate,
+          endDate: term.endDate,
+          subTermIds,
         },
       });
     }
@@ -219,7 +219,7 @@ export async function createAcademicYearWithTermGroups(
         ? error.message
         : 'One or more terms could not be created.';
 
-    throw new AcademicYearCreateWithTermGroupsError(
+    throw new AcademicYearCreateWithTermsError(
       `Academic year was created, but term setup did not finish. ${message}`,
       createdAcademicYear
     );
@@ -299,11 +299,11 @@ export async function postAcademicYearTerms({
   signal,
 }: PostAcademicYearTermsRequest): Promise<AcademicYearCreateResponse> {
   return apiRequest({
-    path: `/api/academic-year/${academicYearId}/terms`,
+    path: `/api/academic-year/${academicYearId}/sub-terms`,
     method: 'POST',
-    body: AcademicYearPostTermsRequestSchema.parse(request),
+    body: AcademicYearPostSubTermsRequestSchema.parse(request),
     parser: AcademicYearCreateResponseSchema,
-    fallbackMessage: 'Failed to add academic year terms.',
+    fallbackMessage: 'Failed to add academic year sub terms.',
     signal,
   });
 }

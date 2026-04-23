@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 @Setter
 public class CourseOfferingSearchCriteria {
     private String academicYearCode;
-    private String termCode;
+    private String subTermCode;
     private String departmentCode;
     private String subjectCode;
     private String courseNumber;
@@ -19,4 +19,3 @@ public class CourseOfferingSearchCriteria {
     private BigDecimal maxCredits;
     private Boolean variableCredit;
 }
-

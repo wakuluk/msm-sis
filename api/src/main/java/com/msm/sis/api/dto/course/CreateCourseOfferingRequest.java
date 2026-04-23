@@ -11,7 +11,7 @@ public record CreateCourseOfferingRequest(
         Long courseId,
 
         @NotEmpty
-        List<@NotNull Long> termIds,
+        List<@NotNull Long> subTermIds,
 
         @Size(max = 500)
         String notes

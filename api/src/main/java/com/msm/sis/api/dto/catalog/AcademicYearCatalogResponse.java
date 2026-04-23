@@ -9,20 +9,20 @@ public record AcademicYearCatalogResponse(
         Long academicYearId,
         String academicYearCode,
         String academicYearName,
-        List<TermGroupCatalogResponse> termGroups
+        List<TermCatalogResponse> terms
 ) {
-    public record TermGroupCatalogResponse(
-            Long termGroupId,
+    public record TermCatalogResponse(
+            Long termId,
             String code,
             String name,
             LocalDate startDate,
             LocalDate endDate,
-            List<TermCatalogResponse> terms
+            List<SubTermCatalogResponse> subTerms
     ) {
     }
 
-    public record TermCatalogResponse(
-            Long termId,
+    public record SubTermCatalogResponse(
+            Long subTermId,
             String code,
             String name,
             LocalDate startDate,

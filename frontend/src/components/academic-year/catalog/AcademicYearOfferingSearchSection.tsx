@@ -25,7 +25,7 @@ type YearOfferingSearchSortDirection = 'asc' | 'desc';
 type YearOfferingResultsView = 'standard' | 'system';
 
 type YearOfferingSearchFormValues = {
-  termId: string | null;
+  subTermId: string | null;
   schoolId: string | null;
   departmentId: string | null;
   subjectId: string | null;
@@ -51,7 +51,7 @@ type AcademicYearOfferingSearchSectionProps = {
 };
 
 const initialYearOfferingSearchFormValues: YearOfferingSearchFormValues = {
-  termId: null,
+  subTermId: null,
   schoolId: null,
   departmentId: null,
   subjectId: null,
@@ -103,11 +103,13 @@ const academicYearOfferingColumns: ColumnDef<AcademicYearCourseOfferingSearchRes
     meta: { sortBy: 'title' satisfies YearOfferingSearchSortBy },
   },
   {
-    accessorKey: 'terms',
+    accessorKey: 'subTerms',
     header: 'Terms',
     size: 220,
     cell: ({ row }) =>
-      row.original.terms.length > 0 ? row.original.terms.map((term) => term.code).join(', ') : 'N/A',
+      row.original.subTerms.length > 0
+        ? row.original.subTerms.map((subTerm) => subTerm.code).join(', ')
+        : 'N/A',
   },
   {
     accessorKey: 'offeringStatusName',
@@ -200,7 +202,9 @@ export function AcademicYearOfferingSearchSection({
 
     searchAcademicYearCourseOfferings({
       academicYearId,
-      termId: submittedSearchValues.termId ? Number(submittedSearchValues.termId) : undefined,
+      subTermId: submittedSearchValues.subTermId
+        ? Number(submittedSearchValues.subTermId)
+        : undefined,
       schoolId: submittedSearchValues.schoolId ? Number(submittedSearchValues.schoolId) : undefined,
       departmentId: submittedSearchValues.departmentId
         ? Number(submittedSearchValues.departmentId)
@@ -376,11 +380,11 @@ export function AcademicYearOfferingSearchSection({
                 label="Term"
                 placeholder="Filter by term"
                 data={termOptions}
-                value={searchValues.termId}
+                value={searchValues.subTermId}
                 onChange={(value) => {
                   setSearchValues((current) => ({
                     ...current,
-                    termId: value,
+                    subTermId: value,
                   }));
                 }}
                 searchable

@@ -31,7 +31,7 @@ import {
 import {
   buildPostAcademicYearTermsRequest,
   buildPatchAcademicYearRequest,
-  getAcademicYearResponseTerms,
+  getAcademicYearResponseSubTerms,
   hasAcademicYearDetailChanges,
   mapAcademicYearDetailToFormValues,
 } from '@/services/mappers/academic-year-mappers';
@@ -390,14 +390,14 @@ export function AcademicYearDetailPage() {
   const addTermsSucceeded = addTermsState.status === 'success';
   const hasPendingMutation = saveInProgress || statusShiftInProgress || addTermsInProgress;
   const canSaveChanges = hasAcademicYearDetailChanges(detail, form.values);
-  const sortedTermGroups = [...detail.groupTerms]
+  const sortedTermGroups = [...detail.terms]
     .sort(compareAcademicTermGroups)
-    .map((termGroup) => ({
-      ...termGroup,
-      academicTerms: [...termGroup.academicTerms].sort(compareAcademicTerms),
+    .map((term) => ({
+      ...term,
+      subTerms: [...term.subTerms].sort(compareAcademicTerms),
     }));
   const hasTermGroups = sortedTermGroups.length > 0;
-  const sortedLegacyTerms = hasTermGroups ? [] : getAcademicYearResponseTerms(detail);
+  const sortedLegacyTerms = hasTermGroups ? [] : getAcademicYearResponseSubTerms(detail);
   const currentAcademicYearStatusCode = getAcademicYearStatusCode(detail);
 
   async function handleSaveEdit() {

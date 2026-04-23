@@ -1,8 +1,8 @@
 import {
-  AcademicTermPatchRequestSchema,
-  type AcademicTermDetailFormValues,
-  type AcademicTermPatchRequest,
-  type AcademicTermResponse,
+  AcademicSubTermPatchRequestSchema,
+  type AcademicSubTermDetailFormValues,
+  type AcademicSubTermPatchRequest,
+  type AcademicSubTermResponse,
 } from '../schemas/academic-years-schemas';
 
 function toFormString(value: number | string | null | undefined): string {
@@ -81,7 +81,7 @@ function validateDateRange(startDate: string, endDate: string, fieldLabel: strin
   }
 }
 
-function normalizeAcademicTermDetailFormValues(values: AcademicTermDetailFormValues) {
+function normalizeAcademicTermDetailFormValues(values: AcademicSubTermDetailFormValues) {
   const code = validateMaxLength(
     trimRequiredString(values.code, 'Sub term code'),
     20,
@@ -108,8 +108,8 @@ function normalizeAcademicTermDetailFormValues(values: AcademicTermDetailFormVal
 }
 
 export function mapAcademicTermDetailToFormValues(
-  detail: AcademicTermResponse
-): AcademicTermDetailFormValues {
+  detail: AcademicSubTermResponse
+): AcademicSubTermDetailFormValues {
   return {
     code: toFormString(detail.code),
     name: toFormString(detail.name),
@@ -120,8 +120,8 @@ export function mapAcademicTermDetailToFormValues(
 }
 
 export function hasAcademicTermDetailChanges(
-  detail: AcademicTermResponse,
-  values: AcademicTermDetailFormValues
+  detail: AcademicSubTermResponse,
+  values: AcademicSubTermDetailFormValues
 ): boolean {
   const originalValues = mapAcademicTermDetailToFormValues(detail);
 
@@ -158,14 +158,14 @@ export function hasAcademicTermDetailChanges(
 }
 
 export function buildPatchAcademicTermRequest(
-  detail: AcademicTermResponse,
-  values: AcademicTermDetailFormValues
-): AcademicTermPatchRequest {
+  detail: AcademicSubTermResponse,
+  values: AcademicSubTermDetailFormValues
+): AcademicSubTermPatchRequest {
   const originalNormalized = normalizeAcademicTermDetailFormValues(
     mapAcademicTermDetailToFormValues(detail)
   );
   const currentNormalized = normalizeAcademicTermDetailFormValues(values);
-  const request: AcademicTermPatchRequest = {};
+  const request: AcademicSubTermPatchRequest = {};
 
   if (originalNormalized.code !== currentNormalized.code) {
     request.code = currentNormalized.code;
@@ -187,5 +187,5 @@ export function buildPatchAcademicTermRequest(
     request.sortOrder = currentNormalized.sortOrder;
   }
 
-  return AcademicTermPatchRequestSchema.parse(request);
+  return AcademicSubTermPatchRequestSchema.parse(request);
 }

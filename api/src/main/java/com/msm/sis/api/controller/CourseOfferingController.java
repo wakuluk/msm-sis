@@ -38,14 +38,14 @@ public class CourseOfferingController {
     @PreAuthorize("hasRole('STUDENT')")
     @Operation(
             summary = "Search course offerings",
-            description = "Returns paged course offering search results from the catalog. Example: /api/course-offerings?termCode=FALL-2026&subjectCode=TOLK&title=Tolkien&page=0&size=25&sortBy=courseNumber&sortDirection=asc"
+            description = "Returns paged course offering search results from the catalog. Example: /api/course-offerings?subTermCode=FALL-2026&subjectCode=TOLK&title=Tolkien&page=0&size=25&sortBy=courseNumber&sortDirection=asc"
     )
     public ResponseEntity<CourseOfferingSearchResponse> searchPublicCourseOfferings(
             @AuthenticationPrincipal AuthenticatedJwt jwt,
             @ModelAttribute CourseOfferingSearchCriteria criteria,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
-            @RequestParam(defaultValue = "termCode") String sortBy,
+            @RequestParam(defaultValue = "subTermCode") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection
     ) {
         throw catalogUnavailableException();
@@ -55,14 +55,14 @@ public class CourseOfferingController {
     @PreAuthorize("hasAnyRole('ADMIN')")
     @Operation(
             summary = "Search course offerings",
-            description = "Returns paged course offering search results from the catalog. Example: /api/course-offerings?termCode=FALL-2026&subjectCode=TOLK&title=Tolkien&page=0&size=25&sortBy=courseNumber&sortDirection=asc"
+            description = "Returns paged course offering search results from the catalog. Example: /api/course-offerings?subTermCode=FALL-2026&subjectCode=TOLK&title=Tolkien&page=0&size=25&sortBy=courseNumber&sortDirection=asc"
     )
     public ResponseEntity<CourseOfferingSearchResponse> searchCourseOfferings(
             @AuthenticationPrincipal AuthenticatedJwt jwt,
             @ModelAttribute CourseOfferingAdvancedSearchCriteria criteria,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
-            @RequestParam(defaultValue = "termCode") String sortBy,
+            @RequestParam(defaultValue = "subTermCode") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection
     ) {
         throw catalogUnavailableException();
@@ -92,7 +92,7 @@ public class CourseOfferingController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Patch course offering",
-            description = "Updates an admin course offering's assigned terms, offering status, and notes."
+            description = "Updates an admin course offering's assigned sub terms, offering status, and notes."
     )
     public ResponseEntity<CourseOfferingDetailResponse> patchCourseOffering(
             @PathVariable Long courseOfferingId,

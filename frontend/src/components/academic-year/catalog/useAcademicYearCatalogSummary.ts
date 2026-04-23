@@ -63,7 +63,7 @@ export function useAcademicYearCatalogSummary({
 
   const summary = state.status === 'success' ? state.summary : null;
   const sortedTermGroups = useMemo(
-    () => (summary ? sortAcademicYearCatalogTermGroups(summary.termGroups) : []),
+    () => (summary ? sortAcademicYearCatalogTermGroups(summary.terms) : []),
     [summary]
   );
   const termOptions = useMemo<ReadonlyArray<CatalogTermOption>>(

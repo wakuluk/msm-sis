@@ -28,12 +28,12 @@ export function AcademicYearCatalogSummarySection({
         <>
           <ReadOnlyField
             label="Terms"
-            value={displayValue(summary.termGroupCount)}
+            value={displayValue(summary.termCount)}
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField
             label="Sub terms"
-            value={displayValue(summary.termCount)}
+            value={displayValue(summary.subTermCount)}
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField
@@ -42,7 +42,7 @@ export function AcademicYearCatalogSummarySection({
             span={{ base: 12, md: 4 }}
           />
           <Grid.Col span={12}>
-            {summary.termGroups.length === 0 ? (
+            {summary.terms.length === 0 ? (
               <Alert color="gray" title="No catalog summary yet">
                 This academic year does not have terms with catalog activity yet.
               </Alert>
@@ -57,25 +57,25 @@ export function AcademicYearCatalogSummarySection({
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
-                    {summary.termGroups.map((termGroup) => (
-                      <Table.Tr key={termGroup.termGroupId}>
+                    {summary.terms.map((term) => (
+                      <Table.Tr key={term.termId}>
                         <Table.Td>
                           <Stack gap={2}>
-                            <Text fw={600}>{termGroup.name}</Text>
+                            <Text fw={600}>{term.name}</Text>
                             <Text size="sm" c="dimmed">
-                              {termGroup.code}
+                              {term.code}
                             </Text>
-                            {termGroup.terms.length > 0 ? (
+                            {term.subTerms.length > 0 ? (
                               <Text size="xs" c="dimmed">
-                                {termGroup.terms
-                                  .map((term) => `${term.code}: ${term.courseOfferingCount}`)
+                                {term.subTerms
+                                  .map((subTerm) => `${subTerm.code}: ${subTerm.courseOfferingCount}`)
                                   .join(' • ')}
                               </Text>
                             ) : null}
                           </Stack>
                         </Table.Td>
-                        <Table.Td>{termGroup.termCount}</Table.Td>
-                        <Table.Td>{termGroup.courseOfferingCount}</Table.Td>
+                        <Table.Td>{term.subTermCount}</Table.Td>
+                        <Table.Td>{term.courseOfferingCount}</Table.Td>
                       </Table.Tr>
                     ))}
                   </Table.Tbody>

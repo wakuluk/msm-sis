@@ -13,9 +13,9 @@ import { WorkflowStatusStepperSection } from '@/components/status/WorkflowStatus
 import {
   getAcademicTermById,
   getAcademicTermCourseOfferings,
-  getAcademicTermStatuses,
+  getAcademicSubTermStatuses,
   patchAcademicTerm,
-  shiftAcademicTermStatus,
+  shiftAcademicSubTermStatus,
 } from '@/services/academic-term-service';
 import {
   buildPatchAcademicTermRequest,
@@ -29,12 +29,12 @@ import type {
   CourseOfferingSortDirection,
 } from '@/services/schemas/catalog-schemas';
 import type {
-  AcademicTermDetailFormValues,
-  AcademicTermResponse,
-  AcademicTermStatusShiftDirection,
-  AcademicTermStatusesResponse,
+  AcademicSubTermDetailFormValues,
+  AcademicSubTermResponse,
+  AcademicSubTermStatusShiftDirection,
+  AcademicSubTermStatusesResponse,
 } from '@/services/schemas/academic-years-schemas';
-import { initialAcademicTermDetailFormValues } from '@/services/schemas/academic-years-schemas';
+import { initialAcademicSubTermDetailFormValues } from '@/services/schemas/academic-years-schemas';
 
 type AcademicTermDetailLocationState = {
   academicYearId?: number;
@@ -43,7 +43,7 @@ type AcademicTermDetailLocationState = {
 type AcademicTermDetailPageState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'success'; academicTerm: AcademicTermResponse };
+  | { status: 'success'; academicTerm: AcademicSubTermResponse };
 
 type AcademicTermStatusShiftState =
   | { status: 'idle' }
@@ -242,7 +242,7 @@ function ReadOnlyField({
 }
 
 export function AcademicTermDetailPage() {
-  const { academicTermId } = useParams<{ academicTermId: string }>();
+  const { subTermId } = useParams<{ subTermId: string }>();
   const location = useLocation();
   const locationState = (location.state as AcademicTermDetailLocationState | null) ?? null;
   const fallbackAcademicYearId =
@@ -254,7 +254,7 @@ export function AcademicTermDetailPage() {
       ? `/academics/academic-years/${fallbackAcademicYearId}`
       : '/academics/academic-years/search',
   });
-  const parsedAcademicTermId = Number(academicTermId);
+  const parsedAcademicTermId = Number(subTermId);
   const hasValidAcademicTermId = Number.isInteger(parsedAcademicTermId) && parsedAcademicTermId > 0;
   const [isEditing, setIsEditing] = useState(false);
   const [detailState, setDetailState] = useState<AcademicTermDetailPageState>({ status: 'loading' });
@@ -269,11 +269,11 @@ export function AcademicTermDetailPage() {
   const [courseOfferingsState, setCourseOfferingsState] = useState<AcademicTermCourseOfferingsState>(
     { status: 'loading' }
   );
-  const [academicTermStatuses, setAcademicTermStatuses] = useState<AcademicTermStatusesResponse>([]);
+  const [academicTermStatuses, setAcademicTermStatuses] = useState<AcademicSubTermStatusesResponse>([]);
   const [academicTermStatusesLoading, setAcademicTermStatusesLoading] = useState(true);
   const [academicTermStatusesError, setAcademicTermStatusesError] = useState<string | null>(null);
-  const form = useForm<AcademicTermDetailFormValues>({
-    initialValues: initialAcademicTermDetailFormValues,
+  const form = useForm<AcademicSubTermDetailFormValues>({
+    initialValues: initialAcademicSubTermDetailFormValues,
   });
 
   useEffect(() => {
@@ -281,7 +281,7 @@ export function AcademicTermDetailPage() {
     setAcademicTermStatusesLoading(true);
     setAcademicTermStatusesError(null);
 
-    getAcademicTermStatuses({ signal: abortController.signal })
+    getAcademicSubTermStatuses({ signal: abortController.signal })
       .then((response) => {
         setAcademicTermStatuses([...response].sort((left, right) => left.order - right.order));
         setAcademicTermStatusesLoading(false);
@@ -344,7 +344,7 @@ export function AcademicTermDetailPage() {
     setDetailState({ status: 'loading' });
 
     getAcademicTermById({
-      academicTermId: parsedAcademicTermId,
+      academicSubTermId: parsedAcademicTermId,
       signal: abortController.signal,
     })
       .then((response) => {
@@ -383,7 +383,7 @@ export function AcademicTermDetailPage() {
     setCourseOfferingsState({ status: 'loading' });
 
     getAcademicTermCourseOfferings({
-      academicTermId: parsedAcademicTermId,
+      academicSubTermId: parsedAcademicTermId,
       sortBy: courseOfferingsSortBy,
       sortDirection: courseOfferingsSortDirection,
       signal: abortController.signal,
@@ -412,15 +412,15 @@ export function AcademicTermDetailPage() {
     parsedAcademicTermId,
   ]);
 
-  async function handleShiftStatus(direction: AcademicTermStatusShiftDirection) {
+  async function handleShiftStatus(direction: AcademicSubTermStatusShiftDirection) {
     if (statusShiftState.status === 'saving' || detailState.status !== 'success') {
       return;
     }
 
     try {
       setStatusShiftState({ status: 'saving' });
-      const updatedAcademicTerm = await shiftAcademicTermStatus({
-        academicTermId: detailState.academicTerm.termId,
+      const updatedAcademicTerm = await shiftAcademicSubTermStatus({
+        academicSubTermId: detailState.academicTerm.subTermId,
         direction,
       });
       form.setValues(mapAcademicTermDetailToFormValues(updatedAcademicTerm));
@@ -446,7 +446,7 @@ export function AcademicTermDetailPage() {
     setCourseOfferingsSortDirection('asc');
   }
 
-  async function handleSaveEdit(detail: AcademicTermResponse) {
+  async function handleSaveEdit(detail: AcademicSubTermResponse) {
     if (saveState.status === 'saving') {
       return;
     }
@@ -462,7 +462,7 @@ export function AcademicTermDetailPage() {
 
       setSaveState({ status: 'saving' });
       const updatedAcademicTerm = await patchAcademicTerm({
-        academicTermId: detail.termId,
+        academicSubTermId: detail.subTermId,
         request,
       });
       form.setValues(mapAcademicTermDetailToFormValues(updatedAcademicTerm));
@@ -508,7 +508,7 @@ export function AcademicTermDetailPage() {
           >
             <Grid.Col span={12}>
               <Alert color="blue" title="Loading sub term">
-                Fetching sub term {academicTermId ?? 'unknown'}.
+                Fetching sub term {subTermId ?? 'unknown'}.
               </Alert>
             </Grid.Col>
           </RecordPageSection>
@@ -599,7 +599,7 @@ export function AcademicTermDetailPage() {
             {detail.active ? 'Active' : 'Inactive'}
           </Badge>
           <Badge variant="light" color="blue">
-            {displayValue(detail.termStatusName ?? detail.termStatusCode)}
+            {displayValue(detail.subTermStatusName ?? detail.subTermStatusCode)}
           </Badge>
         </Group>
       }
@@ -622,7 +622,7 @@ export function AcademicTermDetailPage() {
           title="Sub Term Status"
           description="This tracker shows the configured sub term workflow steps."
           statuses={academicTermStatuses}
-          currentStatusCode={detail.termStatusCode}
+          currentStatusCode={detail.subTermStatusCode}
           isLoading={academicTermStatusesLoading}
           loadError={academicTermStatusesError}
           shiftError={statusShiftError}
@@ -697,7 +697,7 @@ export function AcademicTermDetailPage() {
         >
           <ReadOnlyField
             label="Sub term ID"
-            value={displayValue(detail.termId)}
+            value={displayValue(detail.subTermId)}
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField
@@ -789,7 +789,7 @@ export function AcademicTermDetailPage() {
           )}
           <ReadOnlyField
             label="Current status"
-            value={displayValue(detail.termStatusName ?? detail.termStatusCode)}
+            value={displayValue(detail.subTermStatusName ?? detail.subTermStatusCode)}
             span={{ base: 12, md: 3 }}
           />
           <ReadOnlyField

@@ -11,7 +11,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "academic_term_status")
-public class AcademicTermStatus {
+public class AcademicSubTermStatus {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

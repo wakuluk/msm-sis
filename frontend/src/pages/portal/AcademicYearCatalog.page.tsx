@@ -96,12 +96,12 @@ export function AcademicYearCatalogPage() {
           />
           <ReadOnlyField
             label="Terms"
-            value={displayValue(summary?.termGroupCount)}
+            value={displayValue(summary?.termCount)}
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField
             label="Sub terms"
-            value={displayValue(summary?.termCount)}
+            value={displayValue(summary?.subTermCount)}
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField

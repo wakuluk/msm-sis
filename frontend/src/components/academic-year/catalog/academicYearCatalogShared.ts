@@ -1,5 +1,5 @@
 import type { AcademicYearCatalogSummaryResponse } from '@/services/schemas/admin-catalog-schemas';
-import type { AcademicTermGroupResponse } from '@/services/schemas/academic-years-schemas';
+import type { AcademicTermResponse } from '@/services/schemas/academic-years-schemas';
 
 export type CatalogTermOption = {
   value: string;
@@ -7,58 +7,58 @@ export type CatalogTermOption = {
 };
 
 function compareSummaryTermGroups(
-  left: AcademicYearCatalogSummaryResponse['termGroups'][number],
-  right: AcademicYearCatalogSummaryResponse['termGroups'][number]
-): number {
-  return left.code.localeCompare(right.code) || left.termGroupId - right.termGroupId;
-}
-
-function compareSummaryTerms(
-  left: AcademicYearCatalogSummaryResponse['termGroups'][number]['terms'][number],
-  right: AcademicYearCatalogSummaryResponse['termGroups'][number]['terms'][number]
+  left: AcademicYearCatalogSummaryResponse['terms'][number],
+  right: AcademicYearCatalogSummaryResponse['terms'][number]
 ): number {
   return left.code.localeCompare(right.code) || left.termId - right.termId;
 }
 
+function compareSummaryTerms(
+  left: AcademicYearCatalogSummaryResponse['terms'][number]['subTerms'][number],
+  right: AcademicYearCatalogSummaryResponse['terms'][number]['subTerms'][number]
+): number {
+  return left.code.localeCompare(right.code) || left.subTermId - right.subTermId;
+}
+
 export function sortAcademicYearCatalogTermGroups(
-  termGroups: ReadonlyArray<AcademicYearCatalogSummaryResponse['termGroups'][number]>
+  terms: ReadonlyArray<AcademicYearCatalogSummaryResponse['terms'][number]>
 ) {
-  return [...termGroups]
+  return [...terms]
     .sort(compareSummaryTermGroups)
-    .map((termGroup) => ({
-      ...termGroup,
-      terms: [...termGroup.terms].sort(compareSummaryTerms),
+    .map((term) => ({
+      ...term,
+      subTerms: [...term.subTerms].sort(compareSummaryTerms),
     }));
 }
 
 export function buildAcademicYearCatalogTermOptions(
-  termGroups: ReadonlyArray<AcademicYearCatalogSummaryResponse['termGroups'][number]>
+  terms: ReadonlyArray<AcademicYearCatalogSummaryResponse['terms'][number]>
 ): CatalogTermOption[] {
-  return termGroups.flatMap((termGroup) =>
-    termGroup.terms.map((term) => ({
-      value: String(term.termId),
-      label: `${term.name} (${term.code}) · ${termGroup.name}`,
+  return terms.flatMap((term) =>
+    term.subTerms.map((subTerm) => ({
+      value: String(subTerm.subTermId),
+      label: `${subTerm.name} (${subTerm.code}) · ${term.name}`,
     }))
   );
 }
 
 export function sortAcademicYearTermGroups(
-  termGroups: ReadonlyArray<AcademicTermGroupResponse>
-): AcademicTermGroupResponse[] {
+  termGroups: ReadonlyArray<AcademicTermResponse>
+): AcademicTermResponse[] {
   return [...termGroups]
     .sort(
       (left, right) =>
         left.startDate.localeCompare(right.startDate) ||
         left.code.localeCompare(right.code) ||
-        left.termGroupId - right.termGroupId
+        left.termId - right.termId
     )
-    .map((termGroup) => ({
-      ...termGroup,
-      academicTerms: [...termGroup.academicTerms].sort(
+    .map((term) => ({
+      ...term,
+      subTerms: [...term.subTerms].sort(
         (left, right) =>
           left.sortOrder - right.sortOrder ||
           left.code.localeCompare(right.code) ||
-          left.termId - right.termId
+          left.subTermId - right.subTermId
       ),
     }));
 }

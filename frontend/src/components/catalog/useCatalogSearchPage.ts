@@ -67,7 +67,7 @@ type UseCatalogSearchPageOptions = {
 
 type AppliedAdvancedFilters = {
   offeringStatusCodes: string[];
-  termStatusCodes: string[];
+  subTermStatusCodes: string[];
   includeInactive: boolean;
   isPublished?: boolean;
 };
@@ -101,7 +101,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     status: 'idle',
   });
   const [selectedOfferingStatusCodes, setSelectedOfferingStatusCodes] = useState<string[]>([]);
-  const [selectedTermStatusCodes, setSelectedTermStatusCodes] = useState<string[]>([]);
+  const [selectedSubTermStatusCodes, setSelectedSubTermStatusCodes] = useState<string[]>([]);
   const [includeInactive, setIncludeInactive] = useState(variant === 'advanced');
   const [publishedOnly, setPublishedOnly] = useState(variant === 'advanced');
   const [resultsView, setResultsView] = useState<CatalogResultsView>('standard');
@@ -155,8 +155,8 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
           filters: appliedFilters,
           offeringStatusCodes:
             variant === 'advanced' ? appliedAdvancedFilters?.offeringStatusCodes : undefined,
-          termStatusCodes:
-            variant === 'advanced' ? appliedAdvancedFilters?.termStatusCodes : undefined,
+          subTermStatusCodes:
+            variant === 'advanced' ? appliedAdvancedFilters?.subTermStatusCodes : undefined,
           includeInactive:
             variant === 'advanced' ? appliedAdvancedFilters?.includeInactive : undefined,
           isPublished: variant === 'advanced' ? appliedAdvancedFilters?.isPublished : undefined,
@@ -207,14 +207,15 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
       return;
     }
 
-    const matchingTermStillAvailable = referenceOptionsState.response.terms.some(
-      (term) =>
-        term.code === form.values.termCode &&
-        (!form.values.academicYearCode || term.academicYearCode === form.values.academicYearCode)
+    const matchingTermStillAvailable = referenceOptionsState.response.subTerms.some(
+      (subTerm) =>
+        subTerm.code === form.values.subTermCode &&
+        (!form.values.academicYearCode ||
+          subTerm.academicYearCode === form.values.academicYearCode)
     );
 
-    if (form.values.termCode && !matchingTermStillAvailable) {
-      form.setFieldValue('termCode', null);
+    if (form.values.subTermCode && !matchingTermStillAvailable) {
+      form.setFieldValue('subTermCode', null);
     }
 
     const matchingSubjectStillAvailable = referenceOptionsState.response.subjects.some(
@@ -231,7 +232,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     form.values.academicYearCode,
     form.values.departmentCode,
     form.values.subjectCode,
-    form.values.termCode,
+    form.values.subTermCode,
     referenceOptionsState,
   ]);
 
@@ -240,7 +241,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
   const hasSearchValues =
     hasCourseOfferingSearchValues(form.values) ||
     selectedOfferingStatusCodes.length > 0 ||
-    selectedTermStatusCodes.length > 0 ||
+    selectedSubTermStatusCodes.length > 0 ||
     (variant === 'advanced' && (includeInactive !== true || publishedOnly !== true));
   const isSearching = searchResultsState.status === 'loading';
 
@@ -255,7 +256,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
   const termOptions: SelectOption[] = hasLoadedReferenceOptions
     ? mapAcademicTermOptionsToSelectOptions(
         filterAcademicTermsByAcademicYear(
-          referenceOptionsState.response.terms,
+          referenceOptionsState.response.subTerms,
           form.values.academicYearCode
         )
       )
@@ -275,7 +276,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     : [];
 
   const termStatusOptions: SelectOption[] = hasLoadedReferenceOptions
-    ? mapCatalogReferenceOptionsToSelectOptions(referenceOptionsState.response.termStatuses)
+    ? mapCatalogReferenceOptionsToSelectOptions(referenceOptionsState.response.subTermStatuses)
     : [];
 
   const tableData =
@@ -342,7 +343,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     setSortBy(defaultCourseOfferingSortBy);
     setSortDirection(defaultCourseOfferingSortDirection);
     setSelectedOfferingStatusCodes([]);
-    setSelectedTermStatusCodes([]);
+    setSelectedSubTermStatusCodes([]);
     setIncludeInactive(variant === 'advanced');
     setPublishedOnly(variant === 'advanced');
     setAppliedFilters(null);
@@ -356,7 +357,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
       variant === 'advanced'
         ? {
             offeringStatusCodes: [...selectedOfferingStatusCodes],
-            termStatusCodes: [...selectedTermStatusCodes],
+            subTermStatusCodes: [...selectedSubTermStatusCodes],
             includeInactive,
             isPublished: publishedOnly ? true : undefined,
           }
@@ -388,7 +389,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     sortBy,
     sortDirection,
     selectedOfferingStatusCodes,
-    selectedTermStatusCodes,
+    selectedTermStatusCodes: selectedSubTermStatusCodes,
     includeInactive,
     publishedOnly,
     searchResultsState,
@@ -402,7 +403,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     searchResultsIdle: searchResultsState.status === 'idle',
     setResultsView,
     setSelectedOfferingStatusCodes,
-    setSelectedTermStatusCodes,
+    setSelectedTermStatusCodes: setSelectedSubTermStatusCodes,
     setIncludeInactive,
     setPublishedOnly,
     toggleExpandedCourseOffering,

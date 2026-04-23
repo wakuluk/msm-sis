@@ -4,7 +4,7 @@ const NullableString = z.string().nullable();
 
 export const CourseOfferingSearchFiltersSchema = z.object({
   academicYearCode: NullableString,
-  termCode: NullableString,
+  subTermCode: NullableString,
   departmentCode: NullableString,
   subjectCode: NullableString,
   courseCode: z.string(),
@@ -16,7 +16,7 @@ export type CourseOfferingSearchFilters = z.infer<typeof CourseOfferingSearchFil
 
 export const initialCourseOfferingSearchFilters: CourseOfferingSearchFilters = {
   academicYearCode: null,
-  termCode: null,
+  subTermCode: null,
   departmentCode: null,
   subjectCode: null,
   courseCode: '',
@@ -26,7 +26,7 @@ export const initialCourseOfferingSearchFilters: CourseOfferingSearchFilters = {
 
 export const CourseOfferingSearchSortBySchema = z.enum([
   'academicYearCode',
-  'termCode',
+  'subTermCode',
   'departmentCode',
   'subjectCode',
   'courseNumber',
@@ -48,8 +48,8 @@ export const CourseOfferingSearchResultResponseSchema = z.object({
   courseOfferingId: z.number(),
   courseId: z.number(),
   courseVersionId: z.number(),
-  termCode: z.string(),
-  termName: z.string(),
+  subTermCode: z.string(),
+  subTermName: z.string(),
   subjectCode: z.string(),
   courseNumber: z.string(),
   courseCode: z.string(),
@@ -91,8 +91,13 @@ export const CourseOfferingDetailResponseSchema = z.object({
   minCredits: z.number(),
   maxCredits: z.number(),
   variableCredit: z.boolean(),
-  termCode: z.string(),
-  termName: z.string(),
+  subTerms: z.array(
+    z.object({
+      subTermId: z.number(),
+      code: z.string(),
+      name: z.string(),
+    })
+  ),
   offeringStatusCode: z.string(),
   offeringStatusName: z.string(),
   notes: z.string().nullable(),

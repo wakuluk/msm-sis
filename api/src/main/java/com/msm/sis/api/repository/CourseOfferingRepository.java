@@ -12,8 +12,8 @@ import java.util.Optional;
 
 public interface CourseOfferingRepository
         extends JpaRepository<CourseOffering, Long>, CourseOfferingRepositoryCustom {
-    interface TermCourseOfferingCount {
-        Long getTermId();
+    interface SubTermCourseOfferingCount {
+        Long getSubTermId();
         long getCourseOfferingCount();
     }
 
@@ -25,9 +25,9 @@ public interface CourseOfferingRepository
             "courseVersion.course.subject.department",
             "courseVersion.course.subject.department.school",
             "academicYear",
-            "courseOfferingTerms",
-            "courseOfferingTerms.term",
-            "courseOfferingTerms.term.status",
+            "courseOfferingSubTerms",
+            "courseOfferingSubTerms.subTerm",
+            "courseOfferingSubTerms.subTerm.status",
             "status"
     })
     Optional<CourseOffering> findById(Long id);
@@ -35,8 +35,8 @@ public interface CourseOfferingRepository
     @Query("""
             select distinct courseOffering
             from CourseOffering courseOffering
-            join courseOffering.courseOfferingTerms courseOfferingTerm
-            where courseOfferingTerm.term.id = :termId
+            join courseOffering.courseOfferingSubTerms courseOfferingSubTerm
+            where courseOfferingSubTerm.subTerm.id = :subTermId
             """)
     @EntityGraph(attributePaths = {
             "courseVersion",
@@ -45,12 +45,12 @@ public interface CourseOfferingRepository
             "courseVersion.course.subject.department",
             "courseVersion.course.subject.department.school",
             "academicYear",
-            "courseOfferingTerms",
-            "courseOfferingTerms.term",
-            "courseOfferingTerms.term.status",
+            "courseOfferingSubTerms",
+            "courseOfferingSubTerms.subTerm",
+            "courseOfferingSubTerms.subTerm.status",
             "status"
     })
-    List<CourseOffering> findAllByAcademicTermId(@Param("termId") Long termId, Sort sort);
+    List<CourseOffering> findAllByAcademicSubTermId(@Param("subTermId") Long subTermId, Sort sort);
 
     @EntityGraph(attributePaths = {
             "courseVersion",
@@ -59,9 +59,9 @@ public interface CourseOfferingRepository
             "courseVersion.course.subject.department",
             "courseVersion.course.subject.department.school",
             "academicYear",
-            "courseOfferingTerms",
-            "courseOfferingTerms.term",
-            "courseOfferingTerms.term.status",
+            "courseOfferingSubTerms",
+            "courseOfferingSubTerms.subTerm",
+            "courseOfferingSubTerms.subTerm.status",
             "status"
     })
     List<CourseOffering> findAllByCourseVersion_Course_Id(Long courseId, Sort sort);
@@ -73,9 +73,9 @@ public interface CourseOfferingRepository
             "courseVersion.course.subject.department",
             "courseVersion.course.subject.department.school",
             "academicYear",
-            "courseOfferingTerms",
-            "courseOfferingTerms.term",
-            "courseOfferingTerms.term.status",
+            "courseOfferingSubTerms",
+            "courseOfferingSubTerms.subTerm",
+            "courseOfferingSubTerms.subTerm.status",
             "status"
     })
     List<CourseOffering> findAllByAcademicYear_Id(Long academicYearId, Sort sort);
@@ -86,9 +86,9 @@ public interface CourseOfferingRepository
             "courseVersion.course.subject",
             "courseVersion.course.subject.department",
             "academicYear",
-            "courseOfferingTerms",
-            "courseOfferingTerms.term",
-            "courseOfferingTerms.term.status",
+            "courseOfferingSubTerms",
+            "courseOfferingSubTerms.subTerm",
+            "courseOfferingSubTerms.subTerm.status",
             "status"
     })
     Optional<CourseOffering> findByCourseVersion_IdAndAcademicYear_Id(Long courseVersionId, Long academicYearId);
@@ -107,12 +107,12 @@ public interface CourseOfferingRepository
 
     @Query("""
             select
-                courseOfferingTerm.term.id as termId,
+                courseOfferingSubTerm.subTerm.id as subTermId,
                 count(distinct courseOffering.id) as courseOfferingCount
             from CourseOffering courseOffering
-            join courseOffering.courseOfferingTerms courseOfferingTerm
-            where courseOfferingTerm.term.id in :termIds
-            group by courseOfferingTerm.term.id
+            join courseOffering.courseOfferingSubTerms courseOfferingSubTerm
+            where courseOfferingSubTerm.subTerm.id in :subTermIds
+            group by courseOfferingSubTerm.subTerm.id
             """)
-    List<TermCourseOfferingCount> countByTermIds(@Param("termIds") List<Long> termIds);
+    List<SubTermCourseOfferingCount> countBySubTermIds(@Param("subTermIds") List<Long> subTermIds);
 }

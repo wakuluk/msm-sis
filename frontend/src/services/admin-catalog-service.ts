@@ -23,7 +23,7 @@ export type GetAcademicYearCatalogSummaryRequest = {
 
 export type SearchAcademicYearCourseOfferingsRequest = {
   academicYearId: number;
-  termId?: number;
+  subTermId?: number;
   schoolId?: number;
   departmentId?: number;
   subjectId?: number;
@@ -77,7 +77,7 @@ export async function getAcademicYearCatalogSummary({
 
 export async function searchAcademicYearCourseOfferings({
   academicYearId,
-  termId,
+  subTermId,
   schoolId,
   departmentId,
   subjectId,
@@ -91,8 +91,8 @@ export async function searchAcademicYearCourseOfferings({
 }: SearchAcademicYearCourseOfferingsRequest): Promise<AcademicYearCourseOfferingSearchResponse> {
   const queryParams = new URLSearchParams();
 
-  if (termId !== undefined) {
-    queryParams.set('termId', String(termId));
+  if (subTermId !== undefined) {
+    queryParams.set('subTermId', String(subTermId));
   }
 
   if (schoolId !== undefined) {

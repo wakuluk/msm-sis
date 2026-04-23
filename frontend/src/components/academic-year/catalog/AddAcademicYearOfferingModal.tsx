@@ -25,7 +25,7 @@ type AddOfferingFormValues = {
   departmentId: string | null;
   subjectId: string | null;
   courseId: string | null;
-  termIds: string[];
+  subTermIds: string[];
   notes: string;
 };
 
@@ -43,7 +43,7 @@ const initialAddOfferingFormValues: AddOfferingFormValues = {
   departmentId: null,
   subjectId: null,
   courseId: null,
-  termIds: [],
+  subTermIds: [],
   notes: '',
 };
 
@@ -213,11 +213,11 @@ export function AddAcademicYearOfferingModal({
       return;
     }
 
-    const termIds = formValues.termIds
-      .map((termId) => Number(termId))
-      .filter((termId) => Number.isInteger(termId) && termId > 0);
+    const subTermIds = formValues.subTermIds
+      .map((subTermId) => Number(subTermId))
+      .filter((subTermId) => Number.isInteger(subTermId) && subTermId > 0);
 
-    if (termIds.length === 0) {
+    if (subTermIds.length === 0) {
       setCreateOfferingState({
         status: 'error',
         message: 'Select at least one sub term before creating the offering.',
@@ -232,7 +232,7 @@ export function AddAcademicYearOfferingModal({
         academicYearId,
         request: {
           courseId,
-          termIds,
+          subTermIds,
           notes: normalizeNotes(formValues.notes),
         },
       });
@@ -328,11 +328,11 @@ export function AddAcademicYearOfferingModal({
           label="Sub Terms"
           placeholder="Select one or more sub terms"
           data={termOptions}
-          value={formValues.termIds}
+          value={formValues.subTermIds}
           onChange={(value) => {
             setFormValues((current) => ({
               ...current,
-              termIds: value,
+              subTermIds: value,
             }));
           }}
           searchable
@@ -388,7 +388,7 @@ export function AddAcademicYearOfferingModal({
             disabled={
               coursePickerState.status !== 'success' ||
               !formValues.courseId ||
-              formValues.termIds.length === 0
+              formValues.subTermIds.length === 0
             }
           >
             Create offering

@@ -25,6 +25,6 @@ public record CreateAcademicYearRequest(
         LocalDate endDate,
 
         @Valid
-        List<CreateAcademicYearTermRequest> terms
+        List<CreateAcademicYearSubTermRequest> subTerms
 ) {
 }

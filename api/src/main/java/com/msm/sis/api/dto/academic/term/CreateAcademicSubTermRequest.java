@@ -1,12 +1,16 @@
-package com.msm.sis.api.dto.academic.year;
+package com.msm.sis.api.dto.academic.term;
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
-public record CreateAcademicYearTermRequest(
+public record CreateAcademicSubTermRequest(
+
+        @NotNull
+        Long academicYearId,
 
         @NotBlank
         @Size(max = 20)
@@ -24,5 +28,5 @@ public record CreateAcademicYearTermRequest(
 
         @NotNull
         Integer sortOrder
-) {
+        ) {
 }

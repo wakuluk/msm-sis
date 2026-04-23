@@ -1,17 +1,17 @@
 package com.msm.sis.api.mapper;
 
-import com.msm.sis.api.dto.academic.term.AcademicTermGroupResponse;
 import com.msm.sis.api.dto.academic.term.AcademicTermResponse;
-import com.msm.sis.api.dto.academic.term.CreateAcademicTermRequest;
+import com.msm.sis.api.dto.academic.term.AcademicSubTermResponse;
+import com.msm.sis.api.dto.academic.term.CreateAcademicSubTermRequest;
 import com.msm.sis.api.dto.academic.year.PatchAcademicYearRequest;
-import com.msm.sis.api.dto.academic.term.PatchAcademicTermRequest;
+import com.msm.sis.api.dto.academic.term.PatchAcademicSubTermRequest;
 import com.msm.sis.api.dto.academic.year.AcademicYearResponse;
 import com.msm.sis.api.dto.academic.year.AcademicYearSearchResponse;
 import com.msm.sis.api.dto.academic.year.CreateAcademicYearRequest;
-import com.msm.sis.api.dto.academic.year.CreateAcademicYearTermRequest;
+import com.msm.sis.api.dto.academic.year.CreateAcademicYearSubTermRequest;
 import com.msm.sis.api.entity.AcademicYear;
-import com.msm.sis.api.entity.AcademicTerm;
-import com.msm.sis.api.entity.AcademicTermStatus;
+import com.msm.sis.api.entity.AcademicSubTerm;
+import com.msm.sis.api.entity.AcademicSubTermStatus;
 import com.msm.sis.api.patch.PatchValue;
 import org.springframework.stereotype.Component;
 
@@ -34,59 +34,62 @@ public class AcademicYearMapper {
         return academicYear;
     }
 
-    public AcademicTerm fromCreateAcademicTermRequest(
+    public AcademicSubTerm fromCreateAcademicSubTermRequest(
             AcademicYear academicYear,
-            AcademicTermStatus termStatus,
-            CreateAcademicTermRequest request
+            AcademicSubTermStatus subTermStatus,
+            CreateAcademicSubTermRequest request
     ) {
-        AcademicTerm term = new AcademicTerm();
-        term.setAcademicYear(academicYear);
-        term.setCode(trimToNull(request.code()));
-        term.setName(trimToNull(request.name()));
-        term.setStartDate(request.startDate());
-        term.setEndDate(request.endDate());
-        term.setSortOrder(request.sortOrder());
-        term.setStatus(termStatus);
-        term.setActive(true);
-        return term;
+        AcademicSubTerm subTerm = new AcademicSubTerm();
+        subTerm.setAcademicYear(academicYear);
+        subTerm.setCode(trimToNull(request.code()));
+        subTerm.setName(trimToNull(request.name()));
+        subTerm.setStartDate(request.startDate());
+        subTerm.setEndDate(request.endDate());
+        subTerm.setSortOrder(request.sortOrder());
+        subTerm.setStatus(subTermStatus);
+        subTerm.setActive(true);
+        return subTerm;
     }
 
-    public AcademicTerm fromCreateAcademicYearTermRequest(
+    public AcademicSubTerm fromCreateAcademicYearSubTermRequest(
             AcademicYear academicYear,
-            AcademicTermStatus termStatus,
-            CreateAcademicYearTermRequest request
+            AcademicSubTermStatus subTermStatus,
+            CreateAcademicYearSubTermRequest request
     ) {
-        AcademicTerm term = new AcademicTerm();
-        term.setAcademicYear(academicYear);
-        term.setCode(trimToNull(request.code()));
-        term.setName(trimToNull(request.name()));
-        term.setStartDate(request.startDate());
-        term.setEndDate(request.endDate());
-        term.setSortOrder(request.sortOrder());
-        term.setStatus(termStatus);
-        term.setActive(true);
-        return term;
+        AcademicSubTerm subTerm = new AcademicSubTerm();
+        subTerm.setAcademicYear(academicYear);
+        subTerm.setCode(trimToNull(request.code()));
+        subTerm.setName(trimToNull(request.name()));
+        subTerm.setStartDate(request.startDate());
+        subTerm.setEndDate(request.endDate());
+        subTerm.setSortOrder(request.sortOrder());
+        subTerm.setStatus(subTermStatus);
+        subTerm.setActive(true);
+        return subTerm;
     }
 
-    public AcademicTermResponse toAcademicTermResponse(AcademicTerm term) {
-        return toAcademicTermResponse(term, 0L);
+    public AcademicSubTermResponse toAcademicSubTermResponse(AcademicSubTerm subTerm) {
+        return toAcademicSubTermResponse(subTerm, 0L);
     }
 
-    public AcademicTermResponse toAcademicTermResponse(AcademicTerm term, long courseOfferingCount) {
-        return new AcademicTermResponse(
-                term.getId(),
-                term.getAcademicYear() == null ? null : term.getAcademicYear().getId(),
-                term.getCode(),
-                term.getName(),
-                term.getStartDate(),
-                term.getEndDate(),
-                term.getSortOrder(),
-                term.getStatus() == null ? null : term.getStatus().getCode(),
-                term.getStatus() == null ? null : term.getStatus().getName(),
-                term.isActive(),
+    public AcademicSubTermResponse toAcademicSubTermResponse(
+            AcademicSubTerm subTerm,
+            long courseOfferingCount
+    ) {
+        return new AcademicSubTermResponse(
+                subTerm.getId(),
+                subTerm.getAcademicYear() == null ? null : subTerm.getAcademicYear().getId(),
+                subTerm.getCode(),
+                subTerm.getName(),
+                subTerm.getStartDate(),
+                subTerm.getEndDate(),
+                subTerm.getSortOrder(),
+                subTerm.getStatus() == null ? null : subTerm.getStatus().getCode(),
+                subTerm.getStatus() == null ? null : subTerm.getStatus().getName(),
+                subTerm.isActive(),
                 courseOfferingCount,
-                term.getLastUpdated(),
-                term.getUpdatedBy()
+                subTerm.getLastUpdated(),
+                subTerm.getUpdatedBy()
         );
     }
 
@@ -106,7 +109,8 @@ public class AcademicYearMapper {
 
     public AcademicYearResponse toAcademicYearResponse(
             AcademicYear academicYear,
-            List<AcademicTermGroupResponse> groupTerms
+            List<AcademicSubTermResponse> subTerms,
+            List<AcademicTermResponse> terms
     ) {
         return new AcademicYearResponse(
                 academicYear.getId(),
@@ -122,29 +126,8 @@ public class AcademicYearMapper {
                 academicYear.isPublished(),
                 academicYear.getLastUpdated(),
                 academicYear.getUpdatedBy(),
-                groupTerms == null ? List.of() : groupTerms
-        );
-    }
-
-    public AcademicYearResponse toAcademicYearResponseFromTermResponses(
-            AcademicYear academicYear,
-            List<AcademicTermGroupResponse> groupTerms
-    ) {
-        return new AcademicYearResponse(
-                academicYear.getId(),
-                academicYear.getCode(),
-                academicYear.getName(),
-                academicYear.getStartDate(),
-                academicYear.getEndDate(),
-                academicYear.getStatus() == null ? null : academicYear.getStatus().getId(),
-                academicYear.getStatus() == null ? null : academicYear.getStatus().getCode(),
-                academicYear.getStatus() == null ? null : academicYear.getStatus().getName(),
-                academicYear.getStatus() == null ? null : academicYear.getStatus().getSortOrder(),
-                academicYear.isActive(),
-                academicYear.isPublished(),
-                academicYear.getLastUpdated(),
-                academicYear.getUpdatedBy(),
-                groupTerms == null ? List.of() : groupTerms
+                subTerms == null ? List.of() : subTerms,
+                terms == null ? List.of() : terms
         );
     }
 
@@ -177,12 +160,12 @@ public class AcademicYearMapper {
         applyDirect(request.getEndDate(), academicYear::setEndDate);
     }
 
-    public void applyPatch(AcademicTerm academicTerm, PatchAcademicTermRequest request) {
-        applyTrimmed(request.getCode(), academicTerm::setCode);
-        applyTrimmed(request.getName(), academicTerm::setName);
-        applyDirect(request.getStartDate(), academicTerm::setStartDate);
-        applyDirect(request.getEndDate(), academicTerm::setEndDate);
-        applyDirect(request.getSortOrder(), academicTerm::setSortOrder);
+    public void applyPatch(AcademicSubTerm academicSubTerm, PatchAcademicSubTermRequest request) {
+        applyTrimmed(request.getCode(), academicSubTerm::setCode);
+        applyTrimmed(request.getName(), academicSubTerm::setName);
+        applyDirect(request.getStartDate(), academicSubTerm::setStartDate);
+        applyDirect(request.getEndDate(), academicSubTerm::setEndDate);
+        applyDirect(request.getSortOrder(), academicSubTerm::setSortOrder);
     }
 
     private <T> void applyDirect(PatchValue<T> value, Consumer<T> consumer) {

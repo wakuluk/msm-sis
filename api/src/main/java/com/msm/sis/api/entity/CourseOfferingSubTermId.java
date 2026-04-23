@@ -12,11 +12,11 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Embeddable
-public class CourseOfferingTermId implements Serializable {
+public class CourseOfferingSubTermId implements Serializable {
 
     @Column(name = "course_offering_id")
     private Long courseOfferingId;
 
     @Column(name = "term_id")
-    private Long termId;
+    private Long subTermId;
 }

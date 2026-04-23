@@ -6,7 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AcademicYearCourseOfferingSearchCriteria {
-    private Long termId;
+    private Long subTermId;
     private Long schoolId;
     private Long departmentId;
     private Long subjectId;

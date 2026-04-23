@@ -1,7 +1,7 @@
 import type {
   CatalogReferenceOption,
   AcademicSubjectReferenceOption,
-  AcademicTermReferenceOption,
+  AcademicSubTermReferenceOption,
 } from './schemas/reference-schemas';
 import type { CourseOfferingSearchFilters } from './schemas/catalog-schemas';
 
@@ -22,7 +22,7 @@ export function hasCourseOfferingSearchValues(filters: CourseOfferingSearchFilte
 export function getCourseOfferingSearchFilterSummary(filters: CourseOfferingSearchFilters) {
   return [
     filters.academicYearCode,
-    filters.termCode,
+    filters.subTermCode,
     filters.departmentCode,
     filters.subjectCode,
     getTrimmedFilterValue(filters.courseCode),
@@ -32,10 +32,12 @@ export function getCourseOfferingSearchFilterSummary(filters: CourseOfferingSear
 }
 
 export function filterAcademicTermsByAcademicYear(
-  terms: ReadonlyArray<AcademicTermReferenceOption>,
+  subTerms: ReadonlyArray<AcademicSubTermReferenceOption>,
   academicYearCode: string | null
 ) {
-  return terms.filter((term) => !academicYearCode || term.academicYearCode === academicYearCode);
+  return subTerms.filter(
+    (subTerm) => !academicYearCode || subTerm.academicYearCode === academicYearCode
+  );
 }
 
 export function filterAcademicSubjectsByDepartment(
@@ -64,7 +66,7 @@ export function mapCatalogAcademicYearOptionsToSelectOptions(
 }
 
 export function mapAcademicTermOptionsToSelectOptions(
-  options: ReadonlyArray<AcademicTermReferenceOption>
+  options: ReadonlyArray<AcademicSubTermReferenceOption>
 ) {
   return options.map((option) => ({
     value: option.code,

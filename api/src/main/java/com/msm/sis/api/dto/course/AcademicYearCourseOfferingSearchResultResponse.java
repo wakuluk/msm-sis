@@ -22,12 +22,12 @@ public record AcademicYearCourseOfferingSearchResultResponse(
         BigDecimal minCredits,
         BigDecimal maxCredits,
         boolean variableCredit,
-        List<TermResult> terms,
+        List<SubTermResult> subTerms,
         String offeringStatusCode,
         String offeringStatusName
 ) {
-    public record TermResult(
-            Long termId,
+    public record SubTermResult(
+            Long subTermId,
             String code,
             String name
     ) {

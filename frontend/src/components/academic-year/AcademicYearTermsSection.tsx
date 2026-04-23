@@ -28,8 +28,8 @@ import {
 type AcademicYearTermsSectionProps = {
   academicYearId: number;
   hasTermGroups: boolean;
-  sortedTermGroups: AcademicYearCreateResponse['groupTerms'];
-  sortedLegacyTerms: AcademicYearCreateResponse['terms'];
+  sortedTermGroups: AcademicYearCreateResponse['terms'];
+  sortedLegacyTerms: AcademicYearCreateResponse['subTerms'];
   isEditing: boolean;
   isAddingTerms: boolean;
   addTermsInProgress: boolean;
@@ -152,10 +152,13 @@ export function AcademicYearTermsSection({
                 </Table.Thead>
                 <Table.Tbody>
                   {sortedLegacyTerms.map((term) => (
-                    <Table.Tr key={term.termId}>
+                    <Table.Tr key={term.subTermId}>
                       <Table.Td>{term.sortOrder}</Table.Td>
                       <Table.Td>
-                        <Link to={`/academics/academic-term/${term.termId}`} state={{ academicYearId }}>
+                        <Link
+                          to={`/academics/academic-sub-term/${term.subTermId}`}
+                          state={{ academicYearId }}
+                        >
                           {term.code}
                         </Link>
                       </Table.Td>
@@ -163,7 +166,9 @@ export function AcademicYearTermsSection({
                       <Table.Td>{displayDate(term.startDate)}</Table.Td>
                       <Table.Td>{displayDate(term.endDate)}</Table.Td>
                       <Table.Td>{displayValue(term.courseOfferingCount)}</Table.Td>
-                      <Table.Td>{displayValue(term.termStatusName ?? term.termStatusCode)}</Table.Td>
+                      <Table.Td>
+                        {displayValue(term.subTermStatusName ?? term.subTermStatusCode)}
+                      </Table.Td>
                     </Table.Tr>
                   ))}
                 </Table.Tbody>

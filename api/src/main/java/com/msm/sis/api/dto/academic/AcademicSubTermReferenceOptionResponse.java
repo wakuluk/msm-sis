@@ -1,6 +1,6 @@
 package com.msm.sis.api.dto.academic;
 
-public record AcademicTermReferenceOptionResponse(
+public record AcademicSubTermReferenceOptionResponse(
         Long id,
         String code,
         String name,

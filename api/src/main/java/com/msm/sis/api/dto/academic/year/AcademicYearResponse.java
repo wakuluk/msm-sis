@@ -1,7 +1,7 @@
 package com.msm.sis.api.dto.academic.year;
 
-import com.msm.sis.api.dto.academic.term.AcademicTermGroupResponse;
 import com.msm.sis.api.dto.academic.term.AcademicTermResponse;
+import com.msm.sis.api.dto.academic.term.AcademicSubTermResponse;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,7 +35,9 @@ public record AcademicYearResponse(
 
         String updatedBy,
 
-        List<AcademicTermGroupResponse> groupTerms
+        List<AcademicSubTermResponse> subTerms,
+
+        List<AcademicTermResponse> terms
 
 ) {
 }

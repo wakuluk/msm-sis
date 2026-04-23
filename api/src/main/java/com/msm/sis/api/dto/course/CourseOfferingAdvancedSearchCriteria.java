@@ -9,7 +9,7 @@ import java.util.List;
 @Setter
 public class CourseOfferingAdvancedSearchCriteria extends CourseOfferingSearchCriteria {
     private List<String> offeringStatusCodes;
-    private List<String> termStatusCodes;
+    private List<String> subTermStatusCodes;
     private Boolean includeInactive;
     private Boolean isPublished;
 }

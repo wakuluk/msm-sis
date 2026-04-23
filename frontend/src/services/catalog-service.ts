@@ -21,7 +21,7 @@ import {
 export type CourseOfferingSearchRequest = {
   filters: CourseOfferingSearchFilters;
   offeringStatusCodes?: string[];
-  termStatusCodes?: string[];
+  subTermStatusCodes?: string[];
   includeInactive?: boolean;
   isPublished?: boolean;
   page?: number;
@@ -34,7 +34,7 @@ export type CourseOfferingSearchRequest = {
 export function buildCourseOfferingSearchQueryParams({
   filters,
   offeringStatusCodes,
-  termStatusCodes,
+  subTermStatusCodes,
   includeInactive,
   isPublished,
   page = 0,
@@ -49,7 +49,7 @@ export function buildCourseOfferingSearchQueryParams({
   });
 
   appendTrimmedMultiValueQueryParams(queryParams, 'offeringStatusCodes', offeringStatusCodes);
-  appendTrimmedMultiValueQueryParams(queryParams, 'termStatusCodes', termStatusCodes);
+  appendTrimmedMultiValueQueryParams(queryParams, 'subTermStatusCodes', subTermStatusCodes);
 
   if (includeInactive !== undefined) {
     queryParams.set('includeInactive', String(includeInactive));
@@ -72,7 +72,7 @@ async function fetchCourseOfferingSearch(
   {
     filters,
     offeringStatusCodes,
-    termStatusCodes,
+    subTermStatusCodes,
     includeInactive,
     isPublished,
     page = 0,
@@ -86,7 +86,7 @@ async function fetchCourseOfferingSearch(
     path: `${path}?${buildCourseOfferingSearchQueryParams({
       filters,
       offeringStatusCodes,
-      termStatusCodes,
+      subTermStatusCodes,
       includeInactive,
       isPublished,
       page,

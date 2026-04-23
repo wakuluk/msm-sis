@@ -8,8 +8,8 @@ import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import {
-  getAcademicTermGroupById,
-  patchAcademicTermGroup,
+  getAcademicTermById,
+  patchAcademicTerm,
 } from '@/services/academic-term-group-service';
 import {
   buildPatchAcademicTermGroupRequest,
@@ -17,9 +17,9 @@ import {
   mapAcademicTermGroupDetailToFormValues,
 } from '@/services/mappers/academic-term-group-mappers';
 import {
-  initialAcademicTermGroupDetailFormValues,
-  type AcademicTermGroupDetailFormValues,
-  type AcademicTermGroupResponse,
+  initialAcademicTermDetailFormValues,
+  type AcademicTermDetailFormValues,
+  type AcademicTermResponse,
 } from '@/services/schemas/academic-years-schemas';
 
 type AcademicTermGroupDetailLocationState = {
@@ -29,7 +29,7 @@ type AcademicTermGroupDetailLocationState = {
 type AcademicTermGroupDetailPageState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'success'; academicTermGroup: AcademicTermGroupResponse };
+  | { status: 'success'; academicTermGroup: AcademicTermResponse };
 
 type AcademicTermGroupDetailSaveState =
   | { status: 'idle' }
@@ -72,10 +72,14 @@ function getErrorMessage(error: unknown, fallbackMessage: string): string {
 }
 
 function compareAcademicTerms(
-  left: AcademicTermGroupResponse['academicTerms'][number],
-  right: AcademicTermGroupResponse['academicTerms'][number]
+  left: AcademicTermResponse['subTerms'][number],
+  right: AcademicTermResponse['subTerms'][number]
 ): number {
-  return left.sortOrder - right.sortOrder || left.code.localeCompare(right.code) || left.termId - right.termId;
+  return (
+    left.sortOrder - right.sortOrder ||
+    left.code.localeCompare(right.code) ||
+    left.subTermId - right.subTermId
+  );
 }
 
 function formatDateForFormValue(value: Date): string {
@@ -153,7 +157,7 @@ function ReadOnlyField({
 }
 
 export function AcademicTermGroupDetailPage() {
-  const { termGroupId } = useParams<{ termGroupId: string }>();
+  const { termId } = useParams<{ termId: string }>();
   const location = useLocation();
   const locationState = (location.state as AcademicTermGroupDetailLocationState | null) ?? null;
   const fallbackAcademicYearId =
@@ -165,15 +169,15 @@ export function AcademicTermGroupDetailPage() {
       ? `/academics/academic-years/${fallbackAcademicYearId}`
       : '/academics/academic-years/search',
   });
-  const parsedTermGroupId = Number(termGroupId);
-  const hasValidTermGroupId = Number.isInteger(parsedTermGroupId) && parsedTermGroupId > 0;
+  const parsedTermId = Number(termId);
+  const hasValidTermId = Number.isInteger(parsedTermId) && parsedTermId > 0;
   const [isEditing, setIsEditing] = useState(false);
   const [detailState, setDetailState] = useState<AcademicTermGroupDetailPageState>({
     status: 'loading',
   });
   const [saveState, setSaveState] = useState<AcademicTermGroupDetailSaveState>({ status: 'idle' });
-  const form = useForm<AcademicTermGroupDetailFormValues>({
-    initialValues: initialAcademicTermGroupDetailFormValues,
+  const form = useForm<AcademicTermDetailFormValues>({
+    initialValues: initialAcademicTermDetailFormValues,
   });
 
   useEffect(() => {
@@ -191,7 +195,7 @@ export function AcademicTermGroupDetailPage() {
   }, [saveState.status]);
 
   useEffect(() => {
-    if (!hasValidTermGroupId) {
+    if (!hasValidTermId) {
       setDetailState({
         status: 'error',
         message: 'Term ID is missing or invalid.',
@@ -202,8 +206,8 @@ export function AcademicTermGroupDetailPage() {
     const abortController = new AbortController();
     setDetailState({ status: 'loading' });
 
-    getAcademicTermGroupById({
-      academicTermGroupId: parsedTermGroupId,
+    getAcademicTermById({
+      academicTermId: parsedTermId,
       signal: abortController.signal,
     })
       .then((response) => {
@@ -226,9 +230,9 @@ export function AcademicTermGroupDetailPage() {
     return () => {
       abortController.abort();
     };
-  }, [hasValidTermGroupId, parsedTermGroupId]);
+  }, [hasValidTermId, parsedTermId]);
 
-  async function handleSaveEdit(detail: AcademicTermGroupResponse) {
+  async function handleSaveEdit(detail: AcademicTermResponse) {
     if (saveState.status === 'saving') {
       return;
     }
@@ -243,8 +247,8 @@ export function AcademicTermGroupDetailPage() {
       }
 
       setSaveState({ status: 'saving' });
-      const updatedAcademicTermGroup = await patchAcademicTermGroup({
-        academicTermGroupId: detail.termGroupId,
+      const updatedAcademicTermGroup = await patchAcademicTerm({
+        academicTermId: detail.termId,
         request,
       });
       form.setValues(mapAcademicTermGroupDetailToFormValues(updatedAcademicTermGroup));
@@ -279,7 +283,7 @@ export function AcademicTermGroupDetailPage() {
           >
             <Grid.Col span={12}>
               <Alert color="blue" title="Loading term">
-                Fetching term {termGroupId ?? 'unknown'}.
+                Fetching term {termId ?? 'unknown'}.
               </Alert>
             </Grid.Col>
           </RecordPageSection>
@@ -349,7 +353,7 @@ export function AcademicTermGroupDetailPage() {
 
   const detail = detailState.academicTermGroup;
   const academicYearPath = `/academics/academic-years/${detail.academicYearId}`;
-  const sortedTerms = [...detail.academicTerms].sort(compareAcademicTerms);
+  const sortedTerms = [...detail.subTerms].sort(compareAcademicTerms);
   const saveInProgress = saveState.status === 'saving';
   const saveError = saveState.status === 'error' ? saveState.message : null;
   const saveSucceeded = saveState.status === 'success';
@@ -436,7 +440,7 @@ export function AcademicTermGroupDetailPage() {
         >
           <ReadOnlyField
             label="Term ID"
-            value={displayValue(detail.termGroupId)}
+            value={displayValue(detail.termId)}
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField
@@ -545,22 +549,26 @@ export function AcademicTermGroupDetailPage() {
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
-                      {sortedTerms.map((term) => (
-                        <Table.Tr key={term.termId}>
-                          <Table.Td>{term.sortOrder}</Table.Td>
+                      {sortedTerms.map((subTerm) => (
+                        <Table.Tr key={subTerm.subTermId}>
+                          <Table.Td>{subTerm.sortOrder}</Table.Td>
                           <Table.Td>
                             <Link
-                              to={`/academics/academic-term/${term.termId}`}
+                              to={`/academics/academic-sub-term/${subTerm.subTermId}`}
                               state={{ academicYearId: detail.academicYearId }}
                             >
-                              {term.code}
+                              {subTerm.code}
                             </Link>
                           </Table.Td>
-                          <Table.Td>{term.name}</Table.Td>
-                          <Table.Td>{displayDate(term.startDate)}</Table.Td>
-                          <Table.Td>{displayDate(term.endDate)}</Table.Td>
-                          <Table.Td>{displayValue(term.termStatusName ?? term.termStatusCode)}</Table.Td>
-                          <Table.Td>{displayValue(term.active)}</Table.Td>
+                          <Table.Td>{subTerm.name}</Table.Td>
+                          <Table.Td>{displayDate(subTerm.startDate)}</Table.Td>
+                          <Table.Td>{displayDate(subTerm.endDate)}</Table.Td>
+                          <Table.Td>
+                            {displayValue(
+                              subTerm.subTermStatusName ?? subTerm.subTermStatusCode
+                            )}
+                          </Table.Td>
+                          <Table.Td>{displayValue(subTerm.active)}</Table.Td>
                         </Table.Tr>
                       ))}
                     </Table.Tbody>

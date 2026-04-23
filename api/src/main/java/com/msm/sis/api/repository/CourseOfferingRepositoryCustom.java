@@ -12,7 +12,7 @@ public interface CourseOfferingRepositoryCustom {
 
     Page<CourseOffering> searchCourseOfferings(
             String academicYearCode,
-            String termCode,
+            String subTermCode,
             String departmentCode,
             String subjectCode,
             String courseNumber,
@@ -23,7 +23,7 @@ public interface CourseOfferingRepositoryCustom {
             BigDecimal maxCredits,
             Boolean variableCredit,
             List<String> offeringStatusCodes,
-            List<String> termStatusCodes,
+            List<String> subTermStatusCodes,
             boolean includeInactive,
             Boolean isPublished,
             Pageable pageable
@@ -32,6 +32,6 @@ public interface CourseOfferingRepositoryCustom {
     Optional<CourseOffering> findPublicVisibleById(
             Long courseOfferingId,
             List<String> offeringStatusCodes,
-            List<String> termStatusCodes
+            List<String> subTermStatusCodes
     );
 }
