@@ -21,18 +21,18 @@ export function AcademicYearCatalogSummarySection({
   return (
     <RecordPageSection
       title="Catalog Summary"
-      description="Year-level catalog totals derived from this academic year’s term groups and their terms."
+      description="Year-level catalog totals derived from this academic year’s terms and their sub terms."
       action={action}
     >
       {summary ? (
         <>
           <ReadOnlyField
-            label="Term groups"
+            label="Terms"
             value={displayValue(summary.termGroupCount)}
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField
-            label="Terms"
+            label="Sub terms"
             value={displayValue(summary.termCount)}
             span={{ base: 12, md: 4 }}
           />
@@ -44,15 +44,15 @@ export function AcademicYearCatalogSummarySection({
           <Grid.Col span={12}>
             {summary.termGroups.length === 0 ? (
               <Alert color="gray" title="No catalog summary yet">
-                This academic year does not have term groups with catalog activity yet.
+                This academic year does not have terms with catalog activity yet.
               </Alert>
             ) : (
               <Table.ScrollContainer minWidth={720}>
                 <Table striped highlightOnHover withTableBorder>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th>Term Group</Table.Th>
-                      <Table.Th>Terms</Table.Th>
+                      <Table.Th>Term</Table.Th>
+                      <Table.Th>Sub Terms</Table.Th>
                       <Table.Th>Course Offerings</Table.Th>
                     </Table.Tr>
                   </Table.Thead>

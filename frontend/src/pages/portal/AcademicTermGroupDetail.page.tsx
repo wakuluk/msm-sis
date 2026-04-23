@@ -194,7 +194,7 @@ export function AcademicTermGroupDetailPage() {
     if (!hasValidTermGroupId) {
       setDetailState({
         status: 'error',
-        message: 'Academic term group ID is missing or invalid.',
+        message: 'Term ID is missing or invalid.',
       });
       return;
     }
@@ -219,7 +219,7 @@ export function AcademicTermGroupDetailPage() {
 
         setDetailState({
           status: 'error',
-          message: getErrorMessage(error, 'Failed to load academic term group detail.'),
+          message: getErrorMessage(error, 'Failed to load term detail.'),
         });
       });
 
@@ -254,7 +254,7 @@ export function AcademicTermGroupDetailPage() {
     } catch (error) {
       setSaveState({
         status: 'error',
-        message: getErrorMessage(error, 'Failed to save academic term group detail.'),
+        message: getErrorMessage(error, 'Failed to save term detail.'),
       });
     }
   }
@@ -264,8 +264,8 @@ export function AcademicTermGroupDetailPage() {
       <RecordPageShell
         size="xl"
         eyebrow="Admin Workflow"
-        title="Academic Term Group Detail"
-        description="Loading academic term group detail."
+        title="Term Detail"
+        description="Loading term detail."
         badge={
           <Badge variant="light" size="lg" color="gray">
             Admin only
@@ -274,12 +274,12 @@ export function AcademicTermGroupDetailPage() {
       >
         <Stack gap={0}>
           <RecordPageSection
-            title="Academic Term Group"
-            description="The academic term group detail is loading."
+            title="Term"
+            description="The term detail is loading."
           >
             <Grid.Col span={12}>
-              <Alert color="blue" title="Loading academic term group">
-                Fetching academic term group {termGroupId ?? 'unknown'}.
+              <Alert color="blue" title="Loading term">
+                Fetching term {termGroupId ?? 'unknown'}.
               </Alert>
             </Grid.Col>
           </RecordPageSection>
@@ -308,8 +308,8 @@ export function AcademicTermGroupDetailPage() {
       <RecordPageShell
         size="xl"
         eyebrow="Admin Workflow"
-        title="Academic Term Group Detail"
-        description="Academic term group detail could not be loaded."
+        title="Term Detail"
+        description="Term detail could not be loaded."
         badge={
           <Badge variant="light" size="lg" color="gray">
             Admin only
@@ -318,11 +318,11 @@ export function AcademicTermGroupDetailPage() {
       >
         <Stack gap={0}>
           <RecordPageSection
-            title="Academic Term Group"
-            description="The detail page could not load this academic term group."
+            title="Term"
+            description="The detail page could not load this term."
           >
             <Grid.Col span={12}>
-              <Alert color="red" title="Academic term group detail unavailable">
+              <Alert color="red" title="Term detail unavailable">
                 {detailState.message}
               </Alert>
             </Grid.Col>
@@ -360,11 +360,11 @@ export function AcademicTermGroupDetailPage() {
       size="xl"
       eyebrow="Admin Workflow"
       title={detail.name}
-      description="Review the academic term group configuration and the academic terms assigned to it."
+      description="Review the term configuration and the sub terms assigned to it."
       badge={
         <Group gap="sm">
           <Badge variant="light" color="blue">
-            {sortedTerms.length} {sortedTerms.length === 1 ? 'term' : 'terms'}
+            {sortedTerms.length} {sortedTerms.length === 1 ? 'sub term' : 'sub terms'}
           </Badge>
         </Group>
       }
@@ -376,7 +376,7 @@ export function AcademicTermGroupDetailPage() {
             description="Resolve the current validation or API error before trying again."
           >
             <Grid.Col span={12}>
-              <Alert color="red" title="Unable to save academic term group changes">
+              <Alert color="red" title="Unable to save term changes">
                 {saveError}
               </Alert>
             </Grid.Col>
@@ -384,8 +384,8 @@ export function AcademicTermGroupDetailPage() {
         ) : null}
 
         <RecordPageSection
-          title="Academic Term Group"
-          description="These fields reflect the current academic term group detail."
+          title="Term"
+          description="These fields reflect the current term detail."
           action={
             isEditing ? (
               <Group gap="sm" wrap="wrap" justify="flex-end">
@@ -435,7 +435,7 @@ export function AcademicTermGroupDetailPage() {
           }
         >
           <ReadOnlyField
-            label="Academic term group ID"
+            label="Term ID"
             value={displayValue(detail.termGroupId)}
             span={{ base: 12, md: 4 }}
           />
@@ -445,7 +445,7 @@ export function AcademicTermGroupDetailPage() {
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField
-            label="Assigned terms"
+            label="Assigned sub terms"
             value={displayValue(sortedTerms.length)}
             span={{ base: 12, md: 4 }}
           />
@@ -521,14 +521,14 @@ export function AcademicTermGroupDetailPage() {
         </RecordPageSection>
 
         <RecordPageSection
-          title="Academic Terms"
-          description="These academic terms are currently assigned to this group."
+          title="Sub Terms"
+          description="These sub terms are currently assigned to this term."
         >
           <Grid.Col span={12}>
             <Stack gap="md">
               {sortedTerms.length === 0 ? (
-                <Alert color="gray" title="No terms in this group">
-                  This academic term group does not have any academic terms assigned yet.
+                <Alert color="gray" title="No sub terms in this term">
+                  This term does not have any sub terms assigned yet.
                 </Alert>
               ) : (
                 <Table.ScrollContainer minWidth={760}>

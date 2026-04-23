@@ -37,7 +37,7 @@ export async function getAcademicYearTermGroups({
   return apiRequest({
     path: `/api/academic-year/${academicYearId}/term-groups`,
     parser: AcademicTermGroupResponseSchema.array(),
-    fallbackMessage: 'Failed to load academic year term groups.',
+    fallbackMessage: 'Failed to load academic year terms.',
     signal,
   });
 }
@@ -49,7 +49,7 @@ export async function getAcademicTermGroupById({
   return apiRequest({
     path: `/api/academic-term-group/${academicTermGroupId}`,
     parser: AcademicTermGroupResponseSchema,
-    fallbackMessage: 'Failed to load academic term group.',
+    fallbackMessage: 'Failed to load term.',
     signal,
   });
 }
@@ -64,7 +64,7 @@ export async function patchAcademicTermGroup({
     method: 'PATCH',
     body: AcademicTermGroupPatchRequestSchema.parse(request),
     parser: AcademicTermGroupResponseSchema,
-    fallbackMessage: 'Failed to save academic term group detail.',
+    fallbackMessage: 'Failed to save term detail.',
     signal,
   });
 }
@@ -79,7 +79,7 @@ export async function postAcademicYearTermGroup({
     method: 'POST',
     body: AcademicTermGroupCreateRequestSchema.parse(request),
     parser: AcademicTermGroupResponseSchema,
-    fallbackMessage: 'Failed to create academic term group.',
+    fallbackMessage: 'Failed to create term.',
     signal,
   });
 }

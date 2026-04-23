@@ -184,7 +184,7 @@ export async function createAcademicYearWithTermGroups(
 
   if (createdTermIdByCode.size === 0) {
     throw new Error(
-      'Academic year was created, but the response did not include academic terms needed to create term groups.'
+      'Academic year was created, but the response did not include sub terms needed to create terms.'
     );
   }
 
@@ -195,7 +195,7 @@ export async function createAcademicYearWithTermGroups(
 
         if (matchedTermId === undefined) {
           throw new Error(
-            `Created academic term "${termCode}" could not be matched while creating term group "${termGroup.code}".`
+            `Created sub term "${termCode}" could not be matched while creating term "${termGroup.code}".`
           );
         }
 
@@ -217,10 +217,10 @@ export async function createAcademicYearWithTermGroups(
     const message =
       error instanceof Error
         ? error.message
-        : 'One or more academic term groups could not be created.';
+        : 'One or more terms could not be created.';
 
     throw new AcademicYearCreateWithTermGroupsError(
-      `Academic year was created, but term group setup did not finish. ${message}`,
+      `Academic year was created, but term setup did not finish. ${message}`,
       createdAcademicYear
     );
   }

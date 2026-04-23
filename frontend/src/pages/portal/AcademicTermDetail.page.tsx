@@ -292,7 +292,7 @@ export function AcademicTermDetailPage() {
         }
 
         setAcademicTermStatuses([]);
-        setAcademicTermStatusesError(getErrorMessage(error, 'Failed to load academic term statuses.'));
+        setAcademicTermStatusesError(getErrorMessage(error, 'Failed to load sub term statuses.'));
         setAcademicTermStatusesLoading(false);
       });
 
@@ -335,7 +335,7 @@ export function AcademicTermDetailPage() {
     if (!hasValidAcademicTermId) {
       setDetailState({
         status: 'error',
-        message: 'Academic term ID is missing or invalid.',
+        message: 'Sub term ID is missing or invalid.',
       });
       return;
     }
@@ -361,7 +361,7 @@ export function AcademicTermDetailPage() {
 
         setDetailState({
           status: 'error',
-          message: getErrorMessage(error, 'Failed to load academic term detail.'),
+          message: getErrorMessage(error, 'Failed to load sub term detail.'),
         });
       });
 
@@ -374,7 +374,7 @@ export function AcademicTermDetailPage() {
     if (!hasValidAcademicTermId) {
       setCourseOfferingsState({
         status: 'error',
-        message: 'Academic term ID is missing or invalid.',
+        message: 'Sub term ID is missing or invalid.',
       });
       return;
     }
@@ -398,7 +398,7 @@ export function AcademicTermDetailPage() {
 
         setCourseOfferingsState({
           status: 'error',
-          message: getErrorMessage(error, 'Failed to load course offerings for this term.'),
+          message: getErrorMessage(error, 'Failed to load course offerings for this sub term.'),
         });
       });
 
@@ -429,7 +429,7 @@ export function AcademicTermDetailPage() {
     } catch (error) {
       setStatusShiftState({
         status: 'error',
-        message: getErrorMessage(error, 'Failed to shift academic term status.'),
+        message: getErrorMessage(error, 'Failed to shift sub term status.'),
       });
     }
   }
@@ -472,7 +472,7 @@ export function AcademicTermDetailPage() {
     } catch (error) {
       setSaveState({
         status: 'error',
-        message: getErrorMessage(error, 'Failed to save academic term detail.'),
+        message: getErrorMessage(error, 'Failed to save sub term detail.'),
       });
     }
   }
@@ -493,8 +493,8 @@ export function AcademicTermDetailPage() {
       <RecordPageShell
         size="xl"
         eyebrow="Admin Workflow"
-        title="Academic Term Detail"
-        description="Loading academic term detail."
+        title="Sub Term Detail"
+        description="Loading sub term detail."
         badge={
           <Badge variant="light" size="lg" color="gray">
             Admin only
@@ -503,12 +503,12 @@ export function AcademicTermDetailPage() {
       >
         <Stack gap={0}>
           <RecordPageSection
-            title="Academic Term"
-            description="The academic term detail is loading."
+            title="Sub Term"
+            description="The sub term detail is loading."
           >
             <Grid.Col span={12}>
-              <Alert color="blue" title="Loading academic term">
-                Fetching academic term {academicTermId ?? 'unknown'}.
+              <Alert color="blue" title="Loading sub term">
+                Fetching sub term {academicTermId ?? 'unknown'}.
               </Alert>
             </Grid.Col>
           </RecordPageSection>
@@ -537,8 +537,8 @@ export function AcademicTermDetailPage() {
       <RecordPageShell
         size="xl"
         eyebrow="Admin Workflow"
-        title="Academic Term Detail"
-        description="Academic term detail could not be loaded."
+        title="Sub Term Detail"
+        description="Sub term detail could not be loaded."
         badge={
           <Badge variant="light" size="lg" color="gray">
             Admin only
@@ -547,11 +547,11 @@ export function AcademicTermDetailPage() {
       >
         <Stack gap={0}>
           <RecordPageSection
-            title="Academic Term"
-            description="The detail page could not load this academic term."
+            title="Sub Term"
+            description="The detail page could not load this sub term."
           >
             <Grid.Col span={12}>
-              <Alert color="red" title="Academic term detail unavailable">
+              <Alert color="red" title="Sub term detail unavailable">
                 {detailState.message}
               </Alert>
             </Grid.Col>
@@ -592,7 +592,7 @@ export function AcademicTermDetailPage() {
       size="xl"
       eyebrow="Admin Workflow"
       title={detail.name}
-      description="Review the academic term configuration, workflow status, and parent academic year."
+      description="Review the sub term configuration, workflow status, and parent academic year."
       badge={
         <Group gap="sm">
           <Badge variant="light" color={detail.active ? 'green' : 'gray'}>
@@ -611,7 +611,7 @@ export function AcademicTermDetailPage() {
             description="Resolve the current validation or API error before trying again."
           >
             <Grid.Col span={12}>
-              <Alert color="red" title="Unable to save academic term changes">
+              <Alert color="red" title="Unable to save sub term changes">
                 {saveError}
               </Alert>
             </Grid.Col>
@@ -619,8 +619,8 @@ export function AcademicTermDetailPage() {
         ) : null}
 
         <WorkflowStatusStepperSection
-          title="Academic Term Status"
-          description="This tracker shows the configured academic term workflow steps."
+          title="Sub Term Status"
+          description="This tracker shows the configured sub term workflow steps."
           statuses={academicTermStatuses}
           currentStatusCode={detail.termStatusCode}
           isLoading={academicTermStatusesLoading}
@@ -630,11 +630,11 @@ export function AcademicTermDetailPage() {
           isShifting={statusShiftInProgress}
           disableShiftControls={isEditing}
           isConditionalStatus={isConditionalAcademicTermStatus}
-          emptyTitle="No academic term statuses configured"
-          emptyMessage="Add academic term statuses before using the status tracker."
-          invisibleTitle="No visible academic term statuses"
-          invisibleMessage="No academic term statuses are available for this record."
-          missingCurrentStatusMessage="Current academic term status is not available on the detail response."
+          emptyTitle="No sub term statuses configured"
+          emptyMessage="Add sub term statuses before using the status tracker."
+          invisibleTitle="No visible sub term statuses"
+          invisibleMessage="No sub term statuses are available for this record."
+          missingCurrentStatusMessage="Current sub term status is not available on the detail response."
           onStepDown={() => {
             void handleShiftStatus('DOWN');
           }}
@@ -644,8 +644,8 @@ export function AcademicTermDetailPage() {
         />
 
         <RecordPageSection
-          title="Academic Term"
-          description="These fields reflect the current academic term detail."
+          title="Sub Term"
+          description="These fields reflect the current sub term detail."
           action={
             isEditing ? (
               <Group gap="sm" wrap="wrap" justify="flex-end">
@@ -696,7 +696,7 @@ export function AcademicTermDetailPage() {
           }
         >
           <ReadOnlyField
-            label="Academic term ID"
+            label="Sub term ID"
             value={displayValue(detail.termId)}
             span={{ base: 12, md: 4 }}
           />
@@ -811,21 +811,21 @@ export function AcademicTermDetailPage() {
 
         <RecordPageSection
           title="Course Offerings"
-          description="These course offerings are scheduled within this academic term."
+          description="These course offerings are scheduled within this sub term."
         >
           <Grid.Col span={12}>
             <Stack gap="md">
               {courseOfferingsState.status === 'loading' ? (
                 <Text size="sm" c="dimmed">
-                  Loading course offerings for this academic term.
+                  Loading course offerings for this sub term.
                 </Text>
               ) : courseOfferingsState.status === 'error' ? (
                 <Alert color="red" title="Unable to load course offerings">
                   {courseOfferingsState.message}
                 </Alert>
               ) : courseOfferingsState.courseOfferings.length === 0 ? (
-                <Alert color="gray" title="No course offerings on this term">
-                  No course offerings are currently associated with this academic term.
+                <Alert color="gray" title="No course offerings on this sub term">
+                  No course offerings are currently associated with this sub term.
                 </Alert>
               ) : (
                 <SearchResultsTable

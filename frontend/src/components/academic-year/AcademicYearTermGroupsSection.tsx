@@ -18,24 +18,24 @@ export function AcademicYearTermGroupsSection({
   error = null,
 }: AcademicYearTermGroupsSectionProps) {
   return (
-    <RecordPageSection title="Academic Term Groups">
+    <RecordPageSection title="Terms">
       <Grid.Col span={12}>
         <Stack gap="md">
           {error ? (
-            <Alert color="red" title="Unable to load academic term groups">
+            <Alert color="red" title="Unable to load terms">
               {error}
             </Alert>
           ) : null}
 
           {!error && isLoading ? (
-            <Alert color="blue" title="Loading academic term groups">
-              Fetching academic term groups and their terms.
+            <Alert color="blue" title="Loading terms">
+              Fetching terms and their sub terms.
             </Alert>
           ) : null}
 
           {!error && !isLoading && termGroups.length === 0 ? (
-            <Alert color="gray" title="No academic term groups">
-              This academic year does not have any academic term groups yet.
+            <Alert color="gray" title="No terms">
+              This academic year does not have any terms yet.
             </Alert>
           ) : null}
 
@@ -56,8 +56,8 @@ export function AcademicYearTermGroupsSection({
                       </Stack>
                       <BadgeCount
                         count={termGroup.academicTerms.length}
-                        singular="term"
-                        plural="terms"
+                        singular="sub term"
+                        plural="sub terms"
                       />
                     </Group>
 
@@ -77,8 +77,8 @@ export function AcademicYearTermGroupsSection({
                     </Grid>
 
                     {termGroup.academicTerms.length === 0 ? (
-                      <Alert color="gray" title="No terms in this group">
-                        This term group has not been assigned any academic terms yet.
+                      <Alert color="gray" title="No sub terms in this term">
+                        This term does not have any sub terms assigned yet.
                       </Alert>
                     ) : (
                       <Table.ScrollContainer minWidth={760}>

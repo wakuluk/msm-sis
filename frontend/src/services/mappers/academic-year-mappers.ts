@@ -161,15 +161,15 @@ function validateAcademicYearTermCollection(
 
   terms.forEach((term, index) => {
     if (term.startDate < academicYearStartDate || term.endDate > academicYearEndDate) {
-      throw new Error(`Term ${index + 1} dates must fall within the academic year date range.`);
+      throw new Error(`Sub term ${index + 1} dates must fall within the academic year date range.`);
     }
 
     if (!termCodes.add(term.code)) {
-      throw new Error('Academic term code must be unique within an academic year.');
+      throw new Error('Sub term code must be unique within an academic year.');
     }
 
     if (!sortOrders.add(term.sortOrder)) {
-      throw new Error('Academic term sort order must be unique within an academic year.');
+      throw new Error('Sub term sort order must be unique within an academic year.');
     }
   });
 }
@@ -178,7 +178,7 @@ function normalizeAcademicTermGroupFormValue(
   termGroup: AcademicTermGroupFormValues,
   index: number
 ): NormalizedAcademicTermGroup {
-  const fieldLabelPrefix = `Term group ${index + 1}`;
+  const fieldLabelPrefix = `Term ${index + 1}`;
   const code = validateMaxLength(
     trimRequiredString(termGroup.code, `${fieldLabelPrefix} code`),
     20,
@@ -195,13 +195,13 @@ function normalizeAcademicTermGroupFormValue(
   validateDateRange(startDate, endDate, fieldLabelPrefix);
 
   const terms = termGroup.terms.map((term, termIndex) =>
-    normalizeAcademicYearTermFormValue(term, `${fieldLabelPrefix} term ${termIndex + 1}`)
+    normalizeAcademicYearTermFormValue(term, `${fieldLabelPrefix} sub term ${termIndex + 1}`)
   );
 
   terms.forEach((term, termIndex) => {
     if (term.startDate < startDate || term.endDate > endDate) {
       throw new Error(
-        `Term group ${index + 1} term ${termIndex + 1} dates must fall within the term group date range.`
+        `Term ${index + 1} sub term ${termIndex + 1} dates must fall within the term date range.`
       );
     }
   });
@@ -252,13 +252,11 @@ function validateAcademicYearTermGroupCollection(
       termGroup.startDate < academicYearStartDate ||
       termGroup.endDate > academicYearEndDate
     ) {
-      throw new Error(
-        `Term group ${index + 1} dates must fall within the academic year date range.`
-      );
+      throw new Error(`Term ${index + 1} dates must fall within the academic year date range.`);
     }
 
     if (!groupCodes.add(termGroup.code)) {
-      throw new Error('Academic term group code must be unique within an academic year.');
+      throw new Error('Term code must be unique within an academic year.');
     }
   });
 }
@@ -401,13 +399,13 @@ export function buildPostAcademicYearTermsRequest(
   values: AcademicYearTermFormValues[]
 ): AcademicYearCreateTermRequest[] {
   if (values.length === 0) {
-    throw new Error('Add at least one term before saving.');
+    throw new Error('Add at least one sub term before saving.');
   }
 
   const academicYearStartDate = trimRequiredIsoDate(detail.startDate, 'Academic year start date');
   const academicYearEndDate = trimRequiredIsoDate(detail.endDate, 'Academic year end date');
   const newTerms = values.map((term, index) =>
-    normalizeAcademicYearTermFormValue(term, `Term ${index + 1}`)
+    normalizeAcademicYearTermFormValue(term, `Sub term ${index + 1}`)
   );
   const existingTerms = getAcademicYearResponseTerms(detail);
   const existingTermCodes = new Set(
@@ -419,11 +417,11 @@ export function buildPostAcademicYearTermsRequest(
 
   newTerms.forEach((term) => {
     if (existingTermCodes.has(term.code)) {
-      throw new Error('Academic term code must be unique within an academic year.');
+      throw new Error('Sub term code must be unique within an academic year.');
     }
 
     if (existingSortOrders.has(term.sortOrder)) {
-      throw new Error('Academic term sort order must be unique within an academic year.');
+      throw new Error('Sub term sort order must be unique within an academic year.');
     }
   });
 

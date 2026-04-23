@@ -167,7 +167,7 @@ export function AcademicYearCreatePage() {
       size="xl"
       eyebrow="Admin Workflow"
       title="Create Academic Year"
-      description="Create an academic year and optionally define academic term groups in one pass. Terms on this page are created only inside term groups, and each new term still begins in Planned status."
+      description="Create an academic year and optionally define terms in one pass. Sub terms on this page are created only inside terms, and each new sub term still begins in Planned status."
       badge={
         <Badge variant="light" size="lg">
           Admin only
@@ -236,20 +236,19 @@ export function AcademicYearCreatePage() {
           </RecordPageSection>
 
           <RecordPageSection
-            title="Academic Term Groups"
-            description="Standalone term rows are not available on this page anymore. Add term groups here, then place each term inside its group before saving."
+            title="Terms"
+            description="Standalone sub term rows are not available on this page anymore. Add terms here, then place each sub term inside a term before saving."
             action={
               <Button type="button" variant="light" onClick={handleAddTermGroup}>
-                Add term group
+                Add term
               </Button>
             }
           >
             <Grid.Col span={12}>
               <Stack gap="md">
                 {form.values.termGroups.length === 0 ? (
-                  <Alert color="gray" title="No term groups added">
-                    This academic year will be created without term groups unless you add them
-                    here.
+                  <Alert color="gray" title="No terms added">
+                    This academic year will be created without terms unless you add them here.
                   </Alert>
                 ) : null}
 
@@ -257,7 +256,7 @@ export function AcademicYearCreatePage() {
                   <Paper key={`term-group-${groupIndex}`} withBorder p="md" radius="sm">
                     <Stack gap="md">
                       <Group justify="space-between" align="center" wrap="wrap">
-                        <Text fw={600}>Term Group {groupIndex + 1}</Text>
+                        <Text fw={600}>Term {groupIndex + 1}</Text>
                         <Button
                           type="button"
                           variant="subtle"
@@ -266,7 +265,7 @@ export function AcademicYearCreatePage() {
                             handleRemoveTermGroup(groupIndex);
                           }}
                         >
-                          Remove group
+                          Remove term
                         </Button>
                       </Group>
 
@@ -325,7 +324,7 @@ export function AcademicYearCreatePage() {
 
                       <Stack gap="sm">
                         <Group justify="space-between" align="center" wrap="wrap">
-                          <Text fw={500}>Terms in this group</Text>
+                          <Text fw={500}>Sub terms in this term</Text>
                           <Button
                             type="button"
                             variant="light"
@@ -334,13 +333,13 @@ export function AcademicYearCreatePage() {
                               handleAddGroupTerm(groupIndex);
                             }}
                           >
-                            Add term
+                            Add sub term
                           </Button>
                         </Group>
 
                         {termGroup.terms.length === 0 ? (
-                          <Alert color="gray" title="No terms in this group">
-                            This term group will be created without terms unless you add them here.
+                          <Alert color="gray" title="No sub terms in this term">
+                            This term will be created without sub terms unless you add them here.
                           </Alert>
                         ) : null}
 
@@ -354,7 +353,7 @@ export function AcademicYearCreatePage() {
                           >
                             <Stack gap="md">
                               <Group justify="space-between" align="center" wrap="wrap">
-                                <Text fw={500}>Term {termIndex + 1}</Text>
+                                <Text fw={500}>Sub term {termIndex + 1}</Text>
                                 <Button
                                   type="button"
                                   variant="subtle"
@@ -364,7 +363,7 @@ export function AcademicYearCreatePage() {
                                     handleRemoveGroupTerm(groupIndex, termIndex);
                                   }}
                                 >
-                                  Remove term
+                                  Remove sub term
                                 </Button>
                               </Group>
 
@@ -446,7 +445,7 @@ export function AcademicYearCreatePage() {
             </Grid.Col>
           </RecordPageSection>
 
-          <RecordPageFooter description="New academic years start inactive and unpublished. Use the academic year detail page after save to review the created year, the generated terms, and any term-group follow-up work.">
+          <RecordPageFooter description="New academic years start inactive and unpublished. Use the academic year detail page after save to review the created year, the generated terms, the generated sub terms, and any follow-up work.">
             <Button
               type="button"
               onClick={handleBack}

@@ -83,20 +83,20 @@ function validateDateRange(startDate: string, endDate: string, fieldLabel: strin
 
 function normalizeAcademicTermDetailFormValues(values: AcademicTermDetailFormValues) {
   const code = validateMaxLength(
-    trimRequiredString(values.code, 'Academic term code'),
+    trimRequiredString(values.code, 'Sub term code'),
     20,
-    'Academic term code'
+    'Sub term code'
   );
   const name = validateMaxLength(
-    trimRequiredString(values.name, 'Academic term name'),
+    trimRequiredString(values.name, 'Sub term name'),
     100,
-    'Academic term name'
+    'Sub term name'
   );
-  const startDate = trimRequiredIsoDate(values.startDate, 'Academic term start date');
-  const endDate = trimRequiredIsoDate(values.endDate, 'Academic term end date');
-  const sortOrder = parseRequiredWholeNumber(values.sortOrder, 'Academic term sort order');
+  const startDate = trimRequiredIsoDate(values.startDate, 'Sub term start date');
+  const endDate = trimRequiredIsoDate(values.endDate, 'Sub term end date');
+  const sortOrder = parseRequiredWholeNumber(values.sortOrder, 'Sub term sort order');
 
-  validateDateRange(startDate, endDate, 'Academic term');
+  validateDateRange(startDate, endDate, 'Sub term');
 
   return {
     code,

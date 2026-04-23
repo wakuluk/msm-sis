@@ -69,19 +69,19 @@ function validateDateRange(startDate: string, endDate: string, fieldLabel: strin
 
 function normalizeAcademicTermGroupDetailFormValues(values: AcademicTermGroupDetailFormValues) {
   const code = validateMaxLength(
-    trimRequiredString(values.code, 'Academic term group code'),
+    trimRequiredString(values.code, 'Term code'),
     20,
-    'Academic term group code'
+    'Term code'
   );
   const name = validateMaxLength(
-    trimRequiredString(values.name, 'Academic term group name'),
+    trimRequiredString(values.name, 'Term name'),
     100,
-    'Academic term group name'
+    'Term name'
   );
-  const startDate = trimRequiredIsoDate(values.startDate, 'Academic term group start date');
-  const endDate = trimRequiredIsoDate(values.endDate, 'Academic term group end date');
+  const startDate = trimRequiredIsoDate(values.startDate, 'Term start date');
+  const endDate = trimRequiredIsoDate(values.endDate, 'Term end date');
 
-  validateDateRange(startDate, endDate, 'Academic term group');
+  validateDateRange(startDate, endDate, 'Term');
 
   return {
     code,

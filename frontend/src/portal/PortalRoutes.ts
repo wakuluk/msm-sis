@@ -208,7 +208,7 @@ export const portalRoutes: PortalRouteNode[] = [
       {
         kind: 'item',
         key: 'academic-term-detail',
-        label: 'Academic Term Detail',
+        label: 'Sub Term Detail',
         path: '/academics/academic-term/:academicTermId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
@@ -216,7 +216,7 @@ export const portalRoutes: PortalRouteNode[] = [
       {
         kind: 'item',
         key: 'academic-term-group-detail',
-        label: 'Academic Term Group Detail',
+        label: 'Term Detail',
         path: '/academics/academic-term-group/:termGroupId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,

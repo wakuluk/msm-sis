@@ -52,7 +52,7 @@ export function useAcademicYearTermGroups({
 
         setState({
           status: 'error',
-          message: getErrorMessage(error, 'Failed to load academic year term groups.'),
+          message: getErrorMessage(error, 'Failed to load academic year terms.'),
         });
       });
 

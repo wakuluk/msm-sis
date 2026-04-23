@@ -220,7 +220,7 @@ export function AddAcademicYearOfferingModal({
     if (termIds.length === 0) {
       setCreateOfferingState({
         status: 'error',
-        message: 'Select at least one term before creating the offering.',
+        message: 'Select at least one sub term before creating the offering.',
       });
       return;
     }
@@ -258,7 +258,7 @@ export function AddAcademicYearOfferingModal({
     >
       <Stack gap="md">
         <Alert color="blue" title="Add course offering">
-          Select a course and the terms it should appear in for this academic year.
+          Select a course and the sub terms it should appear in for this academic year.
         </Alert>
 
         {coursePickerState.status === 'loading' ? (
@@ -325,8 +325,8 @@ export function AddAcademicYearOfferingModal({
         />
 
         <MultiSelect
-          label="Terms"
-          placeholder="Select one or more terms"
+          label="Sub Terms"
+          placeholder="Select one or more sub terms"
           data={termOptions}
           value={formValues.termIds}
           onChange={(value) => {

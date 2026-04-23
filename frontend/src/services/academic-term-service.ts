@@ -51,7 +51,7 @@ export async function getAcademicTermById({
   return apiRequest({
     path: `/api/academic-term/${academicTermId}`,
     parser: AcademicTermResponseSchema,
-    fallbackMessage: 'Failed to load academic term.',
+    fallbackMessage: 'Failed to load sub term.',
     signal,
   });
 }
@@ -70,7 +70,7 @@ export async function getAcademicTermCourseOfferings({
   return apiRequest({
     path: `/api/academic-term/${academicTermId}/course-offerings?${queryParams.toString()}`,
     parser: CourseOfferingSearchResultsListSchema,
-    fallbackMessage: 'Failed to load academic term course offerings.',
+    fallbackMessage: 'Failed to load sub term course offerings.',
     signal,
   });
 }
@@ -81,7 +81,7 @@ export async function getAcademicTermStatuses({
   return apiRequest({
     path: '/api/academic-term/statuses',
     parser: AcademicTermStatusesResponseSchema,
-    fallbackMessage: 'Failed to load academic term statuses.',
+    fallbackMessage: 'Failed to load sub term statuses.',
     signal,
   });
 }
@@ -96,7 +96,7 @@ export async function shiftAcademicTermStatus({
     method: 'POST',
     body: ShiftAcademicTermStatusRequestSchema.parse({ direction }),
     parser: AcademicTermResponseSchema,
-    fallbackMessage: 'Failed to shift academic term status.',
+    fallbackMessage: 'Failed to shift sub term status.',
     signal,
   });
 }
@@ -111,7 +111,7 @@ export async function patchAcademicTerm({
     method: 'PATCH',
     body: AcademicTermPatchRequestSchema.parse(request),
     parser: AcademicTermResponseSchema,
-    fallbackMessage: 'Failed to save academic term detail.',
+    fallbackMessage: 'Failed to save sub term detail.',
     signal,
   });
 }
