@@ -10,14 +10,14 @@ export const courseOfferingSearchSizeOptions = [10, 25, 50, 100] as const;
 export type CourseOfferingSearchSize = (typeof courseOfferingSearchSizeOptions)[number];
 
 export const defaultCourseOfferingSearchSize: CourseOfferingSearchSize = 25;
-export const defaultCourseOfferingSortBy: CourseOfferingSearchSortBy = 'termCode';
+export const defaultCourseOfferingSortBy: CourseOfferingSearchSortBy = 'subTermCode';
 export const defaultCourseOfferingSortDirection: CourseOfferingSortDirection = 'asc';
 
 export const courseOfferingSortByOptions: ReadonlyArray<{
   value: CourseOfferingSearchSortBy;
   label: string;
 }> = [
-  { value: 'termCode', label: 'Term' },
+  { value: 'subTermCode', label: 'Term' },
   { value: 'subjectCode', label: 'Subject' },
   { value: 'courseNumber', label: 'Course number' },
   { value: 'courseCode', label: 'Course code' },

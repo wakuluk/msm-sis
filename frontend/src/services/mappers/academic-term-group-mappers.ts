@@ -1,8 +1,8 @@
 import {
-  AcademicTermGroupPatchRequestSchema,
-  type AcademicTermGroupDetailFormValues,
-  type AcademicTermGroupPatchRequest,
-  type AcademicTermGroupResponse,
+  AcademicTermPatchRequestSchema,
+  type AcademicTermDetailFormValues,
+  type AcademicTermPatchRequest,
+  type AcademicTermResponse,
 } from '../schemas/academic-years-schemas';
 
 function toFormString(value: number | string | null | undefined): string {
@@ -67,21 +67,21 @@ function validateDateRange(startDate: string, endDate: string, fieldLabel: strin
   }
 }
 
-function normalizeAcademicTermGroupDetailFormValues(values: AcademicTermGroupDetailFormValues) {
+function normalizeAcademicTermGroupDetailFormValues(values: AcademicTermDetailFormValues) {
   const code = validateMaxLength(
-    trimRequiredString(values.code, 'Academic term group code'),
+    trimRequiredString(values.code, 'Term code'),
     20,
-    'Academic term group code'
+    'Term code'
   );
   const name = validateMaxLength(
-    trimRequiredString(values.name, 'Academic term group name'),
+    trimRequiredString(values.name, 'Term name'),
     100,
-    'Academic term group name'
+    'Term name'
   );
-  const startDate = trimRequiredIsoDate(values.startDate, 'Academic term group start date');
-  const endDate = trimRequiredIsoDate(values.endDate, 'Academic term group end date');
+  const startDate = trimRequiredIsoDate(values.startDate, 'Term start date');
+  const endDate = trimRequiredIsoDate(values.endDate, 'Term end date');
 
-  validateDateRange(startDate, endDate, 'Academic term group');
+  validateDateRange(startDate, endDate, 'Term');
 
   return {
     code,
@@ -92,8 +92,8 @@ function normalizeAcademicTermGroupDetailFormValues(values: AcademicTermGroupDet
 }
 
 export function mapAcademicTermGroupDetailToFormValues(
-  detail: AcademicTermGroupResponse
-): AcademicTermGroupDetailFormValues {
+  detail: AcademicTermResponse
+): AcademicTermDetailFormValues {
   return {
     code: toFormString(detail.code),
     name: toFormString(detail.name),
@@ -103,8 +103,8 @@ export function mapAcademicTermGroupDetailToFormValues(
 }
 
 export function hasAcademicTermGroupDetailChanges(
-  detail: AcademicTermGroupResponse,
-  values: AcademicTermGroupDetailFormValues
+  detail: AcademicTermResponse,
+  values: AcademicTermDetailFormValues
 ): boolean {
   const originalValues = mapAcademicTermGroupDetailToFormValues(detail);
 
@@ -133,14 +133,14 @@ export function hasAcademicTermGroupDetailChanges(
 }
 
 export function buildPatchAcademicTermGroupRequest(
-  detail: AcademicTermGroupResponse,
-  values: AcademicTermGroupDetailFormValues
-): AcademicTermGroupPatchRequest {
+  detail: AcademicTermResponse,
+  values: AcademicTermDetailFormValues
+): AcademicTermPatchRequest {
   const originalNormalized = normalizeAcademicTermGroupDetailFormValues(
     mapAcademicTermGroupDetailToFormValues(detail)
   );
   const currentNormalized = normalizeAcademicTermGroupDetailFormValues(values);
-  const request: AcademicTermGroupPatchRequest = {};
+  const request: AcademicTermPatchRequest = {};
 
   if (originalNormalized.code !== currentNormalized.code) {
     request.code = currentNormalized.code;
@@ -158,5 +158,5 @@ export function buildPatchAcademicTermGroupRequest(
     request.endDate = currentNormalized.endDate;
   }
 
-  return AcademicTermGroupPatchRequestSchema.parse(request);
+  return AcademicTermPatchRequestSchema.parse(request);
 }

@@ -8,8 +8,8 @@ import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import {
-  getAcademicTermGroupById,
-  patchAcademicTermGroup,
+  getAcademicTermById,
+  patchAcademicTerm,
 } from '@/services/academic-term-group-service';
 import {
   buildPatchAcademicTermGroupRequest,
@@ -17,9 +17,9 @@ import {
   mapAcademicTermGroupDetailToFormValues,
 } from '@/services/mappers/academic-term-group-mappers';
 import {
-  initialAcademicTermGroupDetailFormValues,
-  type AcademicTermGroupDetailFormValues,
-  type AcademicTermGroupResponse,
+  initialAcademicTermDetailFormValues,
+  type AcademicTermDetailFormValues,
+  type AcademicTermResponse,
 } from '@/services/schemas/academic-years-schemas';
 
 type AcademicTermGroupDetailLocationState = {
@@ -29,7 +29,7 @@ type AcademicTermGroupDetailLocationState = {
 type AcademicTermGroupDetailPageState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'success'; academicTermGroup: AcademicTermGroupResponse };
+  | { status: 'success'; academicTermGroup: AcademicTermResponse };
 
 type AcademicTermGroupDetailSaveState =
   | { status: 'idle' }
@@ -72,10 +72,14 @@ function getErrorMessage(error: unknown, fallbackMessage: string): string {
 }
 
 function compareAcademicTerms(
-  left: AcademicTermGroupResponse['academicTerms'][number],
-  right: AcademicTermGroupResponse['academicTerms'][number]
+  left: AcademicTermResponse['subTerms'][number],
+  right: AcademicTermResponse['subTerms'][number]
 ): number {
-  return left.sortOrder - right.sortOrder || left.code.localeCompare(right.code) || left.termId - right.termId;
+  return (
+    left.sortOrder - right.sortOrder ||
+    left.code.localeCompare(right.code) ||
+    left.subTermId - right.subTermId
+  );
 }
 
 function formatDateForFormValue(value: Date): string {
@@ -153,7 +157,7 @@ function ReadOnlyField({
 }
 
 export function AcademicTermGroupDetailPage() {
-  const { termGroupId } = useParams<{ termGroupId: string }>();
+  const { termId } = useParams<{ termId: string }>();
   const location = useLocation();
   const locationState = (location.state as AcademicTermGroupDetailLocationState | null) ?? null;
   const fallbackAcademicYearId =
@@ -165,15 +169,15 @@ export function AcademicTermGroupDetailPage() {
       ? `/academics/academic-years/${fallbackAcademicYearId}`
       : '/academics/academic-years/search',
   });
-  const parsedTermGroupId = Number(termGroupId);
-  const hasValidTermGroupId = Number.isInteger(parsedTermGroupId) && parsedTermGroupId > 0;
+  const parsedTermId = Number(termId);
+  const hasValidTermId = Number.isInteger(parsedTermId) && parsedTermId > 0;
   const [isEditing, setIsEditing] = useState(false);
   const [detailState, setDetailState] = useState<AcademicTermGroupDetailPageState>({
     status: 'loading',
   });
   const [saveState, setSaveState] = useState<AcademicTermGroupDetailSaveState>({ status: 'idle' });
-  const form = useForm<AcademicTermGroupDetailFormValues>({
-    initialValues: initialAcademicTermGroupDetailFormValues,
+  const form = useForm<AcademicTermDetailFormValues>({
+    initialValues: initialAcademicTermDetailFormValues,
   });
 
   useEffect(() => {
@@ -191,10 +195,10 @@ export function AcademicTermGroupDetailPage() {
   }, [saveState.status]);
 
   useEffect(() => {
-    if (!hasValidTermGroupId) {
+    if (!hasValidTermId) {
       setDetailState({
         status: 'error',
-        message: 'Academic term group ID is missing or invalid.',
+        message: 'Term ID is missing or invalid.',
       });
       return;
     }
@@ -202,8 +206,8 @@ export function AcademicTermGroupDetailPage() {
     const abortController = new AbortController();
     setDetailState({ status: 'loading' });
 
-    getAcademicTermGroupById({
-      academicTermGroupId: parsedTermGroupId,
+    getAcademicTermById({
+      academicTermId: parsedTermId,
       signal: abortController.signal,
     })
       .then((response) => {
@@ -219,16 +223,16 @@ export function AcademicTermGroupDetailPage() {
 
         setDetailState({
           status: 'error',
-          message: getErrorMessage(error, 'Failed to load academic term group detail.'),
+          message: getErrorMessage(error, 'Failed to load term detail.'),
         });
       });
 
     return () => {
       abortController.abort();
     };
-  }, [hasValidTermGroupId, parsedTermGroupId]);
+  }, [hasValidTermId, parsedTermId]);
 
-  async function handleSaveEdit(detail: AcademicTermGroupResponse) {
+  async function handleSaveEdit(detail: AcademicTermResponse) {
     if (saveState.status === 'saving') {
       return;
     }
@@ -243,8 +247,8 @@ export function AcademicTermGroupDetailPage() {
       }
 
       setSaveState({ status: 'saving' });
-      const updatedAcademicTermGroup = await patchAcademicTermGroup({
-        academicTermGroupId: detail.termGroupId,
+      const updatedAcademicTermGroup = await patchAcademicTerm({
+        academicTermId: detail.termId,
         request,
       });
       form.setValues(mapAcademicTermGroupDetailToFormValues(updatedAcademicTermGroup));
@@ -254,7 +258,7 @@ export function AcademicTermGroupDetailPage() {
     } catch (error) {
       setSaveState({
         status: 'error',
-        message: getErrorMessage(error, 'Failed to save academic term group detail.'),
+        message: getErrorMessage(error, 'Failed to save term detail.'),
       });
     }
   }
@@ -264,8 +268,8 @@ export function AcademicTermGroupDetailPage() {
       <RecordPageShell
         size="xl"
         eyebrow="Admin Workflow"
-        title="Academic Term Group Detail"
-        description="Loading academic term group detail."
+        title="Term Detail"
+        description="Loading term detail."
         badge={
           <Badge variant="light" size="lg" color="gray">
             Admin only
@@ -274,12 +278,12 @@ export function AcademicTermGroupDetailPage() {
       >
         <Stack gap={0}>
           <RecordPageSection
-            title="Academic Term Group"
-            description="The academic term group detail is loading."
+            title="Term"
+            description="The term detail is loading."
           >
             <Grid.Col span={12}>
-              <Alert color="blue" title="Loading academic term group">
-                Fetching academic term group {termGroupId ?? 'unknown'}.
+              <Alert color="blue" title="Loading term">
+                Fetching term {termId ?? 'unknown'}.
               </Alert>
             </Grid.Col>
           </RecordPageSection>
@@ -308,8 +312,8 @@ export function AcademicTermGroupDetailPage() {
       <RecordPageShell
         size="xl"
         eyebrow="Admin Workflow"
-        title="Academic Term Group Detail"
-        description="Academic term group detail could not be loaded."
+        title="Term Detail"
+        description="Term detail could not be loaded."
         badge={
           <Badge variant="light" size="lg" color="gray">
             Admin only
@@ -318,11 +322,11 @@ export function AcademicTermGroupDetailPage() {
       >
         <Stack gap={0}>
           <RecordPageSection
-            title="Academic Term Group"
-            description="The detail page could not load this academic term group."
+            title="Term"
+            description="The detail page could not load this term."
           >
             <Grid.Col span={12}>
-              <Alert color="red" title="Academic term group detail unavailable">
+              <Alert color="red" title="Term detail unavailable">
                 {detailState.message}
               </Alert>
             </Grid.Col>
@@ -349,7 +353,7 @@ export function AcademicTermGroupDetailPage() {
 
   const detail = detailState.academicTermGroup;
   const academicYearPath = `/academics/academic-years/${detail.academicYearId}`;
-  const sortedTerms = [...detail.academicTerms].sort(compareAcademicTerms);
+  const sortedTerms = [...detail.subTerms].sort(compareAcademicTerms);
   const saveInProgress = saveState.status === 'saving';
   const saveError = saveState.status === 'error' ? saveState.message : null;
   const saveSucceeded = saveState.status === 'success';
@@ -360,11 +364,11 @@ export function AcademicTermGroupDetailPage() {
       size="xl"
       eyebrow="Admin Workflow"
       title={detail.name}
-      description="Review the academic term group configuration and the academic terms assigned to it."
+      description="Review the term configuration and the sub terms assigned to it."
       badge={
         <Group gap="sm">
           <Badge variant="light" color="blue">
-            {sortedTerms.length} {sortedTerms.length === 1 ? 'term' : 'terms'}
+            {sortedTerms.length} {sortedTerms.length === 1 ? 'sub term' : 'sub terms'}
           </Badge>
         </Group>
       }
@@ -376,7 +380,7 @@ export function AcademicTermGroupDetailPage() {
             description="Resolve the current validation or API error before trying again."
           >
             <Grid.Col span={12}>
-              <Alert color="red" title="Unable to save academic term group changes">
+              <Alert color="red" title="Unable to save term changes">
                 {saveError}
               </Alert>
             </Grid.Col>
@@ -384,8 +388,8 @@ export function AcademicTermGroupDetailPage() {
         ) : null}
 
         <RecordPageSection
-          title="Academic Term Group"
-          description="These fields reflect the current academic term group detail."
+          title="Term"
+          description="These fields reflect the current term detail."
           action={
             isEditing ? (
               <Group gap="sm" wrap="wrap" justify="flex-end">
@@ -435,8 +439,8 @@ export function AcademicTermGroupDetailPage() {
           }
         >
           <ReadOnlyField
-            label="Academic term group ID"
-            value={displayValue(detail.termGroupId)}
+            label="Term ID"
+            value={displayValue(detail.termId)}
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField
@@ -445,7 +449,7 @@ export function AcademicTermGroupDetailPage() {
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField
-            label="Assigned terms"
+            label="Assigned sub terms"
             value={displayValue(sortedTerms.length)}
             span={{ base: 12, md: 4 }}
           />
@@ -521,14 +525,14 @@ export function AcademicTermGroupDetailPage() {
         </RecordPageSection>
 
         <RecordPageSection
-          title="Academic Terms"
-          description="These academic terms are currently assigned to this group."
+          title="Sub Terms"
+          description="These sub terms are currently assigned to this term."
         >
           <Grid.Col span={12}>
             <Stack gap="md">
               {sortedTerms.length === 0 ? (
-                <Alert color="gray" title="No terms in this group">
-                  This academic term group does not have any academic terms assigned yet.
+                <Alert color="gray" title="No sub terms in this term">
+                  This term does not have any sub terms assigned yet.
                 </Alert>
               ) : (
                 <Table.ScrollContainer minWidth={760}>
@@ -545,22 +549,26 @@ export function AcademicTermGroupDetailPage() {
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
-                      {sortedTerms.map((term) => (
-                        <Table.Tr key={term.termId}>
-                          <Table.Td>{term.sortOrder}</Table.Td>
+                      {sortedTerms.map((subTerm) => (
+                        <Table.Tr key={subTerm.subTermId}>
+                          <Table.Td>{subTerm.sortOrder}</Table.Td>
                           <Table.Td>
                             <Link
-                              to={`/academics/academic-term/${term.termId}`}
+                              to={`/academics/academic-sub-term/${subTerm.subTermId}`}
                               state={{ academicYearId: detail.academicYearId }}
                             >
-                              {term.code}
+                              {subTerm.code}
                             </Link>
                           </Table.Td>
-                          <Table.Td>{term.name}</Table.Td>
-                          <Table.Td>{displayDate(term.startDate)}</Table.Td>
-                          <Table.Td>{displayDate(term.endDate)}</Table.Td>
-                          <Table.Td>{displayValue(term.termStatusName ?? term.termStatusCode)}</Table.Td>
-                          <Table.Td>{displayValue(term.active)}</Table.Td>
+                          <Table.Td>{subTerm.name}</Table.Td>
+                          <Table.Td>{displayDate(subTerm.startDate)}</Table.Td>
+                          <Table.Td>{displayDate(subTerm.endDate)}</Table.Td>
+                          <Table.Td>
+                            {displayValue(
+                              subTerm.subTermStatusName ?? subTerm.subTermStatusCode
+                            )}
+                          </Table.Td>
+                          <Table.Td>{displayValue(subTerm.active)}</Table.Td>
                         </Table.Tr>
                       ))}
                     </Table.Tbody>

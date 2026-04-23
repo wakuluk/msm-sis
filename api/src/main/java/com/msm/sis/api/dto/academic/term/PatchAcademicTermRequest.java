@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -17,5 +18,5 @@ public class PatchAcademicTermRequest {
     private PatchValue<LocalDate> startDate = PatchValue.absent();
     @JsonFormat(pattern = "yyyy-MM-dd")
     private PatchValue<LocalDate> endDate = PatchValue.absent();
-    private PatchValue<Integer> sortOrder = PatchValue.absent();
+    private PatchValue<List<Long>> subTermIds = PatchValue.absent();
 }

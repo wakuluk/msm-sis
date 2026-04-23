@@ -38,8 +38,8 @@ export type PortalRoutePath =
   | '/academics/academic-years/create'
   | '/academics/academic-years/:academicYearId'
   | '/academics/academic-years/:academicYearId/catalog'
-  | '/academics/academic-term/:academicTermId'
-  | '/academics/academic-term-group/:termGroupId';
+  | '/academics/academic-sub-term/:subTermId'
+  | '/academics/academic-terms/:termId';
 
 export type PortalRouteGroupKey = 'people' | 'catalog' | 'academics' | 'calendar';
 
@@ -208,16 +208,16 @@ export const portalRoutes: PortalRouteNode[] = [
       {
         kind: 'item',
         key: 'academic-term-detail',
-        label: 'Academic Term Detail',
-        path: '/academics/academic-term/:academicTermId',
+        label: 'Sub Term Detail',
+        path: '/academics/academic-sub-term/:subTermId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
       },
       {
         kind: 'item',
         key: 'academic-term-group-detail',
-        label: 'Academic Term Group Detail',
-        path: '/academics/academic-term-group/:termGroupId',
+        label: 'Term Detail',
+        path: '/academics/academic-terms/:termId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
       },

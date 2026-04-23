@@ -13,7 +13,7 @@ public class CourseOfferingAdvancedSearchCriteriaMapper {
         CourseOfferingAdvancedSearchCriteria criteria = new CourseOfferingAdvancedSearchCriteria();
 
         criteria.setAcademicYearCode(publicCriteria.getAcademicYearCode());
-        criteria.setTermCode(publicCriteria.getTermCode());
+        criteria.setSubTermCode(publicCriteria.getSubTermCode());
         criteria.setDepartmentCode(publicCriteria.getDepartmentCode());
         criteria.setSubjectCode(publicCriteria.getSubjectCode());
         criteria.setCourseNumber(publicCriteria.getCourseNumber());

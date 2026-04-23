@@ -1,17 +1,17 @@
 import {
   AcademicYearPatchRequestSchema,
   AcademicYearCreateRequestSchema,
-  AcademicYearPostTermsRequestSchema,
-  type AcademicTermResponse,
-  type AcademicTermGroupCreateRequest,
-  type AcademicTermGroupFormValues,
+  AcademicYearPostSubTermsRequestSchema,
+  type AcademicSubTermResponse,
+  type AcademicTermCreateRequest,
+  type AcademicTermFormValues,
   type AcademicYearCreateFormValues,
   type AcademicYearCreateResponse,
   type AcademicYearCreateRequest,
-  type AcademicYearCreateTermRequest,
+  type AcademicYearCreateSubTermRequest,
   type AcademicYearDetailFormValues,
   type AcademicYearPatchRequest,
-  type AcademicYearTermFormValues,
+  type AcademicYearSubTermFormValues,
 } from '../schemas/academic-years-schemas';
 
 type NormalizedAcademicYearTerm = {
@@ -29,7 +29,7 @@ type NormalizedAcademicYearDetail = {
   endDate: string;
 };
 
-type NormalizedAcademicTermGroup = {
+type NormalizedAcademicTerm = {
   code: string;
   name: string;
   startDate: string;
@@ -37,13 +37,13 @@ type NormalizedAcademicTermGroup = {
   terms: NormalizedAcademicYearTerm[];
 };
 
-export type AcademicTermGroupCreatePlan = Omit<AcademicTermGroupCreateRequest, 'termIds'> & {
-  termCodes: string[];
+export type AcademicTermCreatePlan = Omit<AcademicTermCreateRequest, 'subTermIds'> & {
+  subTermCodes: string[];
 };
 
 export type AcademicYearCreateSubmissionPlan = {
   academicYearRequest: AcademicYearCreateRequest;
-  termGroups: AcademicTermGroupCreatePlan[];
+  terms: AcademicTermCreatePlan[];
 };
 
 function toFormString(value: number | string | null | undefined): string {
@@ -123,7 +123,7 @@ function validateDateRange(startDate: string, endDate: string, fieldLabel: strin
 }
 
 function normalizeAcademicYearTermFormValue(
-  term: AcademicYearTermFormValues,
+  term: AcademicYearSubTermFormValues,
   fieldLabelPrefix: string
 ): NormalizedAcademicYearTerm {
   const code = validateMaxLength(
@@ -161,47 +161,47 @@ function validateAcademicYearTermCollection(
 
   terms.forEach((term, index) => {
     if (term.startDate < academicYearStartDate || term.endDate > academicYearEndDate) {
-      throw new Error(`Term ${index + 1} dates must fall within the academic year date range.`);
+      throw new Error(`Sub term ${index + 1} dates must fall within the academic year date range.`);
     }
 
     if (!termCodes.add(term.code)) {
-      throw new Error('Academic term code must be unique within an academic year.');
+      throw new Error('Sub term code must be unique within an academic year.');
     }
 
     if (!sortOrders.add(term.sortOrder)) {
-      throw new Error('Academic term sort order must be unique within an academic year.');
+      throw new Error('Sub term sort order must be unique within an academic year.');
     }
   });
 }
 
-function normalizeAcademicTermGroupFormValue(
-  termGroup: AcademicTermGroupFormValues,
+function normalizeAcademicTermFormValue(
+  term: AcademicTermFormValues,
   index: number
-): NormalizedAcademicTermGroup {
-  const fieldLabelPrefix = `Term group ${index + 1}`;
+): NormalizedAcademicTerm {
+  const fieldLabelPrefix = `Term ${index + 1}`;
   const code = validateMaxLength(
-    trimRequiredString(termGroup.code, `${fieldLabelPrefix} code`),
+    trimRequiredString(term.code, `${fieldLabelPrefix} code`),
     20,
     `${fieldLabelPrefix} code`
   );
   const name = validateMaxLength(
-    trimRequiredString(termGroup.name, `${fieldLabelPrefix} name`),
+    trimRequiredString(term.name, `${fieldLabelPrefix} name`),
     100,
     `${fieldLabelPrefix} name`
   );
-  const startDate = trimRequiredIsoDate(termGroup.startDate, `${fieldLabelPrefix} start date`);
-  const endDate = trimRequiredIsoDate(termGroup.endDate, `${fieldLabelPrefix} end date`);
+  const startDate = trimRequiredIsoDate(term.startDate, `${fieldLabelPrefix} start date`);
+  const endDate = trimRequiredIsoDate(term.endDate, `${fieldLabelPrefix} end date`);
 
   validateDateRange(startDate, endDate, fieldLabelPrefix);
 
-  const terms = termGroup.terms.map((term, termIndex) =>
-    normalizeAcademicYearTermFormValue(term, `${fieldLabelPrefix} term ${termIndex + 1}`)
+  const terms = term.terms.map((subTerm, termIndex) =>
+    normalizeAcademicYearTermFormValue(subTerm, `${fieldLabelPrefix} sub term ${termIndex + 1}`)
   );
 
   terms.forEach((term, termIndex) => {
     if (term.startDate < startDate || term.endDate > endDate) {
       throw new Error(
-        `Term group ${index + 1} term ${termIndex + 1} dates must fall within the term group date range.`
+        `Term ${index + 1} sub term ${termIndex + 1} dates must fall within the term date range.`
       );
     }
   });
@@ -240,50 +240,45 @@ function normalizeAcademicYearDetailFormValues(
   };
 }
 
-function validateAcademicYearTermGroupCollection(
-  termGroups: NormalizedAcademicTermGroup[],
+function validateAcademicYearTermCollectionForCreate(
+  terms: NormalizedAcademicTerm[],
   academicYearStartDate: string,
   academicYearEndDate: string
 ) {
   const groupCodes = new Set<string>();
 
-  termGroups.forEach((termGroup, index) => {
-    if (
-      termGroup.startDate < academicYearStartDate ||
-      termGroup.endDate > academicYearEndDate
-    ) {
-      throw new Error(
-        `Term group ${index + 1} dates must fall within the academic year date range.`
-      );
+  terms.forEach((term, index) => {
+    if (term.startDate < academicYearStartDate || term.endDate > academicYearEndDate) {
+      throw new Error(`Term ${index + 1} dates must fall within the academic year date range.`);
     }
 
-    if (!groupCodes.add(termGroup.code)) {
-      throw new Error('Academic term group code must be unique within an academic year.');
+    if (!groupCodes.add(term.code)) {
+      throw new Error('Term code must be unique within an academic year.');
     }
   });
 }
 
-function compareAcademicTerms(left: AcademicTermResponse, right: AcademicTermResponse): number {
+function compareAcademicTerms(left: AcademicSubTermResponse, right: AcademicSubTermResponse): number {
   return (
     left.sortOrder - right.sortOrder ||
     left.code.localeCompare(right.code) ||
-    left.termId - right.termId
+    left.subTermId - right.subTermId
   );
 }
 
-export function getAcademicYearResponseTerms(
+export function getAcademicYearResponseSubTerms(
   detail: AcademicYearCreateResponse
-): AcademicTermResponse[] {
-  const termsById = new Map<number, AcademicTermResponse>();
+): AcademicSubTermResponse[] {
+  const termsById = new Map<number, AcademicSubTermResponse>();
 
-  detail.terms.forEach((term) => {
-    termsById.set(term.termId, term);
+  detail.subTerms.forEach((subTerm) => {
+    termsById.set(subTerm.subTermId, subTerm);
   });
 
-  detail.groupTerms.forEach((termGroup) => {
-    termGroup.academicTerms.forEach((term) => {
-      if (!termsById.has(term.termId)) {
-        termsById.set(term.termId, term);
+  detail.terms.forEach((term) => {
+    term.subTerms.forEach((subTerm) => {
+      if (!termsById.has(subTerm.subTermId)) {
+        termsById.set(subTerm.subTermId, subTerm);
       }
     });
   });
@@ -365,13 +360,13 @@ export function buildCreateAcademicYearSubmissionPlan(
   values: AcademicYearCreateFormValues
 ): AcademicYearCreateSubmissionPlan {
   const normalizedAcademicYear = normalizeAcademicYearDetailFormValues(values);
-  const normalizedTermGroups = values.termGroups.map((termGroup, index) =>
-    normalizeAcademicTermGroupFormValue(termGroup, index)
+  const normalizedTerms = values.terms.map((term, index) =>
+    normalizeAcademicTermFormValue(term, index)
   );
-  const flattenedTerms = normalizedTermGroups.flatMap((termGroup) => termGroup.terms);
+  const flattenedTerms = normalizedTerms.flatMap((term) => term.terms);
 
-  validateAcademicYearTermGroupCollection(
-    normalizedTermGroups,
+  validateAcademicYearTermCollectionForCreate(
+    normalizedTerms,
     normalizedAcademicYear.startDate,
     normalizedAcademicYear.endDate
   );
@@ -384,32 +379,32 @@ export function buildCreateAcademicYearSubmissionPlan(
   return {
     academicYearRequest: AcademicYearCreateRequestSchema.parse({
       ...normalizedAcademicYear,
-      terms: flattenedTerms,
+      subTerms: flattenedTerms,
     }),
-    termGroups: normalizedTermGroups.map((termGroup) => ({
-      code: termGroup.code,
-      name: termGroup.name,
-      startDate: termGroup.startDate,
-      endDate: termGroup.endDate,
-      termCodes: termGroup.terms.map((term) => term.code),
+    terms: normalizedTerms.map((term) => ({
+      code: term.code,
+      name: term.name,
+      startDate: term.startDate,
+      endDate: term.endDate,
+      subTermCodes: term.terms.map((subTerm) => subTerm.code),
     })),
   };
 }
 
 export function buildPostAcademicYearTermsRequest(
   detail: AcademicYearCreateResponse,
-  values: AcademicYearTermFormValues[]
-): AcademicYearCreateTermRequest[] {
+  values: AcademicYearSubTermFormValues[]
+): AcademicYearCreateSubTermRequest[] {
   if (values.length === 0) {
-    throw new Error('Add at least one term before saving.');
+    throw new Error('Add at least one sub term before saving.');
   }
 
   const academicYearStartDate = trimRequiredIsoDate(detail.startDate, 'Academic year start date');
   const academicYearEndDate = trimRequiredIsoDate(detail.endDate, 'Academic year end date');
   const newTerms = values.map((term, index) =>
-    normalizeAcademicYearTermFormValue(term, `Term ${index + 1}`)
+    normalizeAcademicYearTermFormValue(term, `Sub term ${index + 1}`)
   );
-  const existingTerms = getAcademicYearResponseTerms(detail);
+  const existingTerms = getAcademicYearResponseSubTerms(detail);
   const existingTermCodes = new Set(
     existingTerms.map((term) => normalizeComparableString(term.code))
   );
@@ -419,13 +414,13 @@ export function buildPostAcademicYearTermsRequest(
 
   newTerms.forEach((term) => {
     if (existingTermCodes.has(term.code)) {
-      throw new Error('Academic term code must be unique within an academic year.');
+      throw new Error('Sub term code must be unique within an academic year.');
     }
 
     if (existingSortOrders.has(term.sortOrder)) {
-      throw new Error('Academic term sort order must be unique within an academic year.');
+      throw new Error('Sub term sort order must be unique within an academic year.');
     }
   });
 
-  return AcademicYearPostTermsRequestSchema.parse(newTerms);
+  return AcademicYearPostSubTermsRequestSchema.parse(newTerms);
 }

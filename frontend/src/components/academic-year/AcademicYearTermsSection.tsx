@@ -28,8 +28,8 @@ import {
 type AcademicYearTermsSectionProps = {
   academicYearId: number;
   hasTermGroups: boolean;
-  sortedTermGroups: AcademicYearCreateResponse['groupTerms'];
-  sortedLegacyTerms: AcademicYearCreateResponse['terms'];
+  sortedTermGroups: AcademicYearCreateResponse['terms'];
+  sortedLegacyTerms: AcademicYearCreateResponse['subTerms'];
   isEditing: boolean;
   isAddingTerms: boolean;
   addTermsInProgress: boolean;
@@ -91,7 +91,7 @@ export function AcademicYearTermsSection({
           loading={addTermsInProgress}
           disabled={addTermsForm.values.terms.length === 0}
         >
-          Save terms
+          Save sub terms
         </Button>
       </Group>
     );
@@ -99,7 +99,7 @@ export function AcademicYearTermsSection({
 
   return (
     <RecordPageSection
-      title="Academic Terms"
+      title="Sub Terms"
       action={
         isEditing ? null : isAddingTerms ? (
           renderAddTermsActions()
@@ -107,7 +107,7 @@ export function AcademicYearTermsSection({
           <Group gap="sm" wrap="wrap" justify="flex-end">
             {addTermsSucceeded ? (
               <Text size="sm" c="teal">
-                Terms added.
+                Sub terms added.
               </Text>
             ) : null}
             <Button
@@ -116,7 +116,7 @@ export function AcademicYearTermsSection({
               onClick={onStartAddingTerms}
               disabled={saveInProgress}
             >
-              Add terms
+              Add sub terms
             </Button>
           </Group>
         )
@@ -125,16 +125,16 @@ export function AcademicYearTermsSection({
       <Grid.Col span={12}>
         <Stack gap="md">
           {addTermsError ? (
-            <Alert color="red" title="Unable to add academic terms">
+            <Alert color="red" title="Unable to add sub terms">
               {addTermsError}
             </Alert>
           ) : null}
 
           {sortedLegacyTerms.length === 0 ? (
-            <Alert color="gray" title="No terms on this academic year">
+            <Alert color="gray" title="No sub terms on this academic year">
               {isAddingTerms
-                ? 'This academic year does not have any terms yet. Use the rows below to add the first ones.'
-                : 'This academic year was created without nested academic terms.'}
+                ? 'This academic year does not have any sub terms yet. Use the rows below to add the first ones.'
+                : 'This academic year was created without any sub terms.'}
             </Alert>
           ) : (
             <Table.ScrollContainer minWidth={760}>
@@ -152,10 +152,13 @@ export function AcademicYearTermsSection({
                 </Table.Thead>
                 <Table.Tbody>
                   {sortedLegacyTerms.map((term) => (
-                    <Table.Tr key={term.termId}>
+                    <Table.Tr key={term.subTermId}>
                       <Table.Td>{term.sortOrder}</Table.Td>
                       <Table.Td>
-                        <Link to={`/academics/academic-term/${term.termId}`} state={{ academicYearId }}>
+                        <Link
+                          to={`/academics/academic-sub-term/${term.subTermId}`}
+                          state={{ academicYearId }}
+                        >
                           {term.code}
                         </Link>
                       </Table.Td>
@@ -163,7 +166,9 @@ export function AcademicYearTermsSection({
                       <Table.Td>{displayDate(term.startDate)}</Table.Td>
                       <Table.Td>{displayDate(term.endDate)}</Table.Td>
                       <Table.Td>{displayValue(term.courseOfferingCount)}</Table.Td>
-                      <Table.Td>{displayValue(term.termStatusName ?? term.termStatusCode)}</Table.Td>
+                      <Table.Td>
+                        {displayValue(term.subTermStatusName ?? term.subTermStatusCode)}
+                      </Table.Td>
                     </Table.Tr>
                   ))}
                 </Table.Tbody>
@@ -174,8 +179,8 @@ export function AcademicYearTermsSection({
           {!hasTermGroups && isAddingTerms ? (
             <>
               {addTermsForm.values.terms.length === 0 ? (
-                <Alert color="gray" title="No new term rows">
-                  Add a row before saving new academic terms.
+                <Alert color="gray" title="No new sub term rows">
+                  Add a row before saving new sub terms.
                 </Alert>
               ) : null}
 
@@ -183,7 +188,7 @@ export function AcademicYearTermsSection({
                 <Paper key={`new-term-${index}`} withBorder p="md" radius="sm">
                   <Stack gap="md">
                     <Group justify="space-between" align="center" wrap="wrap">
-                      <Text fw={600}>New term {index + 1}</Text>
+                      <Text fw={600}>New sub term {index + 1}</Text>
                       <Button
                         type="button"
                         variant="subtle"

@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { getAcademicYearTermGroups } from '@/services/academic-term-group-service';
-import type { AcademicTermGroupResponse } from '@/services/schemas/academic-years-schemas';
+import type { AcademicTermResponse } from '@/services/schemas/academic-years-schemas';
 import { getErrorMessage, sortAcademicYearTermGroups } from './academicYearCatalogShared';
 
 type AcademicYearTermGroupsState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'success'; termGroups: AcademicTermGroupResponse[] };
+  | { status: 'success'; termGroups: AcademicTermResponse[] };
 
 type UseAcademicYearTermGroupsArgs = {
   academicYearId: number;
@@ -52,7 +52,7 @@ export function useAcademicYearTermGroups({
 
         setState({
           status: 'error',
-          message: getErrorMessage(error, 'Failed to load academic year term groups.'),
+          message: getErrorMessage(error, 'Failed to load academic year terms.'),
         });
       });
 

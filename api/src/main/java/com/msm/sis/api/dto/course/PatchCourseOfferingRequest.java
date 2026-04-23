@@ -10,7 +10,7 @@ import java.util.List;
 @Setter
 public class PatchCourseOfferingRequest {
     private Long courseOfferingId;
-    private PatchValue<List<Long>> termIds = PatchValue.absent();
+    private PatchValue<List<Long>> subTermIds = PatchValue.absent();
     private PatchValue<String> offeringStatusCode = PatchValue.absent();
     private PatchValue<String> notes = PatchValue.absent();
 }

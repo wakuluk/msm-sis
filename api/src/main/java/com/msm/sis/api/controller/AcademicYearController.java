@@ -1,8 +1,8 @@
 package com.msm.sis.api.controller;
 
 import com.msm.sis.api.config.AuthenticatedJwt;
-import com.msm.sis.api.dto.academic.term.AcademicTermGroupResponse;
-import com.msm.sis.api.dto.academic.term.CreateAcademicTermGroupRequest;
+import com.msm.sis.api.dto.academic.term.AcademicTermResponse;
+import com.msm.sis.api.dto.academic.term.CreateAcademicTermRequest;
 import com.msm.sis.api.dto.academic.year.*;
 import com.msm.sis.api.dto.catalog.AcademicYearCatalogResponse;
 import com.msm.sis.api.dto.catalog.AcademicYearCatalogSummaryResponse;
@@ -44,7 +44,7 @@ public class AcademicYearController {
 
     @PostMapping("/create")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Create academic year", description = "Creates a new academic year with optional academic terms")
+    @Operation(summary = "Create academic year", description = "Creates a new academic year with optional academic sub terms")
     public ResponseEntity<AcademicYearResponse> createAcademicYear(
             @AuthenticationPrincipal AuthenticatedJwt jwt,
             @Valid @NotNull @RequestBody CreateAcademicYearRequest request
@@ -64,7 +64,7 @@ public class AcademicYearController {
 
     @GetMapping("/{academicYearId}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get academic year", description = "Gets a single academic year and its academic terms by ID")
+    @Operation(summary = "Get academic year", description = "Gets a single academic year and its terms and sub terms by ID")
     public ResponseEntity<AcademicYearResponse> getAcademicYear(
             @PathVariable Long academicYearId
     ) {
@@ -73,7 +73,7 @@ public class AcademicYearController {
 
     @PatchMapping("/{academicYearId}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Patches an academic year", description = "Patches a single academic year and its academic terms")
+    @Operation(summary = "Patches an academic year", description = "Patches a single academic year")
     public ResponseEntity<AcademicYearResponse> patchAcademicYear(
             @PathVariable Long academicYearId,
             @AuthenticationPrincipal AuthenticatedJwt jwt,
@@ -115,7 +115,7 @@ public class AcademicYearController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Get academic year catalog",
-            description = "Returns the academic year catalog grouped by term groups and terms, with course offerings under each term."
+            description = "Returns the academic year catalog grouped by terms and sub terms, with course offerings under each sub term."
     )
     public ResponseEntity<AcademicYearCatalogResponse> getAcademicYearCatalog(
             @PathVariable Long academicYearId
@@ -127,7 +127,7 @@ public class AcademicYearController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Create academic year course offering",
-            description = "Creates a year-scoped course offering and assigns it to one or more academic terms within the academic year."
+            description = "Creates a year-scoped course offering and assigns it to one or more academic sub terms within the academic year."
     )
     public ResponseEntity<CourseOfferingDetailResponse> postAcademicYearCourseOffering(
             @PathVariable Long academicYearId,
@@ -178,35 +178,37 @@ public class AcademicYearController {
         return ResponseEntity.ok(courseOfferingService.searchAcademicYearCourseOfferings(academicYearId, criteria));
     }
 
-    @PostMapping("/{academicYearId}/terms")
+    @PostMapping("/{academicYearId}/sub-terms")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Adds a list of academic terms", description = "Adds a list academic terms to an Academic Year")
-    public ResponseEntity<AcademicYearResponse> postAcademicYearTerms(
+    @Operation(summary = "Adds a list of academic sub terms", description = "Adds a list of academic sub terms to an academic year")
+    public ResponseEntity<AcademicYearResponse> postAcademicYearSubTerms(
             @PathVariable Long academicYearId,
             @AuthenticationPrincipal AuthenticatedJwt jwt,
-            @Valid @NotNull @RequestBody List<CreateAcademicYearTermRequest> request)
+            @Valid @NotNull @RequestBody List<CreateAcademicYearSubTermRequest> request)
     {
-        return ResponseEntity.ok(academicYearService.postAcademicYearTerm(academicYearId, request, jwt.getEmail()));
+        return ResponseEntity.ok(
+                academicYearService.postAcademicYearSubTerms(academicYearId, request, jwt.getEmail())
+        );
     }
 
-    @PostMapping("/{academicYearId}/term-groups")
+    @PostMapping("/{academicYearId}/terms")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Create academic term group", description = "Creates an academic term group within an academic year")
-    public ResponseEntity<AcademicTermGroupResponse> postAcademicYearTermGroup(
+    @Operation(summary = "Create academic term", description = "Creates an academic term within an academic year")
+    public ResponseEntity<AcademicTermResponse> postAcademicYearTerm(
             @PathVariable Long academicYearId,
-            @Valid @NotNull @RequestBody CreateAcademicTermGroupRequest request
+            @Valid @NotNull @RequestBody CreateAcademicTermRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(academicYearService.postAcademicYearTermGroup(academicYearId, request));
+                .body(academicYearService.postAcademicYearTerm(academicYearId, request));
     }
 
-    @GetMapping("/{academicYearId}/term-groups")
+    @GetMapping("/{academicYearId}/terms")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get academic term groups", description = "Gets academic term groups for a single academic year")
-    public ResponseEntity<List<AcademicTermGroupResponse>> getAcademicYearTermGroups(
+    @Operation(summary = "Get academic terms", description = "Gets academic terms for a single academic year")
+    public ResponseEntity<List<AcademicTermResponse>> getAcademicYearTerms(
             @PathVariable Long academicYearId
     ) {
-        return ResponseEntity.ok(academicYearService.getAcademicYearTermGroups(academicYearId));
+        return ResponseEntity.ok(academicYearService.getAcademicYearTerms(academicYearId));
     }
 
     @GetMapping("/statuses")

@@ -16,13 +16,13 @@ public record CourseOfferingDetailResponse(
         BigDecimal minCredits,
         BigDecimal maxCredits,
         boolean variableCredit,
-        List<TermDetail> terms,
+        List<SubTermDetail> subTerms,
         String offeringStatusCode,
         String offeringStatusName,
         String notes
 ) {
-    public record TermDetail(
-            Long termId,
+    public record SubTermDetail(
+            Long subTermId,
             String code,
             String name
     ) {

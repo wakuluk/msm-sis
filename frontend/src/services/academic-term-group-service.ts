@@ -1,11 +1,11 @@
 import { apiRequest } from './api-client';
 import {
-  AcademicTermGroupCreateRequestSchema,
-  AcademicTermGroupPatchRequestSchema,
-  AcademicTermGroupResponseSchema,
-  type AcademicTermGroupCreateRequest,
-  type AcademicTermGroupPatchRequest,
-  type AcademicTermGroupResponse,
+  AcademicTermCreateRequestSchema,
+  AcademicTermPatchRequestSchema,
+  AcademicTermResponseSchema,
+  type AcademicTermCreateRequest,
+  type AcademicTermPatchRequest,
+  type AcademicTermResponse,
 } from './schemas/academic-years-schemas';
 
 export type GetAcademicYearTermGroupsRequest = {
@@ -13,73 +13,73 @@ export type GetAcademicYearTermGroupsRequest = {
   signal?: AbortSignal;
 };
 
-export type GetAcademicTermGroupRequest = {
-  academicTermGroupId: number;
+export type GetAcademicTermRequest = {
+  academicTermId: number;
   signal?: AbortSignal;
 };
 
-export type PatchAcademicTermGroupRequest = {
-  academicTermGroupId: number;
-  request: AcademicTermGroupPatchRequest;
+export type PatchAcademicTermRequest = {
+  academicTermId: number;
+  request: AcademicTermPatchRequest;
   signal?: AbortSignal;
 };
 
-export type PostAcademicYearTermGroupRequest = {
+export type PostAcademicYearTermRequest = {
   academicYearId: number;
-  request: AcademicTermGroupCreateRequest;
+  request: AcademicTermCreateRequest;
   signal?: AbortSignal;
 };
 
 export async function getAcademicYearTermGroups({
   academicYearId,
   signal,
-}: GetAcademicYearTermGroupsRequest): Promise<AcademicTermGroupResponse[]> {
+}: GetAcademicYearTermGroupsRequest): Promise<AcademicTermResponse[]> {
   return apiRequest({
-    path: `/api/academic-year/${academicYearId}/term-groups`,
-    parser: AcademicTermGroupResponseSchema.array(),
-    fallbackMessage: 'Failed to load academic year term groups.',
+    path: `/api/academic-year/${academicYearId}/terms`,
+    parser: AcademicTermResponseSchema.array(),
+    fallbackMessage: 'Failed to load academic year terms.',
     signal,
   });
 }
 
-export async function getAcademicTermGroupById({
-  academicTermGroupId,
+export async function getAcademicTermById({
+  academicTermId,
   signal,
-}: GetAcademicTermGroupRequest): Promise<AcademicTermGroupResponse> {
+}: GetAcademicTermRequest): Promise<AcademicTermResponse> {
   return apiRequest({
-    path: `/api/academic-term-group/${academicTermGroupId}`,
-    parser: AcademicTermGroupResponseSchema,
-    fallbackMessage: 'Failed to load academic term group.',
+    path: `/api/academic-terms/${academicTermId}`,
+    parser: AcademicTermResponseSchema,
+    fallbackMessage: 'Failed to load term.',
     signal,
   });
 }
 
-export async function patchAcademicTermGroup({
-  academicTermGroupId,
+export async function patchAcademicTerm({
+  academicTermId,
   request,
   signal,
-}: PatchAcademicTermGroupRequest): Promise<AcademicTermGroupResponse> {
+}: PatchAcademicTermRequest): Promise<AcademicTermResponse> {
   return apiRequest({
-    path: `/api/academic-term-group/${academicTermGroupId}`,
+    path: `/api/academic-terms/${academicTermId}`,
     method: 'PATCH',
-    body: AcademicTermGroupPatchRequestSchema.parse(request),
-    parser: AcademicTermGroupResponseSchema,
-    fallbackMessage: 'Failed to save academic term group detail.',
+    body: AcademicTermPatchRequestSchema.parse(request),
+    parser: AcademicTermResponseSchema,
+    fallbackMessage: 'Failed to save term detail.',
     signal,
   });
 }
 
-export async function postAcademicYearTermGroup({
+export async function postAcademicYearTerm({
   academicYearId,
   request,
   signal,
-}: PostAcademicYearTermGroupRequest): Promise<AcademicTermGroupResponse> {
+}: PostAcademicYearTermRequest): Promise<AcademicTermResponse> {
   return apiRequest({
-    path: `/api/academic-year/${academicYearId}/term-groups`,
+    path: `/api/academic-year/${academicYearId}/terms`,
     method: 'POST',
-    body: AcademicTermGroupCreateRequestSchema.parse(request),
-    parser: AcademicTermGroupResponseSchema,
-    fallbackMessage: 'Failed to create academic term group.',
+    body: AcademicTermCreateRequestSchema.parse(request),
+    parser: AcademicTermResponseSchema,
+    fallbackMessage: 'Failed to create term.',
     signal,
   });
 }

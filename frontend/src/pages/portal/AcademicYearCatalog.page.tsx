@@ -40,7 +40,7 @@ export function AcademicYearCatalogPage() {
 
   const pageTitle = summary ? `${summary.academicYearName} Catalog` : 'Manage Catalog';
   const pageDescription = summary
-    ? 'Manage year-scoped course offerings and review the academic term groups for this academic year.'
+    ? 'Manage year-scoped course offerings and review the terms and sub terms for this academic year.'
     : 'Academic year catalog management will be built here next.';
 
   function handleCatalogChanged() {
@@ -77,7 +77,7 @@ export function AcademicYearCatalogPage() {
       <Stack gap={0}>
         <RecordPageSection
           title="Catalog Workspace"
-          description="This workspace is scoped to one academic year and its term groups."
+          description="This workspace is scoped to one academic year and its terms and sub terms."
         >
           <ReadOnlyField
             label="Academic year ID"
@@ -95,13 +95,13 @@ export function AcademicYearCatalogPage() {
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField
-            label="Term groups"
-            value={displayValue(summary?.termGroupCount)}
+            label="Terms"
+            value={displayValue(summary?.termCount)}
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField
-            label="Terms"
-            value={displayValue(summary?.termCount)}
+            label="Sub terms"
+            value={displayValue(summary?.subTermCount)}
             span={{ base: 12, md: 4 }}
           />
           <ReadOnlyField

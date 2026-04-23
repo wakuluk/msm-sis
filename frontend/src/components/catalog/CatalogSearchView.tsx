@@ -33,11 +33,11 @@ const courseOfferingResultsColumns: ColumnDef<CourseOfferingSearchResultResponse
     meta: { sortBy: 'title' satisfies CourseOfferingSearchSortBy },
   },
   {
-    accessorKey: 'termName',
+    accessorKey: 'subTermName',
     header: 'Term',
     size: 156,
-    cell: ({ row }) => row.original.termName,
-    meta: { sortBy: 'termCode' satisfies CourseOfferingSearchSortBy },
+    cell: ({ row }) => row.original.subTermName,
+    meta: { sortBy: 'subTermCode' satisfies CourseOfferingSearchSortBy },
   },
   {
     accessorKey: 'subjectCode',

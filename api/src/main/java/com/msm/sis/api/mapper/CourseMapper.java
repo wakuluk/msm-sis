@@ -10,10 +10,10 @@ import com.msm.sis.api.dto.course.CourseSearchResponse;
 import com.msm.sis.api.dto.course.CourseSearchResultResponse;
 import com.msm.sis.api.dto.course.CourseVersionDetailResponse;
 import com.msm.sis.api.dto.course.CourseVersionSearchResponse;
-import com.msm.sis.api.entity.AcademicTerm;
+import com.msm.sis.api.entity.AcademicSubTerm;
 import com.msm.sis.api.entity.Course;
 import com.msm.sis.api.entity.CourseOffering;
-import com.msm.sis.api.entity.CourseOfferingTerm;
+import com.msm.sis.api.entity.CourseOfferingSubTerm;
 import com.msm.sis.api.entity.CourseVersion;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -30,19 +30,19 @@ public class CourseMapper {
 
     public CourseOfferingSearchResultResponse toCourseOfferingSearchResultResponse(
             CourseOffering offering,
-            AcademicTerm academicTerm
+            AcademicSubTerm academicSubTerm
     ) {
         CourseVersion courseVersion = offering.getCourseVersion();
         Course course = courseVersion.getCourse();
-        String termCode = academicTerm == null ? buildTermCodeDisplay(offering) : academicTerm.getCode();
-        String termName = academicTerm == null ? buildTermNameDisplay(offering) : academicTerm.getName();
+        String subTermCode = academicSubTerm == null ? buildSubTermCodeDisplay(offering) : academicSubTerm.getCode();
+        String subTermName = academicSubTerm == null ? buildSubTermNameDisplay(offering) : academicSubTerm.getName();
 
         return new CourseOfferingSearchResultResponse(
                 offering.getId(),
                 course.getId(),
                 courseVersion.getId(),
-                termCode,
-                termName,
+                subTermCode,
+                subTermName,
                 course.getSubject().getCode(),
                 course.getCourseNumber(),
                 buildCourseCode(course),
@@ -72,11 +72,11 @@ public class CourseMapper {
                 courseVersion.getMinCredits(),
                 courseVersion.getMaxCredits(),
                 courseVersion.isVariableCredit(),
-                getSortedTerms(offering).stream()
-                        .map(term -> new CourseOfferingDetailResponse.TermDetail(
-                                term.getId(),
-                                term.getCode(),
-                                term.getName()
+                getSortedSubTerms(offering).stream()
+                        .map(subTerm -> new CourseOfferingDetailResponse.SubTermDetail(
+                                subTerm.getId(),
+                                subTerm.getCode(),
+                                subTerm.getName()
                         ))
                         .toList(),
                 offering.getStatus().getCode(),
@@ -133,11 +133,11 @@ public class CourseMapper {
                 courseVersion == null ? null : courseVersion.getMinCredits(),
                 courseVersion == null ? null : courseVersion.getMaxCredits(),
                 courseVersion != null && courseVersion.isVariableCredit(),
-                getSortedTerms(offering).stream()
-                        .map(term -> new AcademicYearCourseOfferingSearchResultResponse.TermResult(
-                                term.getId(),
-                                term.getCode(),
-                                term.getName()
+                getSortedSubTerms(offering).stream()
+                        .map(subTerm -> new AcademicYearCourseOfferingSearchResultResponse.SubTermResult(
+                                subTerm.getId(),
+                                subTerm.getCode(),
+                                subTerm.getName()
                         ))
                         .toList(),
                 offering.getStatus() == null ? null : offering.getStatus().getCode(),
@@ -271,30 +271,30 @@ public class CourseMapper {
         return course.getSubject().getCode() + course.getCourseNumber();
     }
 
-    private String buildTermCodeDisplay(CourseOffering offering) {
-        return getSortedTerms(offering).stream()
-                .map(AcademicTerm::getCode)
+    private String buildSubTermCodeDisplay(CourseOffering offering) {
+        return getSortedSubTerms(offering).stream()
+                .map(AcademicSubTerm::getCode)
                 .reduce((left, right) -> left + ", " + right)
                 .orElse(null);
     }
 
-    private String buildTermNameDisplay(CourseOffering offering) {
-        return getSortedTerms(offering).stream()
-                .map(AcademicTerm::getName)
+    private String buildSubTermNameDisplay(CourseOffering offering) {
+        return getSortedSubTerms(offering).stream()
+                .map(AcademicSubTerm::getName)
                 .reduce((left, right) -> left + ", " + right)
                 .orElse(null);
     }
 
-    private List<AcademicTerm> getSortedTerms(CourseOffering offering) {
-        return offering.getCourseOfferingTerms().stream()
-                .map(CourseOfferingTerm::getTerm)
+    private List<AcademicSubTerm> getSortedSubTerms(CourseOffering offering) {
+        return offering.getCourseOfferingSubTerms().stream()
+                .map(CourseOfferingSubTerm::getSubTerm)
                 .sorted(
                         Comparator.comparing(
-                                        AcademicTerm::getSortOrder,
+                                        AcademicSubTerm::getSortOrder,
                                         Comparator.nullsLast(Integer::compareTo)
                                 )
                                 .thenComparing(
-                                        AcademicTerm::getCode,
+                                        AcademicSubTerm::getCode,
                                         Comparator.nullsLast(String::compareTo)
                                 )
                 )

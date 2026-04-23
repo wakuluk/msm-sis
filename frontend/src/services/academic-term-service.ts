@@ -6,23 +6,23 @@ import {
   type CourseOfferingSortDirection,
 } from './schemas/catalog-schemas';
 import {
-  AcademicTermPatchRequestSchema,
-  AcademicTermResponseSchema,
-  AcademicTermStatusesResponseSchema,
-  ShiftAcademicTermStatusRequestSchema,
-  type AcademicTermPatchRequest,
-  type AcademicTermResponse,
-  type AcademicTermStatusesResponse,
-  type AcademicTermStatusShiftDirection,
+  AcademicSubTermPatchRequestSchema,
+  AcademicSubTermResponseSchema,
+  AcademicSubTermStatusesResponseSchema,
+  ShiftAcademicSubTermStatusRequestSchema,
+  type AcademicSubTermPatchRequest,
+  type AcademicSubTermResponse,
+  type AcademicSubTermStatusesResponse,
+  type AcademicSubTermStatusShiftDirection,
 } from './schemas/academic-years-schemas';
 
 export type GetAcademicTermRequest = {
-  academicTermId: number;
+  academicSubTermId: number;
   signal?: AbortSignal;
 };
 
 export type GetAcademicTermCourseOfferingsRequest = {
-  academicTermId: number;
+  academicSubTermId: number;
   sortBy?: CourseOfferingSearchSortBy;
   sortDirection?: CourseOfferingSortDirection;
   signal?: AbortSignal;
@@ -32,32 +32,32 @@ export type GetAcademicTermStatusesRequest = {
   signal?: AbortSignal;
 };
 
-export type ShiftAcademicTermStatusRequest = {
-  academicTermId: number;
-  direction: AcademicTermStatusShiftDirection;
+export type ShiftAcademicSubTermStatusRequest = {
+  academicSubTermId: number;
+  direction: AcademicSubTermStatusShiftDirection;
   signal?: AbortSignal;
 };
 
-export type PatchAcademicTermRequest = {
-  academicTermId: number;
-  request: AcademicTermPatchRequest;
+export type PatchAcademicSubTermRequest = {
+  academicSubTermId: number;
+  request: AcademicSubTermPatchRequest;
   signal?: AbortSignal;
 };
 
 export async function getAcademicTermById({
-  academicTermId,
+  academicSubTermId,
   signal,
-}: GetAcademicTermRequest): Promise<AcademicTermResponse> {
+}: GetAcademicTermRequest): Promise<AcademicSubTermResponse> {
   return apiRequest({
-    path: `/api/academic-term/${academicTermId}`,
-    parser: AcademicTermResponseSchema,
-    fallbackMessage: 'Failed to load academic term.',
+    path: `/api/academic-sub-term/${academicSubTermId}`,
+    parser: AcademicSubTermResponseSchema,
+    fallbackMessage: 'Failed to load sub term.',
     signal,
   });
 }
 
 export async function getAcademicTermCourseOfferings({
-  academicTermId,
+  academicSubTermId,
   sortBy = 'courseCode',
   sortDirection = 'asc',
   signal,
@@ -68,50 +68,50 @@ export async function getAcademicTermCourseOfferings({
   });
 
   return apiRequest({
-    path: `/api/academic-term/${academicTermId}/course-offerings?${queryParams.toString()}`,
+    path: `/api/academic-sub-term/${academicSubTermId}/course-offerings?${queryParams.toString()}`,
     parser: CourseOfferingSearchResultsListSchema,
-    fallbackMessage: 'Failed to load academic term course offerings.',
+    fallbackMessage: 'Failed to load sub term course offerings.',
     signal,
   });
 }
 
-export async function getAcademicTermStatuses({
+export async function getAcademicSubTermStatuses({
   signal,
-}: GetAcademicTermStatusesRequest = {}): Promise<AcademicTermStatusesResponse> {
+}: GetAcademicTermStatusesRequest = {}): Promise<AcademicSubTermStatusesResponse> {
   return apiRequest({
-    path: '/api/academic-term/statuses',
-    parser: AcademicTermStatusesResponseSchema,
-    fallbackMessage: 'Failed to load academic term statuses.',
+    path: '/api/academic-sub-term/statuses',
+    parser: AcademicSubTermStatusesResponseSchema,
+    fallbackMessage: 'Failed to load sub term statuses.',
     signal,
   });
 }
 
-export async function shiftAcademicTermStatus({
-  academicTermId,
+export async function shiftAcademicSubTermStatus({
+  academicSubTermId,
   direction,
   signal,
-}: ShiftAcademicTermStatusRequest): Promise<AcademicTermResponse> {
+}: ShiftAcademicSubTermStatusRequest): Promise<AcademicSubTermResponse> {
   return apiRequest({
-    path: `/api/academic-term/${academicTermId}/status/shift`,
+    path: `/api/academic-sub-term/${academicSubTermId}/status/shift`,
     method: 'POST',
-    body: ShiftAcademicTermStatusRequestSchema.parse({ direction }),
-    parser: AcademicTermResponseSchema,
-    fallbackMessage: 'Failed to shift academic term status.',
+    body: ShiftAcademicSubTermStatusRequestSchema.parse({ direction }),
+    parser: AcademicSubTermResponseSchema,
+    fallbackMessage: 'Failed to shift sub term status.',
     signal,
   });
 }
 
 export async function patchAcademicTerm({
-  academicTermId,
+  academicSubTermId,
   request,
   signal,
-}: PatchAcademicTermRequest): Promise<AcademicTermResponse> {
+}: PatchAcademicSubTermRequest): Promise<AcademicSubTermResponse> {
   return apiRequest({
-    path: `/api/academic-term/${academicTermId}`,
+    path: `/api/academic-sub-term/${academicSubTermId}`,
     method: 'PATCH',
-    body: AcademicTermPatchRequestSchema.parse(request),
-    parser: AcademicTermResponseSchema,
-    fallbackMessage: 'Failed to save academic term detail.',
+    body: AcademicSubTermPatchRequestSchema.parse(request),
+    parser: AcademicSubTermResponseSchema,
+    fallbackMessage: 'Failed to save sub term detail.',
     signal,
   });
 }

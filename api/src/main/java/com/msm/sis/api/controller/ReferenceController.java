@@ -72,14 +72,14 @@ public class ReferenceController {
 
     @GetMapping("/catalog-search-options")
     @PreAuthorize("hasRole('STUDENT')")
-    @Operation(summary = "Get catalog search reference options", description = "Returns academic years, terms, departments, subjects, and status options used by catalog search filters")
+    @Operation(summary = "Get catalog search reference options", description = "Returns academic years, sub terms, departments, subjects, and status options used by catalog search filters")
     public ResponseEntity<CatalogSearchReferenceOptionsResponse> getCatalogSearchReferenceOptions() {
         throw catalogUnavailableException();
     }
 
     @GetMapping("/catalog-advanced-search-options")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get catalog search reference options", description = "Returns academic years, terms, departments, subjects, and status options used by catalog search filters")
+    @Operation(summary = "Get catalog search reference options", description = "Returns academic years, sub terms, departments, subjects, and status options used by catalog search filters")
     public ResponseEntity<CatalogAdvancedSearchReferenceOptionsResponse> getCatalogAdvancedSearchReferenceOptions() {
         throw catalogUnavailableException();
     }

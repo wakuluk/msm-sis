@@ -12,11 +12,11 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "course_offering_term")
-public class CourseOfferingTerm {
+@Table(name = "course_offering_sub_term")
+public class CourseOfferingSubTerm {
 
     @EmbeddedId
-    private CourseOfferingTermId id;
+    private CourseOfferingSubTermId id;
 
     @JsonIgnore
     @MapsId("courseOfferingId")
@@ -25,10 +25,10 @@ public class CourseOfferingTerm {
     private CourseOffering courseOffering;
 
     @JsonIgnore
-    @MapsId("termId")
+    @MapsId("subTermId")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "term_id", nullable = false)
-    private AcademicTerm term;
+    @JoinColumn(name = "sub_term_id", nullable = false)
+    private AcademicSubTerm subTerm;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)

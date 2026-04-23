@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 public enum CourseOfferingSearchSortField {
     ACADEMIC_YEAR_CODE("academicYearCode", "academicYear.code"),
-    TERM_CODE("termCode", "courseOfferingTerms.term.sortOrder"),
+    SUB_TERM_CODE("subTermCode", "courseOfferingSubTerms.subTerm.sortOrder"),
     DEPARTMENT_CODE("departmentCode", "courseVersion.course.subject.department.code"),
     SUBJECT_CODE("subjectCode", "courseVersion.course.subject.code"),
     COURSE_NUMBER("courseNumber", "courseVersion.course.courseNumber"),
@@ -33,7 +33,7 @@ public enum CourseOfferingSearchSortField {
 
     public static CourseOfferingSearchSortField fromRequestValue(String value) {
         if (value == null || value.isBlank()) {
-            return TERM_CODE;
+            return SUB_TERM_CODE;
         }
 
         CourseOfferingSearchSortField sortField = BY_REQUEST_VALUE.get(value.trim());

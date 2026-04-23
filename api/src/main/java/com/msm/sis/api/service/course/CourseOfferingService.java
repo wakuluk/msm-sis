@@ -1,21 +1,21 @@
 package com.msm.sis.api.service.course;
 
 import com.msm.sis.api.dto.course.*;
-import com.msm.sis.api.entity.AcademicTerm;
+import com.msm.sis.api.entity.AcademicSubTerm;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.CourseOffering;
 import com.msm.sis.api.entity.CourseOfferingStatus;
-import com.msm.sis.api.entity.CourseOfferingTerm;
-import com.msm.sis.api.entity.CourseOfferingTermId;
+import com.msm.sis.api.entity.CourseOfferingSubTerm;
+import com.msm.sis.api.entity.CourseOfferingSubTermId;
 import com.msm.sis.api.entity.CourseVersion;
 import com.msm.sis.api.mapper.CourseMapper;
 import com.msm.sis.api.mapper.CourseOfferingAdvancedSearchCriteriaMapper;
 import com.msm.sis.api.patch.PatchValue;
-import com.msm.sis.api.repository.AcademicTermRepository;
+import com.msm.sis.api.repository.AcademicSubTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.repository.CourseOfferingStatusRepository;
 import com.msm.sis.api.repository.CourseOfferingRepository;
-import com.msm.sis.api.repository.CourseOfferingTermRepository;
+import com.msm.sis.api.repository.CourseOfferingSubTermRepository;
 import com.msm.sis.api.repository.CourseRepository;
 import com.msm.sis.api.repository.CourseVersionRepository;
 import jakarta.persistence.EntityManager;
@@ -43,7 +43,7 @@ public class CourseOfferingService {
     private static final String DEFAULT_CREATE_STATUS_CODE = "PLANNED";
 
     //TODO yea... we need a better solution than this.
-    private final List<String> publicTermStatusCodes = List.of(
+    private final List<String> publicSubTermStatusCodes = List.of(
             "REGISTRATION_OPEN",
             "REGISTRATION_CLOSED",
             "ACTIVE",
@@ -55,10 +55,10 @@ public class CourseOfferingService {
             "CLOSED");
 
     private final CourseOfferingRepository courseOfferingRepository;
-    private final CourseOfferingTermRepository courseOfferingTermRepository;
+    private final CourseOfferingSubTermRepository courseOfferingSubTermRepository;
     private final CourseOfferingStatusRepository courseOfferingStatusRepository;
     private final AcademicYearRepository academicYearRepository;
-    private final AcademicTermRepository academicTermRepository;
+    private final AcademicSubTermRepository academicSubTermRepository;
     private final CourseRepository courseRepository;
     private final CourseVersionRepository courseVersionRepository;
     private final CourseMapper courseMapper;
@@ -67,10 +67,10 @@ public class CourseOfferingService {
 
     public CourseOfferingService(
             CourseOfferingRepository courseOfferingRepository,
-            CourseOfferingTermRepository courseOfferingTermRepository,
+            CourseOfferingSubTermRepository courseOfferingSubTermRepository,
             CourseOfferingStatusRepository courseOfferingStatusRepository,
             AcademicYearRepository academicYearRepository,
-            AcademicTermRepository academicTermRepository,
+            AcademicSubTermRepository academicSubTermRepository,
             CourseRepository courseRepository,
             CourseVersionRepository courseVersionRepository,
             CourseMapper courseMapper,
@@ -78,10 +78,10 @@ public class CourseOfferingService {
             EntityManager entityManager
     ) {
         this.courseOfferingRepository = courseOfferingRepository;
-        this.courseOfferingTermRepository = courseOfferingTermRepository;
+        this.courseOfferingSubTermRepository = courseOfferingSubTermRepository;
         this.courseOfferingStatusRepository = courseOfferingStatusRepository;
         this.academicYearRepository = academicYearRepository;
-        this.academicTermRepository = academicTermRepository;
+        this.academicSubTermRepository = academicSubTermRepository;
         this.courseRepository = courseRepository;
         this.courseVersionRepository = courseVersionRepository;
         this.courseMapper = courseMapper;
@@ -116,11 +116,11 @@ public class CourseOfferingService {
             );
         }
 
-        List<Long> requestedTermIds = normalizeTermIds(request.termIds());
-        if (requestedTermIds.isEmpty()) {
+        List<Long> requestedSubTermIds = normalizeSubTermIds(request.subTermIds());
+        if (requestedSubTermIds.isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "At least one academic term is required."
+                    "At least one academic sub term is required."
             );
         }
 
@@ -130,7 +130,10 @@ public class CourseOfferingService {
         courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        List<AcademicTerm> academicTerms = getAcademicTermsForAcademicYear(academicYearId, requestedTermIds);
+        List<AcademicSubTerm> academicSubTerms = getAcademicSubTermsForAcademicYear(
+                academicYearId,
+                requestedSubTermIds
+        );
         CourseVersion currentCourseVersion = getCurrentCourseVersion(courseId);
 
         if (courseOfferingRepository.existsByCourseIdAndAcademicYearId(courseId, academicYearId)) {
@@ -155,11 +158,15 @@ public class CourseOfferingService {
 
         CourseOffering savedCourseOffering = courseOfferingRepository.saveAndFlush(courseOffering);
 
-        List<CourseOfferingTerm> courseOfferingTerms = academicTerms.stream()
-                .map(academicTerm -> buildCourseOfferingTerm(savedCourseOffering, academicYear, academicTerm))
+        List<CourseOfferingSubTerm> courseOfferingSubTerms = academicSubTerms.stream()
+                .map(academicSubTerm -> buildCourseOfferingSubTerm(
+                        savedCourseOffering,
+                        academicYear,
+                        academicSubTerm
+                ))
                 .toList();
 
-        courseOfferingTermRepository.saveAllAndFlush(courseOfferingTerms);
+        courseOfferingSubTermRepository.saveAllAndFlush(courseOfferingSubTerms);
         entityManager.clear();
 
         return getCourseOfferingById(savedCourseOffering.getId());
@@ -356,45 +363,48 @@ public class CourseOfferingService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        boolean termsChanged = false;
-        if (request.getTermIds().isPresent()) {
-            List<Long> requestedTermIds = normalizeTermIds(request.getTermIds().getValue());
-            if (requestedTermIds.isEmpty()) {
+        boolean subTermsChanged = false;
+        if (request.getSubTermIds().isPresent()) {
+            List<Long> requestedSubTermIds = normalizeSubTermIds(request.getSubTermIds().getValue());
+            if (requestedSubTermIds.isEmpty()) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
-                        "At least one academic term is required."
+                        "At least one academic sub term is required."
                 );
             }
 
-            List<AcademicTerm> academicTerms = getAcademicTermsForAcademicYear(academicYearId, requestedTermIds);
-            List<Long> existingTermIds = courseOffering.getCourseOfferingTerms().stream()
-                    .map(CourseOfferingTerm::getTerm)
+            List<AcademicSubTerm> academicSubTerms = getAcademicSubTermsForAcademicYear(
+                    academicYearId,
+                    requestedSubTermIds
+            );
+            List<Long> existingSubTermIds = courseOffering.getCourseOfferingSubTerms().stream()
+                    .map(CourseOfferingSubTerm::getSubTerm)
                     .filter(Objects::nonNull)
-                    .map(AcademicTerm::getId)
+                    .map(AcademicSubTerm::getId)
                     .sorted()
                     .toList();
-            List<Long> normalizedRequestedTermIds = academicTerms.stream()
-                    .map(AcademicTerm::getId)
+            List<Long> normalizedRequestedSubTermIds = academicSubTerms.stream()
+                    .map(AcademicSubTerm::getId)
                     .sorted()
                     .toList();
 
-            if (!Objects.equals(existingTermIds, normalizedRequestedTermIds)) {
-                courseOfferingTermRepository.deleteAllByCourseOffering_Id(courseOfferingId);
+            if (!Objects.equals(existingSubTermIds, normalizedRequestedSubTermIds)) {
+                courseOfferingSubTermRepository.deleteAllByCourseOffering_Id(courseOfferingId);
                 entityManager.flush();
 
-                List<CourseOfferingTerm> courseOfferingTerms = academicTerms.stream()
-                        .map(academicTerm -> buildCourseOfferingTerm(
+                List<CourseOfferingSubTerm> courseOfferingSubTerms = academicSubTerms.stream()
+                        .map(academicSubTerm -> buildCourseOfferingSubTerm(
                                 courseOffering,
                                 courseOffering.getAcademicYear(),
-                                academicTerm
+                                academicSubTerm
                         ))
                         .toList();
-                courseOfferingTermRepository.saveAll(courseOfferingTerms);
-                termsChanged = true;
+                courseOfferingSubTermRepository.saveAll(courseOfferingSubTerms);
+                subTermsChanged = true;
             }
         }
 
-        boolean changed = termsChanged;
+        boolean changed = subTermsChanged;
 
         if (request.getOfferingStatusCode().isPresent()) {
             String statusCode = trimToNull(request.getOfferingStatusCode().getValue());
@@ -442,7 +452,7 @@ public class CourseOfferingService {
 
         courseOfferingAdvancedSearchCriteria.setIncludeInactive(true);
         courseOfferingAdvancedSearchCriteria.setIsPublished(true);
-        courseOfferingAdvancedSearchCriteria.setTermStatusCodes(publicTermStatusCodes);
+        courseOfferingAdvancedSearchCriteria.setSubTermStatusCodes(publicSubTermStatusCodes);
         courseOfferingAdvancedSearchCriteria.setOfferingStatusCodes(publicOfferingStatusCodes);
 
 
@@ -480,7 +490,7 @@ public class CourseOfferingService {
 
         Page<CourseOffering> offeringsPage = courseOfferingRepository.searchCourseOfferings(
                 trimToNull(criteria.getAcademicYearCode()),
-                trimToNull(criteria.getTermCode()),
+                trimToNull(criteria.getSubTermCode()),
                 trimToNull(criteria.getDepartmentCode()),
                 trimToNull(criteria.getSubjectCode()),
                 trimToNull(criteria.getCourseNumber()),
@@ -491,7 +501,7 @@ public class CourseOfferingService {
                 criteria.getMaxCredits(),
                 criteria.getVariableCredit(),
                 normalizeStatusCodes(criteria.getOfferingStatusCodes()),
-                normalizeStatusCodes(criteria.getTermStatusCodes()),
+                normalizeStatusCodes(criteria.getSubTermStatusCodes()),
                 includeInactive,
                 criteria.getIsPublished(),
                 pageable
@@ -536,7 +546,7 @@ public class CourseOfferingService {
                 .findAllByAcademicYear_Id(academicYearId, Sort.unsorted())
                 .stream()
                 .map(courseMapper::toAcademicYearCourseOfferingSearchResultResponse)
-                .filter(result -> matchesTermId(criteria == null ? null : criteria.getTermId(), result))
+                .filter(result -> matchesSubTermId(criteria == null ? null : criteria.getSubTermId(), result))
                 .filter(result -> matchesId(criteria == null ? null : criteria.getSchoolId(), result.schoolId()))
                 .filter(result -> matchesId(criteria == null ? null : criteria.getDepartmentId(), result.departmentId()))
                 .filter(result -> matchesId(criteria == null ? null : criteria.getSubjectId(), result.subjectId()))
@@ -567,59 +577,60 @@ public class CourseOfferingService {
         CourseOffering offering = courseOfferingRepository.findPublicVisibleById(
                         courseOfferingId,
                         publicOfferingStatusCodes,
-                        publicTermStatusCodes
+                        publicSubTermStatusCodes
                 )
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         return courseMapper.toCourseOfferingDetailResponse(offering);
     }
 
-    private List<Long> normalizeTermIds(List<Long> termIds) {
-        if (termIds == null) {
+    private List<Long> normalizeSubTermIds(List<Long> subTermIds) {
+        if (subTermIds == null) {
             return List.of();
         }
 
-        if (termIds.stream().anyMatch(Objects::isNull)) {
+        if (subTermIds.stream().anyMatch(Objects::isNull)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Academic term ids cannot contain null values."
+                    "Academic sub term ids cannot contain null values."
             );
         }
 
-        return termIds.stream().distinct().toList();
+        return subTermIds.stream().distinct().toList();
     }
 
-    private List<AcademicTerm> getAcademicTermsForAcademicYear(
+    private List<AcademicSubTerm> getAcademicSubTermsForAcademicYear(
             Long academicYearId,
-            List<Long> requestedTermIds
+            List<Long> requestedSubTermIds
     ) {
-        List<AcademicTerm> academicTerms = academicTermRepository.findAllByIdInOrderBySortOrderAsc(requestedTermIds);
-        Set<Long> foundTermIds = academicTerms.stream()
-                .map(AcademicTerm::getId)
+        List<AcademicSubTerm> academicSubTerms =
+                academicSubTermRepository.findAllByIdInOrderBySortOrderAsc(requestedSubTermIds);
+        Set<Long> foundSubTermIds = academicSubTerms.stream()
+                .map(AcademicSubTerm::getId)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
 
-        if (foundTermIds.size() != new LinkedHashSet<>(requestedTermIds).size()) {
-            List<Long> missingTermIds = requestedTermIds.stream()
-                    .filter(termId -> !foundTermIds.contains(termId))
+        if (foundSubTermIds.size() != new LinkedHashSet<>(requestedSubTermIds).size()) {
+            List<Long> missingSubTermIds = requestedSubTermIds.stream()
+                    .filter(subTermId -> !foundSubTermIds.contains(subTermId))
                     .toList();
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Academic terms not found for ids: " + missingTermIds
+                    "Academic sub terms not found for ids: " + missingSubTermIds
             );
         }
 
-        boolean hasMismatchedAcademicYear = academicTerms.stream()
-                .anyMatch(term -> term.getAcademicYear() == null
-                        || !Objects.equals(term.getAcademicYear().getId(), academicYearId));
+        boolean hasMismatchedAcademicYear = academicSubTerms.stream()
+                .anyMatch(subTerm -> subTerm.getAcademicYear() == null
+                        || !Objects.equals(subTerm.getAcademicYear().getId(), academicYearId));
 
         if (hasMismatchedAcademicYear) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "All academic terms must belong to the target academic year."
+                    "All academic sub terms must belong to the target academic year."
             );
         }
 
-        return academicTerms;
+        return academicSubTerms;
     }
 
     private CourseVersion getCurrentCourseVersion(Long courseId) {
@@ -644,17 +655,17 @@ public class CourseOfferingService {
         return courseOffering;
     }
 
-    private CourseOfferingTerm buildCourseOfferingTerm(
+    private CourseOfferingSubTerm buildCourseOfferingSubTerm(
             CourseOffering courseOffering,
             AcademicYear academicYear,
-            AcademicTerm academicTerm
+            AcademicSubTerm academicSubTerm
     ) {
-        CourseOfferingTerm courseOfferingTerm = new CourseOfferingTerm();
-        courseOfferingTerm.setId(new CourseOfferingTermId(courseOffering.getId(), academicTerm.getId()));
-        courseOfferingTerm.setCourseOffering(courseOffering);
-        courseOfferingTerm.setAcademicYear(academicYear);
-        courseOfferingTerm.setTerm(academicTerm);
-        return courseOfferingTerm;
+        CourseOfferingSubTerm courseOfferingSubTerm = new CourseOfferingSubTerm();
+        courseOfferingSubTerm.setId(new CourseOfferingSubTermId(courseOffering.getId(), academicSubTerm.getId()));
+        courseOfferingSubTerm.setCourseOffering(courseOffering);
+        courseOfferingSubTerm.setAcademicYear(academicYear);
+        courseOfferingSubTerm.setSubTerm(academicSubTerm);
+        return courseOfferingSubTerm;
     }
 
     private List<String> normalizeStatusCodes(List<String> statusCodes) {
@@ -691,12 +702,14 @@ public class CourseOfferingService {
         return expectedId == null || Objects.equals(expectedId, actualId);
     }
 
-    private boolean matchesTermId(
-            Long expectedTermId,
+    private boolean matchesSubTermId(
+            Long expectedSubTermId,
             AcademicYearCourseOfferingSearchResultResponse result
     ) {
-        return expectedTermId == null
-                || result.terms().stream().anyMatch(term -> Objects.equals(term.termId(), expectedTermId));
+        return expectedSubTermId == null
+                || result.subTerms().stream().anyMatch(
+                        subTerm -> Objects.equals(subTerm.subTermId(), expectedSubTermId)
+                );
     }
 
     private boolean containsIgnoreCase(String value, String filter) {
@@ -763,7 +776,7 @@ public class CourseOfferingService {
 
     private Sort buildSearchSort(CourseOfferingSearchSortField sortField, Sort.Direction sortDirection) {
         return sortField.toSort(sortDirection)
-                .and(Sort.by("courseOfferingTerms.term.sortOrder").ascending())
+                .and(Sort.by("courseOfferingSubTerms.subTerm.sortOrder").ascending())
                 .and(Sort.by("courseVersion.course.subject.code").ascending())
                 .and(Sort.by("courseVersion.course.courseNumber").ascending())
                 .and(Sort.by("courseVersion.versionNumber").descending())

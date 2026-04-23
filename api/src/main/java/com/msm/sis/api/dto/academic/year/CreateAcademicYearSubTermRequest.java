@@ -1,10 +1,13 @@
-package com.msm.sis.api.dto.academic.term;
+package com.msm.sis.api.dto.academic.year;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record AcademicTermStatusResponse(
+import java.time.LocalDate;
+
+public record CreateAcademicYearSubTermRequest(
+
         @NotBlank
         @Size(max = 20)
         String code,
@@ -14,6 +17,12 @@ public record AcademicTermStatusResponse(
         String name,
 
         @NotNull
-        Integer order
+        LocalDate startDate,
+
+        @NotNull
+        LocalDate endDate,
+
+        @NotNull
+        Integer sortOrder
 ) {
 }

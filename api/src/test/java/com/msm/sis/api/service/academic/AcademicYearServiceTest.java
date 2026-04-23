@@ -9,7 +9,7 @@ import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.AcademicYearStatus;
 import com.msm.sis.api.mapper.AcademicYearMapper;
 import com.msm.sis.api.patch.PatchValue;
-import com.msm.sis.api.repository.AcademicTermRepository;
+import com.msm.sis.api.repository.AcademicSubTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.repository.AcademicYearStatusRepository;
 import jakarta.persistence.EntityManager;
@@ -48,13 +48,13 @@ class AcademicYearServiceTest {
     private AcademicYearStatusRepository academicYearStatusRepository;
 
     @Mock
-    private AcademicTermRepository academicTermRepository;
+    private AcademicSubTermRepository academicTermRepository;
 
     @Mock
     private AcademicValidationService academicValidationService;
 
     @Mock
-    private AcademicTermService academicTermService;
+    private AcademicSubTermService academicTermService;
 
     @Mock
     private AcademicYearMapper academicYearMapper;
@@ -166,7 +166,7 @@ class AcademicYearServiceTest {
         assertThat(draftAcademicYear.getStatus()).isSameAs(draftStatus);
         verify(academicValidationService).validateCreateAcademicYear(draftAcademicYear);
         verify(academicYearRepository).save(draftAcademicYear);
-        verify(academicTermService).createAcademicTerms(savedAcademicYear, List.of());
+        verify(academicTermService).createAcademicSubTerms(savedAcademicYear, List.of());
     }
 
     @Test

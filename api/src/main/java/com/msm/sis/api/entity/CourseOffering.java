@@ -51,7 +51,7 @@ public class CourseOffering {
 
     @JsonIgnore
     @OneToMany(mappedBy = "courseOffering")
-    private List<CourseOfferingTerm> courseOfferingTerms = new ArrayList<>();
+    private List<CourseOfferingSubTerm> courseOfferingSubTerms = new ArrayList<>();
 
     @Column(name = "notes")
     private String notes;

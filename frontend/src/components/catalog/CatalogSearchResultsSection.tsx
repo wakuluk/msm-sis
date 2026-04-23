@@ -167,7 +167,8 @@ export function CatalogSearchResultsSection({
                                     {detailState.detail.title}
                                   </Text>
                                   <Text c="dimmed" size="sm" mt={4}>
-                                    {detailState.detail.termName} · {formatCredits(detailState.detail)} credits
+                                    {detailState.detail.subTerms.map((subTerm) => subTerm.name).join(', ')} ·{' '}
+                                    {formatCredits(detailState.detail)} credits
                                   </Text>
                                 </div>
                               </Group>

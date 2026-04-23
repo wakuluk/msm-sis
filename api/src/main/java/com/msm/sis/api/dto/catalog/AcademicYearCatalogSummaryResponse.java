@@ -6,23 +6,23 @@ public record AcademicYearCatalogSummaryResponse(
         Long academicYearId,
         String academicYearCode,
         String academicYearName,
-        long termGroupCount,
         long termCount,
+        long subTermCount,
         long courseOfferingCount,
-        List<TermGroupSummary> termGroups
+        List<TermSummary> terms
 ) {
-    public record TermGroupSummary(
-            Long termGroupId,
+    public record TermSummary(
+            Long termId,
             String code,
             String name,
-            long termCount,
+            long subTermCount,
             long courseOfferingCount,
-            List<TermSummary> terms
+            List<SubTermSummary> subTerms
     ) {
     }
 
-    public record TermSummary(
-            Long termId,
+    public record SubTermSummary(
+            Long subTermId,
             String code,
             String name,
             long courseOfferingCount

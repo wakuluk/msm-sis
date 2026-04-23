@@ -3,7 +3,7 @@ package com.msm.sis.api.service;
 import com.msm.sis.api.dto.academic.AcademicDepartmentReferenceOptionResponse;
 import com.msm.sis.api.dto.academic.AcademicSchoolDepartmentSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.academic.AcademicSubjectReferenceOptionResponse;
-import com.msm.sis.api.dto.academic.AcademicTermReferenceOptionResponse;
+import com.msm.sis.api.dto.academic.AcademicSubTermReferenceOptionResponse;
 import com.msm.sis.api.dto.catalog.*;
 import com.msm.sis.api.dto.course.CoursePickerReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CourseReferenceOptionResponse;
@@ -19,8 +19,8 @@ import com.msm.sis.api.repository.AcademicDepartmentRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.repository.CourseOfferingStatusRepository;
 import com.msm.sis.api.repository.AcademicSubjectRepository;
-import com.msm.sis.api.repository.AcademicTermRepository;
-import com.msm.sis.api.repository.AcademicTermStatusRepository;
+import com.msm.sis.api.repository.AcademicSubTermRepository;
+import com.msm.sis.api.repository.AcademicSubTermStatusRepository;
 import com.msm.sis.api.repository.ClassStandingRepository;
 import com.msm.sis.api.repository.CourseRepository;
 import com.msm.sis.api.repository.CourseVersionRepository;
@@ -45,8 +45,8 @@ public class ReferenceDataService {
     private final AcademicSchoolRepository academicSchoolRepository;
     private final AcademicDepartmentRepository academicDepartmentRepository;
     private final AcademicSubjectRepository academicSubjectRepository;
-    private final AcademicTermRepository AcademicTermRepository;
-    private final AcademicTermStatusRepository AcademicTermStatusRepository;
+    private final AcademicSubTermRepository academicSubTermRepository;
+    private final AcademicSubTermStatusRepository academicSubTermStatusRepository;
     private final CourseRepository courseRepository;
     private final CourseVersionRepository courseVersionRepository;
     private final EthnicityRepository ethnicityRepository;
@@ -59,8 +59,8 @@ public class ReferenceDataService {
             AcademicSchoolRepository academicSchoolRepository,
             AcademicDepartmentRepository academicDepartmentRepository,
             AcademicSubjectRepository academicSubjectRepository,
-            AcademicTermRepository AcademicTermRepository,
-            AcademicTermStatusRepository AcademicTermStatusRepository,
+            AcademicSubTermRepository academicSubTermRepository,
+            AcademicSubTermStatusRepository academicSubTermStatusRepository,
             CourseRepository courseRepository,
             CourseVersionRepository courseVersionRepository,
             GenderRepository genderRepository,
@@ -72,8 +72,8 @@ public class ReferenceDataService {
         this.academicSchoolRepository = academicSchoolRepository;
         this.academicDepartmentRepository = academicDepartmentRepository;
         this.academicSubjectRepository = academicSubjectRepository;
-        this.AcademicTermRepository = AcademicTermRepository;
-        this.AcademicTermStatusRepository = AcademicTermStatusRepository;
+        this.academicSubTermRepository = academicSubTermRepository;
+        this.academicSubTermStatusRepository = academicSubTermStatusRepository;
         this.courseRepository = courseRepository;
         this.courseVersionRepository = courseVersionRepository;
         this.genderRepository = genderRepository;
@@ -276,14 +276,14 @@ public class ReferenceDataService {
                                 academicYear.getName()
                         ))
                         .toList(),
-                AcademicTermRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(term -> new AcademicTermReferenceOptionResponse(
-                                term.getId(),
-                                term.getCode(),
-                                term.getName(),
-                                term.getAcademicYear().getId(),
-                                term.getAcademicYear().getCode(),
-                                term.getAcademicYear().getName()
+                academicSubTermRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(subTerm -> new AcademicSubTermReferenceOptionResponse(
+                                subTerm.getId(),
+                                subTerm.getCode(),
+                                subTerm.getName(),
+                                subTerm.getAcademicYear().getId(),
+                                subTerm.getAcademicYear().getCode(),
+                                subTerm.getAcademicYear().getName()
                         ))
                         .toList(),
                 academicDepartmentRepository.findAllByActiveTrueOrderByNameAsc().stream()
@@ -310,7 +310,7 @@ public class ReferenceDataService {
                                 status.getName()
                         ))
                         .toList(),
-                AcademicTermStatusRepository.findAllByActiveTrueOrderByNameAsc().stream()
+                academicSubTermStatusRepository.findAllByActiveTrueOrderByNameAsc().stream()
                         .map(status -> new CodeNameReferenceOptionResponse(
                                 status.getId(),
                                 status.getCode(),
@@ -329,14 +329,14 @@ public class ReferenceDataService {
                                 academicYear.getName()
                         ))
                         .toList(),
-                AcademicTermRepository.findAllForStudentCatalogSearchOrderBySortOrderAsc().stream()
-                        .map(term -> new AcademicTermReferenceOptionResponse(
-                                term.getId(),
-                                term.getCode(),
-                                term.getName(),
-                                term.getAcademicYear().getId(),
-                                term.getAcademicYear().getCode(),
-                                term.getAcademicYear().getName()
+                academicSubTermRepository.findAllForStudentCatalogSearchOrderBySortOrderAsc().stream()
+                        .map(subTerm -> new AcademicSubTermReferenceOptionResponse(
+                                subTerm.getId(),
+                                subTerm.getCode(),
+                                subTerm.getName(),
+                                subTerm.getAcademicYear().getId(),
+                                subTerm.getAcademicYear().getCode(),
+                                subTerm.getAcademicYear().getName()
                         ))
                         .toList(),
                 academicDepartmentRepository.findAllByActiveTrueOrderByNameAsc().stream()

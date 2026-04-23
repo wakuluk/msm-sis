@@ -1,15 +1,15 @@
 package com.msm.sis.api.repository;
 
 import com.msm.sis.api.entity.AcademicDepartment;
-import com.msm.sis.api.entity.AcademicTermStatus;
+import com.msm.sis.api.entity.AcademicSubTermStatus;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.Course;
 import com.msm.sis.api.entity.CourseOffering;
 import com.msm.sis.api.entity.CourseOfferingStatus;
-import com.msm.sis.api.entity.CourseOfferingTerm;
+import com.msm.sis.api.entity.CourseOfferingSubTerm;
 import com.msm.sis.api.entity.CourseVersion;
 import com.msm.sis.api.entity.AcademicSubject;
-import com.msm.sis.api.entity.AcademicTerm;
+import com.msm.sis.api.entity.AcademicSubTerm;
 import jakarta.persistence.EntityGraph;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -46,7 +46,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
     @Override
     public Page<CourseOffering> searchCourseOfferings(
             String academicYearCode,
-            String termCode,
+            String subTermCode,
             String departmentCode,
             String subjectCode,
             String courseNumber,
@@ -57,7 +57,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             BigDecimal maxCredits,
             Boolean variableCredit,
             List<String> offeringStatusCodes,
-            List<String> termStatusCodes,
+            List<String> subTermStatusCodes,
             boolean includeInactive,
             Boolean isPublished,
             Pageable pageable
@@ -73,7 +73,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
                 root,
                 joins,
                 academicYearCode,
-                termCode,
+                subTermCode,
                 departmentCode,
                 subjectCode,
                 courseNumber,
@@ -84,7 +84,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
                 maxCredits,
                 variableCredit,
                 offeringStatusCodes,
-                termStatusCodes,
+                subTermStatusCodes,
                 includeInactive,
                 isPublished
         );
@@ -109,7 +109,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
                 countRoot,
                 countJoins,
                 academicYearCode,
-                termCode,
+                subTermCode,
                 departmentCode,
                 subjectCode,
                 courseNumber,
@@ -120,7 +120,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
                 maxCredits,
                 variableCredit,
                 offeringStatusCodes,
-                termStatusCodes,
+                subTermStatusCodes,
                 includeInactive,
                 isPublished
         );
@@ -137,7 +137,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
     public Optional<CourseOffering> findPublicVisibleById(
             Long courseOfferingId,
             List<String> offeringStatusCodes,
-            List<String> termStatusCodes
+            List<String> subTermStatusCodes
     ) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<CourseOffering> query = criteriaBuilder.createQuery(CourseOffering.class);
@@ -147,13 +147,13 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(criteriaBuilder.equal(root.get("id"), courseOfferingId));
         addStatusInPredicate(criteriaBuilder, predicates, joins.status.get("code"), offeringStatusCodes);
-        addStatusInPredicate(criteriaBuilder, predicates, joins.termStatus.get("code"), termStatusCodes);
+        addStatusInPredicate(criteriaBuilder, predicates, joins.subTermStatus.get("code"), subTermStatusCodes);
         predicates.add(criteriaBuilder.isTrue(joins.department.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.subject.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.course.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.academicYear.get("active")));
-        predicates.add(criteriaBuilder.isTrue(joins.term.get("active")));
-        predicates.add(criteriaBuilder.isTrue(joins.termStatus.get("active")));
+        predicates.add(criteriaBuilder.isTrue(joins.subTerm.get("active")));
+        predicates.add(criteriaBuilder.isTrue(joins.subTermStatus.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.status.get("active")));
 
         query.select(root)
@@ -172,9 +172,9 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
         Join<Course, AcademicSubject> subject = course.join("subject", JoinType.INNER);
         Join<AcademicSubject, AcademicDepartment> department = subject.join("department", JoinType.INNER);
         Join<CourseOffering, AcademicYear> academicYear = root.join("academicYear", JoinType.INNER);
-        Join<CourseOffering, CourseOfferingTerm> courseOfferingTerm = root.join("courseOfferingTerms", JoinType.LEFT);
-        Join<CourseOfferingTerm, AcademicTerm> term = courseOfferingTerm.join("term", JoinType.LEFT);
-        Join<AcademicTerm, AcademicTermStatus> termStatus = term.join("status", JoinType.LEFT);
+        Join<CourseOffering, CourseOfferingSubTerm> courseOfferingSubTerm = root.join("courseOfferingSubTerms", JoinType.LEFT);
+        Join<CourseOfferingSubTerm, AcademicSubTerm> subTerm = courseOfferingSubTerm.join("subTerm", JoinType.LEFT);
+        Join<AcademicSubTerm, AcademicSubTermStatus> subTermStatus = subTerm.join("status", JoinType.LEFT);
         Join<CourseOffering, CourseOfferingStatus> status = root.join("status", JoinType.INNER);
 
         return new SearchJoins(
@@ -183,9 +183,9 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
                 subject,
                 department,
                 academicYear,
-                courseOfferingTerm,
-                term,
-                termStatus,
+                courseOfferingSubTerm,
+                subTerm,
+                subTermStatus,
                 status
         );
     }
@@ -195,7 +195,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             Root<CourseOffering> root,
             SearchJoins joins,
             String academicYearCode,
-            String termCode,
+            String subTermCode,
             String departmentCode,
             String subjectCode,
             String courseNumber,
@@ -206,14 +206,14 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             BigDecimal maxCredits,
             Boolean variableCredit,
             List<String> offeringStatusCodes,
-            List<String> termStatusCodes,
+            List<String> subTermStatusCodes,
             boolean includeInactive,
             Boolean isPublished
     ) {
         List<Predicate> predicates = new ArrayList<>();
 
         addEqualsIgnoreCasePredicate(criteriaBuilder, predicates, joins.academicYear.get("code"), academicYearCode);
-        addEqualsIgnoreCasePredicate(criteriaBuilder, predicates, joins.term.get("code"), termCode);
+        addEqualsIgnoreCasePredicate(criteriaBuilder, predicates, joins.subTerm.get("code"), subTermCode);
         addEqualsIgnoreCasePredicate(criteriaBuilder, predicates, joins.department.get("code"), departmentCode);
         addEqualsIgnoreCasePredicate(criteriaBuilder, predicates, joins.subject.get("code"), subjectCode);
         addContainsIgnoreCasePredicate(criteriaBuilder, predicates, joins.course.get("courseNumber"), courseNumber);
@@ -234,7 +234,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
         }
 
         addStatusInPredicate(criteriaBuilder, predicates, joins.status.get("code"), offeringStatusCodes);
-        addStatusInPredicate(criteriaBuilder, predicates, joins.termStatus.get("code"), termStatusCodes);
+        addStatusInPredicate(criteriaBuilder, predicates, joins.subTermStatus.get("code"), subTermStatusCodes);
 
         if (isPublished != null) {
             predicates.add(criteriaBuilder.equal(joins.academicYear.get("isPublished"), isPublished));
@@ -245,8 +245,8 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             predicates.add(criteriaBuilder.isTrue(joins.subject.get("active")));
             predicates.add(criteriaBuilder.isTrue(joins.course.get("active")));
             predicates.add(criteriaBuilder.isTrue(joins.academicYear.get("active")));
-            predicates.add(criteriaBuilder.isTrue(joins.term.get("active")));
-            predicates.add(criteriaBuilder.isTrue(joins.termStatus.get("active")));
+            predicates.add(criteriaBuilder.isTrue(joins.subTerm.get("active")));
+            predicates.add(criteriaBuilder.isTrue(joins.subTermStatus.get("active")));
             predicates.add(criteriaBuilder.isTrue(joins.status.get("active")));
         }
 
@@ -346,11 +346,11 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
                 Map.entry("courseVersion.course.subject", joins.subject),
                 Map.entry("courseVersion.course.subject.department", joins.department),
                 Map.entry("academicYear", joins.academicYear),
-                Map.entry("courseOfferingTerms", joins.courseOfferingTerm),
-                Map.entry("courseOfferingTerms.term", joins.term),
-                Map.entry("term", joins.term),
-                Map.entry("term.status", joins.termStatus),
-                Map.entry("courseOfferingTerms.term.status", joins.termStatus),
+                Map.entry("courseOfferingSubTerms", joins.courseOfferingSubTerm),
+                Map.entry("courseOfferingSubTerms.subTerm", joins.subTerm),
+                Map.entry("subTerm", joins.subTerm),
+                Map.entry("subTerm.status", joins.subTermStatus),
+                Map.entry("courseOfferingSubTerms.subTerm.status", joins.subTermStatus),
                 Map.entry("status", joins.status)
         );
 
@@ -368,13 +368,13 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
 
     private EntityGraph<CourseOffering> createSearchEntityGraph() {
         EntityGraph<CourseOffering> graph = entityManager.createEntityGraph(CourseOffering.class);
-        graph.addAttributeNodes("academicYear", "status", "courseVersion", "courseOfferingTerms");
+        graph.addAttributeNodes("academicYear", "status", "courseVersion", "courseOfferingSubTerms");
 
-        var courseOfferingTermGraph = graph.addSubgraph("courseOfferingTerms");
-        courseOfferingTermGraph.addAttributeNodes("term");
+        var courseOfferingSubTermGraph = graph.addSubgraph("courseOfferingSubTerms");
+        courseOfferingSubTermGraph.addAttributeNodes("subTerm");
 
-        var termGraph = courseOfferingTermGraph.addSubgraph("term");
-        termGraph.addAttributeNodes("academicYear", "status");
+        var subTermGraph = courseOfferingSubTermGraph.addSubgraph("subTerm");
+        subTermGraph.addAttributeNodes("academicYear", "status");
 
         var courseVersionGraph = graph.addSubgraph("courseVersion");
         courseVersionGraph.addAttributeNodes("course");
@@ -406,9 +406,9 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             Join<Course, AcademicSubject> subject,
             Join<AcademicSubject, AcademicDepartment> department,
             Join<CourseOffering, AcademicYear> academicYear,
-            Join<CourseOffering, CourseOfferingTerm> courseOfferingTerm,
-            Join<CourseOfferingTerm, AcademicTerm> term,
-            Join<AcademicTerm, AcademicTermStatus> termStatus,
+            Join<CourseOffering, CourseOfferingSubTerm> courseOfferingSubTerm,
+            Join<CourseOfferingSubTerm, AcademicSubTerm> subTerm,
+            Join<AcademicSubTerm, AcademicSubTermStatus> subTermStatus,
             Join<CourseOffering, CourseOfferingStatus> status
     ) {
     }

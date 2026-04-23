@@ -82,23 +82,23 @@ export function parseDateInputValue(value: string): Date | null {
 }
 
 export function compareAcademicTerms(
-  left: Pick<AcademicYearCreateResponse['terms'][number], 'code' | 'sortOrder' | 'termId'>,
-  right: Pick<AcademicYearCreateResponse['terms'][number], 'code' | 'sortOrder' | 'termId'>
+  left: Pick<AcademicYearCreateResponse['subTerms'][number], 'code' | 'sortOrder' | 'subTermId'>,
+  right: Pick<AcademicYearCreateResponse['subTerms'][number], 'code' | 'sortOrder' | 'subTermId'>
 ): number {
   return (
     left.sortOrder - right.sortOrder ||
     left.code.localeCompare(right.code) ||
-    left.termId - right.termId
+    left.subTermId - right.subTermId
   );
 }
 
 export function compareAcademicTermGroups(
-  left: Pick<AcademicYearCreateResponse['groupTerms'][number], 'code' | 'startDate' | 'termGroupId'>,
-  right: Pick<AcademicYearCreateResponse['groupTerms'][number], 'code' | 'startDate' | 'termGroupId'>
+  left: Pick<AcademicYearCreateResponse['terms'][number], 'code' | 'startDate' | 'termId'>,
+  right: Pick<AcademicYearCreateResponse['terms'][number], 'code' | 'startDate' | 'termId'>
 ): number {
   return (
     left.startDate.localeCompare(right.startDate) ||
     left.code.localeCompare(right.code) ||
-    left.termGroupId - right.termGroupId
+    left.termId - right.termId
   );
 }

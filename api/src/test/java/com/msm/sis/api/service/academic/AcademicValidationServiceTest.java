@@ -1,7 +1,7 @@
 package com.msm.sis.api.service.academic;
 
 import com.msm.sis.api.entity.AcademicYear;
-import com.msm.sis.api.repository.AcademicTermRepository;
+import com.msm.sis.api.repository.AcademicSubTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +25,7 @@ class AcademicValidationServiceTest {
     private AcademicYearRepository academicYearRepository;
 
     @Mock
-    private AcademicTermRepository academicTermRepository;
+    private AcademicSubTermRepository academicTermRepository;
 
     @InjectMocks
     private AcademicValidationService academicValidationService;

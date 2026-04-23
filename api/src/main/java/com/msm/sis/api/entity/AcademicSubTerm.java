@@ -9,33 +9,28 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
 @Entity
 @Table(
-        name = "academic_term_group",
+        name = "academic_sub_term",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uq_academic_term_group_year_code", columnNames = {"academic_year_id", "code"})
+                @UniqueConstraint(name = "uq_academic_sub_term_year_code", columnNames = {"academic_year_id", "code"}),
+                @UniqueConstraint(name = "uq_academic_sub_term_year_sort_order", columnNames = {"academic_year_id", "sort_order"})
         }
 )
-public class AcademicTermGroup {
+public class AcademicSubTerm {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "term_group_id")
+    @Column(name = "sub_term_id")
     private Long id;
 
     @JsonIgnore
@@ -57,12 +52,21 @@ public class AcademicTermGroup {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
-    @OrderBy("sortOrder ASC")
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "academic_term_group_term",
-            joinColumns = @JoinColumn(name = "term_group_id", nullable = false),
-            inverseJoinColumns = @JoinColumn(name = "term_id", nullable = false, unique = true)
-    )
-    private List<AcademicTerm> academicTerms = new ArrayList<>();
+    @Column(name = "sort_order", nullable = false)
+    private Integer sortOrder;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sub_term_status_id", nullable = false)
+    private AcademicSubTermStatus status;
+
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Column(name = "last_updated", insertable = false, updatable = false)
+    private LocalDateTime lastUpdated;
+
+    @Column(name = "updated_by")
+    private String updatedBy;
 }

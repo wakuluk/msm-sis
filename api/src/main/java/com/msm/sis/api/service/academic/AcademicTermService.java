@@ -1,142 +1,141 @@
 package com.msm.sis.api.service.academic;
 
-import com.msm.sis.api.dto.academic.term.AcademicTermStatusShiftDirection;
 import com.msm.sis.api.dto.academic.term.AcademicTermResponse;
-import com.msm.sis.api.dto.academic.term.AcademicTermStatusResponse;
 import com.msm.sis.api.dto.academic.term.CreateAcademicTermRequest;
 import com.msm.sis.api.dto.academic.term.PatchAcademicTermRequest;
-import com.msm.sis.api.dto.academic.year.CreateAcademicYearTermRequest;
-import com.msm.sis.api.dto.course.CourseOfferingSearchSortField;
-import com.msm.sis.api.dto.course.CourseOfferingSearchResultResponse;
+import com.msm.sis.api.entity.AcademicSubTerm;
 import com.msm.sis.api.entity.AcademicTerm;
-import com.msm.sis.api.entity.AcademicTermGroup;
-import com.msm.sis.api.entity.AcademicTermStatus;
 import com.msm.sis.api.entity.AcademicYear;
-import com.msm.sis.api.mapper.AcademicYearMapper;
-import com.msm.sis.api.mapper.CourseMapper;
-import com.msm.sis.api.repository.AcademicTermGroupRepository;
+import com.msm.sis.api.mapper.AcademicTermMapper;
 import com.msm.sis.api.repository.AcademicTermRepository;
-import com.msm.sis.api.repository.AcademicTermStatusRepository;
-import com.msm.sis.api.repository.AcademicYearRepository;
+import com.msm.sis.api.repository.AcademicSubTermRepository;
 import com.msm.sis.api.repository.CourseOfferingRepository;
+import com.msm.sis.api.repository.AcademicYearRepository;
 import jakarta.persistence.EntityManager;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-
-import static com.msm.sis.api.util.TextUtils.trimToNull;
+import java.util.Set;
 
 @Service
 public class AcademicTermService {
-    private static final String PLANNED_TERM_STATUS_CODE = "PLANNED";
 
-    private final AcademicValidationService academicValidationService;
-    private final AcademicTermGroupRepository academicTermGroupRepository;
     private final AcademicTermRepository academicTermRepository;
-    private final AcademicTermStatusRepository academicTermStatusRepository;
     private final AcademicYearRepository academicYearRepository;
+    private final AcademicSubTermRepository academicSubTermRepository;
     private final CourseOfferingRepository courseOfferingRepository;
-    private final AcademicYearMapper academicYearMapper;
-    private final CourseMapper courseMapper;
+    private final AcademicValidationService academicValidationService;
+    private final AcademicTermMapper academicTermMapper;
     private final EntityManager entityManager;
 
     public AcademicTermService(
-            AcademicValidationService academicValidationService,
-            AcademicTermGroupRepository academicTermGroupRepository,
             AcademicTermRepository academicTermRepository,
-            AcademicTermStatusRepository academicTermStatusRepository,
             AcademicYearRepository academicYearRepository,
+            AcademicSubTermRepository academicSubTermRepository,
             CourseOfferingRepository courseOfferingRepository,
-            AcademicYearMapper academicYearMapper,
-            CourseMapper courseMapper,
+            AcademicValidationService academicValidationService,
+            AcademicTermMapper academicTermMapper,
             EntityManager entityManager
     ) {
-        this.academicValidationService = academicValidationService;
-        this.academicTermGroupRepository = academicTermGroupRepository;
         this.academicTermRepository = academicTermRepository;
-        this.academicTermStatusRepository = academicTermStatusRepository;
         this.academicYearRepository = academicYearRepository;
+        this.academicSubTermRepository = academicSubTermRepository;
         this.courseOfferingRepository = courseOfferingRepository;
-        this.academicYearMapper = academicYearMapper;
-        this.courseMapper = courseMapper;
+        this.academicValidationService = academicValidationService;
+        this.academicTermMapper = academicTermMapper;
         this.entityManager = entityManager;
     }
 
     @Transactional
-    public List<AcademicTermResponse> createAcademicTerms(
+    public AcademicTermResponse createAcademicTerm(
             Long academicYearId,
-            List<CreateAcademicTermRequest> createAcademicTermRequestList)
-    {
-        AcademicYear academicYear = academicYearRepository.findById(academicYearId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        if (createAcademicTermRequestList == null || createAcademicTermRequestList.isEmpty()) {
-            return List.of();
-        }
-
-        academicValidationService.validateCreateAcademicTerms(
+            CreateAcademicTermRequest request
+    ) {
+        AcademicYear academicYear = getAcademicYearEntity(academicYearId);
+        List<Long> subTermIds = normalizeSubTermIds(request.subTermIds());
+        List<AcademicSubTerm> academicSubTerms = getAcademicSubTerms(subTermIds);
+        AcademicTerm academicTerm = academicTermMapper.fromCreateAcademicTermRequest(
                 academicYear,
-                academicYearId,
-                createAcademicTermRequestList
+                request
         );
+        academicValidationService.validateCreateAcademicTerm(
+                academicYear,
+                academicTerm,
+                subTermIds,
+                academicSubTerms
+        );
+        academicTerm.getAcademicSubTerms().addAll(academicSubTerms);
+        AcademicTerm savedAcademicTerm = academicTermRepository.save(academicTerm);
+        entityManager.flush();
+        entityManager.clear();
+        return getAcademicTerm(savedAcademicTerm.getId());
+    }
 
-        return createAcademicTermRequestList.stream()
-                .map(createAcademicTermRequest -> saveAcademicTerm(academicYear, createAcademicTermRequest))
+    @Transactional(readOnly = true)
+    public List<AcademicTermResponse> getAcademicTerms(Long academicYearId) {
+        getAcademicYearEntity(academicYearId);
+        List<AcademicTerm> academicTerms =
+                academicTermRepository.findAllByAcademicYear_IdOrderByStartDateAsc(academicYearId);
+        Map<Long, Long> courseOfferingCountsBySubTermId = getCourseOfferingCountsBySubTermId(academicTerms);
+
+        return academicTerms.stream()
+                .map(term -> academicTermMapper.toAcademicTermResponse(term, courseOfferingCountsBySubTermId))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public AcademicTermResponse getAcademicTerm(Long termId) {
-        return academicYearMapper.toAcademicTermResponse(getAcademicTermEntity(termId));
-    }
-
-    @Transactional(readOnly = true)
-    public List<AcademicTermStatusResponse> getAcademicTermStatuses() {
-        return academicTermStatusRepository.findAllByOrderBySortOrderAsc().stream()
-                .map(status -> new AcademicTermStatusResponse(
-                        status.getCode(),
-                        status.getName(),
-                        status.getSortOrder()
-                ))
-                .toList();
+        AcademicTerm academicTerm = getAcademicTermEntity(termId);
+        return academicTermMapper.toAcademicTermResponse(
+                academicTerm,
+                getCourseOfferingCountsBySubTermId(List.of(academicTerm))
+        );
     }
 
     @Transactional
     public AcademicTermResponse patchAcademicTerm(
             Long termId,
-            PatchAcademicTermRequest patchAcademicTermRequest,
-            String updatedBy
+            PatchAcademicTermRequest request
     ) {
-        //TODO review!
         AcademicTerm existingAcademicTerm = getAcademicTermEntity(termId);
-        AcademicTerm candidateAcademicTerm = copyAcademicTerm(existingAcademicTerm);
+        AcademicTerm candidateAcademicTerm = academicTermMapper.copy(existingAcademicTerm);
 
-        if (patchAcademicTermRequest.getTermId() != null
-                && !Objects.equals(patchAcademicTermRequest.getTermId(), termId)) {
+        if (request.getTermId() != null && !Objects.equals(request.getTermId(), termId)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Academic term ID in the request does not match the target academic term."
             );
         }
 
-        academicYearMapper.applyPatch(candidateAcademicTerm, patchAcademicTermRequest);
+        academicTermMapper.applyPatch(candidateAcademicTerm, request);
+
+        List<Long> requestedSubTermIds = request.getSubTermIds().isPresent()
+                ? normalizeSubTermIds(request.getSubTermIds().orElse(List.of()))
+                : extractAcademicSubTermIds(existingAcademicTerm.getAcademicSubTerms());
+
+        List<AcademicSubTerm> requestedAcademicSubTerms = request.getSubTermIds().isPresent()
+                ? getAcademicSubTerms(requestedSubTermIds)
+                : List.copyOf(existingAcademicTerm.getAcademicSubTerms());
+
         academicValidationService.validatePatchAcademicTerm(
                 existingAcademicTerm,
-                candidateAcademicTerm
+                candidateAcademicTerm,
+                requestedSubTermIds,
+                requestedAcademicSubTerms
         );
-        validateAcademicTermGroupConstraints(candidateAcademicTerm);
 
-        if (!hasPatchableChanges(existingAcademicTerm, candidateAcademicTerm)) {
+        if (!hasPatchableChanges(existingAcademicTerm, candidateAcademicTerm, requestedAcademicSubTerms)) {
             return getAcademicTerm(termId);
         }
 
-        copyPatchableFields(candidateAcademicTerm, existingAcademicTerm);
-        existingAcademicTerm.setUpdatedBy(updatedBy);
+        academicTermMapper.copyPatchableFields(candidateAcademicTerm, existingAcademicTerm);
+        replaceAcademicSubTerms(existingAcademicTerm, requestedAcademicSubTerms);
         academicTermRepository.save(existingAcademicTerm);
         entityManager.flush();
         entityManager.clear();
@@ -144,254 +143,101 @@ public class AcademicTermService {
     }
 
     @Transactional(readOnly = true)
-    public List<CourseOfferingSearchResultResponse> getCourseOfferingsForAcademicTerm(
-            Long termId,
-            String sortBy,
-            String sortDirection
-    ) {
-        AcademicTerm academicTerm = getAcademicTermEntity(termId);
-        CourseOfferingSearchSortField sortField = parseCourseOfferingSortField(sortBy);
-        Sort.Direction direction = parseSortDirection(sortDirection);
-
-        return courseOfferingRepository.findAllByAcademicTermId(
-                        termId,
-                        buildCourseOfferingSort(sortField, direction)
-                ).stream()
-                .map(courseOffering -> courseMapper.toCourseOfferingSearchResultResponse(courseOffering, academicTerm))
-                .toList();
-    }
-
-    @Transactional
-    public AcademicTermResponse shiftAcademicTermStatus(
-            Long termId,
-            AcademicTermStatusShiftDirection direction,
-            String updatedBy
-    ) {
-        if (direction == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Status shift direction is required."
-            );
-        }
-
-        AcademicTerm academicTerm = getAcademicTermEntity(termId);
-        AcademicTermStatus currentStatus = academicTerm.getStatus();
-
-        if (currentStatus == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic term does not have a current status."
-            );
-        }
-
-        if (!currentStatus.isActive() || !currentStatus.isAllowLinearShift()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Current academic term status cannot be shifted linearly."
-            );
-        }
-
-        List<AcademicTermStatus> linearStatuses = academicTermStatusRepository
-                .findAllByActiveTrueAndAllowLinearShiftTrueOrderBySortOrderAsc();
-
-        int currentIndex = findAcademicTermStatusIndex(linearStatuses, currentStatus.getId());
-
-        if (currentIndex < 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Current academic term status is not part of the linear status flow."
-            );
-        }
-
-        int targetIndex = direction == AcademicTermStatusShiftDirection.UP
-                ? currentIndex + 1
-                : currentIndex - 1;
-
-        if (targetIndex < 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic term is already at the first workflow step."
-            );
-        }
-
-        if (targetIndex >= linearStatuses.size()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic term is already at the final workflow step."
-            );
-        }
-
-        academicTerm.setStatus(linearStatuses.get(targetIndex));
-        academicTerm.setUpdatedBy(updatedBy);
-        academicTermRepository.save(academicTerm);
-        entityManager.flush();
-        entityManager.clear();
-        return getAcademicTerm(termId);
-    }
-
-    @Transactional
-    public List<AcademicTermResponse> createAcademicTerms(
-            AcademicYear academicYear,
-            List<CreateAcademicYearTermRequest> createAcademicTermRequestList)
-    {
-        if (createAcademicTermRequestList == null || createAcademicTermRequestList.isEmpty()) {
-            return List.of();
-        }
-
-        academicValidationService.validateCreateAcademicTerms(academicYear, createAcademicTermRequestList);
-
-        return createAcademicTermRequestList.stream()
-                .map(createAcademicTermRequest -> saveAcademicYearTerm(academicYear, createAcademicTermRequest))
-                .toList();
-    }
-
-    @Transactional
-    public AcademicTermResponse createAcademicTerm(
-            AcademicYear academicYear,
-            CreateAcademicYearTermRequest createAcademicTermRequest
-    ){
-        academicValidationService.validateCreateAcademicTerm(academicYear, createAcademicTermRequest);
-        return saveAcademicYearTerm(academicYear, createAcademicTermRequest);
-    }
-
-    @Transactional
-    public AcademicTermResponse createAcademicTerm(AcademicYear academicYear, CreateAcademicTermRequest createAcademicTermRequest){
-        if (academicYear.getId() == null || !academicYear.getId().equals(createAcademicTermRequest.academicYearId())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic year ID in the request does not match the target academic year."
-            );
-        }
-
-        academicValidationService.validateCreateAcademicTerm(academicYear, createAcademicTermRequest);
-        return saveAcademicTerm(academicYear, createAcademicTermRequest);
-    }
-
-    private AcademicTermResponse saveAcademicYearTerm(
-            AcademicYear academicYear,
-            CreateAcademicYearTermRequest createAcademicTermRequest
-    ) {
-        AcademicTermStatus termStatus = getPlannedTermStatus();
-        AcademicTerm academicTerm = academicYearMapper.fromCreateAcademicYearTermRequest(
-                academicYear,
-                termStatus,
-                createAcademicTermRequest
-        );
-        AcademicTerm savedAcademicTerm = academicTermRepository.save(academicTerm);
-        return academicYearMapper.toAcademicTermResponse(savedAcademicTerm);
-    }
-
-    private AcademicTermResponse saveAcademicTerm(
-            AcademicYear academicYear,
-            CreateAcademicTermRequest createAcademicTermRequest
-    ) {
-        AcademicTermStatus termStatus = getPlannedTermStatus();
-        AcademicTerm academicTerm = academicYearMapper.fromCreateAcademicTermRequest(
-                academicYear,
-                termStatus,
-                createAcademicTermRequest
-        );
-        AcademicTerm savedAcademicTerm = academicTermRepository.save(academicTerm);
-        return academicYearMapper.toAcademicTermResponse(savedAcademicTerm);
-    }
-
-    private AcademicTermStatus getPlannedTermStatus() {
-        return academicTermStatusRepository.findByCode(trimToNull(PLANNED_TERM_STATUS_CODE))
-                .filter(AcademicTermStatus::isActive)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Academic term status 'PLANNED' must exist and be active."
-                ));
-    }
-
-    private AcademicTerm getAcademicTermEntity(Long termId) {
+    public AcademicTerm getAcademicTermEntity(Long termId) {
         return academicTermRepository.findDetailedById(termId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
-    private int findAcademicTermStatusIndex(List<AcademicTermStatus> statuses, Long statusId) {
-        for (int index = 0; index < statuses.size(); index += 1) {
-            if (Objects.equals(statuses.get(index).getId(), statusId)) {
-                return index;
-            }
+    private AcademicYear getAcademicYearEntity(Long academicYearId) {
+        return academicYearRepository.findById(academicYearId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+
+    private List<Long> normalizeSubTermIds(List<Long> subTermIds) {
+        if (subTermIds == null) {
+            return List.of();
         }
 
-        return -1;
+        if (subTermIds.stream().anyMatch(Objects::isNull)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic sub term IDs cannot contain null values."
+            );
+        }
+
+        return List.copyOf(subTermIds);
     }
 
-    private AcademicTerm copyAcademicTerm(AcademicTerm academicTerm) {
-        AcademicTerm copy = new AcademicTerm();
-        copy.setId(academicTerm.getId());
-        copy.setAcademicYear(academicTerm.getAcademicYear());
-        copy.setCode(academicTerm.getCode());
-        copy.setName(academicTerm.getName());
-        copy.setStartDate(academicTerm.getStartDate());
-        copy.setEndDate(academicTerm.getEndDate());
-        copy.setSortOrder(academicTerm.getSortOrder());
-        copy.setStatus(academicTerm.getStatus());
-        copy.setActive(academicTerm.isActive());
-        copy.setLastUpdated(academicTerm.getLastUpdated());
-        copy.setUpdatedBy(academicTerm.getUpdatedBy());
-        return copy;
+    private List<AcademicSubTerm> getAcademicSubTerms(List<Long> subTermIds) {
+        if (subTermIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<AcademicSubTerm> academicSubTerms =
+                academicSubTermRepository.findAllByIdInOrderBySortOrderAsc(subTermIds);
+        Set<Long> foundIds = academicSubTerms.stream()
+                .map(AcademicSubTerm::getId)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+
+        if (foundIds.size() != new LinkedHashSet<>(subTermIds).size()) {
+            List<Long> missingIds = subTermIds.stream()
+                    .filter(subTermId -> !foundIds.contains(subTermId))
+                    .distinct()
+                    .toList();
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Academic sub terms not found for IDs: " + missingIds
+            );
+        }
+
+        return academicSubTerms;
     }
 
-    private void copyPatchableFields(AcademicTerm source, AcademicTerm target) {
-        target.setCode(source.getCode());
-        target.setName(source.getName());
-        target.setStartDate(source.getStartDate());
-        target.setEndDate(source.getEndDate());
-        target.setSortOrder(source.getSortOrder());
+    private List<Long> extractAcademicSubTermIds(List<AcademicSubTerm> academicSubTerms) {
+        if (academicSubTerms == null) {
+            return List.of();
+        }
+
+        return academicSubTerms.stream()
+                .map(AcademicSubTerm::getId)
+                .toList();
     }
 
-    private boolean hasPatchableChanges(AcademicTerm existingAcademicTerm, AcademicTerm candidateAcademicTerm) {
+    private void replaceAcademicSubTerms(AcademicTerm academicTerm, List<AcademicSubTerm> academicSubTerms) {
+        academicTerm.getAcademicSubTerms().clear();
+        academicTerm.getAcademicSubTerms().addAll(academicSubTerms);
+    }
+
+    private Map<Long, Long> getCourseOfferingCountsBySubTermId(List<AcademicTerm> academicTerms) {
+        List<Long> subTermIds = academicTerms.stream()
+                .flatMap(term -> term.getAcademicSubTerms().stream())
+                .map(AcademicSubTerm::getId)
+                .distinct()
+                .toList();
+
+        if (subTermIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return courseOfferingRepository.countBySubTermIds(subTermIds).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        CourseOfferingRepository.SubTermCourseOfferingCount::getSubTermId,
+                        CourseOfferingRepository.SubTermCourseOfferingCount::getCourseOfferingCount
+                ));
+    }
+
+    private boolean hasPatchableChanges(
+            AcademicTerm existingAcademicTerm,
+            AcademicTerm candidateAcademicTerm,
+            List<AcademicSubTerm> requestedAcademicSubTerms
+    ) {
+        List<Long> existingSubTermIds = extractAcademicSubTermIds(existingAcademicTerm.getAcademicSubTerms());
+        List<Long> requestedSubTermIds = extractAcademicSubTermIds(requestedAcademicSubTerms);
+
         return !Objects.equals(existingAcademicTerm.getCode(), candidateAcademicTerm.getCode())
                 || !Objects.equals(existingAcademicTerm.getName(), candidateAcademicTerm.getName())
                 || !Objects.equals(existingAcademicTerm.getStartDate(), candidateAcademicTerm.getStartDate())
                 || !Objects.equals(existingAcademicTerm.getEndDate(), candidateAcademicTerm.getEndDate())
-                || !Objects.equals(existingAcademicTerm.getSortOrder(), candidateAcademicTerm.getSortOrder());
-    }
-
-    private void validateAcademicTermGroupConstraints(AcademicTerm academicTerm) {
-        if (academicTerm.getId() == null) {
-            return;
-        }
-
-        AcademicTermGroup academicTermGroup = academicTermGroupRepository.findByAcademicTerms_Id(academicTerm.getId())
-                .orElse(null);
-
-        academicValidationService.validateAcademicTermWithinContainingGroup(academicTermGroup, academicTerm);
-    }
-
-    private CourseOfferingSearchSortField parseCourseOfferingSortField(String sortBy) {
-        try {
-            return CourseOfferingSearchSortField.fromRequestValue(sortBy);
-        } catch (IllegalArgumentException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Sort by must be one of: academicYearCode, termCode, departmentCode, subjectCode, courseNumber, courseCode, title, minCredits, maxCredits, variableCredit, offeringStatusCode."
-            );
-        }
-    }
-
-    private Sort.Direction parseSortDirection(String sortDirection) {
-        try {
-            return Sort.Direction.fromString(sortDirection);
-        } catch (IllegalArgumentException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Sort direction must be 'asc' or 'desc'."
-            );
-        }
-    }
-
-    private Sort buildCourseOfferingSort(
-            CourseOfferingSearchSortField sortField,
-            Sort.Direction sortDirection
-    ) {
-        return sortField.toSort(sortDirection)
-                .and(Sort.by("courseVersion.course.subject.code").ascending())
-                .and(Sort.by("courseVersion.course.courseNumber").ascending())
-                .and(Sort.by("courseVersion.versionNumber").descending())
-                .and(Sort.by("id").ascending());
+                || !Objects.equals(existingSubTermIds, requestedSubTermIds);
     }
 }

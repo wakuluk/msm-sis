@@ -18,11 +18,11 @@ import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import {
-  AcademicYearCreateWithTermGroupsError,
-  createAcademicYearWithTermGroups,
+  AcademicYearCreateWithTermsError,
+  createAcademicYearWithTerms,
 } from '@/services/academic-year-service';
 import {
-  initialAcademicTermGroupFormValues,
+  initialAcademicTermFormValues,
   initialAcademicYearCreateFormValues,
   initialAcademicYearTermFormValues,
   type AcademicYearCreateFormValues,
@@ -115,7 +115,7 @@ export function AcademicYearCreatePage() {
 
     try {
       setSubmitState({ status: 'submitting' });
-      const createdAcademicYear = await createAcademicYearWithTermGroups(values);
+      const createdAcademicYear = await createAcademicYearWithTerms(values);
       navigate(`/academics/academic-years/${createdAcademicYear.academicYearId}`, {
         replace: true,
         state: {
@@ -123,7 +123,7 @@ export function AcademicYearCreatePage() {
         },
       });
     } catch (error) {
-      if (error instanceof AcademicYearCreateWithTermGroupsError) {
+      if (error instanceof AcademicYearCreateWithTermsError) {
         navigate(`/academics/academic-years/${error.academicYear.academicYearId}`, {
           replace: true,
           state: {
@@ -142,24 +142,24 @@ export function AcademicYearCreatePage() {
   }
 
   function handleAddTermGroup() {
-    form.insertListItem('termGroups', {
-      ...initialAcademicTermGroupFormValues,
+    form.insertListItem('terms', {
+      ...initialAcademicTermFormValues,
       terms: [],
     });
   }
 
   function handleRemoveTermGroup(index: number) {
-    form.removeListItem('termGroups', index);
+    form.removeListItem('terms', index);
   }
 
   function handleAddGroupTerm(groupIndex: number) {
-    form.insertListItem(`termGroups.${groupIndex}.terms`, {
+    form.insertListItem(`terms.${groupIndex}.terms`, {
       ...initialAcademicYearTermFormValues,
     });
   }
 
   function handleRemoveGroupTerm(groupIndex: number, termIndex: number) {
-    form.removeListItem(`termGroups.${groupIndex}.terms`, termIndex);
+    form.removeListItem(`terms.${groupIndex}.terms`, termIndex);
   }
 
   return (
@@ -167,7 +167,7 @@ export function AcademicYearCreatePage() {
       size="xl"
       eyebrow="Admin Workflow"
       title="Create Academic Year"
-      description="Create an academic year and optionally define academic term groups in one pass. Terms on this page are created only inside term groups, and each new term still begins in Planned status."
+      description="Create an academic year and optionally define terms in one pass. Sub terms on this page are created only inside terms, and each new sub term still begins in Planned status."
       badge={
         <Badge variant="light" size="lg">
           Admin only
@@ -236,28 +236,27 @@ export function AcademicYearCreatePage() {
           </RecordPageSection>
 
           <RecordPageSection
-            title="Academic Term Groups"
-            description="Standalone term rows are not available on this page anymore. Add term groups here, then place each term inside its group before saving."
+            title="Terms"
+            description="Standalone sub term rows are not available on this page anymore. Add terms here, then place each sub term inside a term before saving."
             action={
               <Button type="button" variant="light" onClick={handleAddTermGroup}>
-                Add term group
+                Add term
               </Button>
             }
           >
             <Grid.Col span={12}>
               <Stack gap="md">
-                {form.values.termGroups.length === 0 ? (
-                  <Alert color="gray" title="No term groups added">
-                    This academic year will be created without term groups unless you add them
-                    here.
+                {form.values.terms.length === 0 ? (
+                  <Alert color="gray" title="No terms added">
+                    This academic year will be created without terms unless you add them here.
                   </Alert>
                 ) : null}
 
-                {form.values.termGroups.map((termGroup, groupIndex) => (
+                {form.values.terms.map((termGroup, groupIndex) => (
                   <Paper key={`term-group-${groupIndex}`} withBorder p="md" radius="sm">
                     <Stack gap="md">
                       <Group justify="space-between" align="center" wrap="wrap">
-                        <Text fw={600}>Term Group {groupIndex + 1}</Text>
+                        <Text fw={600}>Term {groupIndex + 1}</Text>
                         <Button
                           type="button"
                           variant="subtle"
@@ -266,7 +265,7 @@ export function AcademicYearCreatePage() {
                             handleRemoveTermGroup(groupIndex);
                           }}
                         >
-                          Remove group
+                          Remove term
                         </Button>
                       </Group>
 
@@ -277,7 +276,7 @@ export function AcademicYearCreatePage() {
                             label="Code"
                             placeholder="SEMESTER-1"
                             maxLength={20}
-                            {...form.getInputProps(`termGroups.${groupIndex}.code`)}
+                            {...form.getInputProps(`terms.${groupIndex}.code`)}
                           />
                         </Grid.Col>
                         <Grid.Col span={{ base: 12, md: 8 }}>
@@ -286,7 +285,7 @@ export function AcademicYearCreatePage() {
                             label="Name"
                             placeholder="Semester 1"
                             maxLength={100}
-                            {...form.getInputProps(`termGroups.${groupIndex}.name`)}
+                            {...form.getInputProps(`terms.${groupIndex}.name`)}
                           />
                         </Grid.Col>
                         <Grid.Col span={{ base: 12, md: 4 }}>
@@ -295,7 +294,7 @@ export function AcademicYearCreatePage() {
                             value={parseDateInputValue(termGroup.startDate)}
                             onChange={(value) => {
                               form.setFieldValue(
-                                `termGroups.${groupIndex}.startDate`,
+                                `terms.${groupIndex}.startDate`,
                                 normalizeDateInputValue(value)
                               );
                             }}
@@ -311,7 +310,7 @@ export function AcademicYearCreatePage() {
                             value={parseDateInputValue(termGroup.endDate)}
                             onChange={(value) => {
                               form.setFieldValue(
-                                `termGroups.${groupIndex}.endDate`,
+                                `terms.${groupIndex}.endDate`,
                                 normalizeDateInputValue(value)
                               );
                             }}
@@ -325,7 +324,7 @@ export function AcademicYearCreatePage() {
 
                       <Stack gap="sm">
                         <Group justify="space-between" align="center" wrap="wrap">
-                          <Text fw={500}>Terms in this group</Text>
+                          <Text fw={500}>Sub terms in this term</Text>
                           <Button
                             type="button"
                             variant="light"
@@ -334,13 +333,13 @@ export function AcademicYearCreatePage() {
                               handleAddGroupTerm(groupIndex);
                             }}
                           >
-                            Add term
+                            Add sub term
                           </Button>
                         </Group>
 
                         {termGroup.terms.length === 0 ? (
-                          <Alert color="gray" title="No terms in this group">
-                            This term group will be created without terms unless you add them here.
+                          <Alert color="gray" title="No sub terms in this term">
+                            This term will be created without sub terms unless you add them here.
                           </Alert>
                         ) : null}
 
@@ -354,7 +353,7 @@ export function AcademicYearCreatePage() {
                           >
                             <Stack gap="md">
                               <Group justify="space-between" align="center" wrap="wrap">
-                                <Text fw={500}>Term {termIndex + 1}</Text>
+                                <Text fw={500}>Sub term {termIndex + 1}</Text>
                                 <Button
                                   type="button"
                                   variant="subtle"
@@ -364,7 +363,7 @@ export function AcademicYearCreatePage() {
                                     handleRemoveGroupTerm(groupIndex, termIndex);
                                   }}
                                 >
-                                  Remove term
+                                  Remove sub term
                                 </Button>
                               </Group>
 
@@ -376,7 +375,7 @@ export function AcademicYearCreatePage() {
                                     placeholder="FALL-2026-A"
                                     maxLength={20}
                                     {...form.getInputProps(
-                                      `termGroups.${groupIndex}.terms.${termIndex}.code`
+                                      `terms.${groupIndex}.terms.${termIndex}.code`
                                     )}
                                   />
                                 </Grid.Col>
@@ -387,7 +386,7 @@ export function AcademicYearCreatePage() {
                                     placeholder="Fall 2026 Block A"
                                     maxLength={100}
                                     {...form.getInputProps(
-                                      `termGroups.${groupIndex}.terms.${termIndex}.name`
+                                      `terms.${groupIndex}.terms.${termIndex}.name`
                                     )}
                                   />
                                 </Grid.Col>
@@ -397,7 +396,7 @@ export function AcademicYearCreatePage() {
                                     value={parseDateInputValue(term.startDate)}
                                     onChange={(value) => {
                                       form.setFieldValue(
-                                        `termGroups.${groupIndex}.terms.${termIndex}.startDate`,
+                                        `terms.${groupIndex}.terms.${termIndex}.startDate`,
                                         normalizeDateInputValue(value)
                                       );
                                     }}
@@ -413,7 +412,7 @@ export function AcademicYearCreatePage() {
                                     value={parseDateInputValue(term.endDate)}
                                     onChange={(value) => {
                                       form.setFieldValue(
-                                        `termGroups.${groupIndex}.terms.${termIndex}.endDate`,
+                                        `terms.${groupIndex}.terms.${termIndex}.endDate`,
                                         normalizeDateInputValue(value)
                                       );
                                     }}
@@ -430,7 +429,7 @@ export function AcademicYearCreatePage() {
                                     placeholder="202630"
                                     inputMode="numeric"
                                     {...form.getInputProps(
-                                      `termGroups.${groupIndex}.terms.${termIndex}.sortOrder`
+                                      `terms.${groupIndex}.terms.${termIndex}.sortOrder`
                                     )}
                                   />
                                 </Grid.Col>
@@ -446,7 +445,7 @@ export function AcademicYearCreatePage() {
             </Grid.Col>
           </RecordPageSection>
 
-          <RecordPageFooter description="New academic years start inactive and unpublished. Use the academic year detail page after save to review the created year, the generated terms, and any term-group follow-up work.">
+          <RecordPageFooter description="New academic years start inactive and unpublished. Use the academic year detail page after save to review the created year, the generated terms, the generated sub terms, and any follow-up work.">
             <Button
               type="button"
               onClick={handleBack}

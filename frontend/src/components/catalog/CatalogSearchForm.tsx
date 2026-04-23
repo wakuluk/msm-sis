@@ -158,7 +158,7 @@ export function CatalogSearchForm({
                 clearable
                 searchable
                 disabled={!hasLoadedReferenceOptions}
-                {...form.getInputProps('termCode')}
+                {...form.getInputProps('subTermCode')}
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6 }}>

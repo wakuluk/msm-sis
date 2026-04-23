@@ -1,13 +1,13 @@
 package com.msm.sis.api.mapper;
 
-import com.msm.sis.api.dto.academic.term.CreateAcademicTermRequest;
+import com.msm.sis.api.dto.academic.term.CreateAcademicSubTermRequest;
 import com.msm.sis.api.dto.academic.year.CreateAcademicYearRequest;
-import com.msm.sis.api.dto.academic.year.CreateAcademicYearTermRequest;
+import com.msm.sis.api.dto.academic.year.CreateAcademicYearSubTermRequest;
 import com.msm.sis.api.dto.academic.year.PatchAcademicYearRequest;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.AcademicYearStatus;
-import com.msm.sis.api.entity.AcademicTerm;
-import com.msm.sis.api.entity.AcademicTermStatus;
+import com.msm.sis.api.entity.AcademicSubTerm;
+import com.msm.sis.api.entity.AcademicSubTermStatus;
 import com.msm.sis.api.patch.PatchValue;
 import org.junit.jupiter.api.Test;
 
@@ -47,11 +47,11 @@ class AcademicYearMapperTest {
         AcademicYear academicYear = new AcademicYear();
         academicYear.setId(7L);
 
-        AcademicTermStatus termStatus = new AcademicTermStatus();
+        AcademicSubTermStatus termStatus = new AcademicSubTermStatus();
         termStatus.setCode("REGISTRATION_OPEN");
         termStatus.setName("Registration Open");
 
-        CreateAcademicYearTermRequest request = new CreateAcademicYearTermRequest(
+        CreateAcademicYearSubTermRequest request = new CreateAcademicYearSubTermRequest(
                 " FALL-2026 ",
                 " Fall 2026 ",
                 LocalDate.of(2026, 8, 24),
@@ -59,7 +59,7 @@ class AcademicYearMapperTest {
                 202630
         );
 
-        AcademicTerm term = academicYearMapper.fromCreateAcademicYearTermRequest(
+        AcademicSubTerm term = academicYearMapper.fromCreateAcademicYearSubTermRequest(
                 academicYear,
                 termStatus,
                 request
@@ -78,11 +78,11 @@ class AcademicYearMapperTest {
         AcademicYear academicYear = new AcademicYear();
         academicYear.setId(9L);
 
-        AcademicTermStatus termStatus = new AcademicTermStatus();
+        AcademicSubTermStatus termStatus = new AcademicSubTermStatus();
         termStatus.setCode("PLANNED");
         termStatus.setName("Planned");
 
-        CreateAcademicTermRequest request = new CreateAcademicTermRequest(
+        CreateAcademicSubTermRequest request = new CreateAcademicSubTermRequest(
                 9L,
                 " SPRING-2027 ",
                 " Spring 2027 ",
@@ -91,7 +91,7 @@ class AcademicYearMapperTest {
                 202710
         );
 
-        AcademicTerm term = academicYearMapper.fromCreateAcademicTermRequest(
+        AcademicSubTerm term = academicYearMapper.fromCreateAcademicSubTermRequest(
                 academicYear,
                 termStatus,
                 request
@@ -119,11 +119,11 @@ class AcademicYearMapperTest {
         academicYear.setActive(true);
         academicYear.setPublished(true);
 
-        AcademicTermStatus planned = new AcademicTermStatus();
+        AcademicSubTermStatus planned = new AcademicSubTermStatus();
         planned.setCode("PLANNED");
         planned.setName("Planned");
 
-        AcademicTerm spring = new AcademicTerm();
+        AcademicSubTerm spring = new AcademicSubTerm();
         spring.setId(2L);
         spring.setAcademicYear(academicYear);
         spring.setCode("SPRING-2027");
@@ -134,7 +134,7 @@ class AcademicYearMapperTest {
         spring.setStatus(planned);
         spring.setActive(true);
 
-        AcademicTerm fall = new AcademicTerm();
+        AcademicSubTerm fall = new AcademicSubTerm();
         fall.setId(1L);
         fall.setAcademicYear(academicYear);
         fall.setCode("FALL-2026");

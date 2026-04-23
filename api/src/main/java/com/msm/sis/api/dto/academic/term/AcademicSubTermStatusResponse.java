@@ -4,11 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
-import java.util.List;
-
-public record CreateAcademicTermGroupRequest(
-
+public record AcademicSubTermStatusResponse(
         @NotBlank
         @Size(max = 20)
         String code,
@@ -18,11 +14,6 @@ public record CreateAcademicTermGroupRequest(
         String name,
 
         @NotNull
-        LocalDate startDate,
-
-        @NotNull
-        LocalDate endDate,
-
-        List<Long> termIds
+        Integer order
 ) {
 }

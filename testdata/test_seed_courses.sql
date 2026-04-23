@@ -119,7 +119,7 @@ WHERE d.code = 'HIST'
       WHERE code = 'MEH'
   );
 
--- Academic year, academic term, and course offering statuses come from migrations.
+-- Academic year, academic sub term, and course offering statuses come from migrations.
 
 INSERT INTO academic_year (code, name, start_date, end_date, active, is_published, year_status_id)
 SELECT 'AY-2026-2027', 'Academic Year 2026-2027', '2026-08-01', '2027-08-15', TRUE, TRUE, ys.year_status_id
@@ -163,344 +163,344 @@ FROM academic_year_status ys
 WHERE ys.code = 'PLANNED'
   AND ay.code = 'AY-2027-2028';
 
-INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
-SELECT ay.academic_year_id, 'FALL-2026', 'Fall 2026', '2026-08-24', '2026-12-11', 202630, ts.term_status_id, TRUE
-FROM academic_term_status ts
+INSERT INTO academic_sub_term (academic_year_id, code, name, start_date, end_date, sort_order, sub_term_status_id, active)
+SELECT ay.academic_year_id, 'FALL-2026', 'Fall 2026', '2026-08-24', '2026-12-11', 202630, ts.sub_term_status_id, TRUE
+FROM academic_sub_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2026-2027'
 WHERE ts.code = 'OPEN_FOR_REGISTRATION'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term term
-      WHERE term.academic_year_id = ay.academic_year_id
-        AND term.code = 'FALL-2026'
+      FROM academic_sub_term sub_term
+      WHERE sub_term.academic_year_id = ay.academic_year_id
+        AND sub_term.code = 'FALL-2026'
   );
 
-INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
-SELECT ay.academic_year_id, 'SPRING-2027', 'Spring 2027', '2027-01-19', '2027-05-07', 202710, ts.term_status_id, TRUE
-FROM academic_term_status ts
+INSERT INTO academic_sub_term (academic_year_id, code, name, start_date, end_date, sort_order, sub_term_status_id, active)
+SELECT ay.academic_year_id, 'SPRING-2027', 'Spring 2027', '2027-01-19', '2027-05-07', 202710, ts.sub_term_status_id, TRUE
+FROM academic_sub_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2026-2027'
 WHERE ts.code = 'PLANNED'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term term
-      WHERE term.academic_year_id = ay.academic_year_id
-        AND term.code = 'SPRING-2027'
+      FROM academic_sub_term sub_term
+      WHERE sub_term.academic_year_id = ay.academic_year_id
+        AND sub_term.code = 'SPRING-2027'
   );
 
-INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
-SELECT ay.academic_year_id, 'FALL-2027', 'Fall 2027', '2027-08-23', '2027-12-10', 202730, ts.term_status_id, TRUE
-FROM academic_term_status ts
+INSERT INTO academic_sub_term (academic_year_id, code, name, start_date, end_date, sort_order, sub_term_status_id, active)
+SELECT ay.academic_year_id, 'FALL-2027', 'Fall 2027', '2027-08-23', '2027-12-10', 202730, ts.sub_term_status_id, TRUE
+FROM academic_sub_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2027-2028'
 WHERE ts.code = 'PLANNED'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term term
-      WHERE term.academic_year_id = ay.academic_year_id
-        AND term.code = 'FALL-2027'
+      FROM academic_sub_term sub_term
+      WHERE sub_term.academic_year_id = ay.academic_year_id
+        AND sub_term.code = 'FALL-2027'
   );
 
-INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
-SELECT ay.academic_year_id, 'SUMMER-I-2027', 'Summer I 2027', '2027-05-24', '2027-06-25', 202720, ts.term_status_id, TRUE
-FROM academic_term_status ts
+INSERT INTO academic_sub_term (academic_year_id, code, name, start_date, end_date, sort_order, sub_term_status_id, active)
+SELECT ay.academic_year_id, 'SUMMER-I-2027', 'Summer I 2027', '2027-05-24', '2027-06-25', 202720, ts.sub_term_status_id, TRUE
+FROM academic_sub_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2026-2027'
 WHERE ts.code = 'PLANNED'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term term
-      WHERE term.academic_year_id = ay.academic_year_id
-        AND term.code = 'SUMMER-I-2027'
+      FROM academic_sub_term sub_term
+      WHERE sub_term.academic_year_id = ay.academic_year_id
+        AND sub_term.code = 'SUMMER-I-2027'
   );
 
-INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
-SELECT ay.academic_year_id, 'SUMMER-II-2027', 'Summer II 2027', '2027-06-28', '2027-07-30', 202721, ts.term_status_id, TRUE
-FROM academic_term_status ts
+INSERT INTO academic_sub_term (academic_year_id, code, name, start_date, end_date, sort_order, sub_term_status_id, active)
+SELECT ay.academic_year_id, 'SUMMER-II-2027', 'Summer II 2027', '2027-06-28', '2027-07-30', 202721, ts.sub_term_status_id, TRUE
+FROM academic_sub_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2026-2027'
 WHERE ts.code = 'PLANNED'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term term
-      WHERE term.academic_year_id = ay.academic_year_id
-        AND term.code = 'SUMMER-II-2027'
+      FROM academic_sub_term sub_term
+      WHERE sub_term.academic_year_id = ay.academic_year_id
+        AND sub_term.code = 'SUMMER-II-2027'
   );
 
-INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
-SELECT ay.academic_year_id, 'SPRING-2028', 'Spring 2028', '2028-01-18', '2028-05-05', 202810, ts.term_status_id, TRUE
-FROM academic_term_status ts
+INSERT INTO academic_sub_term (academic_year_id, code, name, start_date, end_date, sort_order, sub_term_status_id, active)
+SELECT ay.academic_year_id, 'SPRING-2028', 'Spring 2028', '2028-01-18', '2028-05-05', 202810, ts.sub_term_status_id, TRUE
+FROM academic_sub_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2027-2028'
 WHERE ts.code = 'PLANNED'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term term
-      WHERE term.academic_year_id = ay.academic_year_id
-        AND term.code = 'SPRING-2028'
+      FROM academic_sub_term sub_term
+      WHERE sub_term.academic_year_id = ay.academic_year_id
+        AND sub_term.code = 'SPRING-2028'
   );
 
-INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
-SELECT ay.academic_year_id, 'SUMMER-I-2028', 'Summer I 2028', '2028-05-22', '2028-06-23', 202820, ts.term_status_id, TRUE
-FROM academic_term_status ts
+INSERT INTO academic_sub_term (academic_year_id, code, name, start_date, end_date, sort_order, sub_term_status_id, active)
+SELECT ay.academic_year_id, 'SUMMER-I-2028', 'Summer I 2028', '2028-05-22', '2028-06-23', 202820, ts.sub_term_status_id, TRUE
+FROM academic_sub_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2027-2028'
 WHERE ts.code = 'PLANNED'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term term
-      WHERE term.academic_year_id = ay.academic_year_id
-        AND term.code = 'SUMMER-I-2028'
+      FROM academic_sub_term sub_term
+      WHERE sub_term.academic_year_id = ay.academic_year_id
+        AND sub_term.code = 'SUMMER-I-2028'
   );
 
-INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date, sort_order, term_status_id, active)
-SELECT ay.academic_year_id, 'SUMMER-II-2028', 'Summer II 2028', '2028-06-26', '2028-07-28', 202821, ts.term_status_id, TRUE
-FROM academic_term_status ts
+INSERT INTO academic_sub_term (academic_year_id, code, name, start_date, end_date, sort_order, sub_term_status_id, active)
+SELECT ay.academic_year_id, 'SUMMER-II-2028', 'Summer II 2028', '2028-06-26', '2028-07-28', 202821, ts.sub_term_status_id, TRUE
+FROM academic_sub_term_status ts
 JOIN academic_year ay ON ay.code = 'AY-2027-2028'
 WHERE ts.code = 'PLANNED'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term term
-      WHERE term.academic_year_id = ay.academic_year_id
-        AND term.code = 'SUMMER-II-2028'
+      FROM academic_sub_term sub_term
+      WHERE sub_term.academic_year_id = ay.academic_year_id
+        AND sub_term.code = 'SUMMER-II-2028'
   );
 
-UPDATE academic_term term
+UPDATE academic_sub_term sub_term
 SET academic_year_id = ay.academic_year_id,
     name = 'Fall 2026',
     start_date = '2026-08-24',
     end_date = '2026-12-11',
     sort_order = 202630,
-    term_status_id = ts.term_status_id,
+    sub_term_status_id = ts.sub_term_status_id,
     active = TRUE
-FROM academic_year ay, academic_term_status ts
+FROM academic_year ay, academic_sub_term_status ts
 WHERE ay.code = 'AY-2026-2027'
   AND ts.code = 'OPEN_FOR_REGISTRATION'
-  AND term.code = 'FALL-2026'
+  AND sub_term.code = 'FALL-2026'
 ;
 
-UPDATE academic_term term
+UPDATE academic_sub_term sub_term
 SET academic_year_id = ay.academic_year_id,
     name = 'Spring 2027',
     start_date = '2027-01-19',
     end_date = '2027-05-07',
     sort_order = 202710,
-    term_status_id = ts.term_status_id,
+    sub_term_status_id = ts.sub_term_status_id,
     active = TRUE
-FROM academic_year ay, academic_term_status ts
+FROM academic_year ay, academic_sub_term_status ts
 WHERE ay.code = 'AY-2026-2027'
   AND ts.code = 'PLANNED'
-  AND term.code = 'SPRING-2027'
+  AND sub_term.code = 'SPRING-2027'
 ;
 
-UPDATE academic_term term
+UPDATE academic_sub_term sub_term
 SET academic_year_id = ay.academic_year_id,
     name = 'Fall 2027',
     start_date = '2027-08-23',
     end_date = '2027-12-10',
     sort_order = 202730,
-    term_status_id = ts.term_status_id,
+    sub_term_status_id = ts.sub_term_status_id,
     active = TRUE
-FROM academic_year ay, academic_term_status ts
+FROM academic_year ay, academic_sub_term_status ts
 WHERE ay.code = 'AY-2027-2028'
   AND ts.code = 'PLANNED'
-  AND term.code = 'FALL-2027'
+  AND sub_term.code = 'FALL-2027'
 ;
 
-UPDATE academic_term term
+UPDATE academic_sub_term sub_term
 SET academic_year_id = ay.academic_year_id,
     name = 'Summer I 2027',
     start_date = '2027-05-24',
     end_date = '2027-06-25',
     sort_order = 202720,
-    term_status_id = ts.term_status_id,
+    sub_term_status_id = ts.sub_term_status_id,
     active = TRUE
-FROM academic_year ay, academic_term_status ts
+FROM academic_year ay, academic_sub_term_status ts
 WHERE ay.code = 'AY-2026-2027'
   AND ts.code = 'PLANNED'
-  AND term.code = 'SUMMER-I-2027'
+  AND sub_term.code = 'SUMMER-I-2027'
 ;
 
-UPDATE academic_term term
+UPDATE academic_sub_term sub_term
 SET academic_year_id = ay.academic_year_id,
     name = 'Summer II 2027',
     start_date = '2027-06-28',
     end_date = '2027-07-30',
     sort_order = 202721,
-    term_status_id = ts.term_status_id,
+    sub_term_status_id = ts.sub_term_status_id,
     active = TRUE
-FROM academic_year ay, academic_term_status ts
+FROM academic_year ay, academic_sub_term_status ts
 WHERE ay.code = 'AY-2026-2027'
   AND ts.code = 'PLANNED'
-  AND term.code = 'SUMMER-II-2027'
+  AND sub_term.code = 'SUMMER-II-2027'
 ;
 
-UPDATE academic_term term
+UPDATE academic_sub_term sub_term
 SET academic_year_id = ay.academic_year_id,
     name = 'Spring 2028',
     start_date = '2028-01-18',
     end_date = '2028-05-05',
     sort_order = 202810,
-    term_status_id = ts.term_status_id,
+    sub_term_status_id = ts.sub_term_status_id,
     active = TRUE
-FROM academic_year ay, academic_term_status ts
+FROM academic_year ay, academic_sub_term_status ts
 WHERE ay.code = 'AY-2027-2028'
   AND ts.code = 'PLANNED'
-  AND term.code = 'SPRING-2028'
+  AND sub_term.code = 'SPRING-2028'
 ;
 
-UPDATE academic_term term
+UPDATE academic_sub_term sub_term
 SET academic_year_id = ay.academic_year_id,
     name = 'Summer I 2028',
     start_date = '2028-05-22',
     end_date = '2028-06-23',
     sort_order = 202820,
-    term_status_id = ts.term_status_id,
+    sub_term_status_id = ts.sub_term_status_id,
     active = TRUE
-FROM academic_year ay, academic_term_status ts
+FROM academic_year ay, academic_sub_term_status ts
 WHERE ay.code = 'AY-2027-2028'
   AND ts.code = 'PLANNED'
-  AND term.code = 'SUMMER-I-2028'
+  AND sub_term.code = 'SUMMER-I-2028'
 ;
 
-UPDATE academic_term term
+UPDATE academic_sub_term sub_term
 SET academic_year_id = ay.academic_year_id,
     name = 'Summer II 2028',
     start_date = '2028-06-26',
     end_date = '2028-07-28',
     sort_order = 202821,
-    term_status_id = ts.term_status_id,
+    sub_term_status_id = ts.sub_term_status_id,
     active = TRUE
-FROM academic_year ay, academic_term_status ts
+FROM academic_year ay, academic_sub_term_status ts
 WHERE ay.code = 'AY-2027-2028'
   AND ts.code = 'PLANNED'
-  AND term.code = 'SUMMER-II-2028'
+  AND sub_term.code = 'SUMMER-II-2028'
 ;
 
-INSERT INTO academic_term_group (academic_year_id, code, name, start_date, end_date)
+INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date)
 SELECT ay.academic_year_id, 'FALL-2026-2027', 'Fall 2026-2027', '2026-08-24', '2026-12-11'
 FROM academic_year ay
 WHERE ay.code = 'AY-2026-2027'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term_group term_group
-      WHERE term_group.academic_year_id = ay.academic_year_id
-        AND term_group.code = 'FALL-2026-2027'
+      FROM academic_term term
+      WHERE term.academic_year_id = ay.academic_year_id
+        AND term.code = 'FALL-2026-2027'
   );
 
-INSERT INTO academic_term_group (academic_year_id, code, name, start_date, end_date)
+INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date)
 SELECT ay.academic_year_id, 'SPRING-2026-2027', 'Spring 2026-2027', '2027-01-19', '2027-05-07'
 FROM academic_year ay
 WHERE ay.code = 'AY-2026-2027'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term_group term_group
-      WHERE term_group.academic_year_id = ay.academic_year_id
-        AND term_group.code = 'SPRING-2026-2027'
+      FROM academic_term term
+      WHERE term.academic_year_id = ay.academic_year_id
+        AND term.code = 'SPRING-2026-2027'
   );
 
-INSERT INTO academic_term_group (academic_year_id, code, name, start_date, end_date)
+INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date)
 SELECT ay.academic_year_id, 'SUMMER-2026-2027', 'Summer 2026-2027', '2027-05-24', '2027-07-30'
 FROM academic_year ay
 WHERE ay.code = 'AY-2026-2027'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term_group term_group
-      WHERE term_group.academic_year_id = ay.academic_year_id
-        AND term_group.code = 'SUMMER-2026-2027'
+      FROM academic_term term
+      WHERE term.academic_year_id = ay.academic_year_id
+        AND term.code = 'SUMMER-2026-2027'
   );
 
-INSERT INTO academic_term_group (academic_year_id, code, name, start_date, end_date)
+INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date)
 SELECT ay.academic_year_id, 'FALL-2027-2028', 'Fall 2027-2028', '2027-08-23', '2027-12-10'
 FROM academic_year ay
 WHERE ay.code = 'AY-2027-2028'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term_group term_group
-      WHERE term_group.academic_year_id = ay.academic_year_id
-        AND term_group.code = 'FALL-2027-2028'
+      FROM academic_term term
+      WHERE term.academic_year_id = ay.academic_year_id
+        AND term.code = 'FALL-2027-2028'
   );
 
-INSERT INTO academic_term_group (academic_year_id, code, name, start_date, end_date)
+INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date)
 SELECT ay.academic_year_id, 'SPRING-2027-2028', 'Spring 2027-2028', '2028-01-18', '2028-05-05'
 FROM academic_year ay
 WHERE ay.code = 'AY-2027-2028'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term_group term_group
-      WHERE term_group.academic_year_id = ay.academic_year_id
-        AND term_group.code = 'SPRING-2027-2028'
+      FROM academic_term term
+      WHERE term.academic_year_id = ay.academic_year_id
+        AND term.code = 'SPRING-2027-2028'
   );
 
-INSERT INTO academic_term_group (academic_year_id, code, name, start_date, end_date)
+INSERT INTO academic_term (academic_year_id, code, name, start_date, end_date)
 SELECT ay.academic_year_id, 'SUMMER-2027-2028', 'Summer 2027-2028', '2028-05-22', '2028-07-28'
 FROM academic_year ay
 WHERE ay.code = 'AY-2027-2028'
   AND NOT EXISTS (
       SELECT 1
-      FROM academic_term_group term_group
-      WHERE term_group.academic_year_id = ay.academic_year_id
-        AND term_group.code = 'SUMMER-2027-2028'
+      FROM academic_term term
+      WHERE term.academic_year_id = ay.academic_year_id
+        AND term.code = 'SUMMER-2027-2028'
   );
 
-UPDATE academic_term_group term_group
+UPDATE academic_term term
 SET name = 'Fall 2026-2027',
     start_date = '2026-08-24',
     end_date = '2026-12-11'
 FROM academic_year ay
 WHERE ay.code = 'AY-2026-2027'
-  AND term_group.academic_year_id = ay.academic_year_id
-  AND term_group.code = 'FALL-2026-2027'
+  AND term.academic_year_id = ay.academic_year_id
+  AND term.code = 'FALL-2026-2027'
 ;
 
-UPDATE academic_term_group term_group
+UPDATE academic_term term
 SET name = 'Spring 2026-2027',
     start_date = '2027-01-19',
     end_date = '2027-05-07'
 FROM academic_year ay
 WHERE ay.code = 'AY-2026-2027'
-  AND term_group.academic_year_id = ay.academic_year_id
-  AND term_group.code = 'SPRING-2026-2027'
+  AND term.academic_year_id = ay.academic_year_id
+  AND term.code = 'SPRING-2026-2027'
 ;
 
-UPDATE academic_term_group term_group
+UPDATE academic_term term
 SET name = 'Summer 2026-2027',
     start_date = '2027-05-24',
     end_date = '2027-07-30'
 FROM academic_year ay
 WHERE ay.code = 'AY-2026-2027'
-  AND term_group.academic_year_id = ay.academic_year_id
-  AND term_group.code = 'SUMMER-2026-2027'
+  AND term.academic_year_id = ay.academic_year_id
+  AND term.code = 'SUMMER-2026-2027'
 ;
 
-UPDATE academic_term_group term_group
+UPDATE academic_term term
 SET name = 'Fall 2027-2028',
     start_date = '2027-08-23',
     end_date = '2027-12-10'
 FROM academic_year ay
 WHERE ay.code = 'AY-2027-2028'
-  AND term_group.academic_year_id = ay.academic_year_id
-  AND term_group.code = 'FALL-2027-2028'
+  AND term.academic_year_id = ay.academic_year_id
+  AND term.code = 'FALL-2027-2028'
 ;
 
-UPDATE academic_term_group term_group
+UPDATE academic_term term
 SET name = 'Spring 2027-2028',
     start_date = '2028-01-18',
     end_date = '2028-05-05'
 FROM academic_year ay
 WHERE ay.code = 'AY-2027-2028'
-  AND term_group.academic_year_id = ay.academic_year_id
-  AND term_group.code = 'SPRING-2027-2028'
+  AND term.academic_year_id = ay.academic_year_id
+  AND term.code = 'SPRING-2027-2028'
 ;
 
-UPDATE academic_term_group term_group
+UPDATE academic_term term
 SET name = 'Summer 2027-2028',
     start_date = '2028-05-22',
     end_date = '2028-07-28'
 FROM academic_year ay
 WHERE ay.code = 'AY-2027-2028'
-  AND term_group.academic_year_id = ay.academic_year_id
-  AND term_group.code = 'SUMMER-2027-2028'
+  AND term.academic_year_id = ay.academic_year_id
+  AND term.code = 'SUMMER-2027-2028'
 ;
 
-DELETE FROM academic_term_group_term term_group_term
-USING academic_term term
-WHERE term.term_id = term_group_term.term_id
-  AND term.code IN (
+DELETE FROM academic_term_sub_term term_sub_term
+USING academic_sub_term sub_term
+WHERE sub_term.sub_term_id = term_sub_term.sub_term_id
+  AND sub_term.code IN (
       'FALL-2026',
       'SPRING-2027',
       'SUMMER-I-2027',
@@ -512,68 +512,68 @@ WHERE term.term_id = term_group_term.term_id
   )
 ;
 
-DELETE FROM academic_term_group
+DELETE FROM academic_term
 WHERE code IN ('MAIN-2026-2027', 'MAIN-2027-2028')
 ;
 
-INSERT INTO academic_term_group_term (term_group_id, term_id)
-SELECT term_group.term_group_id, term.term_id
-FROM academic_term_group term_group
-JOIN academic_year ay ON ay.academic_year_id = term_group.academic_year_id
-JOIN academic_term term ON term.academic_year_id = ay.academic_year_id
+INSERT INTO academic_term_sub_term (term_id, sub_term_id)
+SELECT term.term_id, sub_term.sub_term_id
+FROM academic_term term
+JOIN academic_year ay ON ay.academic_year_id = term.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
 WHERE ay.code = 'AY-2026-2027'
-  AND term_group.code = 'FALL-2026-2027'
-  AND term.code = 'FALL-2026'
+  AND term.code = 'FALL-2026-2027'
+  AND sub_term.code = 'FALL-2026'
 ;
 
-INSERT INTO academic_term_group_term (term_group_id, term_id)
-SELECT term_group.term_group_id, term.term_id
-FROM academic_term_group term_group
-JOIN academic_year ay ON ay.academic_year_id = term_group.academic_year_id
-JOIN academic_term term ON term.academic_year_id = ay.academic_year_id
+INSERT INTO academic_term_sub_term (term_id, sub_term_id)
+SELECT term.term_id, sub_term.sub_term_id
+FROM academic_term term
+JOIN academic_year ay ON ay.academic_year_id = term.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
 WHERE ay.code = 'AY-2026-2027'
-  AND term_group.code = 'SPRING-2026-2027'
-  AND term.code = 'SPRING-2027'
+  AND term.code = 'SPRING-2026-2027'
+  AND sub_term.code = 'SPRING-2027'
 ;
 
-INSERT INTO academic_term_group_term (term_group_id, term_id)
-SELECT term_group.term_group_id, term.term_id
-FROM academic_term_group term_group
-JOIN academic_year ay ON ay.academic_year_id = term_group.academic_year_id
-JOIN academic_term term ON term.academic_year_id = ay.academic_year_id
+INSERT INTO academic_term_sub_term (term_id, sub_term_id)
+SELECT term.term_id, sub_term.sub_term_id
+FROM academic_term term
+JOIN academic_year ay ON ay.academic_year_id = term.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
 WHERE ay.code = 'AY-2026-2027'
-  AND term_group.code = 'SUMMER-2026-2027'
-  AND term.code IN ('SUMMER-I-2027', 'SUMMER-II-2027')
+  AND term.code = 'SUMMER-2026-2027'
+  AND sub_term.code IN ('SUMMER-I-2027', 'SUMMER-II-2027')
 ;
 
-INSERT INTO academic_term_group_term (term_group_id, term_id)
-SELECT term_group.term_group_id, term.term_id
-FROM academic_term_group term_group
-JOIN academic_year ay ON ay.academic_year_id = term_group.academic_year_id
-JOIN academic_term term ON term.academic_year_id = ay.academic_year_id
+INSERT INTO academic_term_sub_term (term_id, sub_term_id)
+SELECT term.term_id, sub_term.sub_term_id
+FROM academic_term term
+JOIN academic_year ay ON ay.academic_year_id = term.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
 WHERE ay.code = 'AY-2027-2028'
-  AND term_group.code = 'FALL-2027-2028'
-  AND term.code = 'FALL-2027'
+  AND term.code = 'FALL-2027-2028'
+  AND sub_term.code = 'FALL-2027'
 ;
 
-INSERT INTO academic_term_group_term (term_group_id, term_id)
-SELECT term_group.term_group_id, term.term_id
-FROM academic_term_group term_group
-JOIN academic_year ay ON ay.academic_year_id = term_group.academic_year_id
-JOIN academic_term term ON term.academic_year_id = ay.academic_year_id
+INSERT INTO academic_term_sub_term (term_id, sub_term_id)
+SELECT term.term_id, sub_term.sub_term_id
+FROM academic_term term
+JOIN academic_year ay ON ay.academic_year_id = term.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
 WHERE ay.code = 'AY-2027-2028'
-  AND term_group.code = 'SPRING-2027-2028'
-  AND term.code = 'SPRING-2028'
+  AND term.code = 'SPRING-2027-2028'
+  AND sub_term.code = 'SPRING-2028'
 ;
 
-INSERT INTO academic_term_group_term (term_group_id, term_id)
-SELECT term_group.term_group_id, term.term_id
-FROM academic_term_group term_group
-JOIN academic_year ay ON ay.academic_year_id = term_group.academic_year_id
-JOIN academic_term term ON term.academic_year_id = ay.academic_year_id
+INSERT INTO academic_term_sub_term (term_id, sub_term_id)
+SELECT term.term_id, sub_term.sub_term_id
+FROM academic_term term
+JOIN academic_year ay ON ay.academic_year_id = term.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
 WHERE ay.code = 'AY-2027-2028'
-  AND term_group.code = 'SUMMER-2027-2028'
-  AND term.code IN ('SUMMER-I-2028', 'SUMMER-II-2028')
+  AND term.code = 'SUMMER-2027-2028'
+  AND sub_term.code IN ('SUMMER-I-2028', 'SUMMER-II-2028')
 ;
 
 INSERT INTO course (subject_id, course_number, active)
@@ -869,7 +869,7 @@ WITH desired_offerings(subject_code, course_number, version_number, academic_yea
         ('TOLK', '480', 1, 'AY-2026-2027'),
         ('MEH', '310', 1, 'AY-2027-2028')
 )
-DELETE FROM course_offering_term cot
+DELETE FROM course_offering_sub_term cost
 USING desired_offerings,
       academic_subject s,
       course c,
@@ -884,10 +884,10 @@ WHERE s.code = desired_offerings.subject_code
   AND ay.code = desired_offerings.academic_year_code
   AND co.course_version_id = cv.course_version_id
   AND co.academic_year_id = ay.academic_year_id
-  AND cot.course_offering_id = co.course_offering_id
+  AND cost.course_offering_id = co.course_offering_id
 ;
 
-WITH desired_offering_terms(subject_code, course_number, version_number, academic_year_code, term_code) AS (
+WITH desired_offering_sub_terms(subject_code, course_number, version_number, academic_year_code, sub_term_code) AS (
     VALUES
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027'),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027'),
@@ -899,23 +899,23 @@ WITH desired_offering_terms(subject_code, course_number, version_number, academi
         ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027'),
         ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028')
 )
-INSERT INTO course_offering_term (
+INSERT INTO course_offering_sub_term (
     course_offering_id,
-    term_id,
+    sub_term_id,
     academic_year_id
 )
 SELECT co.course_offering_id,
-       term.term_id,
+       sub_term.sub_term_id,
        ay.academic_year_id
-FROM desired_offering_terms
-JOIN academic_subject s ON s.code = desired_offering_terms.subject_code
+FROM desired_offering_sub_terms
+JOIN academic_subject s ON s.code = desired_offering_sub_terms.subject_code
 JOIN course c ON c.subject_id = s.subject_id
-             AND c.course_number = desired_offering_terms.course_number
+             AND c.course_number = desired_offering_sub_terms.course_number
 JOIN course_version cv ON cv.course_id = c.course_id
-                      AND cv.version_number = desired_offering_terms.version_number
-JOIN academic_year ay ON ay.code = desired_offering_terms.academic_year_code
+                      AND cv.version_number = desired_offering_sub_terms.version_number
+JOIN academic_year ay ON ay.code = desired_offering_sub_terms.academic_year_code
 JOIN course_offering co ON co.course_version_id = cv.course_version_id
                        AND co.academic_year_id = ay.academic_year_id
-JOIN academic_term term ON term.academic_year_id = ay.academic_year_id
-                       AND term.code = desired_offering_terms.term_code
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
+                           AND sub_term.code = desired_offering_sub_terms.sub_term_code
 ;
