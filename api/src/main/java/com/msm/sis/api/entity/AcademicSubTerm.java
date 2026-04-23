@@ -20,17 +20,17 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(
-        name = "academic_term",
+        name = "academic_sub_term",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uq_academic_term_year_code", columnNames = {"academic_year_id", "code"}),
-                @UniqueConstraint(name = "uq_academic_term_year_sort_order", columnNames = {"academic_year_id", "sort_order"})
+                @UniqueConstraint(name = "uq_academic_sub_term_year_code", columnNames = {"academic_year_id", "code"}),
+                @UniqueConstraint(name = "uq_academic_sub_term_year_sort_order", columnNames = {"academic_year_id", "sort_order"})
         }
 )
 public class AcademicSubTerm {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "term_id")
+    @Column(name = "sub_term_id")
     private Long id;
 
     @JsonIgnore
@@ -57,7 +57,7 @@ public class AcademicSubTerm {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "term_status_id", nullable = false)
+    @JoinColumn(name = "sub_term_status_id", nullable = false)
     private AcademicSubTermStatus status;
 
     @Column(name = "active", nullable = false)

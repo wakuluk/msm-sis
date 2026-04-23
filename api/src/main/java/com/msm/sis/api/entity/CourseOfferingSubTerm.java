@@ -12,7 +12,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "course_offering_term")
+@Table(name = "course_offering_sub_term")
 public class CourseOfferingSubTerm {
 
     @EmbeddedId
@@ -27,7 +27,7 @@ public class CourseOfferingSubTerm {
     @JsonIgnore
     @MapsId("subTermId")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "term_id", nullable = false)
+    @JoinColumn(name = "sub_term_id", nullable = false)
     private AcademicSubTerm subTerm;
 
     @JsonIgnore

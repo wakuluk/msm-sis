@@ -10,12 +10,12 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "academic_term_status")
+@Table(name = "academic_sub_term_status")
 public class AcademicSubTermStatus {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "term_status_id")
+    @Column(name = "sub_term_status_id")
     private Long id;
 
     @Column(name = "code", nullable = false, unique = true)

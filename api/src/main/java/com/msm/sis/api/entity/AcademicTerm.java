@@ -26,16 +26,16 @@ import java.util.List;
 @Setter
 @Entity
 @Table(
-        name = "academic_term_group",
+        name = "academic_term",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uq_academic_term_group_year_code", columnNames = {"academic_year_id", "code"})
+                @UniqueConstraint(name = "uq_academic_term_year_code", columnNames = {"academic_year_id", "code"})
         }
 )
 public class AcademicTerm {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "term_group_id")
+    @Column(name = "term_id")
     private Long id;
 
     @JsonIgnore
@@ -60,9 +60,9 @@ public class AcademicTerm {
     @OrderBy("sortOrder ASC")
     @OneToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "academic_term_group_term",
-            joinColumns = @JoinColumn(name = "term_group_id", nullable = false),
-            inverseJoinColumns = @JoinColumn(name = "term_id", nullable = false, unique = true)
+            name = "academic_term_sub_term",
+            joinColumns = @JoinColumn(name = "term_id", nullable = false),
+            inverseJoinColumns = @JoinColumn(name = "sub_term_id", nullable = false, unique = true)
     )
     private List<AcademicSubTerm> academicSubTerms = new ArrayList<>();
 }

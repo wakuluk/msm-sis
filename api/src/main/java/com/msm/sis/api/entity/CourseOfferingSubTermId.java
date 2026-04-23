@@ -17,6 +17,6 @@ public class CourseOfferingSubTermId implements Serializable {
     @Column(name = "course_offering_id")
     private Long courseOfferingId;
 
-    @Column(name = "term_id")
+    @Column(name = "sub_term_id")
     private Long subTermId;
 }
