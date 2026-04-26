@@ -1,30 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getAcademicYearCatalogSummary } from '@/services/admin-catalog-service';
-import type { AcademicYearCatalogSummaryResponse } from '@/services/schemas/admin-catalog-schemas';
+import { getAcademicYearCoursesSummary } from '@/services/admin-courses-service';
+import type { AcademicYearCoursesSummaryResponse } from '@/services/schemas/admin-courses-schemas';
 import {
-  buildAcademicYearCatalogTermOptions,
+  buildAcademicYearCoursesTermOptions,
   getErrorMessage,
-  sortAcademicYearCatalogTermGroups,
-  type CatalogTermOption,
-} from './academicYearCatalogShared';
+  sortAcademicYearCoursesTermGroups,
+  type CourseTermOption,
+} from './academicYearCoursesShared';
 
-type AcademicYearCatalogSummaryState =
+type AcademicYearCoursesSummaryState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'success'; summary: AcademicYearCatalogSummaryResponse };
+  | { status: 'success'; summary: AcademicYearCoursesSummaryResponse };
 
-type UseAcademicYearCatalogSummaryArgs = {
+type UseAcademicYearCoursesSummaryArgs = {
   academicYearId: number;
   hasValidAcademicYearId: boolean;
   refreshKey: number;
 };
 
-export function useAcademicYearCatalogSummary({
+export function useAcademicYearCoursesSummary({
   academicYearId,
   hasValidAcademicYearId,
   refreshKey,
-}: UseAcademicYearCatalogSummaryArgs) {
-  const [state, setState] = useState<AcademicYearCatalogSummaryState>({ status: 'loading' });
+}: UseAcademicYearCoursesSummaryArgs) {
+  const [state, setState] = useState<AcademicYearCoursesSummaryState>({ status: 'loading' });
 
   useEffect(() => {
     if (!hasValidAcademicYearId) {
@@ -38,7 +38,7 @@ export function useAcademicYearCatalogSummary({
     const abortController = new AbortController();
     setState({ status: 'loading' });
 
-    getAcademicYearCatalogSummary({
+    getAcademicYearCoursesSummary({
       academicYearId,
       signal: abortController.signal,
     })
@@ -52,7 +52,7 @@ export function useAcademicYearCatalogSummary({
 
         setState({
           status: 'error',
-          message: getErrorMessage(error, 'Failed to load academic year catalog summary.'),
+          message: getErrorMessage(error, 'Failed to load academic year courses summary.'),
         });
       });
 
@@ -63,11 +63,11 @@ export function useAcademicYearCatalogSummary({
 
   const summary = state.status === 'success' ? state.summary : null;
   const sortedTermGroups = useMemo(
-    () => (summary ? sortAcademicYearCatalogTermGroups(summary.terms) : []),
+    () => (summary ? sortAcademicYearCoursesTermGroups(summary.terms) : []),
     [summary]
   );
-  const termOptions = useMemo<ReadonlyArray<CatalogTermOption>>(
-    () => buildAcademicYearCatalogTermOptions(sortedTermGroups),
+  const termOptions = useMemo<ReadonlyArray<CourseTermOption>>(
+    () => buildAcademicYearCoursesTermOptions(sortedTermGroups),
     [sortedTermGroups]
   );
 

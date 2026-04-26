@@ -328,38 +328,38 @@ export const AcademicYearCreateResponseSchema = z.object({
 
 export type AcademicYearCreateResponse = z.infer<typeof AcademicYearCreateResponseSchema>;
 
-export const AcademicYearCatalogSubTermSummarySchema = z.object({
+export const AcademicYearCoursesSubTermSummarySchema = z.object({
   subTermId: z.number(),
   code: z.string(),
   name: z.string(),
   courseOfferingCount: z.number(),
 });
 
-export type AcademicYearCatalogSubTermSummary = z.infer<typeof AcademicYearCatalogSubTermSummarySchema>;
+export type AcademicYearCoursesSubTermSummary = z.infer<typeof AcademicYearCoursesSubTermSummarySchema>;
 
-export const AcademicYearCatalogTermSummarySchema = z.object({
+export const AcademicYearCoursesTermSummarySchema = z.object({
   termId: z.number(),
   code: z.string(),
   name: z.string(),
   subTermCount: z.number(),
   courseOfferingCount: z.number(),
-  subTerms: z.array(AcademicYearCatalogSubTermSummarySchema),
+  subTerms: z.array(AcademicYearCoursesSubTermSummarySchema),
 });
 
-export type AcademicYearCatalogTermSummary = z.infer<
-  typeof AcademicYearCatalogTermSummarySchema
+export type AcademicYearCoursesTermSummary = z.infer<
+  typeof AcademicYearCoursesTermSummarySchema
 >;
 
-export const AcademicYearCatalogSummaryResponseSchema = z.object({
+export const AcademicYearCoursesSummaryResponseSchema = z.object({
   academicYearId: z.number(),
   academicYearCode: z.string(),
   academicYearName: z.string(),
   termCount: z.number(),
   subTermCount: z.number(),
   courseOfferingCount: z.number(),
-  terms: z.array(AcademicYearCatalogTermSummarySchema),
+  terms: z.array(AcademicYearCoursesTermSummarySchema),
 });
 
-export type AcademicYearCatalogSummaryResponse = z.infer<
-  typeof AcademicYearCatalogSummaryResponseSchema
+export type AcademicYearCoursesSummaryResponse = z.infer<
+  typeof AcademicYearCoursesSummaryResponseSchema
 >;

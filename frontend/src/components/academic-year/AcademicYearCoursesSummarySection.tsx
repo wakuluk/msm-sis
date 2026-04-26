@@ -2,26 +2,26 @@ import type { ReactNode } from 'react';
 import { Alert, Grid, Stack, Table, Text } from '@mantine/core';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { ReadOnlyField } from '@/components/fields/ReadOnlyField';
-import type { AcademicYearCatalogSummaryResponse } from '@/services/schemas/academic-years-schemas';
+import type { AcademicYearCoursesSummaryResponse } from '@/services/schemas/academic-years-schemas';
 import { displayValue } from './academicYearDisplay';
 
-type AcademicYearCatalogSummarySectionProps = {
-  summary: AcademicYearCatalogSummaryResponse | null;
+type AcademicYearCoursesSummarySectionProps = {
+  summary: AcademicYearCoursesSummaryResponse | null;
   isLoading: boolean;
   error: string | null;
   action?: ReactNode;
 };
 
-export function AcademicYearCatalogSummarySection({
+export function AcademicYearCoursesSummarySection({
   summary,
   isLoading,
   error,
   action,
-}: AcademicYearCatalogSummarySectionProps) {
+}: AcademicYearCoursesSummarySectionProps) {
   return (
     <RecordPageSection
-      title="Catalog Summary"
-      description="Year-level catalog totals derived from this academic year’s terms and their sub terms."
+      title="Courses Summary"
+      description="Year-level course totals derived from this academic year’s terms and their sub terms."
       action={action}
     >
       {summary ? (
@@ -43,8 +43,8 @@ export function AcademicYearCatalogSummarySection({
           />
           <Grid.Col span={12}>
             {summary.terms.length === 0 ? (
-              <Alert color="gray" title="No catalog summary yet">
-                This academic year does not have terms with catalog activity yet.
+              <Alert color="gray" title="No course summary yet">
+                This academic year does not have terms with course activity yet.
               </Alert>
             ) : (
               <Table.ScrollContainer minWidth={720}>
@@ -86,14 +86,14 @@ export function AcademicYearCatalogSummarySection({
         </>
       ) : error ? (
         <Grid.Col span={12}>
-          <Alert color="red" title="Unable to load catalog summary">
+          <Alert color="red" title="Unable to load course summary">
             {error}
           </Alert>
         </Grid.Col>
       ) : isLoading ? (
         <Grid.Col span={12}>
-          <Alert color="blue" title="Loading catalog summary">
-            Fetching academic year catalog summary.
+          <Alert color="blue" title="Loading course summary">
+            Fetching academic year course summary.
           </Alert>
         </Grid.Col>
       ) : null}

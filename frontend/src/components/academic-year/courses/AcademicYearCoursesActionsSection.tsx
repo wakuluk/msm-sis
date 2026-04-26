@@ -4,13 +4,13 @@ import { RecordPageSection } from '@/components/create/RecordPageSection';
 import {
   importAcademicYearCourseOfferings,
   syncAcademicYearCourseOfferings,
-} from '@/services/admin-catalog-service';
+} from '@/services/admin-courses-service';
 import type {
   ImportAcademicYearCourseOfferingsResponse,
   SyncAcademicYearCourseOfferingsResponse,
-} from '@/services/schemas/admin-catalog-schemas';
+} from '@/services/schemas/admin-courses-schemas';
 import { AddAcademicYearOfferingModal } from './AddAcademicYearOfferingModal';
-import { getErrorMessage, type CatalogTermOption } from './academicYearCatalogShared';
+import { getErrorMessage, type CourseTermOption } from './academicYearCoursesShared';
 
 type ImportOfferingsState =
   | { status: 'idle' }
@@ -24,23 +24,23 @@ type SyncOfferingsState =
   | { status: 'error'; message: string }
   | { status: 'success'; response: SyncAcademicYearCourseOfferingsResponse };
 
-type AcademicYearCatalogActionsSectionProps = {
+type AcademicYearCoursesActionsSectionProps = {
   academicYearId: number;
   hasValidAcademicYearId: boolean;
-  canManageCatalog: boolean;
-  termOptions: ReadonlyArray<CatalogTermOption>;
-  onCatalogChanged: () => void;
+  canManageCourses: boolean;
+  termOptions: ReadonlyArray<CourseTermOption>;
+  onCoursesChanged: () => void;
   children?: ReactNode;
 };
 
-export function AcademicYearCatalogActionsSection({
+export function AcademicYearCoursesActionsSection({
   academicYearId,
   hasValidAcademicYearId,
-  canManageCatalog,
+  canManageCourses,
   termOptions,
-  onCatalogChanged,
+  onCoursesChanged,
   children,
-}: AcademicYearCatalogActionsSectionProps) {
+}: AcademicYearCoursesActionsSectionProps) {
   const [isAddOfferingModalOpen, setIsAddOfferingModalOpen] = useState(false);
   const [importOfferingsState, setImportOfferingsState] = useState<ImportOfferingsState>({
     status: 'idle',
@@ -66,13 +66,13 @@ export function AcademicYearCatalogActionsSection({
       });
 
       setImportOfferingsState({ status: 'success', response });
-      onCatalogChanged();
+      onCoursesChanged();
     } catch (error) {
       setImportOfferingsState({
         status: 'error',
         message: getErrorMessage(
           error,
-          'Failed to import current course versions into the academic year catalog.'
+          'Failed to import current course versions into this academic year.'
         ),
       });
     }
@@ -95,7 +95,7 @@ export function AcademicYearCatalogActionsSection({
       });
 
       setSyncOfferingsState({ status: 'success', response });
-      onCatalogChanged();
+      onCoursesChanged();
     } catch (error) {
       setSyncOfferingsState({
         status: 'error',
@@ -110,8 +110,8 @@ export function AcademicYearCatalogActionsSection({
   return (
     <>
       <RecordPageSection
-        title="Catalog Actions"
-        description="Add offerings to this academic year, synchronize version changes, and review the year-wide offering list."
+        title="Course Actions"
+        description="Add offerings to this academic year, synchronize version changes, and review the year-wide course list."
         action={
           <Group gap="sm" wrap="wrap" justify="flex-end">
             <Button
@@ -120,7 +120,7 @@ export function AcademicYearCatalogActionsSection({
                 void handleSyncCurrentCourseVersions();
               }}
               loading={syncOfferingsState.status === 'saving'}
-              disabled={!hasValidAcademicYearId || !canManageCatalog}
+              disabled={!hasValidAcademicYearId || !canManageCourses}
             >
               Sync current versions
             </Button>
@@ -130,7 +130,7 @@ export function AcademicYearCatalogActionsSection({
                 void handleImportCurrentCourseVersions();
               }}
               loading={importOfferingsState.status === 'saving'}
-              disabled={!hasValidAcademicYearId || !canManageCatalog}
+              disabled={!hasValidAcademicYearId || !canManageCourses}
             >
               Add all current versions
             </Button>
@@ -139,16 +139,16 @@ export function AcademicYearCatalogActionsSection({
               onClick={() => {
                 setIsAddOfferingModalOpen(true);
               }}
-              disabled={!canManageCatalog || termOptions.length === 0}
+              disabled={!canManageCourses || termOptions.length === 0}
             >
               Add offering
             </Button>
             <Button
               variant="default"
-              onClick={onCatalogChanged}
-              disabled={!hasValidAcademicYearId || !canManageCatalog}
+              onClick={onCoursesChanged}
+              disabled={!hasValidAcademicYearId || !canManageCourses}
             >
-              Refresh catalog
+              Refresh courses
             </Button>
           </Group>
         }
@@ -206,7 +206,7 @@ export function AcademicYearCatalogActionsSection({
         academicYearId={academicYearId}
         hasValidAcademicYearId={hasValidAcademicYearId}
         termOptions={termOptions}
-        onCreated={onCatalogChanged}
+        onCreated={onCoursesChanged}
       />
     </>
   );

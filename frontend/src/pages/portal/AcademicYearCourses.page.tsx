@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Badge, Button, Group, Stack } from '@mantine/core';
 import { Link, useParams } from 'react-router-dom';
-import { AcademicYearCatalogActionsSection } from '@/components/academic-year/catalog/AcademicYearCatalogActionsSection';
-import { AcademicYearOfferingSearchSection } from '@/components/academic-year/catalog/AcademicYearOfferingSearchSection';
-import { useAcademicYearCatalogSummary } from '@/components/academic-year/catalog/useAcademicYearCatalogSummary';
-import { useAcademicYearTermGroups } from '@/components/academic-year/catalog/useAcademicYearTermGroups';
+import { AcademicYearCourseOfferingSearchSection } from '@/components/academic-year/courses/AcademicYearCourseOfferingSearchSection';
+import { AcademicYearCoursesActionsSection } from '@/components/academic-year/courses/AcademicYearCoursesActionsSection';
+import { useAcademicYearCoursesSummary } from '@/components/academic-year/courses/useAcademicYearCoursesSummary';
+import { useAcademicYearTermGroups } from '@/components/academic-year/courses/useAcademicYearTermGroups';
 import { AcademicYearTermGroupsSection } from '@/components/academic-year/AcademicYearTermGroupsSection';
 import { displayValue } from '@/components/academic-year/academicYearDisplay';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
@@ -13,7 +13,7 @@ import { RecordPageShell } from '@/components/create/RecordPageShell';
 import { ReadOnlyField } from '@/components/fields/ReadOnlyField';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 
-export function AcademicYearCatalogPage() {
+export function AcademicYearCoursesPage() {
   const { academicYearId } = useParams<{ academicYearId: string }>();
   const parsedAcademicYearId = Number(academicYearId);
   const hasValidAcademicYearId = Number.isInteger(parsedAcademicYearId) && parsedAcademicYearId > 0;
@@ -28,7 +28,7 @@ export function AcademicYearCatalogPage() {
     state: summaryState,
     summary,
     termOptions,
-  } = useAcademicYearCatalogSummary({
+  } = useAcademicYearCoursesSummary({
     academicYearId: parsedAcademicYearId,
     hasValidAcademicYearId,
     refreshKey,
@@ -38,12 +38,12 @@ export function AcademicYearCatalogPage() {
     hasValidAcademicYearId,
   });
 
-  const pageTitle = summary ? `${summary.academicYearName} Catalog` : 'Manage Catalog';
+  const pageTitle = summary ? `${summary.academicYearName} Courses` : 'Manage Courses';
   const pageDescription = summary
     ? 'Manage year-scoped course offerings and review the terms and sub terms for this academic year.'
-    : 'Academic year catalog management will be built here next.';
+    : 'Manage course offerings and review the terms and sub terms for this academic year.';
 
-  function handleCatalogChanged() {
+  function handleCoursesChanged() {
     setRefreshKey((current) => current + 1);
   }
 
@@ -76,7 +76,7 @@ export function AcademicYearCatalogPage() {
     >
       <Stack gap={0}>
         <RecordPageSection
-          title="Catalog Workspace"
+          title="Courses Workspace"
           description="This workspace is scoped to one academic year and its terms and sub terms."
         >
           <ReadOnlyField
@@ -111,20 +111,20 @@ export function AcademicYearCatalogPage() {
           />
         </RecordPageSection>
 
-        <AcademicYearCatalogActionsSection
+        <AcademicYearCoursesActionsSection
           academicYearId={parsedAcademicYearId}
           hasValidAcademicYearId={hasValidAcademicYearId}
-          canManageCatalog={summaryState.status === 'success'}
+          canManageCourses={summaryState.status === 'success'}
           termOptions={termOptions}
-          onCatalogChanged={handleCatalogChanged}
+          onCoursesChanged={handleCoursesChanged}
         >
-          <AcademicYearOfferingSearchSection
+          <AcademicYearCourseOfferingSearchSection
             academicYearId={parsedAcademicYearId}
             hasValidAcademicYearId={hasValidAcademicYearId}
             termOptions={termOptions}
             reloadKey={refreshKey}
           />
-        </AcademicYearCatalogActionsSection>
+        </AcademicYearCoursesActionsSection>
 
         <AcademicYearTermGroupsSection
           academicYearId={parsedAcademicYearId}

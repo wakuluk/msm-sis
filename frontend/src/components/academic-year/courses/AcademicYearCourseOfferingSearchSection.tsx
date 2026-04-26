@@ -4,14 +4,14 @@ import { Alert, Badge, Button, Grid, Group, Paper, Select, Stack, Text, TextInpu
 import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
 import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
 import { SearchResultsTable } from '@/components/search/SearchResultsTable';
-import { searchAcademicYearCourseOfferings } from '@/services/admin-catalog-service';
+import { searchAcademicYearCourseOfferings } from '@/services/admin-courses-service';
 import { getCourseSearchReferenceOptions } from '@/services/reference-service';
 import type {
   AcademicYearCourseOfferingSearchResponse,
   AcademicYearCourseOfferingSearchResultResponse,
-} from '@/services/schemas/admin-catalog-schemas';
+} from '@/services/schemas/admin-courses-schemas';
 import type { CourseSearchReferenceOptionsResponse } from '@/services/schemas/reference-schemas';
-import { getErrorMessage, type CatalogTermOption } from './academicYearCatalogShared';
+import { getErrorMessage, type CourseTermOption } from './academicYearCoursesShared';
 
 type YearOfferingSearchSortBy =
   | 'schoolName'
@@ -43,10 +43,10 @@ type YearOfferingSearchState =
   | { status: 'error'; message: string }
   | { status: 'success'; response: AcademicYearCourseOfferingSearchResponse };
 
-type AcademicYearOfferingSearchSectionProps = {
+type AcademicYearCourseOfferingSearchSectionProps = {
   academicYearId: number;
   hasValidAcademicYearId: boolean;
-  termOptions: ReadonlyArray<CatalogTermOption>;
+  termOptions: ReadonlyArray<CourseTermOption>;
   reloadKey: number;
 };
 
@@ -139,12 +139,12 @@ function getYearOfferingResultsSummary(state: YearOfferingSearchState): string {
   return `Showing ${start}-${end} of ${state.response.totalElements} offerings`;
 }
 
-export function AcademicYearOfferingSearchSection({
+export function AcademicYearCourseOfferingSearchSection({
   academicYearId,
   hasValidAcademicYearId,
   termOptions,
   reloadKey,
-}: AcademicYearOfferingSearchSectionProps) {
+}: AcademicYearCourseOfferingSearchSectionProps) {
   const [referenceState, setReferenceState] = useState<YearOfferingReferenceState>({
     status: 'loading',
   });
@@ -349,11 +349,11 @@ export function AcademicYearOfferingSearchSection({
           <Group justify="space-between" align="flex-start" gap="md">
             <Stack gap={2}>
               <Text size="xs" fw={700} c="dimmed" tt="uppercase">
-                Year Offering Search
+                Academic Year Courses
               </Text>
-              <Text fw={600}>Academic year offering list</Text>
+              <Text fw={600}>Academic year course offerings</Text>
               <Text size="sm" c="dimmed">
-                Search the year-wide offering list and filter it by school, department, subject,
+                Search the year-wide course offering list and filter it by school, department, subject,
                 course code, title, and assigned term.
               </Text>
             </Stack>

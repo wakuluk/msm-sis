@@ -4,8 +4,8 @@ import com.msm.sis.api.dto.academic.term.CreateAcademicTermRequest;
 import com.msm.sis.api.dto.academic.term.AcademicTermResponse;
 import com.msm.sis.api.dto.academic.term.AcademicSubTermResponse;
 import com.msm.sis.api.dto.academic.year.*;
-import com.msm.sis.api.dto.catalog.AcademicYearCatalogResponse;
-import com.msm.sis.api.dto.catalog.AcademicYearCatalogSummaryResponse;
+import com.msm.sis.api.dto.catalog.AcademicYearCoursesResponse;
+import com.msm.sis.api.dto.catalog.AcademicYearCoursesSummaryResponse;
 import com.msm.sis.api.dto.course.CourseOfferingSearchResultResponse;
 import com.msm.sis.api.entity.AcademicSubTerm;
 import com.msm.sis.api.entity.AcademicYear;
@@ -201,7 +201,7 @@ public class AcademicYearService {
     }
 
     @Transactional(readOnly = true)
-    public AcademicYearCatalogSummaryResponse getCatalogSummary(
+    public AcademicYearCoursesSummaryResponse getCoursesSummary(
             Long id
     ){
         AcademicYear academicYear = getAcademicYearEntity(id);
@@ -220,19 +220,19 @@ public class AcademicYearService {
                         CourseOfferingRepository.SubTermCourseOfferingCount::getCourseOfferingCount
                 ));
 
-        List<AcademicYearCatalogSummaryResponse.TermSummary> termSummaries = academicTerms.stream()
-                .map(term -> toCatalogTermSummary(term, courseOfferingCountsBySubTermId))
+        List<AcademicYearCoursesSummaryResponse.TermSummary> termSummaries = academicTerms.stream()
+                .map(term -> toCoursesTermSummary(term, courseOfferingCountsBySubTermId))
                 .toList();
 
         long subTermCount = termSummaries.stream()
-                .mapToLong(AcademicYearCatalogSummaryResponse.TermSummary::subTermCount)
+                .mapToLong(AcademicYearCoursesSummaryResponse.TermSummary::subTermCount)
                 .sum();
 
         long courseOfferingCount = termSummaries.stream()
-                .mapToLong(AcademicYearCatalogSummaryResponse.TermSummary::courseOfferingCount)
+                .mapToLong(AcademicYearCoursesSummaryResponse.TermSummary::courseOfferingCount)
                 .sum();
 
-        return new AcademicYearCatalogSummaryResponse(
+        return new AcademicYearCoursesSummaryResponse(
                 academicYear.getId(),
                 academicYear.getCode(),
                 academicYear.getName(),
@@ -244,17 +244,17 @@ public class AcademicYearService {
     }
 
     @Transactional(readOnly = true)
-    public AcademicYearCatalogResponse getCatalog(Long id) {
+    public AcademicYearCoursesResponse getCourses(Long id) {
         AcademicYear academicYear = getAcademicYearEntity(id);
         List<AcademicTermResponse> academicTerms = academicTermService.getAcademicTerms(id);
         Map<Long, List<CourseOfferingSearchResultResponse>> courseOfferingsBySubTermId =
                 getCourseOfferingsBySubTermId(id);
 
-        List<AcademicYearCatalogResponse.TermCatalogResponse> terms = academicTerms.stream()
-                .map(term -> toAcademicYearCatalogTermResponse(term, courseOfferingsBySubTermId))
+        List<AcademicYearCoursesResponse.TermCoursesResponse> terms = academicTerms.stream()
+                .map(term -> toAcademicYearCoursesTermResponse(term, courseOfferingsBySubTermId))
                 .toList();
 
-        return new AcademicYearCatalogResponse(
+        return new AcademicYearCoursesResponse(
                 academicYear.getId(),
                 academicYear.getCode(),
                 academicYear.getName(),
@@ -363,15 +363,15 @@ public class AcademicYearService {
         };
     }
 
-    private AcademicYearCatalogResponse.TermCatalogResponse toAcademicYearCatalogTermResponse(
+    private AcademicYearCoursesResponse.TermCoursesResponse toAcademicYearCoursesTermResponse(
             AcademicTermResponse term,
             Map<Long, List<CourseOfferingSearchResultResponse>> courseOfferingsBySubTermId
     ) {
-        List<AcademicYearCatalogResponse.SubTermCatalogResponse> subTerms = safeSubTerms(term).stream()
-                .map(subTerm -> toAcademicYearCatalogSubTermResponse(subTerm, courseOfferingsBySubTermId))
+        List<AcademicYearCoursesResponse.SubTermCoursesResponse> subTerms = safeSubTerms(term).stream()
+                .map(subTerm -> toAcademicYearCoursesSubTermResponse(subTerm, courseOfferingsBySubTermId))
                 .toList();
 
-        return new AcademicYearCatalogResponse.TermCatalogResponse(
+        return new AcademicYearCoursesResponse.TermCoursesResponse(
                 term.getTermId(),
                 term.getCode(),
                 term.getName(),
@@ -381,14 +381,14 @@ public class AcademicYearService {
         );
     }
 
-    private AcademicYearCatalogResponse.SubTermCatalogResponse toAcademicYearCatalogSubTermResponse(
+    private AcademicYearCoursesResponse.SubTermCoursesResponse toAcademicYearCoursesSubTermResponse(
             AcademicSubTermResponse subTerm,
             Map<Long, List<CourseOfferingSearchResultResponse>> courseOfferingsBySubTermId
     ) {
         List<CourseOfferingSearchResultResponse> courseOfferings =
                 courseOfferingsBySubTermId.getOrDefault(subTerm.subTermId(), List.of());
 
-        return new AcademicYearCatalogResponse.SubTermCatalogResponse(
+        return new AcademicYearCoursesResponse.SubTermCoursesResponse(
                 subTerm.subTermId(),
                 subTerm.code(),
                 subTerm.name(),
@@ -508,19 +508,19 @@ public class AcademicYearService {
                 ));
     }
 
-    private AcademicYearCatalogSummaryResponse.TermSummary toCatalogTermSummary(
+    private AcademicYearCoursesSummaryResponse.TermSummary toCoursesTermSummary(
             AcademicTermResponse academicTerm,
             java.util.Map<Long, Long> courseOfferingCountsBySubTermId
     ) {
-        List<AcademicYearCatalogSummaryResponse.SubTermSummary> subTermSummaries = safeSubTerms(academicTerm).stream()
-                .map(subTerm -> toCatalogSubTermSummary(subTerm, courseOfferingCountsBySubTermId))
+        List<AcademicYearCoursesSummaryResponse.SubTermSummary> subTermSummaries = safeSubTerms(academicTerm).stream()
+                .map(subTerm -> toCoursesSubTermSummary(subTerm, courseOfferingCountsBySubTermId))
                 .toList();
 
         long courseOfferingCount = subTermSummaries.stream()
-                .mapToLong(AcademicYearCatalogSummaryResponse.SubTermSummary::courseOfferingCount)
+                .mapToLong(AcademicYearCoursesSummaryResponse.SubTermSummary::courseOfferingCount)
                 .sum();
 
-        return new AcademicYearCatalogSummaryResponse.TermSummary(
+        return new AcademicYearCoursesSummaryResponse.TermSummary(
                 academicTerm.getTermId(),
                 academicTerm.getCode(),
                 academicTerm.getName(),
@@ -530,11 +530,11 @@ public class AcademicYearService {
         );
     }
 
-    private AcademicYearCatalogSummaryResponse.SubTermSummary toCatalogSubTermSummary(
+    private AcademicYearCoursesSummaryResponse.SubTermSummary toCoursesSubTermSummary(
             AcademicSubTermResponse academicSubTerm,
             java.util.Map<Long, Long> courseOfferingCountsBySubTermId
     ) {
-        return new AcademicYearCatalogSummaryResponse.SubTermSummary(
+        return new AcademicYearCoursesSummaryResponse.SubTermSummary(
                 academicSubTerm.subTermId(),
                 academicSubTerm.code(),
                 academicSubTerm.name(),

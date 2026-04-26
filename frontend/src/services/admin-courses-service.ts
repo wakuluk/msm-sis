@@ -1,22 +1,22 @@
 import { apiRequest } from './api-client';
 import {
-  AcademicYearCatalogSummaryResponseSchema,
+  AcademicYearCoursesSummaryResponseSchema,
   AcademicYearCourseOfferingSearchResponseSchema,
   AdminCourseOfferingDetailResponseSchema,
   CreateAcademicYearCourseOfferingRequestSchema,
   ImportAcademicYearCourseOfferingsResponseSchema,
   PatchCourseOfferingRequestSchema,
   SyncAcademicYearCourseOfferingsResponseSchema,
-  type AcademicYearCatalogSummaryResponse,
+  type AcademicYearCoursesSummaryResponse,
   type AcademicYearCourseOfferingSearchResponse,
   type AdminCourseOfferingDetailResponse,
   type CreateAcademicYearCourseOfferingRequest,
   type ImportAcademicYearCourseOfferingsResponse,
   type PatchCourseOfferingRequest,
   type SyncAcademicYearCourseOfferingsResponse,
-} from './schemas/admin-catalog-schemas';
+} from './schemas/admin-courses-schemas';
 
-export type GetAcademicYearCatalogSummaryRequest = {
+export type GetAcademicYearCoursesSummaryRequest = {
   academicYearId: number;
   signal?: AbortSignal;
 };
@@ -63,14 +63,14 @@ export type PatchCourseOfferingArgs = {
   signal?: AbortSignal;
 };
 
-export async function getAcademicYearCatalogSummary({
+export async function getAcademicYearCoursesSummary({
   academicYearId,
   signal,
-}: GetAcademicYearCatalogSummaryRequest): Promise<AcademicYearCatalogSummaryResponse> {
+}: GetAcademicYearCoursesSummaryRequest): Promise<AcademicYearCoursesSummaryResponse> {
   return apiRequest({
-    path: `/api/academic-year/${academicYearId}/catalog/summary`,
-    parser: AcademicYearCatalogSummaryResponseSchema,
-    fallbackMessage: 'Failed to load academic year catalog summary.',
+    path: `/api/academic-year/${academicYearId}/courses/summary`,
+    parser: AcademicYearCoursesSummaryResponseSchema,
+    fallbackMessage: 'Failed to load academic year courses summary.',
     signal,
   });
 }
@@ -151,7 +151,7 @@ export async function importAcademicYearCourseOfferings({
     path: `/api/academic-year/${academicYearId}/course-offerings/import-current-course-versions`,
     method: 'POST',
     parser: ImportAcademicYearCourseOfferingsResponseSchema,
-    fallbackMessage: 'Failed to import current course versions into the catalog.',
+    fallbackMessage: 'Failed to import current course versions into academic year courses.',
     signal,
   });
 }

@@ -3,7 +3,7 @@ import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { Alert, Badge, Button, Grid, Group, Stack, Text, TextInput } from '@mantine/core';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { AcademicYearCatalogSummarySection } from '@/components/academic-year/AcademicYearCatalogSummarySection';
+import { AcademicYearCoursesSummarySection } from '@/components/academic-year/AcademicYearCoursesSummarySection';
 import {
   compareAcademicTermGroups,
   compareAcademicTerms,
@@ -22,7 +22,7 @@ import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
 import {
   getAcademicYearById,
-  getAcademicYearCatalogSummary,
+  getAcademicYearCoursesSummary,
   getAcademicYearStatuses,
   patchAcademicYear,
   postAcademicYearTerms,
@@ -37,7 +37,7 @@ import {
 } from '@/services/mappers/academic-year-mappers';
 import {
   initialAcademicYearAddTermsFormValues,
-  type AcademicYearCatalogSummaryResponse,
+  type AcademicYearCoursesSummaryResponse,
   initialAcademicYearDetailFormValues,
   initialAcademicYearTermFormValues,
   type AcademicYearAddTermsFormValues,
@@ -75,10 +75,10 @@ type AcademicYearStatusShiftState =
   | { status: 'success' }
   | { status: 'error'; message: string };
 
-type AcademicYearCatalogSummaryState =
+type AcademicYearCoursesSummaryState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'success'; summary: AcademicYearCatalogSummaryResponse };
+  | { status: 'success'; summary: AcademicYearCoursesSummaryResponse };
 
 function getErrorMessage(error: unknown, fallbackMessage: string): string {
   return error instanceof Error ? error.message : fallbackMessage;
@@ -123,7 +123,7 @@ export function AcademicYearDetailPage() {
   );
   const [academicYearStatusesLoading, setAcademicYearStatusesLoading] = useState(true);
   const [academicYearStatusesError, setAcademicYearStatusesError] = useState<string | null>(null);
-  const [catalogSummaryState, setCatalogSummaryState] = useState<AcademicYearCatalogSummaryState>({
+  const [coursesSummaryState, setCoursesSummaryState] = useState<AcademicYearCoursesSummaryState>({
     status: 'loading',
   });
   const form = useForm<AcademicYearDetailFormValues>({
@@ -171,7 +171,7 @@ export function AcademicYearDetailPage() {
 
   useEffect(() => {
     if (!hasValidAcademicYearId) {
-      setCatalogSummaryState({
+      setCoursesSummaryState({
         status: 'error',
         message: 'Academic year ID is missing or invalid.',
       });
@@ -179,23 +179,23 @@ export function AcademicYearDetailPage() {
     }
 
     const abortController = new AbortController();
-    setCatalogSummaryState({ status: 'loading' });
+    setCoursesSummaryState({ status: 'loading' });
 
-    getAcademicYearCatalogSummary({
+    getAcademicYearCoursesSummary({
       academicYearId: parsedAcademicYearId,
       signal: abortController.signal,
     })
       .then((summary) => {
-        setCatalogSummaryState({ status: 'success', summary });
+        setCoursesSummaryState({ status: 'success', summary });
       })
       .catch((error) => {
         if (abortController.signal.aborted) {
           return;
         }
 
-        setCatalogSummaryState({
+        setCoursesSummaryState({
           status: 'error',
-          message: getErrorMessage(error, 'Failed to load academic year catalog summary.'),
+          message: getErrorMessage(error, 'Failed to load academic year courses summary.'),
         });
       });
 
@@ -705,17 +705,17 @@ export function AcademicYearDetailPage() {
           />
         </RecordPageSection>
 
-        <AcademicYearCatalogSummarySection
-          summary={catalogSummaryState.status === 'success' ? catalogSummaryState.summary : null}
-          isLoading={catalogSummaryState.status === 'loading'}
-          error={catalogSummaryState.status === 'error' ? catalogSummaryState.message : null}
+        <AcademicYearCoursesSummarySection
+          summary={coursesSummaryState.status === 'success' ? coursesSummaryState.summary : null}
+          isLoading={coursesSummaryState.status === 'loading'}
+          error={coursesSummaryState.status === 'error' ? coursesSummaryState.message : null}
           action={
             <Button
               component={Link}
-              to={`/academics/academic-years/${detail.academicYearId}/catalog`}
+              to={`/academics/academic-years/${detail.academicYearId}/courses`}
               variant="light"
             >
-              Manage catalog
+              Manage courses
             </Button>
           }
         />

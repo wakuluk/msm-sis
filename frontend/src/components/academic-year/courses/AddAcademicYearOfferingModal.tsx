@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Group, Modal, MultiSelect, Paper, Select, Stack, Text, Textarea } from '@mantine/core';
-import { createAcademicYearCourseOffering } from '@/services/admin-catalog-service';
+import { createAcademicYearCourseOffering } from '@/services/admin-courses-service';
 import { getCoursePickerReferenceOptions } from '@/services/reference-service';
 import type { CoursePickerReferenceOptionsResponse } from '@/services/schemas/reference-schemas';
 import {
   getErrorMessage,
   normalizeNotes,
-  type CatalogTermOption,
-} from './academicYearCatalogShared';
+  type CourseTermOption,
+} from './academicYearCoursesShared';
 
 type CoursePickerState =
   | { status: 'idle' }
@@ -34,7 +34,7 @@ type AddAcademicYearOfferingModalProps = {
   onClose: () => void;
   academicYearId: number;
   hasValidAcademicYearId: boolean;
-  termOptions: ReadonlyArray<CatalogTermOption>;
+  termOptions: ReadonlyArray<CourseTermOption>;
   onCreated: () => void;
 };
 

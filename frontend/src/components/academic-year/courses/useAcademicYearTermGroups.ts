@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getAcademicYearTermGroups } from '@/services/academic-term-group-service';
 import type { AcademicTermResponse } from '@/services/schemas/academic-years-schemas';
-import { getErrorMessage, sortAcademicYearTermGroups } from './academicYearCatalogShared';
+import { getErrorMessage, sortAcademicYearTermGroups } from './academicYearCoursesShared';
 
 type AcademicYearTermGroupsState =
   | { status: 'loading' }

@@ -1,27 +1,27 @@
-import type { AcademicYearCatalogSummaryResponse } from '@/services/schemas/admin-catalog-schemas';
+import type { AcademicYearCoursesSummaryResponse } from '@/services/schemas/admin-courses-schemas';
 import type { AcademicTermResponse } from '@/services/schemas/academic-years-schemas';
 
-export type CatalogTermOption = {
+export type CourseTermOption = {
   value: string;
   label: string;
 };
 
 function compareSummaryTermGroups(
-  left: AcademicYearCatalogSummaryResponse['terms'][number],
-  right: AcademicYearCatalogSummaryResponse['terms'][number]
+  left: AcademicYearCoursesSummaryResponse['terms'][number],
+  right: AcademicYearCoursesSummaryResponse['terms'][number]
 ): number {
   return left.code.localeCompare(right.code) || left.termId - right.termId;
 }
 
 function compareSummaryTerms(
-  left: AcademicYearCatalogSummaryResponse['terms'][number]['subTerms'][number],
-  right: AcademicYearCatalogSummaryResponse['terms'][number]['subTerms'][number]
+  left: AcademicYearCoursesSummaryResponse['terms'][number]['subTerms'][number],
+  right: AcademicYearCoursesSummaryResponse['terms'][number]['subTerms'][number]
 ): number {
   return left.code.localeCompare(right.code) || left.subTermId - right.subTermId;
 }
 
-export function sortAcademicYearCatalogTermGroups(
-  terms: ReadonlyArray<AcademicYearCatalogSummaryResponse['terms'][number]>
+export function sortAcademicYearCoursesTermGroups(
+  terms: ReadonlyArray<AcademicYearCoursesSummaryResponse['terms'][number]>
 ) {
   return [...terms]
     .sort(compareSummaryTermGroups)
@@ -31,9 +31,9 @@ export function sortAcademicYearCatalogTermGroups(
     }));
 }
 
-export function buildAcademicYearCatalogTermOptions(
-  terms: ReadonlyArray<AcademicYearCatalogSummaryResponse['terms'][number]>
-): CatalogTermOption[] {
+export function buildAcademicYearCoursesTermOptions(
+  terms: ReadonlyArray<AcademicYearCoursesSummaryResponse['terms'][number]>
+): CourseTermOption[] {
   return terms.flatMap((term) =>
     term.subTerms.map((subTerm) => ({
       value: String(subTerm.subTermId),

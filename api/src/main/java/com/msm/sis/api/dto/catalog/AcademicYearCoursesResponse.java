@@ -5,23 +5,23 @@ import com.msm.sis.api.dto.course.CourseOfferingSearchResultResponse;
 import java.time.LocalDate;
 import java.util.List;
 
-public record AcademicYearCatalogResponse(
+public record AcademicYearCoursesResponse(
         Long academicYearId,
         String academicYearCode,
         String academicYearName,
-        List<TermCatalogResponse> terms
+        List<TermCoursesResponse> terms
 ) {
-    public record TermCatalogResponse(
+    public record TermCoursesResponse(
             Long termId,
             String code,
             String name,
             LocalDate startDate,
             LocalDate endDate,
-            List<SubTermCatalogResponse> subTerms
+            List<SubTermCoursesResponse> subTerms
     ) {
     }
 
-    public record SubTermCatalogResponse(
+    public record SubTermCoursesResponse(
             Long subTermId,
             String code,
             String name,
