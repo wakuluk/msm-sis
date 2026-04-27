@@ -752,6 +752,7 @@ export function AcademicTermDetailPage() {
           selectedOffering={selectedCourseOffering}
           selectedOfferings={selectedCourseOfferings}
           searchValues={courseSectionSearchValues}
+          subTermId={detail.subTermId}
           subTermLabel={subTermLabel}
           onAddSection={() => {
             setCourseSectionAction('add');
