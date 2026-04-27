@@ -29,6 +29,7 @@ type AcademicYearCoursesActionsSectionProps = {
   hasValidAcademicYearId: boolean;
   canManageCourses: boolean;
   termOptions: ReadonlyArray<CourseTermOption>;
+  initialSubTermIds?: ReadonlyArray<string>;
   onCoursesChanged: () => void;
   children?: ReactNode;
 };
@@ -38,6 +39,7 @@ export function AcademicYearCoursesActionsSection({
   hasValidAcademicYearId,
   canManageCourses,
   termOptions,
+  initialSubTermIds,
   onCoursesChanged,
   children,
 }: AcademicYearCoursesActionsSectionProps) {
@@ -206,6 +208,7 @@ export function AcademicYearCoursesActionsSection({
         academicYearId={academicYearId}
         hasValidAcademicYearId={hasValidAcademicYearId}
         termOptions={termOptions}
+        initialSubTermIds={initialSubTermIds}
         onCreated={onCoursesChanged}
       />
     </>

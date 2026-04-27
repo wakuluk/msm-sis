@@ -1,6 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Alert, Badge, Button, Grid, Group, Paper, Select, Stack, Text, TextInput } from '@mantine/core';
+import {
+  Alert,
+  Badge,
+  Button,
+  Grid,
+  Group,
+  Modal,
+  Paper,
+  Select,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
 import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
 import { SearchResultsTable } from '@/components/search/SearchResultsTable';
@@ -11,6 +24,10 @@ import type {
   AcademicYearCourseOfferingSearchResultResponse,
 } from '@/services/schemas/admin-courses-schemas';
 import type { CourseSearchReferenceOptionsResponse } from '@/services/schemas/reference-schemas';
+import {
+  initialCourseSectionSearchValues,
+  type CourseSectionSearchValues,
+} from './CourseSectionsWorkspace';
 import { getErrorMessage, type CourseTermOption } from './academicYearCoursesShared';
 
 type YearOfferingSearchSortBy =
@@ -18,8 +35,7 @@ type YearOfferingSearchSortBy =
   | 'departmentName'
   | 'subjectCode'
   | 'courseCode'
-  | 'title'
-  | 'offeringStatusName';
+  | 'title';
 
 type YearOfferingSearchSortDirection = 'asc' | 'desc';
 type YearOfferingResultsView = 'standard' | 'system';
@@ -43,21 +59,44 @@ type YearOfferingSearchState =
   | { status: 'error'; message: string }
   | { status: 'success'; response: AcademicYearCourseOfferingSearchResponse };
 
+type CourseOfferingSectionPreview = {
+  sectionId: number;
+  sectionCode: string;
+  status: string;
+  instructor: string;
+  meetingPattern: string;
+  room: string;
+  capacity: number;
+  enrolled: number;
+};
+
 type AcademicYearCourseOfferingSearchSectionProps = {
   academicYearId: number;
   hasValidAcademicYearId: boolean;
   termOptions: ReadonlyArray<CourseTermOption>;
   reloadKey: number;
+  initialSubTermId?: string | null;
+  lockSubTermFilter?: boolean;
+  onOfferingSelected?: (offering: AcademicYearCourseOfferingSearchResultResponse) => void;
+  onViewSearchSections?: (
+    offerings: ReadonlyArray<AcademicYearCourseOfferingSearchResultResponse>
+  ) => void;
+  sectionSearchValues?: CourseSectionSearchValues;
+  onSectionSearchValuesChange?: (values: CourseSectionSearchValues) => void;
 };
 
-const initialYearOfferingSearchFormValues: YearOfferingSearchFormValues = {
-  subTermId: null,
-  schoolId: null,
-  departmentId: null,
-  subjectId: null,
-  courseCode: '',
-  title: '',
-};
+function buildInitialYearOfferingSearchFormValues(
+  initialSubTermId: string | null = null
+): YearOfferingSearchFormValues {
+  return {
+    subTermId: initialSubTermId,
+    schoolId: null,
+    departmentId: null,
+    subjectId: null,
+    courseCode: '',
+    title: '',
+  };
+}
 
 const yearOfferingsPageSize = 25;
 const emptyAcademicYearOfferingResults: AcademicYearCourseOfferingSearchResultResponse[] = [];
@@ -66,59 +105,10 @@ const yearOfferingResultsViewOptions = [
   { value: 'system', label: 'System' },
 ] satisfies ReadonlyArray<{ label: string; value: YearOfferingResultsView }>;
 
-const academicYearOfferingColumns: ColumnDef<AcademicYearCourseOfferingSearchResultResponse>[] = [
-  {
-    accessorKey: 'schoolName',
-    header: 'School',
-    size: 220,
-    cell: ({ row }) => row.original.schoolName ?? '—',
-    meta: { sortBy: 'schoolName' satisfies YearOfferingSearchSortBy },
-  },
-  {
-    accessorKey: 'departmentName',
-    header: 'Department',
-    size: 220,
-    cell: ({ row }) => row.original.departmentName ?? '—',
-    meta: { sortBy: 'departmentName' satisfies YearOfferingSearchSortBy },
-  },
-  {
-    accessorKey: 'subjectCode',
-    header: 'Subject',
-    size: 140,
-    cell: ({ row }) => row.original.subjectCode ?? '—',
-    meta: { sortBy: 'subjectCode' satisfies YearOfferingSearchSortBy },
-  },
-  {
-    accessorKey: 'courseCode',
-    header: 'Course',
-    size: 180,
-    cell: ({ row }) => row.original.courseCode ?? '—',
-    meta: { sortBy: 'courseCode' satisfies YearOfferingSearchSortBy },
-  },
-  {
-    accessorKey: 'title',
-    header: 'Title',
-    size: 320,
-    cell: ({ row }) => row.original.title ?? '—',
-    meta: { sortBy: 'title' satisfies YearOfferingSearchSortBy },
-  },
-  {
-    accessorKey: 'subTerms',
-    header: 'Terms',
-    size: 220,
-    cell: ({ row }) =>
-      row.original.subTerms.length > 0
-        ? row.original.subTerms.map((subTerm) => subTerm.code).join(', ')
-        : 'N/A',
-  },
-  {
-    accessorKey: 'offeringStatusName',
-    header: 'Status',
-    size: 180,
-    cell: ({ row }) => row.original.offeringStatusName ?? '—',
-    meta: { sortBy: 'offeringStatusName' satisfies YearOfferingSearchSortBy },
-  },
-];
+const sectionStatuses = ['Open', 'Open', 'Draft'] as const;
+const sectionInstructors = ['Jane Smith', 'Alan Reed', 'Unassigned'] as const;
+const sectionMeetingPatterns = ['Mon/Wed 9:00-10:15', 'Tue/Thu 11:00-12:15', 'TBD'] as const;
+const sectionRooms = ['RH 204', 'RH 110', 'TBD'] as const;
 
 function getYearOfferingResultsSummary(state: YearOfferingSearchState): string {
   if (state.status === 'loading') {
@@ -139,26 +129,120 @@ function getYearOfferingResultsSummary(state: YearOfferingSearchState): string {
   return `Showing ${start}-${end} of ${state.response.totalElements} offerings`;
 }
 
+function buildSectionPreviews(
+  offering: AcademicYearCourseOfferingSearchResultResponse
+): CourseOfferingSectionPreview[] {
+  const seed = offering.courseOfferingId % 7;
+
+  return [0, 1, 2].map((index) => ({
+    sectionId: offering.courseOfferingId * 10 + index + 1,
+    sectionCode: String(index + 1).padStart(2, '0'),
+    status: sectionStatuses[index],
+    instructor: sectionInstructors[index],
+    meetingPattern: sectionMeetingPatterns[index],
+    room: sectionRooms[index],
+    capacity: 24 + ((seed + index) % 3) * 4,
+    enrolled: index === 2 ? 0 : 14 + seed + index * 5,
+  }));
+}
+
+function buildAcademicYearOfferingColumns(): ColumnDef<AcademicYearCourseOfferingSearchResultResponse>[] {
+  return [
+    {
+      accessorKey: 'schoolName',
+      header: 'School',
+      size: 220,
+      cell: ({ row }) => row.original.schoolName ?? '—',
+      meta: { sortBy: 'schoolName' satisfies YearOfferingSearchSortBy },
+    },
+    {
+      accessorKey: 'departmentName',
+      header: 'Department',
+      size: 220,
+      cell: ({ row }) => row.original.departmentName ?? '—',
+      meta: { sortBy: 'departmentName' satisfies YearOfferingSearchSortBy },
+    },
+    {
+      accessorKey: 'subjectCode',
+      header: 'Subject',
+      size: 140,
+      cell: ({ row }) => row.original.subjectCode ?? '—',
+      meta: { sortBy: 'subjectCode' satisfies YearOfferingSearchSortBy },
+    },
+    {
+      accessorKey: 'courseCode',
+      header: 'Course',
+      size: 180,
+      cell: ({ row }) => row.original.courseCode ?? '—',
+      meta: { sortBy: 'courseCode' satisfies YearOfferingSearchSortBy },
+    },
+    {
+      accessorKey: 'title',
+      header: 'Title',
+      size: 320,
+      cell: ({ row }) => row.original.title ?? '—',
+      meta: { sortBy: 'title' satisfies YearOfferingSearchSortBy },
+    },
+    {
+      accessorKey: 'subTerms',
+      header: 'Terms',
+      size: 220,
+      cell: ({ row }) =>
+        row.original.subTerms.length > 0
+          ? row.original.subTerms.map((subTerm) => subTerm.code).join(', ')
+          : 'N/A',
+    },
+    {
+      id: 'sections',
+      header: 'Sections',
+      size: 120,
+      cell: ({ row }) => (
+        <Badge variant="light" color="blue">
+          {buildSectionPreviews(row.original).length} sections
+        </Badge>
+      ),
+    },
+  ];
+}
+
 export function AcademicYearCourseOfferingSearchSection({
   academicYearId,
   hasValidAcademicYearId,
   termOptions,
   reloadKey,
+  initialSubTermId = null,
+  lockSubTermFilter = false,
+  onOfferingSelected,
+  onViewSearchSections,
+  sectionSearchValues,
+  onSectionSearchValuesChange,
 }: AcademicYearCourseOfferingSearchSectionProps) {
+  const initialSearchValues = useMemo(
+    () => buildInitialYearOfferingSearchFormValues(initialSubTermId),
+    [initialSubTermId]
+  );
   const [referenceState, setReferenceState] = useState<YearOfferingReferenceState>({
     status: 'loading',
   });
   const [searchValues, setSearchValues] = useState<YearOfferingSearchFormValues>(
-    initialYearOfferingSearchFormValues
+    initialSearchValues
   );
   const [submittedSearchValues, setSubmittedSearchValues] = useState<YearOfferingSearchFormValues>(
-    initialYearOfferingSearchFormValues
+    initialSearchValues
   );
   const [sortBy, setSortBy] = useState<YearOfferingSearchSortBy>('courseCode');
   const [sortDirection, setSortDirection] = useState<YearOfferingSearchSortDirection>('asc');
   const [resultsView, setResultsView] = useState<YearOfferingResultsView>('standard');
   const [page, setPage] = useState(0);
   const [searchState, setSearchState] = useState<YearOfferingSearchState>({ status: 'loading' });
+  const [selectedOffering, setSelectedOffering] =
+    useState<AcademicYearCourseOfferingSearchResultResponse | null>(null);
+
+  useEffect(() => {
+    setPage(0);
+    setSearchValues(initialSearchValues);
+    setSubmittedSearchValues(initialSearchValues);
+  }, [initialSearchValues]);
 
   useEffect(() => {
     let cancelled = false;
@@ -277,24 +361,27 @@ export function AcademicYearCourseOfferingSearchSection({
         .map((subject) => ({
           value: String(subject.id),
           label: `${subject.name} (${subject.code})`,
-        })),
+      })),
     [referenceOptions, searchValues.departmentId]
   );
+  const columns = useMemo(() => buildAcademicYearOfferingColumns(), []);
   const tableData =
     searchState.status === 'success' ? searchState.response.results : emptyAcademicYearOfferingResults;
   const table = useReactTable({
-    columns: academicYearOfferingColumns,
+    columns,
     data: tableData,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => String(row.courseOfferingId),
     state: {
       columnVisibility: {
         subjectCode: resultsView === 'system',
-        terms: resultsView === 'system',
-        offeringStatusName: resultsView === 'system',
+        subTerms: !lockSubTermFilter,
+        sections: !lockSubTermFilter,
       },
     },
   });
+  const selectedOfferingSections = selectedOffering ? buildSectionPreviews(selectedOffering) : [];
+  const showSectionSearch = sectionSearchValues && onSectionSearchValuesChange;
 
   function handleSchoolChange(value: string | null) {
     setSearchValues((current) => ({
@@ -327,8 +414,9 @@ export function AcademicYearCourseOfferingSearchSection({
 
   function handleClearSearch() {
     setPage(0);
-    setSearchValues(initialYearOfferingSearchFormValues);
-    setSubmittedSearchValues(initialYearOfferingSearchFormValues);
+    setSearchValues(initialSearchValues);
+    setSubmittedSearchValues(initialSearchValues);
+    onSectionSearchValuesChange?.(initialCourseSectionSearchValues);
   }
 
   function handleToggleSort(nextSortBy: YearOfferingSearchSortBy) {
@@ -342,181 +430,383 @@ export function AcademicYearCourseOfferingSearchSection({
     setPage(0);
   }
 
+  function handleOfferingSelected(offering: AcademicYearCourseOfferingSearchResultResponse) {
+    if (onOfferingSelected) {
+      onOfferingSelected(offering);
+      return;
+    }
+
+    setSelectedOffering(offering);
+  }
+
+  function handleViewSearchSections() {
+    if (!onViewSearchSections) {
+      return;
+    }
+
+    onViewSearchSections(tableData);
+  }
+
   return (
-    <Grid.Col span={12}>
-      <Paper withBorder radius="md" p="lg">
-        <Stack gap="md">
-          <Group justify="space-between" align="flex-start" gap="md">
+    <>
+      <Grid.Col span={12}>
+        <Paper withBorder radius="md" p="lg">
+          <Stack gap="md">
+            <Group justify="space-between" align="flex-start" gap="md">
+              <Stack gap={2}>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase">
+                  Academic Year Courses
+                </Text>
+                <Text fw={600}>Academic year course offerings</Text>
+                <Text size="sm" c="dimmed">
+                  Search the year-wide course offering list and filter it by school, department,
+                  subject, course code, title, and assigned term.
+                </Text>
+              </Stack>
+            </Group>
+
+            <Group justify="space-between" align="center" gap="sm" wrap="wrap">
+              <Text size="sm" c="dimmed">
+                This list pages through the year-scoped course offerings for this academic year.
+              </Text>
+              <Badge variant="light" color="blue">
+                {yearOfferingsPageSize} per page
+              </Badge>
+            </Group>
+
+            {referenceState.status === 'error' ? (
+              <Alert color="red" title="Unable to load offering filters">
+                {referenceState.message}
+              </Alert>
+            ) : null}
+
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <Select
+                  label="Term"
+                  placeholder="Filter by term"
+                  data={termOptions}
+                  value={searchValues.subTermId}
+                  onChange={(value) => {
+                    setSearchValues((current) => ({
+                      ...current,
+                      subTermId: value,
+                    }));
+                  }}
+                  searchable
+                  clearable={!lockSubTermFilter}
+                  disabled={!hasValidAcademicYearId || lockSubTermFilter}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <Select
+                  label="School"
+                  placeholder="Filter by school"
+                  data={schoolOptions}
+                  value={searchValues.schoolId}
+                  onChange={handleSchoolChange}
+                  searchable
+                  clearable
+                  disabled={referenceState.status !== 'success'}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <Select
+                  label="Department"
+                  placeholder="Filter by department"
+                  data={departmentOptions}
+                  value={searchValues.departmentId}
+                  onChange={handleDepartmentChange}
+                  searchable
+                  clearable
+                  disabled={referenceState.status !== 'success'}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <Select
+                  label="Subject"
+                  placeholder="Filter by subject"
+                  data={subjectOptions}
+                  value={searchValues.subjectId}
+                  onChange={handleSubjectChange}
+                  searchable
+                  clearable
+                  disabled={referenceState.status !== 'success'}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 3 }}>
+                <TextInput
+                  label="Course Code"
+                  placeholder="Filter by course code"
+                  value={searchValues.courseCode}
+                  onChange={(event) => {
+                    setSearchValues((current) => ({
+                      ...current,
+                      courseCode: event.currentTarget.value,
+                    }));
+                  }}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 5 }}>
+                <TextInput
+                  label="Title"
+                  placeholder="Filter by title"
+                  value={searchValues.title}
+                  onChange={(event) => {
+                    setSearchValues((current) => ({
+                      ...current,
+                      title: event.currentTarget.value,
+                    }));
+                  }}
+                />
+              </Grid.Col>
+              {showSectionSearch ? (
+                <Grid.Col span={12}>
+                  <Stack gap="sm">
+                    <Stack gap={2}>
+                      <Text fw={600}>Course section filters</Text>
+                      <Text size="sm" c="dimmed">
+                        These filters apply when viewing sections for the current offering results.
+                      </Text>
+                    </Stack>
+                    <Grid>
+                      <Grid.Col span={{ base: 12, md: 2 }}>
+                        <TextInput
+                          label="Section"
+                          placeholder="01"
+                          value={sectionSearchValues.sectionCode}
+                          onChange={(event) => {
+                            onSectionSearchValuesChange({
+                              ...sectionSearchValues,
+                              sectionCode: event.currentTarget.value,
+                            });
+                          }}
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={{ base: 12, md: 3 }}>
+                        <TextInput
+                          label="Instructor"
+                          placeholder="Filter by instructor"
+                          value={sectionSearchValues.instructor}
+                          onChange={(event) => {
+                            onSectionSearchValuesChange({
+                              ...sectionSearchValues,
+                              instructor: event.currentTarget.value,
+                            });
+                          }}
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={{ base: 12, md: 3 }}>
+                        <TextInput
+                          label="Meeting Pattern"
+                          placeholder="Filter by meeting pattern"
+                          value={sectionSearchValues.meetingPattern}
+                          onChange={(event) => {
+                            onSectionSearchValuesChange({
+                              ...sectionSearchValues,
+                              meetingPattern: event.currentTarget.value,
+                            });
+                          }}
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={{ base: 12, md: 2 }}>
+                        <TextInput
+                          label="Room"
+                          placeholder="Room"
+                          value={sectionSearchValues.room}
+                          onChange={(event) => {
+                            onSectionSearchValuesChange({
+                              ...sectionSearchValues,
+                              room: event.currentTarget.value,
+                            });
+                          }}
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={{ base: 12, md: 2 }}>
+                        <Select
+                          label="Status"
+                          placeholder="Any status"
+                          data={[
+                            { value: 'Draft', label: 'Draft' },
+                            { value: 'Open', label: 'Open' },
+                            { value: 'Closed', label: 'Closed' },
+                          ]}
+                          value={sectionSearchValues.status}
+                          onChange={(value) => {
+                            onSectionSearchValuesChange({
+                              ...sectionSearchValues,
+                              status: value,
+                            });
+                          }}
+                          clearable
+                        />
+                      </Grid.Col>
+                    </Grid>
+                  </Stack>
+                </Grid.Col>
+              ) : null}
+              <Grid.Col span={12}>
+                <Group justify="flex-end" align="center" wrap="wrap">
+                  <Button variant="default" onClick={handleClearSearch}>
+                    Clear filters
+                  </Button>
+                  <Button onClick={handleSearch} loading={searchState.status === 'loading'}>
+                    Search offerings
+                  </Button>
+                </Group>
+              </Grid.Col>
+            </Grid>
+
+            {searchState.status === 'error' ? (
+              <Alert color="red" title="Unable to load academic year offerings">
+                {searchState.message}
+              </Alert>
+            ) : null}
+
+            {searchState.status === 'loading' ? (
+              <Alert color="blue" title="Loading academic year offerings">
+                Fetching the paged course offering list for this academic year.
+              </Alert>
+            ) : null}
+
+            {searchState.status === 'success' && searchState.response.results.length === 0 ? (
+              <Alert color="gray" title="No offerings match these filters">
+                No course offerings were found for the selected academic year filters.
+              </Alert>
+            ) : null}
+
+            {searchState.status === 'success' && searchState.response.results.length > 0 ? (
+              <>
+                <SearchResultsHeader
+                  data={yearOfferingResultsViewOptions}
+                  value={resultsView}
+                  onChange={setResultsView}
+                  summary={getYearOfferingResultsSummary(searchState)}
+                />
+
+                <SearchResultsTable
+                  table={table}
+                  sortBy={sortBy}
+                  sortDirection={sortDirection}
+                  onToggleSort={handleToggleSort}
+                  getRowProps={(row) => ({
+                    role: 'button',
+                    tabIndex: 0,
+                    onClick: () => {
+                      handleOfferingSelected(row.original);
+                    },
+                    onKeyDown: (event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        handleOfferingSelected(row.original);
+                      }
+                    },
+                  })}
+                />
+
+                <SearchPaginationFooter
+                  page={searchState.response.page}
+                  totalPages={searchState.response.totalPages}
+                  onPageChange={setPage}
+                />
+
+                <Group justify="space-between" align="center" gap="sm" wrap="wrap">
+                  <Text size="sm" c="dimmed">
+                    {searchState.response.totalElements} offerings found, limited to{' '}
+                    {searchState.response.size} rows per page.
+                  </Text>
+                  {onViewSearchSections ? (
+                    <Button variant="light" onClick={handleViewSearchSections}>
+                      View offering sections
+                    </Button>
+                  ) : null}
+                </Group>
+              </>
+            ) : null}
+          </Stack>
+        </Paper>
+      </Grid.Col>
+
+      <Modal
+        opened={selectedOffering !== null}
+        onClose={() => {
+          setSelectedOffering(null);
+        }}
+        title="Course Offering Sections"
+        size="xl"
+        centered
+      >
+        {selectedOffering ? (
+          <Stack gap="md">
             <Stack gap={2}>
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase">
-                Academic Year Courses
-              </Text>
-              <Text fw={600}>Academic year course offerings</Text>
+              <Text fw={700}>{selectedOffering.courseCode ?? 'Course offering'}</Text>
               <Text size="sm" c="dimmed">
-                Search the year-wide course offering list and filter it by school, department, subject,
-                course code, title, and assigned term.
+                {selectedOffering.title ?? 'Title unavailable'}
               </Text>
-            </Stack>
-          </Group>
-
-          <Group justify="space-between" align="center" gap="sm" wrap="wrap">
-            <Text size="sm" c="dimmed">
-              This list pages through the year-scoped course offerings for this academic year.
-            </Text>
-            <Badge variant="light" color="blue">
-              {yearOfferingsPageSize} per page
-            </Badge>
-          </Group>
-
-          {referenceState.status === 'error' ? (
-            <Alert color="red" title="Unable to load offering filters">
-              {referenceState.message}
-            </Alert>
-          ) : null}
-
-          <Grid>
-            <Grid.Col span={{ base: 12, md: 4 }}>
-              <Select
-                label="Term"
-                placeholder="Filter by term"
-                data={termOptions}
-                value={searchValues.subTermId}
-                onChange={(value) => {
-                  setSearchValues((current) => ({
-                    ...current,
-                    subTermId: value,
-                  }));
-                }}
-                searchable
-                clearable
-                disabled={!hasValidAcademicYearId}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 4 }}>
-              <Select
-                label="School"
-                placeholder="Filter by school"
-                data={schoolOptions}
-                value={searchValues.schoolId}
-                onChange={handleSchoolChange}
-                searchable
-                clearable
-                disabled={referenceState.status !== 'success'}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 4 }}>
-              <Select
-                label="Department"
-                placeholder="Filter by department"
-                data={departmentOptions}
-                value={searchValues.departmentId}
-                onChange={handleDepartmentChange}
-                searchable
-                clearable
-                disabled={referenceState.status !== 'success'}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 4 }}>
-              <Select
-                label="Subject"
-                placeholder="Filter by subject"
-                data={subjectOptions}
-                value={searchValues.subjectId}
-                onChange={handleSubjectChange}
-                searchable
-                clearable
-                disabled={referenceState.status !== 'success'}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 3 }}>
-              <TextInput
-                label="Course Code"
-                placeholder="Filter by course code"
-                value={searchValues.courseCode}
-                onChange={(event) => {
-                  setSearchValues((current) => ({
-                    ...current,
-                    courseCode: event.currentTarget.value,
-                  }));
-                }}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 5 }}>
-              <TextInput
-                label="Title"
-                placeholder="Filter by title"
-                value={searchValues.title}
-                onChange={(event) => {
-                  setSearchValues((current) => ({
-                    ...current,
-                    title: event.currentTarget.value,
-                  }));
-                }}
-              />
-            </Grid.Col>
-            <Grid.Col span={12}>
-              <Group justify="flex-end" align="center" wrap="wrap">
-                <Button variant="default" onClick={handleClearSearch}>
-                  Clear filters
-                </Button>
-                <Button
-                  onClick={handleSearch}
-                  loading={searchState.status === 'loading'}
-                >
-                  Search offerings
-                </Button>
+              <Group gap="xs" wrap="wrap">
+                {(selectedOffering.subTerms.length > 0
+                  ? selectedOffering.subTerms
+                  : [{ code: 'TBD', name: 'Term unavailable', subTermId: 0 }]
+                ).map((subTerm) => (
+                  <Badge key={subTerm.subTermId} variant="light" color="blue">
+                    {subTerm.name} ({subTerm.code})
+                  </Badge>
+                ))}
               </Group>
-            </Grid.Col>
-          </Grid>
+            </Stack>
 
-          {searchState.status === 'error' ? (
-            <Alert color="red" title="Unable to load academic year offerings">
-              {searchState.message}
-            </Alert>
-          ) : null}
+            <Group justify="space-between" align="center" wrap="wrap">
+              <Text size="sm">{selectedOfferingSections.length} current sections</Text>
+              <Button variant="light">Add section</Button>
+            </Group>
 
-          {searchState.status === 'loading' ? (
-            <Alert color="blue" title="Loading academic year offerings">
-              Fetching the paged course offering list for this academic year.
-            </Alert>
-          ) : null}
-
-          {searchState.status === 'success' && searchState.response.results.length === 0 ? (
-            <Alert color="gray" title="No offerings match these filters">
-              No course offerings were found for the selected academic year filters.
-            </Alert>
-          ) : null}
-
-          {searchState.status === 'success' && searchState.response.results.length > 0 ? (
-            <>
-              <SearchResultsHeader
-                data={yearOfferingResultsViewOptions}
-                value={resultsView}
-                onChange={setResultsView}
-                summary={getYearOfferingResultsSummary(searchState)}
-              />
-
-              <SearchResultsTable
-                table={table}
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                onToggleSort={handleToggleSort}
-              />
-
-              <SearchPaginationFooter
-                page={searchState.response.page}
-                totalPages={searchState.response.totalPages}
-                onPageChange={setPage}
-              />
-
-              <Text size="sm" c="dimmed">
-                {searchState.response.totalElements} offerings found, limited to{' '}
-                {searchState.response.size} rows per page.
-              </Text>
-            </>
-          ) : null}
-        </Stack>
-      </Paper>
-    </Grid.Col>
+            <Table withTableBorder withColumnBorders striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Section</Table.Th>
+                  <Table.Th>Status</Table.Th>
+                  <Table.Th>Instructor</Table.Th>
+                  <Table.Th>Meeting Pattern</Table.Th>
+                  <Table.Th>Room</Table.Th>
+                  <Table.Th>Seats</Table.Th>
+                  <Table.Th>Actions</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {selectedOfferingSections.map((section) => (
+                  <Table.Tr key={section.sectionId}>
+                    <Table.Td>{section.sectionCode}</Table.Td>
+                    <Table.Td>
+                      <Badge
+                        variant="light"
+                        color={section.status === 'Draft' ? 'gray' : 'green'}
+                      >
+                        {section.status}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>{section.instructor}</Table.Td>
+                    <Table.Td>{section.meetingPattern}</Table.Td>
+                    <Table.Td>{section.room}</Table.Td>
+                    <Table.Td>
+                      {section.enrolled}/{section.capacity}
+                    </Table.Td>
+                    <Table.Td>
+                      <Group gap="xs" wrap="nowrap">
+                        <Button variant="default" size="xs">
+                          Edit
+                        </Button>
+                        <Button variant="default" size="xs">
+                          Duplicate
+                        </Button>
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Stack>
+        ) : null}
+      </Modal>
+    </>
   );
 }

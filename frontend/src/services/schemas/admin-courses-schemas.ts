@@ -66,8 +66,6 @@ export const AcademicYearCourseOfferingSearchResultResponseSchema = z.object({
   maxCredits: z.number().nullable(),
   variableCredit: z.boolean(),
   subTerms: z.array(AcademicYearCourseOfferingSearchSubTermSchema),
-  offeringStatusCode: z.string().nullable(),
-  offeringStatusName: z.string().nullable(),
 });
 
 export type AcademicYearCourseOfferingSearchResultResponse = z.infer<
@@ -134,8 +132,6 @@ export const AdminCourseOfferingDetailResponseSchema = z.object({
   maxCredits: z.number(),
   variableCredit: z.boolean(),
   subTerms: z.array(AdminCourseOfferingSubTermDetailResponseSchema),
-  offeringStatusCode: z.string(),
-  offeringStatusName: z.string(),
   notes: z.string().nullable(),
 });
 
@@ -156,7 +152,6 @@ export type CreateAcademicYearCourseOfferingRequest = z.infer<
 export const PatchCourseOfferingRequestSchema = z.object({
   courseOfferingId: z.number().nullable().optional(),
   subTermIds: z.array(z.number()).nullable().optional(),
-  offeringStatusCode: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 

@@ -1,5 +1,5 @@
 import type { Table as TanStackTable } from '@tanstack/react-table';
-import { Alert, Badge, Collapse, Group, Loader, Paper, Stack, Table, Text } from '@mantine/core';
+import { Alert, Collapse, Group, Loader, Paper, Stack, Table, Text } from '@mantine/core';
 import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
 import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
 import { SearchResultsStateNotice } from '@/components/search/SearchResultsStateNotice';
@@ -161,7 +161,6 @@ export function CatalogSearchResultsSection({
                                 <div>
                                   <Group gap="sm" wrap="wrap">
                                     <Text fw={700}>{detailState.detail.courseCode}</Text>
-                                    <Badge variant="outline">{detailState.detail.offeringStatusName}</Badge>
                                   </Group>
                                   <Text fw={600} mt={4}>
                                     {detailState.detail.title}

@@ -45,11 +45,6 @@ public class CourseOffering {
     private AcademicYear academicYear;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "course_offering_status_id", nullable = false)
-    private CourseOfferingStatus status;
-
-    @JsonIgnore
     @OneToMany(mappedBy = "courseOffering")
     private List<CourseOfferingSubTerm> courseOfferingSubTerms = new ArrayList<>();
 

@@ -17,7 +17,6 @@ import com.msm.sis.api.repository.AcademicSchoolRepository;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
 import com.msm.sis.api.repository.AcademicDepartmentRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
-import com.msm.sis.api.repository.CourseOfferingStatusRepository;
 import com.msm.sis.api.repository.AcademicSubjectRepository;
 import com.msm.sis.api.repository.AcademicSubTermRepository;
 import com.msm.sis.api.repository.AcademicSubTermStatusRepository;
@@ -41,7 +40,6 @@ import java.util.stream.Collectors;
 public class ReferenceDataService {
 
     private final AcademicYearRepository catalogAcademicYearRepository;
-    private final CourseOfferingStatusRepository courseOfferingStatusRepository;
     private final AcademicSchoolRepository academicSchoolRepository;
     private final AcademicDepartmentRepository academicDepartmentRepository;
     private final AcademicSubjectRepository academicSubjectRepository;
@@ -55,7 +53,6 @@ public class ReferenceDataService {
 
     public ReferenceDataService(
             AcademicYearRepository catalogAcademicYearRepository,
-            CourseOfferingStatusRepository courseOfferingStatusRepository,
             AcademicSchoolRepository academicSchoolRepository,
             AcademicDepartmentRepository academicDepartmentRepository,
             AcademicSubjectRepository academicSubjectRepository,
@@ -68,7 +65,6 @@ public class ReferenceDataService {
             ClassStandingRepository classStandingRepository
     ) {
         this.catalogAcademicYearRepository = catalogAcademicYearRepository;
-        this.courseOfferingStatusRepository = courseOfferingStatusRepository;
         this.academicSchoolRepository = academicSchoolRepository;
         this.academicDepartmentRepository = academicDepartmentRepository;
         this.academicSubjectRepository = academicSubjectRepository;
@@ -301,13 +297,6 @@ public class ReferenceDataService {
                                 subject.getDepartment().getId(),
                                 subject.getDepartment().getCode(),
                                 subject.getDepartment().getName()
-                        ))
-                        .toList(),
-                courseOfferingStatusRepository.findAllByActiveTrueOrderByNameAsc().stream()
-                        .map(status -> new CodeNameReferenceOptionResponse(
-                                status.getId(),
-                                status.getCode(),
-                                status.getName()
                         ))
                         .toList(),
                 academicSubTermStatusRepository.findAllByActiveTrueOrderByNameAsc().stream()

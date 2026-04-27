@@ -35,17 +35,22 @@ type AddAcademicYearOfferingModalProps = {
   academicYearId: number;
   hasValidAcademicYearId: boolean;
   termOptions: ReadonlyArray<CourseTermOption>;
+  initialSubTermIds?: ReadonlyArray<string>;
   onCreated: () => void;
 };
 
-const initialAddOfferingFormValues: AddOfferingFormValues = {
-  schoolId: null,
-  departmentId: null,
-  subjectId: null,
-  courseId: null,
-  subTermIds: [],
-  notes: '',
-};
+function buildInitialAddOfferingFormValues(
+  initialSubTermIds: ReadonlyArray<string> = []
+): AddOfferingFormValues {
+  return {
+    schoolId: null,
+    departmentId: null,
+    subjectId: null,
+    courseId: null,
+    subTermIds: [...initialSubTermIds],
+    notes: '',
+  };
+}
 
 export function AddAcademicYearOfferingModal({
   opened,
@@ -53,18 +58,27 @@ export function AddAcademicYearOfferingModal({
   academicYearId,
   hasValidAcademicYearId,
   termOptions,
+  initialSubTermIds,
   onCreated,
 }: AddAcademicYearOfferingModalProps) {
+  const initialSubTermIdsKey = (initialSubTermIds ?? []).join('\u0000');
+  const normalizedInitialSubTermIds = useMemo(
+    () => (initialSubTermIdsKey ? initialSubTermIdsKey.split('\u0000') : []),
+    [initialSubTermIdsKey]
+  );
   const [coursePickerState, setCoursePickerState] = useState<CoursePickerState>({ status: 'idle' });
   const [createOfferingState, setCreateOfferingState] = useState<CreateOfferingState>({
     status: 'idle',
   });
-  const [formValues, setFormValues] = useState<AddOfferingFormValues>(initialAddOfferingFormValues);
+  const [formValues, setFormValues] = useState<AddOfferingFormValues>(() =>
+    buildInitialAddOfferingFormValues(normalizedInitialSubTermIds)
+  );
 
   useEffect(() => {
+    setFormValues(buildInitialAddOfferingFormValues(normalizedInitialSubTermIds));
+    setCreateOfferingState({ status: 'idle' });
+
     if (!opened) {
-      setCreateOfferingState({ status: 'idle' });
-      setFormValues(initialAddOfferingFormValues);
       return;
     }
 
@@ -93,7 +107,7 @@ export function AddAcademicYearOfferingModal({
     return () => {
       cancelled = true;
     };
-  }, [opened]);
+  }, [opened, normalizedInitialSubTermIds]);
 
   const coursePickerOptions = coursePickerState.status === 'success' ? coursePickerState.options : null;
   const schoolOptions = useMemo(

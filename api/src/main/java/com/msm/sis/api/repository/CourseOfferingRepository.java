@@ -106,6 +106,29 @@ public interface CourseOfferingRepository
     );
 
     @Query("""
+            select courseOffering
+            from CourseOffering courseOffering
+            where courseOffering.courseVersion.course.id = :courseId
+              and courseOffering.academicYear.id = :academicYearId
+            """)
+    @EntityGraph(attributePaths = {
+            "courseVersion",
+            "courseVersion.course",
+            "courseVersion.course.subject",
+            "courseVersion.course.subject.department",
+            "courseVersion.course.subject.department.school",
+            "academicYear",
+            "courseOfferingSubTerms",
+            "courseOfferingSubTerms.subTerm",
+            "courseOfferingSubTerms.subTerm.status",
+            "status"
+    })
+    Optional<CourseOffering> findByCourseIdAndAcademicYearId(
+            @Param("courseId") Long courseId,
+            @Param("academicYearId") Long academicYearId
+    );
+
+    @Query("""
             select
                 courseOfferingSubTerm.subTerm.id as subTermId,
                 count(distinct courseOffering.id) as courseOfferingCount

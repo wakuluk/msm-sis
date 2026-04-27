@@ -11,6 +11,5 @@ import java.util.List;
 public class PatchCourseOfferingRequest {
     private Long courseOfferingId;
     private PatchValue<List<Long>> subTermIds = PatchValue.absent();
-    private PatchValue<String> offeringStatusCode = PatchValue.absent();
     private PatchValue<String> notes = PatchValue.absent();
 }

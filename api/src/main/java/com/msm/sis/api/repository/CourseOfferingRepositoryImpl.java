@@ -5,7 +5,6 @@ import com.msm.sis.api.entity.AcademicSubTermStatus;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.Course;
 import com.msm.sis.api.entity.CourseOffering;
-import com.msm.sis.api.entity.CourseOfferingStatus;
 import com.msm.sis.api.entity.CourseOfferingSubTerm;
 import com.msm.sis.api.entity.CourseVersion;
 import com.msm.sis.api.entity.AcademicSubject;
@@ -56,7 +55,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             BigDecimal minCredits,
             BigDecimal maxCredits,
             Boolean variableCredit,
-            List<String> offeringStatusCodes,
             List<String> subTermStatusCodes,
             boolean includeInactive,
             Boolean isPublished,
@@ -83,7 +81,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
                 minCredits,
                 maxCredits,
                 variableCredit,
-                offeringStatusCodes,
                 subTermStatusCodes,
                 includeInactive,
                 isPublished
@@ -119,7 +116,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
                 minCredits,
                 maxCredits,
                 variableCredit,
-                offeringStatusCodes,
                 subTermStatusCodes,
                 includeInactive,
                 isPublished
@@ -136,7 +132,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
     @Override
     public Optional<CourseOffering> findPublicVisibleById(
             Long courseOfferingId,
-            List<String> offeringStatusCodes,
             List<String> subTermStatusCodes
     ) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
@@ -146,7 +141,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(criteriaBuilder.equal(root.get("id"), courseOfferingId));
-        addStatusInPredicate(criteriaBuilder, predicates, joins.status.get("code"), offeringStatusCodes);
         addStatusInPredicate(criteriaBuilder, predicates, joins.subTermStatus.get("code"), subTermStatusCodes);
         predicates.add(criteriaBuilder.isTrue(joins.department.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.subject.get("active")));
@@ -154,7 +148,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
         predicates.add(criteriaBuilder.isTrue(joins.academicYear.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.subTerm.get("active")));
         predicates.add(criteriaBuilder.isTrue(joins.subTermStatus.get("active")));
-        predicates.add(criteriaBuilder.isTrue(joins.status.get("active")));
 
         query.select(root)
                 .distinct(true)
@@ -175,7 +168,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
         Join<CourseOffering, CourseOfferingSubTerm> courseOfferingSubTerm = root.join("courseOfferingSubTerms", JoinType.LEFT);
         Join<CourseOfferingSubTerm, AcademicSubTerm> subTerm = courseOfferingSubTerm.join("subTerm", JoinType.LEFT);
         Join<AcademicSubTerm, AcademicSubTermStatus> subTermStatus = subTerm.join("status", JoinType.LEFT);
-        Join<CourseOffering, CourseOfferingStatus> status = root.join("status", JoinType.INNER);
 
         return new SearchJoins(
                 courseVersion,
@@ -185,8 +177,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
                 academicYear,
                 courseOfferingSubTerm,
                 subTerm,
-                subTermStatus,
-                status
+                subTermStatus
         );
     }
 
@@ -205,7 +196,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             BigDecimal minCredits,
             BigDecimal maxCredits,
             Boolean variableCredit,
-            List<String> offeringStatusCodes,
             List<String> subTermStatusCodes,
             boolean includeInactive,
             Boolean isPublished
@@ -233,7 +223,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             predicates.add(criteriaBuilder.equal(joins.courseVersion.get("variableCredit"), variableCredit));
         }
 
-        addStatusInPredicate(criteriaBuilder, predicates, joins.status.get("code"), offeringStatusCodes);
         addStatusInPredicate(criteriaBuilder, predicates, joins.subTermStatus.get("code"), subTermStatusCodes);
 
         if (isPublished != null) {
@@ -247,7 +236,6 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             predicates.add(criteriaBuilder.isTrue(joins.academicYear.get("active")));
             predicates.add(criteriaBuilder.isTrue(joins.subTerm.get("active")));
             predicates.add(criteriaBuilder.isTrue(joins.subTermStatus.get("active")));
-            predicates.add(criteriaBuilder.isTrue(joins.status.get("active")));
         }
 
         return predicates;
@@ -350,8 +338,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
                 Map.entry("courseOfferingSubTerms.subTerm", joins.subTerm),
                 Map.entry("subTerm", joins.subTerm),
                 Map.entry("subTerm.status", joins.subTermStatus),
-                Map.entry("courseOfferingSubTerms.subTerm.status", joins.subTermStatus),
-                Map.entry("status", joins.status)
+                Map.entry("courseOfferingSubTerms.subTerm.status", joins.subTermStatus)
         );
 
         int lastDotIndex = propertyPath.lastIndexOf('.');
@@ -368,7 +355,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
 
     private EntityGraph<CourseOffering> createSearchEntityGraph() {
         EntityGraph<CourseOffering> graph = entityManager.createEntityGraph(CourseOffering.class);
-        graph.addAttributeNodes("academicYear", "status", "courseVersion", "courseOfferingSubTerms");
+        graph.addAttributeNodes("academicYear", "courseVersion", "courseOfferingSubTerms");
 
         var courseOfferingSubTermGraph = graph.addSubgraph("courseOfferingSubTerms");
         courseOfferingSubTermGraph.addAttributeNodes("subTerm");
@@ -408,8 +395,7 @@ public class CourseOfferingRepositoryImpl implements CourseOfferingRepositoryCus
             Join<CourseOffering, AcademicYear> academicYear,
             Join<CourseOffering, CourseOfferingSubTerm> courseOfferingSubTerm,
             Join<CourseOfferingSubTerm, AcademicSubTerm> subTerm,
-            Join<AcademicSubTerm, AcademicSubTermStatus> subTermStatus,
-            Join<CourseOffering, CourseOfferingStatus> status
+            Join<AcademicSubTerm, AcademicSubTermStatus> subTermStatus
     ) {
     }
 }

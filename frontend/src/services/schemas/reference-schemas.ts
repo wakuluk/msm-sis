@@ -113,7 +113,6 @@ export const CatalogSearchReferenceOptionsResponseSchema = z.object({
   subTerms: z.array(AcademicSubTermReferenceOptionSchema),
   departments: z.array(CatalogReferenceOptionSchema),
   subjects: z.array(AcademicSubjectReferenceOptionSchema),
-  offeringStatuses: z.array(CatalogReferenceOptionSchema).default([]),
   subTermStatuses: z.array(CatalogReferenceOptionSchema).default([]),
 });
 

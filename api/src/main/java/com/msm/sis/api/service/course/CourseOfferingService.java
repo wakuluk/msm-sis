@@ -4,16 +4,13 @@ import com.msm.sis.api.dto.course.*;
 import com.msm.sis.api.entity.AcademicSubTerm;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.CourseOffering;
-import com.msm.sis.api.entity.CourseOfferingStatus;
 import com.msm.sis.api.entity.CourseOfferingSubTerm;
 import com.msm.sis.api.entity.CourseOfferingSubTermId;
 import com.msm.sis.api.entity.CourseVersion;
 import com.msm.sis.api.mapper.CourseMapper;
 import com.msm.sis.api.mapper.CourseOfferingAdvancedSearchCriteriaMapper;
-import com.msm.sis.api.patch.PatchValue;
 import com.msm.sis.api.repository.AcademicSubTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
-import com.msm.sis.api.repository.CourseOfferingStatusRepository;
 import com.msm.sis.api.repository.CourseOfferingRepository;
 import com.msm.sis.api.repository.CourseOfferingSubTermRepository;
 import com.msm.sis.api.repository.CourseRepository;
@@ -40,8 +37,6 @@ import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 @Service
 public class CourseOfferingService {
-    private static final String DEFAULT_CREATE_STATUS_CODE = "PLANNED";
-
     //TODO yea... we need a better solution than this.
     private final List<String> publicSubTermStatusCodes = List.of(
             "REGISTRATION_OPEN",
@@ -49,14 +44,8 @@ public class CourseOfferingService {
             "ACTIVE",
             "COMPLETED");
 
-    private final List<String> publicOfferingStatusCodes = List.of(
-            "OPEN_FOR_DISPLAY",
-            "OPEN_FOR_REGISTRATION",
-            "CLOSED");
-
     private final CourseOfferingRepository courseOfferingRepository;
     private final CourseOfferingSubTermRepository courseOfferingSubTermRepository;
-    private final CourseOfferingStatusRepository courseOfferingStatusRepository;
     private final AcademicYearRepository academicYearRepository;
     private final AcademicSubTermRepository academicSubTermRepository;
     private final CourseRepository courseRepository;
@@ -68,7 +57,6 @@ public class CourseOfferingService {
     public CourseOfferingService(
             CourseOfferingRepository courseOfferingRepository,
             CourseOfferingSubTermRepository courseOfferingSubTermRepository,
-            CourseOfferingStatusRepository courseOfferingStatusRepository,
             AcademicYearRepository academicYearRepository,
             AcademicSubTermRepository academicSubTermRepository,
             CourseRepository courseRepository,
@@ -79,7 +67,6 @@ public class CourseOfferingService {
     ) {
         this.courseOfferingRepository = courseOfferingRepository;
         this.courseOfferingSubTermRepository = courseOfferingSubTermRepository;
-        this.courseOfferingStatusRepository = courseOfferingStatusRepository;
         this.academicYearRepository = academicYearRepository;
         this.academicSubTermRepository = academicSubTermRepository;
         this.courseRepository = courseRepository;
@@ -136,24 +123,39 @@ public class CourseOfferingService {
         );
         CourseVersion currentCourseVersion = getCurrentCourseVersion(courseId);
 
-        if (courseOfferingRepository.existsByCourseIdAndAcademicYearId(courseId, academicYearId)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "A course offering already exists for this course in the academic year."
-            );
-        }
+        CourseOffering existingCourseOffering = courseOfferingRepository
+                .findByCourseIdAndAcademicYearId(courseId, academicYearId)
+                .orElse(null);
+        if (existingCourseOffering != null) {
+            List<Long> existingSubTermIds = existingCourseOffering.getCourseOfferingSubTerms().stream()
+                    .map(CourseOfferingSubTerm::getSubTerm)
+                    .filter(Objects::nonNull)
+                    .map(AcademicSubTerm::getId)
+                    .toList();
+            List<AcademicSubTerm> missingAcademicSubTerms = academicSubTerms.stream()
+                    .filter(academicSubTerm -> !existingSubTermIds.contains(academicSubTerm.getId()))
+                    .toList();
 
-        CourseOfferingStatus status = courseOfferingStatusRepository.findByCode(DEFAULT_CREATE_STATUS_CODE)
-                .filter(CourseOfferingStatus::isActive)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Course offering status '" + DEFAULT_CREATE_STATUS_CODE + "' must exist and be active."
-                ));
+            if (missingAcademicSubTerms.isEmpty()) {
+                return getCourseOfferingById(existingCourseOffering.getId());
+            }
+
+            List<CourseOfferingSubTerm> courseOfferingSubTerms = missingAcademicSubTerms.stream()
+                    .map(academicSubTerm -> buildCourseOfferingSubTerm(
+                            existingCourseOffering,
+                            existingCourseOffering.getAcademicYear(),
+                            academicSubTerm
+                    ))
+                    .toList();
+
+            courseOfferingSubTermRepository.saveAllAndFlush(courseOfferingSubTerms);
+            entityManager.clear();
+            return getCourseOfferingById(existingCourseOffering.getId());
+        }
 
         CourseOffering courseOffering = new CourseOffering();
         courseOffering.setAcademicYear(academicYear);
         courseOffering.setCourseVersion(currentCourseVersion);
-        courseOffering.setStatus(status);
         courseOffering.setNotes(trimToNull(request.notes()));
 
         CourseOffering savedCourseOffering = courseOfferingRepository.saveAndFlush(courseOffering);
@@ -186,7 +188,6 @@ public class CourseOfferingService {
         AcademicYear academicYear = academicYearRepository.findById(academicYearId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        CourseOfferingStatus defaultStatus = getDefaultCreateStatus();
         List<CourseVersion> eligibleCurrentCourseVersions = courseVersionRepository.findCurrentCourseVersions().stream()
                 .filter(courseVersion -> courseVersion.getCourse() != null && courseVersion.getCourse().isActive())
                 .toList();
@@ -196,7 +197,7 @@ public class CourseOfferingService {
                         courseVersion.getCourse().getId(),
                         academicYearId
                 ))
-                .map(courseVersion -> buildCourseOffering(academicYear, courseVersion, defaultStatus))
+                .map(courseVersion -> buildCourseOffering(academicYear, courseVersion))
                 .toList();
 
         courseOfferingRepository.saveAll(courseOfferingsToCreate);
@@ -406,23 +407,6 @@ public class CourseOfferingService {
 
         boolean changed = subTermsChanged;
 
-        if (request.getOfferingStatusCode().isPresent()) {
-            String statusCode = trimToNull(request.getOfferingStatusCode().getValue());
-            if (statusCode == null) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Course offering status code cannot be blank."
-                );
-            }
-
-            CourseOfferingStatus status = getActiveCourseOfferingStatus(statusCode);
-            if (courseOffering.getStatus() == null
-                    || !Objects.equals(courseOffering.getStatus().getId(), status.getId())) {
-                courseOffering.setStatus(status);
-                changed = true;
-            }
-        }
-
         if (request.getNotes().isPresent()) {
             String notes = trimToNull(request.getNotes().getValue());
             if (!Objects.equals(courseOffering.getNotes(), notes)) {
@@ -453,8 +437,6 @@ public class CourseOfferingService {
         courseOfferingAdvancedSearchCriteria.setIncludeInactive(true);
         courseOfferingAdvancedSearchCriteria.setIsPublished(true);
         courseOfferingAdvancedSearchCriteria.setSubTermStatusCodes(publicSubTermStatusCodes);
-        courseOfferingAdvancedSearchCriteria.setOfferingStatusCodes(publicOfferingStatusCodes);
-
 
         return searchCourseOfferings(
                 courseOfferingAdvancedSearchCriteria,
@@ -500,7 +482,6 @@ public class CourseOfferingService {
                 criteria.getMinCredits(),
                 criteria.getMaxCredits(),
                 criteria.getVariableCredit(),
-                normalizeStatusCodes(criteria.getOfferingStatusCodes()),
                 normalizeStatusCodes(criteria.getSubTermStatusCodes()),
                 includeInactive,
                 criteria.getIsPublished(),
@@ -576,7 +557,6 @@ public class CourseOfferingService {
     public CourseOfferingDetailResponse getPublicCourseOfferingById(Long courseOfferingId) {
         CourseOffering offering = courseOfferingRepository.findPublicVisibleById(
                         courseOfferingId,
-                        publicOfferingStatusCodes,
                         publicSubTermStatusCodes
                 )
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -644,13 +624,11 @@ public class CourseOfferingService {
 
     private CourseOffering buildCourseOffering(
             AcademicYear academicYear,
-            CourseVersion courseVersion,
-            CourseOfferingStatus status
+            CourseVersion courseVersion
     ) {
         CourseOffering courseOffering = new CourseOffering();
         courseOffering.setAcademicYear(academicYear);
         courseOffering.setCourseVersion(courseVersion);
-        courseOffering.setStatus(status);
         courseOffering.setNotes(null);
         return courseOffering;
     }
@@ -678,24 +656,6 @@ public class CourseOfferingService {
                 .filter(java.util.Objects::nonNull)
                 .map(statusCode -> statusCode.toUpperCase(java.util.Locale.ROOT))
                 .toList();
-    }
-
-    private CourseOfferingStatus getActiveCourseOfferingStatus(String statusCode) {
-        return courseOfferingStatusRepository.findByCode(statusCode)
-                .filter(CourseOfferingStatus::isActive)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Course offering status '" + statusCode + "' must exist and be active."
-                ));
-    }
-
-    private CourseOfferingStatus getDefaultCreateStatus() {
-        return courseOfferingStatusRepository.findByCode(DEFAULT_CREATE_STATUS_CODE)
-                .filter(CourseOfferingStatus::isActive)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Course offering status '" + DEFAULT_CREATE_STATUS_CODE + "' must exist and be active."
-                ));
     }
 
     private boolean matchesId(Long expectedId, Long actualId) {
@@ -745,10 +705,6 @@ public class CourseOfferingService {
             );
             case "title" -> Comparator.comparing(
                     AcademicYearCourseOfferingSearchResultResponse::title,
-                    stringComparator
-            );
-            case "offeringStatusName" -> Comparator.comparing(
-                    AcademicYearCourseOfferingSearchResultResponse::offeringStatusName,
                     stringComparator
             );
             case "courseCode" -> Comparator.comparing(

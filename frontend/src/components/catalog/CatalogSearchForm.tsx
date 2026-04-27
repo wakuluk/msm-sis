@@ -42,7 +42,6 @@ type CatalogSearchFormProps = {
   termOptions: SelectOption[];
   departmentOptions: SelectOption[];
   subjectOptions: SelectOption[];
-  offeringStatusOptions: SelectOption[];
   termStatusOptions: SelectOption[];
   hasLoadedReferenceOptions: boolean;
   isLoadingReferenceOptions: boolean;
@@ -51,13 +50,11 @@ type CatalogSearchFormProps = {
   pageSize: CourseOfferingSearchSize;
   sortBy: CourseOfferingSearchSortBy;
   sortDirection: CourseOfferingSortDirection;
-  selectedOfferingStatusCodes: string[];
   selectedTermStatusCodes: string[];
   includeInactive: boolean;
   publishedOnly: boolean;
   errorMessage: string | null;
   searchResultsIdle: boolean;
-  onOfferingStatusCodesChange: (values: string[]) => void;
   onTermStatusCodesChange: (values: string[]) => void;
   onIncludeInactiveChange: (value: boolean) => void;
   onPublishedOnlyChange: (value: boolean) => void;
@@ -76,7 +73,6 @@ export function CatalogSearchForm({
   termOptions,
   departmentOptions,
   subjectOptions,
-  offeringStatusOptions,
   termStatusOptions,
   hasLoadedReferenceOptions,
   isLoadingReferenceOptions,
@@ -85,13 +81,11 @@ export function CatalogSearchForm({
   pageSize,
   sortBy,
   sortDirection,
-  selectedOfferingStatusCodes,
   selectedTermStatusCodes,
   includeInactive,
   publishedOnly,
   errorMessage,
   searchResultsIdle,
-  onOfferingStatusCodesChange,
   onTermStatusCodesChange,
   onIncludeInactiveChange,
   onPublishedOnlyChange,
@@ -211,19 +205,6 @@ export function CatalogSearchForm({
 
           {showAdvancedFilters ? (
             <SearchFormSection legend="Administrative Filters">
-              <Grid.Col span={{ base: 12, md: 6 }}>
-                <MultiSelect
-                  label="Offering statuses"
-                  placeholder="Select offering statuses"
-                  data={offeringStatusOptions}
-                  searchable
-                  clearable
-                  hidePickedOptions
-                  disabled={!hasLoadedReferenceOptions}
-                  value={selectedOfferingStatusCodes}
-                  onChange={onOfferingStatusCodesChange}
-                />
-              </Grid.Col>
               <Grid.Col span={{ base: 12, md: 6 }}>
                 <MultiSelect
                   label="Term statuses"

@@ -8,7 +8,6 @@ import java.util.List;
 @Getter
 @Setter
 public class CourseOfferingAdvancedSearchCriteria extends CourseOfferingSearchCriteria {
-    private List<String> offeringStatusCodes;
     private List<String> subTermStatusCodes;
     private Boolean includeInactive;
     private Boolean isPublished;
