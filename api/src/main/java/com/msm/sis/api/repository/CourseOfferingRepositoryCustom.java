@@ -22,7 +22,6 @@ public interface CourseOfferingRepositoryCustom {
             BigDecimal minCredits,
             BigDecimal maxCredits,
             Boolean variableCredit,
-            List<String> offeringStatusCodes,
             List<String> subTermStatusCodes,
             boolean includeInactive,
             Boolean isPublished,
@@ -31,7 +30,6 @@ public interface CourseOfferingRepositoryCustom {
 
     Optional<CourseOffering> findPublicVisibleById(
             Long courseOfferingId,
-            List<String> offeringStatusCodes,
             List<String> subTermStatusCodes
     );
 }

@@ -108,12 +108,38 @@ export type CoursePickerReferenceOptionsResponse = z.infer<
   typeof CoursePickerReferenceOptionsResponseSchema
 >;
 
+export const GradeMarkReferenceOptionSchema = z.object({
+  id: z.number(),
+  code: z.string(),
+  name: z.string(),
+  qualityPoints: z.number().nullable(),
+  earnsCredit: z.boolean(),
+  countsInGpa: z.boolean(),
+});
+
+export type GradeMarkReferenceOption = z.infer<typeof GradeMarkReferenceOptionSchema>;
+
+export const CourseSectionReferenceOptionsResponseSchema = z.object({
+  courseSectionStatuses: z.array(CatalogReferenceOptionSchema),
+  academicDivisions: z.array(CatalogReferenceOptionSchema),
+  deliveryModes: z.array(CatalogReferenceOptionSchema),
+  gradingBases: z.array(CatalogReferenceOptionSchema),
+  sectionMeetingTypes: z.array(CatalogReferenceOptionSchema),
+  sectionInstructorRoles: z.array(CatalogReferenceOptionSchema),
+  studentSectionEnrollmentStatuses: z.array(CatalogReferenceOptionSchema),
+  studentSectionGradeTypes: z.array(CatalogReferenceOptionSchema),
+  gradeMarks: z.array(GradeMarkReferenceOptionSchema),
+});
+
+export type CourseSectionReferenceOptionsResponse = z.infer<
+  typeof CourseSectionReferenceOptionsResponseSchema
+>;
+
 export const CatalogSearchReferenceOptionsResponseSchema = z.object({
   academicYears: z.array(CatalogReferenceOptionSchema),
   subTerms: z.array(AcademicSubTermReferenceOptionSchema),
   departments: z.array(CatalogReferenceOptionSchema),
   subjects: z.array(AcademicSubjectReferenceOptionSchema),
-  offeringStatuses: z.array(CatalogReferenceOptionSchema).default([]),
   subTermStatuses: z.array(CatalogReferenceOptionSchema).default([]),
 });
 

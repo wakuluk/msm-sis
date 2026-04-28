@@ -27,8 +27,7 @@ public interface CourseOfferingRepository
             "academicYear",
             "courseOfferingSubTerms",
             "courseOfferingSubTerms.subTerm",
-            "courseOfferingSubTerms.subTerm.status",
-            "status"
+            "courseOfferingSubTerms.subTerm.status"
     })
     Optional<CourseOffering> findById(Long id);
 
@@ -47,8 +46,7 @@ public interface CourseOfferingRepository
             "academicYear",
             "courseOfferingSubTerms",
             "courseOfferingSubTerms.subTerm",
-            "courseOfferingSubTerms.subTerm.status",
-            "status"
+            "courseOfferingSubTerms.subTerm.status"
     })
     List<CourseOffering> findAllByAcademicSubTermId(@Param("subTermId") Long subTermId, Sort sort);
 
@@ -61,8 +59,7 @@ public interface CourseOfferingRepository
             "academicYear",
             "courseOfferingSubTerms",
             "courseOfferingSubTerms.subTerm",
-            "courseOfferingSubTerms.subTerm.status",
-            "status"
+            "courseOfferingSubTerms.subTerm.status"
     })
     List<CourseOffering> findAllByCourseVersion_Course_Id(Long courseId, Sort sort);
 
@@ -75,8 +72,7 @@ public interface CourseOfferingRepository
             "academicYear",
             "courseOfferingSubTerms",
             "courseOfferingSubTerms.subTerm",
-            "courseOfferingSubTerms.subTerm.status",
-            "status"
+            "courseOfferingSubTerms.subTerm.status"
     })
     List<CourseOffering> findAllByAcademicYear_Id(Long academicYearId, Sort sort);
 
@@ -88,8 +84,7 @@ public interface CourseOfferingRepository
             "academicYear",
             "courseOfferingSubTerms",
             "courseOfferingSubTerms.subTerm",
-            "courseOfferingSubTerms.subTerm.status",
-            "status"
+            "courseOfferingSubTerms.subTerm.status"
     })
     Optional<CourseOffering> findByCourseVersion_IdAndAcademicYear_Id(Long courseVersionId, Long academicYearId);
 
@@ -101,6 +96,28 @@ public interface CourseOfferingRepository
               and courseOffering.academicYear.id = :academicYearId
             """)
     boolean existsByCourseIdAndAcademicYearId(
+            @Param("courseId") Long courseId,
+            @Param("academicYearId") Long academicYearId
+    );
+
+    @Query("""
+            select courseOffering
+            from CourseOffering courseOffering
+            where courseOffering.courseVersion.course.id = :courseId
+              and courseOffering.academicYear.id = :academicYearId
+            """)
+    @EntityGraph(attributePaths = {
+            "courseVersion",
+            "courseVersion.course",
+            "courseVersion.course.subject",
+            "courseVersion.course.subject.department",
+            "courseVersion.course.subject.department.school",
+            "academicYear",
+            "courseOfferingSubTerms",
+            "courseOfferingSubTerms.subTerm",
+            "courseOfferingSubTerms.subTerm.status"
+    })
+    Optional<CourseOffering> findByCourseIdAndAcademicYearId(
             @Param("courseId") Long courseId,
             @Param("academicYearId") Long academicYearId
     );

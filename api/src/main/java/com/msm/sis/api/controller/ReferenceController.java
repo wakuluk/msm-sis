@@ -5,6 +5,7 @@ import com.msm.sis.api.dto.catalog.CatalogAdvancedSearchReferenceOptionsResponse
 import com.msm.sis.api.dto.catalog.CatalogSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CoursePickerReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CourseSearchReferenceOptionsResponse;
+import com.msm.sis.api.dto.reference.CourseSectionReferenceOptionsResponse;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
 import com.msm.sis.api.service.ReferenceDataService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -68,6 +69,16 @@ public class ReferenceController {
     )
     public ResponseEntity<CoursePickerReferenceOptionsResponse> getCoursePickerReferenceOptions() {
         return ResponseEntity.ok(referenceDataService.getCoursePickerReferenceOptions());
+    }
+
+    @GetMapping("/course-section-options")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Get course section reference options",
+            description = "Returns active section statuses, divisions, delivery modes, grading bases, meeting types, instructor roles, enrollment statuses, grade types, and grade marks."
+    )
+    public ResponseEntity<CourseSectionReferenceOptionsResponse> getCourseSectionReferenceOptions() {
+        return ResponseEntity.ok(referenceDataService.getCourseSectionReferenceOptions());
     }
 
     @GetMapping("/catalog-search-options")

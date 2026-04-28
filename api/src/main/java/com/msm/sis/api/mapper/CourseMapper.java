@@ -49,9 +49,7 @@ public class CourseMapper {
                 courseVersion.getTitle(),
                 courseVersion.getMinCredits(),
                 courseVersion.getMaxCredits(),
-                courseVersion.isVariableCredit(),
-                offering.getStatus().getCode(),
-                offering.getStatus().getName()
+                courseVersion.isVariableCredit()
         );
     }
 
@@ -79,8 +77,6 @@ public class CourseMapper {
                                 subTerm.getName()
                         ))
                         .toList(),
-                offering.getStatus().getCode(),
-                offering.getStatus().getName(),
                 offering.getNotes()
         );
     }
@@ -139,9 +135,7 @@ public class CourseMapper {
                                 subTerm.getCode(),
                                 subTerm.getName()
                         ))
-                        .toList(),
-                offering.getStatus() == null ? null : offering.getStatus().getCode(),
-                offering.getStatus() == null ? null : offering.getStatus().getName()
+                        .toList()
         );
     }
 

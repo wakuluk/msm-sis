@@ -12,7 +12,7 @@ import {
 import {
   AcademicYearCreateRequestSchema,
   AcademicYearCreateResponseSchema,
-  AcademicYearCatalogSummaryResponseSchema,
+  AcademicYearCoursesSummaryResponseSchema,
   AcademicYearPatchRequestSchema,
   AcademicYearPostSubTermsRequestSchema,
   AcademicYearSearchResponseSchema,
@@ -22,7 +22,7 @@ import {
   type AcademicYearCreateRequest,
   type AcademicYearCreateResponse,
   type AcademicYearCreateSubTermRequest,
-  type AcademicYearCatalogSummaryResponse,
+  type AcademicYearCoursesSummaryResponse,
   type AcademicYearPatchRequest,
   type AcademicYearSearchFilters,
   type AcademicYearSearchResponse,
@@ -53,7 +53,7 @@ export type GetAcademicYearRequest = {
   signal?: AbortSignal;
 };
 
-export type GetAcademicYearCatalogSummaryRequest = {
+export type GetAcademicYearCoursesSummaryRequest = {
   academicYearId: number;
   signal?: AbortSignal;
 };
@@ -240,14 +240,14 @@ export async function getAcademicYearById({
   });
 }
 
-export async function getAcademicYearCatalogSummary({
+export async function getAcademicYearCoursesSummary({
   academicYearId,
   signal,
-}: GetAcademicYearCatalogSummaryRequest): Promise<AcademicYearCatalogSummaryResponse> {
+}: GetAcademicYearCoursesSummaryRequest): Promise<AcademicYearCoursesSummaryResponse> {
   return apiRequest({
-    path: `/api/academic-year/${academicYearId}/catalog/summary`,
-    parser: AcademicYearCatalogSummaryResponseSchema,
-    fallbackMessage: 'Failed to load academic year catalog summary.',
+    path: `/api/academic-year/${academicYearId}/courses/summary`,
+    parser: AcademicYearCoursesSummaryResponseSchema,
+    fallbackMessage: 'Failed to load academic year courses summary.',
     signal,
   });
 }

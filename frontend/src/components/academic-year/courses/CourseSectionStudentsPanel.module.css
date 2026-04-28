@@ -1,0 +1,21 @@
+/*
+ * Styles for the course-section student enrollment workspace.
+ * Covers the detail panel surface and selected-row state shared by the student table.
+ */
+.studentDetailsPanel {
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  background: linear-gradient(
+    180deg,
+    light-dark(rgb(248 250 252), rgb(32 37 47)),
+    light-dark(rgb(255 255 255), rgb(26 30 39))
+  );
+}
+
+.selectedRow > td {
+  background-color: var(--portal-ui-accent-active-background) !important;
+}
+
+.selectedRow > td:first-child {
+  box-shadow: inset 3px 0 0 var(--portal-ui-accent-active-border-color);
+}

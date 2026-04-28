@@ -17,8 +17,6 @@ public record CourseOfferingDetailResponse(
         BigDecimal maxCredits,
         boolean variableCredit,
         List<SubTermDetail> subTerms,
-        String offeringStatusCode,
-        String offeringStatusName,
         String notes
 ) {
     public record SubTermDetail(

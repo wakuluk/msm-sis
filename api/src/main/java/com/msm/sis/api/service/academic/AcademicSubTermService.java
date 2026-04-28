@@ -390,7 +390,7 @@ public class AcademicSubTermService {
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Sort by must be one of: academicYearCode, subTermCode, departmentCode, subjectCode, courseNumber, courseCode, title, minCredits, maxCredits, variableCredit, offeringStatusCode."
+                    "Sort by must be one of: academicYearCode, subTermCode, departmentCode, subjectCode, courseNumber, courseCode, title, minCredits, maxCredits, variableCredit."
             );
         }
     }

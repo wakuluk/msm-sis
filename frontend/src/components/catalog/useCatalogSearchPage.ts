@@ -53,7 +53,6 @@ type SelectOption = {
 
 const emptyCourseOfferingResults: CourseOfferingSearchResultResponse[] = [];
 const standardResultsColumnVisibility = {
-  offeringStatusName: false,
   subjectCode: false,
 };
 
@@ -66,7 +65,6 @@ type UseCatalogSearchPageOptions = {
 };
 
 type AppliedAdvancedFilters = {
-  offeringStatusCodes: string[];
   subTermStatusCodes: string[];
   includeInactive: boolean;
   isPublished?: boolean;
@@ -100,7 +98,6 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
   const [searchResultsState, setSearchResultsState] = useState<CatalogSearchResultsState>({
     status: 'idle',
   });
-  const [selectedOfferingStatusCodes, setSelectedOfferingStatusCodes] = useState<string[]>([]);
   const [selectedSubTermStatusCodes, setSelectedSubTermStatusCodes] = useState<string[]>([]);
   const [includeInactive, setIncludeInactive] = useState(variant === 'advanced');
   const [publishedOnly, setPublishedOnly] = useState(variant === 'advanced');
@@ -153,8 +150,6 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
       try {
         const response = await runCourseOfferingSearch({
           filters: appliedFilters,
-          offeringStatusCodes:
-            variant === 'advanced' ? appliedAdvancedFilters?.offeringStatusCodes : undefined,
           subTermStatusCodes:
             variant === 'advanced' ? appliedAdvancedFilters?.subTermStatusCodes : undefined,
           includeInactive:
@@ -240,7 +235,6 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
   const isLoadingReferenceOptions = referenceOptionsState.status === 'loading';
   const hasSearchValues =
     hasCourseOfferingSearchValues(form.values) ||
-    selectedOfferingStatusCodes.length > 0 ||
     selectedSubTermStatusCodes.length > 0 ||
     (variant === 'advanced' && (includeInactive !== true || publishedOnly !== true));
   const isSearching = searchResultsState.status === 'loading';
@@ -269,10 +263,6 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
           form.values.departmentCode
         )
       )
-    : [];
-
-  const offeringStatusOptions: SelectOption[] = hasLoadedReferenceOptions
-    ? mapCatalogReferenceOptionsToSelectOptions(referenceOptionsState.response.offeringStatuses)
     : [];
 
   const termStatusOptions: SelectOption[] = hasLoadedReferenceOptions
@@ -342,7 +332,6 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     setSize(defaultCourseOfferingSearchSize);
     setSortBy(defaultCourseOfferingSortBy);
     setSortDirection(defaultCourseOfferingSortDirection);
-    setSelectedOfferingStatusCodes([]);
     setSelectedSubTermStatusCodes([]);
     setIncludeInactive(variant === 'advanced');
     setPublishedOnly(variant === 'advanced');
@@ -356,7 +345,6 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     setAppliedAdvancedFilters(
       variant === 'advanced'
         ? {
-            offeringStatusCodes: [...selectedOfferingStatusCodes],
             subTermStatusCodes: [...selectedSubTermStatusCodes],
             includeInactive,
             isPublished: publishedOnly ? true : undefined,
@@ -379,7 +367,6 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     termOptions,
     departmentOptions,
     subjectOptions,
-    offeringStatusOptions,
     termStatusOptions,
     hasLoadedReferenceOptions,
     isLoadingReferenceOptions,
@@ -388,7 +375,6 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     size,
     sortBy,
     sortDirection,
-    selectedOfferingStatusCodes,
     selectedTermStatusCodes: selectedSubTermStatusCodes,
     includeInactive,
     publishedOnly,
@@ -402,7 +388,6 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
       referenceOptionsState.status === 'error' ? referenceOptionsState.message : null,
     searchResultsIdle: searchResultsState.status === 'idle',
     setResultsView,
-    setSelectedOfferingStatusCodes,
     setSelectedTermStatusCodes: setSelectedSubTermStatusCodes,
     setIncludeInactive,
     setPublishedOnly,

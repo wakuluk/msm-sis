@@ -4,8 +4,8 @@ import com.msm.sis.api.config.AuthenticatedJwt;
 import com.msm.sis.api.dto.academic.term.AcademicTermResponse;
 import com.msm.sis.api.dto.academic.term.CreateAcademicTermRequest;
 import com.msm.sis.api.dto.academic.year.*;
-import com.msm.sis.api.dto.catalog.AcademicYearCatalogResponse;
-import com.msm.sis.api.dto.catalog.AcademicYearCatalogSummaryResponse;
+import com.msm.sis.api.dto.catalog.AcademicYearCoursesResponse;
+import com.msm.sis.api.dto.catalog.AcademicYearCoursesSummaryResponse;
 import com.msm.sis.api.dto.course.AcademicYearCourseOfferingSearchCriteria;
 import com.msm.sis.api.dto.course.AcademicYearCourseOfferingSearchResponse;
 import com.msm.sis.api.dto.course.CourseOfferingDetailResponse;
@@ -102,25 +102,25 @@ public class AcademicYearController {
         );
     }
 
-    @GetMapping("/{academicYearId}/catalog/summary")
+    @GetMapping("/{academicYearId}/courses/summary")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<AcademicYearCatalogSummaryResponse> getAcademicYearCatalogSummary(
+    public ResponseEntity<AcademicYearCoursesSummaryResponse> getAcademicYearCoursesSummary(
             @PathVariable Long academicYearId,
             @AuthenticationPrincipal AuthenticatedJwt jwt)
     {
-        return ResponseEntity.ok(academicYearService.getCatalogSummary(academicYearId));
+        return ResponseEntity.ok(academicYearService.getCoursesSummary(academicYearId));
     }
 
-    @GetMapping("/{academicYearId}/catalog")
+    @GetMapping("/{academicYearId}/courses")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
-            summary = "Get academic year catalog",
-            description = "Returns the academic year catalog grouped by terms and sub terms, with course offerings under each sub term."
+            summary = "Get academic year courses",
+            description = "Returns academic year courses grouped by terms and sub terms, with course offerings under each sub term."
     )
-    public ResponseEntity<AcademicYearCatalogResponse> getAcademicYearCatalog(
+    public ResponseEntity<AcademicYearCoursesResponse> getAcademicYearCourses(
             @PathVariable Long academicYearId
     ) {
-        return ResponseEntity.ok(academicYearService.getCatalog(academicYearId));
+        return ResponseEntity.ok(academicYearService.getCourses(academicYearId));
     }
 
     @PostMapping("/{academicYearId}/course-offerings")
@@ -140,7 +140,7 @@ public class AcademicYearController {
     @PostMapping("/{academicYearId}/course-offerings/import-current-course-versions")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
-            summary = "Import current course versions into academic year catalog",
+            summary = "Import current course versions into academic year courses",
             description = "Creates year-scoped course offerings for all current course versions whose courses are active and do not already have an offering in the academic year."
     )
     public ResponseEntity<ImportAcademicYearCourseOfferingsResponse> importCurrentCourseVersionsIntoAcademicYear(

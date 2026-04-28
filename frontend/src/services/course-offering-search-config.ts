@@ -24,7 +24,6 @@ export const courseOfferingSortByOptions: ReadonlyArray<{
   { value: 'title', label: 'Title' },
   { value: 'minCredits', label: 'Minimum credits' },
   { value: 'maxCredits', label: 'Maximum credits' },
-  { value: 'offeringStatusCode', label: 'Offering status' },
 ];
 
 export const courseOfferingSortDirectionOptions: ReadonlyArray<{

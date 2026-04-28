@@ -52,12 +52,6 @@ const courseOfferingResultsColumns: ColumnDef<CourseOfferingSearchResultResponse
     cell: ({ row }) => formatCredits(row.original),
     meta: { sortBy: 'minCredits' satisfies CourseOfferingSearchSortBy },
   },
-  {
-    accessorKey: 'offeringStatusName',
-    header: 'Status',
-    size: 180,
-    meta: { sortBy: 'offeringStatusCode' satisfies CourseOfferingSearchSortBy },
-  },
 ];
 
 type CatalogSearchViewProps = {
@@ -72,7 +66,6 @@ export function CatalogSearchView({ variant, title }: CatalogSearchViewProps) {
     termOptions,
     departmentOptions,
     subjectOptions,
-    offeringStatusOptions,
     termStatusOptions,
     hasLoadedReferenceOptions,
     isLoadingReferenceOptions,
@@ -81,7 +74,6 @@ export function CatalogSearchView({ variant, title }: CatalogSearchViewProps) {
     size,
     sortBy,
     sortDirection,
-    selectedOfferingStatusCodes,
     selectedTermStatusCodes,
     includeInactive,
     publishedOnly,
@@ -94,7 +86,6 @@ export function CatalogSearchView({ variant, title }: CatalogSearchViewProps) {
     referenceOptionsErrorMessage,
     searchResultsIdle,
     setResultsView,
-    setSelectedOfferingStatusCodes,
     setSelectedTermStatusCodes,
     setIncludeInactive,
     setPublishedOnly,
@@ -130,7 +121,6 @@ export function CatalogSearchView({ variant, title }: CatalogSearchViewProps) {
           termOptions={termOptions}
           departmentOptions={departmentOptions}
           subjectOptions={subjectOptions}
-          offeringStatusOptions={offeringStatusOptions}
           termStatusOptions={termStatusOptions}
           hasLoadedReferenceOptions={hasLoadedReferenceOptions}
           isLoadingReferenceOptions={isLoadingReferenceOptions}
@@ -139,13 +129,11 @@ export function CatalogSearchView({ variant, title }: CatalogSearchViewProps) {
           pageSize={size}
           sortBy={sortBy}
           sortDirection={sortDirection}
-          selectedOfferingStatusCodes={selectedOfferingStatusCodes}
           selectedTermStatusCodes={selectedTermStatusCodes}
           includeInactive={includeInactive}
           publishedOnly={publishedOnly}
           errorMessage={referenceOptionsErrorMessage}
           searchResultsIdle={searchResultsIdle}
-          onOfferingStatusCodesChange={setSelectedOfferingStatusCodes}
           onTermStatusCodesChange={setSelectedTermStatusCodes}
           onIncludeInactiveChange={setIncludeInactive}
           onPublishedOnlyChange={setPublishedOnly}

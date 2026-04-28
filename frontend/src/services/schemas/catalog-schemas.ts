@@ -35,7 +35,6 @@ export const CourseOfferingSearchSortBySchema = z.enum([
   'minCredits',
   'maxCredits',
   'variableCredit',
-  'offeringStatusCode',
 ]);
 
 export type CourseOfferingSearchSortBy = z.infer<typeof CourseOfferingSearchSortBySchema>;
@@ -57,8 +56,6 @@ export const CourseOfferingSearchResultResponseSchema = z.object({
   minCredits: z.number(),
   maxCredits: z.number(),
   variableCredit: z.boolean(),
-  offeringStatusCode: z.string(),
-  offeringStatusName: z.string(),
 });
 
 export type CourseOfferingSearchResultResponse = z.infer<
@@ -98,8 +95,6 @@ export const CourseOfferingDetailResponseSchema = z.object({
       name: z.string(),
     })
   ),
-  offeringStatusCode: z.string(),
-  offeringStatusName: z.string(),
   notes: z.string().nullable(),
 });
 

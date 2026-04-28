@@ -10,7 +10,6 @@ public record CatalogAdvancedSearchReferenceOptionsResponse(
         List<AcademicSubTermReferenceOptionResponse> subTerms,
         List<CodeNameReferenceOptionResponse> departments,
         List<AcademicSubjectReferenceOptionResponse> subjects,
-        List<CodeNameReferenceOptionResponse> offeringStatuses,
         List<CodeNameReferenceOptionResponse> subTermStatuses
 ){
 }

@@ -22,9 +22,7 @@ public record AcademicYearCourseOfferingSearchResultResponse(
         BigDecimal minCredits,
         BigDecimal maxCredits,
         boolean variableCredit,
-        List<SubTermResult> subTerms,
-        String offeringStatusCode,
-        String offeringStatusName
+        List<SubTermResult> subTerms
 ) {
     public record SubTermResult(
             Long subTermId,

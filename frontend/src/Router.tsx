@@ -24,8 +24,9 @@ import { CourseDetailPage } from './pages/portal/CourseDetail.page';
 import { AcademicYearsSearchPage } from './pages/portal/AcademicYearsSearch.page';
 import { AcademicYearCreatePage } from './pages/portal/AcademicYearCreate.page';
 import { AcademicYearDetailPage } from './pages/portal/AcademicYearDetail.page';
-import { AcademicYearCatalogPage } from './pages/portal/AcademicYearCatalog.page';
+import { AcademicYearCoursesPage } from './pages/portal/AcademicYearCourses.page';
 import { AcademicTermGroupDetailPage } from './pages/portal/AcademicTermGroupDetail.page';
+import { CourseSectionDetailPage } from './pages/portal/CourseSectionDetail.page';
 
 const portalRouteComponents = {
   dashboard: PortalPage,
@@ -39,7 +40,8 @@ const portalRouteComponents = {
   'course-detail': CourseDetailPage,
   'academic-years-create': AcademicYearCreatePage,
   'academic-years-detail': AcademicYearDetailPage,
-  'academic-year-catalog': AcademicYearCatalogPage,
+  'academic-year-courses': AcademicYearCoursesPage,
+  'course-section-detail': CourseSectionDetailPage,
   'academic-term-detail': AcademicTermDetailPage,
   'academic-term-group-detail': AcademicTermGroupDetailPage,
   'academic-years-search': AcademicYearsSearchPage,

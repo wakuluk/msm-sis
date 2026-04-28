@@ -17,8 +17,7 @@ public enum CourseOfferingSearchSortField {
     TITLE("title", "courseVersion.title"),
     MIN_CREDITS("minCredits", "courseVersion.minCredits"),
     MAX_CREDITS("maxCredits", "courseVersion.maxCredits"),
-    VARIABLE_CREDIT("variableCredit", "courseVersion.variableCredit"),
-    OFFERING_STATUS_CODE("offeringStatusCode", "status.code");
+    VARIABLE_CREDIT("variableCredit", "courseVersion.variableCredit");
 
     private static final Map<String, CourseOfferingSearchSortField> BY_REQUEST_VALUE = Arrays.stream(values())
             .collect(Collectors.toUnmodifiableMap(CourseOfferingSearchSortField::getRequestValue, Function.identity()));

@@ -1,18 +1,23 @@
 import { useEffect, useState, type ComponentProps } from 'react';
 import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Alert, Badge, Button, Grid, Group, Stack, Text, TextInput } from '@mantine/core';
 import { Link, useLocation, useParams } from 'react-router-dom';
+import { AcademicYearCourseOfferingSearchSection } from '@/components/academic-year/courses/AcademicYearCourseOfferingSearchSection';
+import { AcademicYearCoursesActionsSection } from '@/components/academic-year/courses/AcademicYearCoursesActionsSection';
+import {
+  CourseSectionsWorkspace,
+  initialCourseSectionSearchValues,
+  type CourseSectionSearchValues,
+} from '@/components/academic-year/courses/CourseSectionsWorkspace';
+import type { CourseTermOption } from '@/components/academic-year/courses/academicYearCoursesShared';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
-import { SearchResultsTable } from '@/components/search/SearchResultsTable';
 import { WorkflowStatusStepperSection } from '@/components/status/WorkflowStatusStepperSection';
 import {
   getAcademicTermById,
-  getAcademicTermCourseOfferings,
   getAcademicSubTermStatuses,
   patchAcademicTerm,
   shiftAcademicSubTermStatus,
@@ -22,12 +27,7 @@ import {
   hasAcademicTermDetailChanges,
   mapAcademicTermDetailToFormValues,
 } from '@/services/mappers/academic-term-mappers';
-import type {
-  CourseOfferingSearchResultResponse,
-  CourseOfferingSearchResultsList,
-  CourseOfferingSearchSortBy,
-  CourseOfferingSortDirection,
-} from '@/services/schemas/catalog-schemas';
+import type { AcademicYearCourseOfferingSearchResultResponse } from '@/services/schemas/admin-courses-schemas';
 import type {
   AcademicSubTermDetailFormValues,
   AcademicSubTermResponse,
@@ -56,13 +56,6 @@ type AcademicTermDetailSaveState =
   | { status: 'saving' }
   | { status: 'success' }
   | { status: 'error'; message: string };
-
-type AcademicTermCourseOfferingsState =
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'success'; courseOfferings: CourseOfferingSearchResultsList };
-
-const emptyCourseOfferingResults: CourseOfferingSearchResultResponse[] = [];
 
 function displayValue(value: boolean | number | string | null | undefined): string {
   if (typeof value === 'boolean') {
@@ -112,14 +105,6 @@ function displayDateTime(value: string | null | undefined): string {
     month: 'long',
     year: 'numeric',
   }).format(parsedDate);
-}
-
-function formatCredits(minCredits: number, maxCredits: number, variableCredit: boolean): string {
-  if (variableCredit && minCredits !== maxCredits) {
-    return `${minCredits.toFixed(2)}-${maxCredits.toFixed(2)}`;
-  }
-
-  return minCredits.toFixed(2);
 }
 
 function formatDateForFormValue(value: Date): string {
@@ -172,41 +157,6 @@ function parseDateInputValue(value: string): Date | null {
 
   return parsedDate;
 }
-
-const courseOfferingResultsColumns: ColumnDef<CourseOfferingSearchResultResponse>[] = [
-  {
-    accessorKey: 'courseCode',
-    header: 'Course',
-    size: 126,
-    meta: { sortBy: 'courseCode' satisfies CourseOfferingSearchSortBy },
-  },
-  {
-    accessorKey: 'title',
-    header: 'Title',
-    size: 320,
-    meta: { sortBy: 'title' satisfies CourseOfferingSearchSortBy },
-  },
-  {
-    accessorKey: 'subjectCode',
-    header: 'Subject',
-    size: 116,
-    meta: { sortBy: 'subjectCode' satisfies CourseOfferingSearchSortBy },
-  },
-  {
-    id: 'credits',
-    header: 'Credits',
-    size: 112,
-    cell: ({ row }) =>
-      formatCredits(row.original.minCredits, row.original.maxCredits, row.original.variableCredit),
-    meta: { sortBy: 'minCredits' satisfies CourseOfferingSearchSortBy },
-  },
-  {
-    accessorKey: 'offeringStatusName',
-    header: 'Status',
-    size: 180,
-    meta: { sortBy: 'offeringStatusCode' satisfies CourseOfferingSearchSortBy },
-  },
-];
 
 function getErrorMessage(error: unknown, fallbackMessage: string): string {
   return error instanceof Error ? error.message : fallbackMessage;
@@ -262,13 +212,14 @@ export function AcademicTermDetailPage() {
   const [statusShiftState, setStatusShiftState] = useState<AcademicTermStatusShiftState>({
     status: 'idle',
   });
-  const [courseOfferingsSortBy, setCourseOfferingsSortBy] =
-    useState<CourseOfferingSearchSortBy>('courseCode');
-  const [courseOfferingsSortDirection, setCourseOfferingsSortDirection] =
-    useState<CourseOfferingSortDirection>('asc');
-  const [courseOfferingsState, setCourseOfferingsState] = useState<AcademicTermCourseOfferingsState>(
-    { status: 'loading' }
-  );
+  const [courseOfferingsRefreshKey, setCourseOfferingsRefreshKey] = useState(0);
+  const [selectedCourseOffering, setSelectedCourseOffering] =
+    useState<AcademicYearCourseOfferingSearchResultResponse | null>(null);
+  const [selectedCourseOfferings, setSelectedCourseOfferings] =
+    useState<ReadonlyArray<AcademicYearCourseOfferingSearchResultResponse> | undefined>(undefined);
+  const [courseSectionAction, setCourseSectionAction] = useState<'add' | 'view'>('view');
+  const [courseSectionSearchValues, setCourseSectionSearchValues] =
+    useState<CourseSectionSearchValues>(initialCourseSectionSearchValues);
   const [academicTermStatuses, setAcademicTermStatuses] = useState<AcademicSubTermStatusesResponse>([]);
   const [academicTermStatusesLoading, setAcademicTermStatusesLoading] = useState(true);
   const [academicTermStatusesError, setAcademicTermStatusesError] = useState<string | null>(null);
@@ -370,48 +321,6 @@ export function AcademicTermDetailPage() {
     };
   }, [hasValidAcademicTermId, parsedAcademicTermId]);
 
-  useEffect(() => {
-    if (!hasValidAcademicTermId) {
-      setCourseOfferingsState({
-        status: 'error',
-        message: 'Sub term ID is missing or invalid.',
-      });
-      return;
-    }
-
-    const abortController = new AbortController();
-    setCourseOfferingsState({ status: 'loading' });
-
-    getAcademicTermCourseOfferings({
-      academicSubTermId: parsedAcademicTermId,
-      sortBy: courseOfferingsSortBy,
-      sortDirection: courseOfferingsSortDirection,
-      signal: abortController.signal,
-    })
-      .then((response) => {
-        setCourseOfferingsState({ status: 'success', courseOfferings: response });
-      })
-      .catch((error) => {
-        if (abortController.signal.aborted) {
-          return;
-        }
-
-        setCourseOfferingsState({
-          status: 'error',
-          message: getErrorMessage(error, 'Failed to load course offerings for this sub term.'),
-        });
-      });
-
-    return () => {
-      abortController.abort();
-    };
-  }, [
-    courseOfferingsSortBy,
-    courseOfferingsSortDirection,
-    hasValidAcademicTermId,
-    parsedAcademicTermId,
-  ]);
-
   async function handleShiftStatus(direction: AcademicSubTermStatusShiftDirection) {
     if (statusShiftState.status === 'saving' || detailState.status !== 'success') {
       return;
@@ -434,16 +343,26 @@ export function AcademicTermDetailPage() {
     }
   }
 
-  function handleToggleCourseOfferingsSort(nextSortBy: CourseOfferingSearchSortBy) {
-    if (nextSortBy === courseOfferingsSortBy) {
-      setCourseOfferingsSortDirection((currentSortDirection) =>
-        currentSortDirection === 'asc' ? 'desc' : 'asc'
-      );
-      return;
-    }
+  function handleCourseOfferingsChanged() {
+    setCourseOfferingsRefreshKey((current) => current + 1);
+    setSelectedCourseOffering(null);
+    setSelectedCourseOfferings(undefined);
+    setCourseSectionAction('view');
+    setCourseSectionSearchValues(initialCourseSectionSearchValues);
+  }
 
-    setCourseOfferingsSortBy(nextSortBy);
-    setCourseOfferingsSortDirection('asc');
+  function handleViewSections(offering: AcademicYearCourseOfferingSearchResultResponse) {
+    setSelectedCourseOffering(offering);
+    setSelectedCourseOfferings(undefined);
+    setCourseSectionAction('view');
+  }
+
+  function handleViewSearchSections(
+    offerings: ReadonlyArray<AcademicYearCourseOfferingSearchResultResponse>
+  ) {
+    setSelectedCourseOffering(null);
+    setSelectedCourseOfferings(offerings);
+    setCourseSectionAction('view');
   }
 
   async function handleSaveEdit(detail: AcademicSubTermResponse) {
@@ -476,17 +395,6 @@ export function AcademicTermDetailPage() {
       });
     }
   }
-
-  const courseOfferingsTableData =
-    courseOfferingsState.status === 'success'
-      ? courseOfferingsState.courseOfferings
-      : emptyCourseOfferingResults;
-  const courseOfferingsTable = useReactTable({
-    columns: courseOfferingResultsColumns,
-    data: courseOfferingsTableData,
-    getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => String(row.courseOfferingId),
-  });
 
   if (detailState.status === 'loading') {
     return (
@@ -586,6 +494,14 @@ export function AcademicTermDetailPage() {
   const statusShiftSucceeded = statusShiftState.status === 'success';
   const hasPendingMutation = saveInProgress || statusShiftInProgress;
   const canSaveChanges = hasAcademicTermDetailChanges(detail, form.values);
+  const subTermCourseOptions: ReadonlyArray<CourseTermOption> = [
+    {
+      value: String(detail.subTermId),
+      label: `${detail.name} (${detail.code})`,
+    },
+  ];
+  const initialCourseOfferingSubTermIds: ReadonlyArray<string> = [String(detail.subTermId)];
+  const subTermLabel = `${detail.name} (${detail.code})`;
 
   return (
     <RecordPageShell
@@ -809,35 +725,43 @@ export function AcademicTermDetailPage() {
           />
         </RecordPageSection>
 
-        <RecordPageSection
-          title="Course Offerings"
-          description="These course offerings are scheduled within this sub term."
+        <AcademicYearCoursesActionsSection
+          academicYearId={detail.academicYearId}
+          hasValidAcademicYearId={detail.academicYearId > 0}
+          canManageCourses={!isEditing}
+          termOptions={subTermCourseOptions}
+          initialSubTermIds={initialCourseOfferingSubTermIds}
+          onCoursesChanged={handleCourseOfferingsChanged}
         >
-          <Grid.Col span={12}>
-            <Stack gap="md">
-              {courseOfferingsState.status === 'loading' ? (
-                <Text size="sm" c="dimmed">
-                  Loading course offerings for this sub term.
-                </Text>
-              ) : courseOfferingsState.status === 'error' ? (
-                <Alert color="red" title="Unable to load course offerings">
-                  {courseOfferingsState.message}
-                </Alert>
-              ) : courseOfferingsState.courseOfferings.length === 0 ? (
-                <Alert color="gray" title="No course offerings on this sub term">
-                  No course offerings are currently associated with this sub term.
-                </Alert>
-              ) : (
-                <SearchResultsTable
-                  table={courseOfferingsTable}
-                  sortBy={courseOfferingsSortBy}
-                  sortDirection={courseOfferingsSortDirection}
-                  onToggleSort={handleToggleCourseOfferingsSort}
-                />
-              )}
-            </Stack>
-          </Grid.Col>
-        </RecordPageSection>
+          <AcademicYearCourseOfferingSearchSection
+            academicYearId={detail.academicYearId}
+            hasValidAcademicYearId={detail.academicYearId > 0}
+            termOptions={subTermCourseOptions}
+            reloadKey={courseOfferingsRefreshKey}
+            initialSubTermId={String(detail.subTermId)}
+            lockSubTermFilter
+            onOfferingSelected={handleViewSections}
+            onViewSearchSections={handleViewSearchSections}
+            sectionSearchValues={courseSectionSearchValues}
+            onSectionSearchValuesChange={setCourseSectionSearchValues}
+          />
+        </AcademicYearCoursesActionsSection>
+
+        <CourseSectionsWorkspace
+          activeAction={courseSectionAction}
+          selectedOffering={selectedCourseOffering}
+          selectedOfferings={selectedCourseOfferings}
+          searchValues={courseSectionSearchValues}
+          subTermId={detail.subTermId}
+          subTermLabel={subTermLabel}
+          onAddSection={() => {
+            setCourseSectionAction('add');
+          }}
+          onCancelAdd={() => {
+            setCourseSectionAction('view');
+          }}
+          onSearchValuesChange={setCourseSectionSearchValues}
+        />
 
         <RecordPageFooter description="Return to the previous page.">
           <Button component={Link} to={academicYearPath} variant="default">

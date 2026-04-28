@@ -805,23 +805,53 @@ WHERE s.code = 'TOLK'
         AND cv.version_number = 1
   );
 
-WITH desired_offerings(subject_code, course_number, version_number, academic_year_code, status_code, notes) AS (
+INSERT INTO staff (first_name, last_name, email)
+SELECT 'Jane', 'Smith', 'jane.smith@msm.edu'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM staff
+    WHERE email = 'jane.smith@msm.edu'
+);
+
+INSERT INTO staff (first_name, last_name, email)
+SELECT 'Alan', 'Reed', 'alan.reed@msm.edu'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM staff
+    WHERE email = 'alan.reed@msm.edu'
+);
+
+INSERT INTO staff (first_name, last_name, email)
+SELECT 'Maria', 'Chen', 'maria.chen@msm.edu'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM staff
+    WHERE email = 'maria.chen@msm.edu'
+);
+
+INSERT INTO staff (first_name, last_name, email)
+SELECT 'Nadia', 'Rivera', 'nadia.rivera@msm.edu'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM staff
+    WHERE email = 'nadia.rivera@msm.edu'
+);
+
+WITH desired_offerings(subject_code, course_number, version_number, academic_year_code, notes) AS (
     VALUES
-        ('TOLK', '101', 2, 'AY-2026-2027', 'OPEN_FOR_DISPLAY', 'Includes a weekend film-comparison workshop.'),
-        ('TOLK', '240', 1, 'AY-2026-2027', 'OPEN_FOR_DISPLAY', 'Seminar format with weekly textual analysis.'),
-        ('ELV', '201', 1, 'AY-2026-2027', 'PLANNED', 'Cross-listed with linguistics discussion groups.'),
-        ('TOLK', '480', 1, 'AY-2026-2027', 'OPEN_FOR_DISPLAY', 'Independent projects require faculty approval.'),
-        ('MEH', '310', 1, 'AY-2027-2028', 'PLANNED', 'Focuses on Gondor, Arnor, and the long defeat.')
+        ('TOLK', '101', 2, 'AY-2026-2027', 'Includes a weekend film-comparison workshop.'),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'Seminar format with weekly textual analysis.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'Cross-listed with linguistics discussion groups.'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'Independent projects require faculty approval.'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'Focuses on Gondor, Arnor, and the long defeat.')
 )
 INSERT INTO course_offering (
     course_version_id,
     academic_year_id,
-    course_offering_status_id,
     notes
 )
 SELECT cv.course_version_id,
        ay.academic_year_id,
-       cos.course_offering_status_id,
        desired_offerings.notes
 FROM desired_offerings
 JOIN academic_subject s ON s.code = desired_offerings.subject_code
@@ -830,7 +860,6 @@ JOIN course c ON c.subject_id = s.subject_id
 JOIN course_version cv ON cv.course_id = c.course_id
                       AND cv.version_number = desired_offerings.version_number
 JOIN academic_year ay ON ay.code = desired_offerings.academic_year_code
-JOIN course_offering_status cos ON cos.code = desired_offerings.status_code
 WHERE NOT EXISTS (
     SELECT 1
     FROM course_offering co
@@ -838,17 +867,16 @@ WHERE NOT EXISTS (
       AND co.academic_year_id = ay.academic_year_id
 );
 
-WITH desired_offerings(subject_code, course_number, version_number, academic_year_code, status_code, notes) AS (
+WITH desired_offerings(subject_code, course_number, version_number, academic_year_code, notes) AS (
     VALUES
-        ('TOLK', '101', 2, 'AY-2026-2027', 'OPEN_FOR_DISPLAY', 'Includes a weekend film-comparison workshop.'),
-        ('TOLK', '240', 1, 'AY-2026-2027', 'OPEN_FOR_DISPLAY', 'Seminar format with weekly textual analysis.'),
-        ('ELV', '201', 1, 'AY-2026-2027', 'PLANNED', 'Cross-listed with linguistics discussion groups.'),
-        ('TOLK', '480', 1, 'AY-2026-2027', 'OPEN_FOR_DISPLAY', 'Independent projects require faculty approval.'),
-        ('MEH', '310', 1, 'AY-2027-2028', 'PLANNED', 'Focuses on Gondor, Arnor, and the long defeat.')
+        ('TOLK', '101', 2, 'AY-2026-2027', 'Includes a weekend film-comparison workshop.'),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'Seminar format with weekly textual analysis.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'Cross-listed with linguistics discussion groups.'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'Independent projects require faculty approval.'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'Focuses on Gondor, Arnor, and the long defeat.')
 )
 UPDATE course_offering co
-SET course_offering_status_id = cos.course_offering_status_id,
-    notes = desired_offerings.notes
+SET notes = desired_offerings.notes
 FROM desired_offerings
 JOIN academic_subject s ON s.code = desired_offerings.subject_code
 JOIN course c ON c.subject_id = s.subject_id
@@ -856,9 +884,42 @@ JOIN course c ON c.subject_id = s.subject_id
 JOIN course_version cv ON cv.course_id = c.course_id
                       AND cv.version_number = desired_offerings.version_number
 JOIN academic_year ay ON ay.code = desired_offerings.academic_year_code
-JOIN course_offering_status cos ON cos.code = desired_offerings.status_code
 WHERE co.course_version_id = cv.course_version_id
   AND co.academic_year_id = ay.academic_year_id
+;
+
+WITH desired_offering_sub_terms(subject_code, course_number, version_number, academic_year_code, sub_term_code) AS (
+    VALUES
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027'),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028')
+)
+DELETE FROM course_section cs
+USING desired_offering_sub_terms,
+      academic_subject s,
+      course c,
+      course_version cv,
+      academic_year ay,
+      course_offering co,
+      academic_sub_term sub_term
+WHERE s.code = desired_offering_sub_terms.subject_code
+  AND c.subject_id = s.subject_id
+  AND c.course_number = desired_offering_sub_terms.course_number
+  AND cv.course_id = c.course_id
+  AND cv.version_number = desired_offering_sub_terms.version_number
+  AND ay.code = desired_offering_sub_terms.academic_year_code
+  AND co.course_version_id = cv.course_version_id
+  AND co.academic_year_id = ay.academic_year_id
+  AND sub_term.academic_year_id = ay.academic_year_id
+  AND sub_term.code = desired_offering_sub_terms.sub_term_code
+  AND cs.course_offering_id = co.course_offering_id
+  AND cs.sub_term_id = sub_term.sub_term_id
 ;
 
 WITH desired_offerings(subject_code, course_number, version_number, academic_year_code) AS (
@@ -918,4 +979,215 @@ JOIN course_offering co ON co.course_version_id = cv.course_version_id
                        AND co.academic_year_id = ay.academic_year_id
 JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
                            AND sub_term.code = desired_offering_sub_terms.sub_term_code
+;
+
+WITH desired_sections(
+    subject_code,
+    course_number,
+    version_number,
+    academic_year_code,
+    sub_term_code,
+    section_letter,
+    is_honors,
+    is_lab,
+    status_code,
+    academic_division_code,
+    delivery_mode_code,
+    grading_basis_code,
+    credits,
+    capacity,
+    waitlist_allowed,
+    start_date,
+    end_date,
+    notes
+) AS (
+    VALUES
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 28, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Lecture section for general registration.'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, FALSE, 'OPEN', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 3.00, 18, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Honors section with additional seminar discussion.'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 3.00, 24, TRUE, '2027-05-24'::date, '2027-06-25'::date, 'Condensed online summer section.'),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 16, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Discussion-heavy seminar section.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Language lab attached to weekly class meeting.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, TRUE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 0.00, 20, FALSE, '2027-01-19'::date, '2027-05-07'::date, 'Required pronunciation lab.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 4.00, 18, TRUE, '2027-06-28'::date, '2027-07-30'::date, 'Online summer language intensive.'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, FALSE, '2027-05-24'::date, '2027-06-25'::date, 'Registrar-managed independent study placements.'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, FALSE, '2027-06-28'::date, '2027-07-30'::date, 'Registrar-managed independent study placements.'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'PLANNED', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, TRUE, '2027-08-23'::date, '2027-12-10'::date, 'Graduate lecture section.'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'DRAFT', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'Draft spring lecture section.'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, FALSE, 'DRAFT', 'GRADUATE', 'HYBRID', 'PASS_FAIL', 3.00, 18, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'Draft seminar section for manual registration testing.')
+)
+INSERT INTO course_section (
+    course_offering_id,
+    sub_term_id,
+    academic_division_id,
+    section_letter,
+    is_honors,
+    is_lab,
+    course_section_status_id,
+    delivery_mode_id,
+    grading_basis_id,
+    credits,
+    capacity,
+    waitlist_allowed,
+    start_date,
+    end_date,
+    notes
+)
+SELECT co.course_offering_id,
+       sub_term.sub_term_id,
+       division.academic_division_id,
+       desired_sections.section_letter,
+       desired_sections.is_honors,
+       desired_sections.is_lab,
+       status.course_section_status_id,
+       delivery_mode.delivery_mode_id,
+       grading_basis.grading_basis_id,
+       desired_sections.credits,
+       desired_sections.capacity,
+       desired_sections.waitlist_allowed,
+       desired_sections.start_date,
+       desired_sections.end_date,
+       desired_sections.notes
+FROM desired_sections
+JOIN academic_subject s ON s.code = desired_sections.subject_code
+JOIN course c ON c.subject_id = s.subject_id
+             AND c.course_number = desired_sections.course_number
+JOIN course_version cv ON cv.course_id = c.course_id
+                      AND cv.version_number = desired_sections.version_number
+JOIN academic_year ay ON ay.code = desired_sections.academic_year_code
+JOIN course_offering co ON co.course_version_id = cv.course_version_id
+                       AND co.academic_year_id = ay.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
+                           AND sub_term.code = desired_sections.sub_term_code
+JOIN academic_division division ON division.code = desired_sections.academic_division_code
+JOIN course_section_status status ON status.code = desired_sections.status_code
+JOIN delivery_mode ON delivery_mode.code = desired_sections.delivery_mode_code
+JOIN grading_basis ON grading_basis.code = desired_sections.grading_basis_code
+;
+
+WITH desired_section_instructors(
+    subject_code,
+    course_number,
+    version_number,
+    academic_year_code,
+    sub_term_code,
+    section_letter,
+    is_honors,
+    is_lab,
+    staff_email
+) AS (
+    VALUES
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'jane.smith@msm.edu'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, FALSE, 'alan.reed@msm.edu'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'jane.smith@msm.edu'),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, FALSE, 'maria.chen@msm.edu'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'nadia.rivera@msm.edu'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, TRUE, 'nadia.rivera@msm.edu'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'nadia.rivera@msm.edu'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'alan.reed@msm.edu'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'alan.reed@msm.edu'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'maria.chen@msm.edu'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'maria.chen@msm.edu'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, FALSE, 'jane.smith@msm.edu')
+)
+INSERT INTO course_section_instructor (
+    section_id,
+    staff_id,
+    section_instructor_role_id,
+    is_primary
+)
+SELECT course_section.section_id,
+       staff.id,
+       role.section_instructor_role_id,
+       TRUE
+FROM desired_section_instructors
+JOIN academic_subject s ON s.code = desired_section_instructors.subject_code
+JOIN course c ON c.subject_id = s.subject_id
+             AND c.course_number = desired_section_instructors.course_number
+JOIN course_version cv ON cv.course_id = c.course_id
+                      AND cv.version_number = desired_section_instructors.version_number
+JOIN academic_year ay ON ay.code = desired_section_instructors.academic_year_code
+JOIN course_offering co ON co.course_version_id = cv.course_version_id
+                       AND co.academic_year_id = ay.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
+                           AND sub_term.code = desired_section_instructors.sub_term_code
+JOIN course_section ON course_section.course_offering_id = co.course_offering_id
+                   AND course_section.sub_term_id = sub_term.sub_term_id
+                   AND course_section.section_letter = desired_section_instructors.section_letter
+                   AND course_section.is_honors = desired_section_instructors.is_honors
+                   AND course_section.is_lab = desired_section_instructors.is_lab
+JOIN staff ON staff.email = desired_section_instructors.staff_email
+JOIN section_instructor_role role ON role.code = 'PRIMARY'
+;
+
+WITH desired_section_meetings(
+    subject_code,
+    course_number,
+    version_number,
+    academic_year_code,
+    sub_term_code,
+    section_letter,
+    is_honors,
+    is_lab,
+    meeting_type_code,
+    day_of_week,
+    start_time,
+    end_time,
+    building,
+    room,
+    sequence_number
+) AS (
+    VALUES
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'CLASS', 1, '09:00'::time, '10:15'::time, 'Rivendell Hall', '204', 1),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'CLASS', 3, '09:00'::time, '10:15'::time, 'Rivendell Hall', '204', 2),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, FALSE, 'CLASS', 2, '11:00'::time, '12:15'::time, 'Lore House', '012', 1),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, FALSE, 'CLASS', 4, '13:00'::time, '14:15'::time, 'Lore House', '012', 2),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'CLASS', NULL, NULL, NULL, NULL, NULL, 1),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, FALSE, 'CLASS', 5, '13:00'::time, '15:30'::time, 'Rivendell Hall', '110', 1),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'CLASS', 1, '10:30'::time, '11:45'::time, 'Language Hall', '201', 1),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'CLASS', 3, '10:30'::time, '11:45'::time, 'Language Hall', '201', 2),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, TRUE, 'LAB', 4, '14:00'::time, '15:30'::time, 'Language Hall', '210', 1),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'CLASS', NULL, NULL, NULL, NULL, NULL, 1),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'CLASS', 2, '09:00'::time, '10:00'::time, 'Rivendell Hall', 'Faculty Suite', 1),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'CLASS', 2, '09:00'::time, '10:00'::time, 'Rivendell Hall', 'Faculty Suite', 1),
+        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'CLASS', 2, '09:30'::time, '10:45'::time, 'History Hall', '301', 1),
+        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'CLASS', 4, '09:30'::time, '10:45'::time, 'History Hall', '301', 2),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'CLASS', 1, '08:00'::time, '09:15'::time, 'History Hall', '302', 1),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'CLASS', 3, '08:00'::time, '09:15'::time, 'History Hall', '302', 2),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, FALSE, 'CLASS', 5, '12:30'::time, '15:30'::time, 'History Hall', '310', 1)
+)
+INSERT INTO course_section_meeting (
+    section_id,
+    section_meeting_type_id,
+    day_of_week,
+    start_time,
+    end_time,
+    building,
+    room,
+    sequence_number
+)
+SELECT course_section.section_id,
+       meeting_type.section_meeting_type_id,
+       desired_section_meetings.day_of_week,
+       desired_section_meetings.start_time,
+       desired_section_meetings.end_time,
+       desired_section_meetings.building,
+       desired_section_meetings.room,
+       desired_section_meetings.sequence_number
+FROM desired_section_meetings
+JOIN academic_subject s ON s.code = desired_section_meetings.subject_code
+JOIN course c ON c.subject_id = s.subject_id
+             AND c.course_number = desired_section_meetings.course_number
+JOIN course_version cv ON cv.course_id = c.course_id
+                      AND cv.version_number = desired_section_meetings.version_number
+JOIN academic_year ay ON ay.code = desired_section_meetings.academic_year_code
+JOIN course_offering co ON co.course_version_id = cv.course_version_id
+                       AND co.academic_year_id = ay.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
+                           AND sub_term.code = desired_section_meetings.sub_term_code
+JOIN course_section ON course_section.course_offering_id = co.course_offering_id
+                   AND course_section.sub_term_id = sub_term.sub_term_id
+                   AND course_section.section_letter = desired_section_meetings.section_letter
+                   AND course_section.is_honors = desired_section_meetings.is_honors
+                   AND course_section.is_lab = desired_section_meetings.is_lab
+JOIN section_meeting_type meeting_type ON meeting_type.code = desired_section_meetings.meeting_type_code
 ;

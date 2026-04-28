@@ -8,24 +8,30 @@ import com.msm.sis.api.dto.catalog.*;
 import com.msm.sis.api.dto.course.CoursePickerReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CourseReferenceOptionResponse;
 import com.msm.sis.api.dto.course.CourseSearchReferenceOptionsResponse;
-import com.msm.sis.api.entity.AcademicDepartment;
-import com.msm.sis.api.entity.AcademicSchool;
-import com.msm.sis.api.entity.AcademicSubject;
-import com.msm.sis.api.entity.Course;
-import com.msm.sis.api.entity.CourseVersion;
+import com.msm.sis.api.dto.reference.CourseSectionReferenceOptionsResponse;
+import com.msm.sis.api.dto.reference.GradeMarkReferenceOptionResponse;
+import com.msm.sis.api.entity.*;
+import com.msm.sis.api.repository.AcademicDivisionRepository;
 import com.msm.sis.api.repository.AcademicSchoolRepository;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
 import com.msm.sis.api.repository.AcademicDepartmentRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
-import com.msm.sis.api.repository.CourseOfferingStatusRepository;
 import com.msm.sis.api.repository.AcademicSubjectRepository;
 import com.msm.sis.api.repository.AcademicSubTermRepository;
 import com.msm.sis.api.repository.AcademicSubTermStatusRepository;
 import com.msm.sis.api.repository.ClassStandingRepository;
+import com.msm.sis.api.repository.CourseSectionStatusRepository;
+import com.msm.sis.api.repository.DeliveryModeRepository;
 import com.msm.sis.api.repository.CourseRepository;
 import com.msm.sis.api.repository.CourseVersionRepository;
 import com.msm.sis.api.repository.EthnicityRepository;
+import com.msm.sis.api.repository.GradeMarkRepository;
+import com.msm.sis.api.repository.GradingBasisRepository;
 import com.msm.sis.api.repository.GenderRepository;
+import com.msm.sis.api.repository.SectionInstructorRoleRepository;
+import com.msm.sis.api.repository.SectionMeetingTypeRepository;
+import com.msm.sis.api.repository.StudentSectionEnrollmentStatusRepository;
+import com.msm.sis.api.repository.StudentSectionGradeTypeRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,12 +47,20 @@ import java.util.stream.Collectors;
 public class ReferenceDataService {
 
     private final AcademicYearRepository catalogAcademicYearRepository;
-    private final CourseOfferingStatusRepository courseOfferingStatusRepository;
+    private final AcademicDivisionRepository academicDivisionRepository;
     private final AcademicSchoolRepository academicSchoolRepository;
     private final AcademicDepartmentRepository academicDepartmentRepository;
     private final AcademicSubjectRepository academicSubjectRepository;
     private final AcademicSubTermRepository academicSubTermRepository;
     private final AcademicSubTermStatusRepository academicSubTermStatusRepository;
+    private final CourseSectionStatusRepository courseSectionStatusRepository;
+    private final DeliveryModeRepository deliveryModeRepository;
+    private final GradingBasisRepository gradingBasisRepository;
+    private final SectionMeetingTypeRepository sectionMeetingTypeRepository;
+    private final SectionInstructorRoleRepository sectionInstructorRoleRepository;
+    private final StudentSectionEnrollmentStatusRepository studentSectionEnrollmentStatusRepository;
+    private final StudentSectionGradeTypeRepository studentSectionGradeTypeRepository;
+    private final GradeMarkRepository gradeMarkRepository;
     private final CourseRepository courseRepository;
     private final CourseVersionRepository courseVersionRepository;
     private final EthnicityRepository ethnicityRepository;
@@ -55,12 +69,20 @@ public class ReferenceDataService {
 
     public ReferenceDataService(
             AcademicYearRepository catalogAcademicYearRepository,
-            CourseOfferingStatusRepository courseOfferingStatusRepository,
+            AcademicDivisionRepository academicDivisionRepository,
             AcademicSchoolRepository academicSchoolRepository,
             AcademicDepartmentRepository academicDepartmentRepository,
             AcademicSubjectRepository academicSubjectRepository,
             AcademicSubTermRepository academicSubTermRepository,
             AcademicSubTermStatusRepository academicSubTermStatusRepository,
+            CourseSectionStatusRepository courseSectionStatusRepository,
+            DeliveryModeRepository deliveryModeRepository,
+            GradingBasisRepository gradingBasisRepository,
+            SectionMeetingTypeRepository sectionMeetingTypeRepository,
+            SectionInstructorRoleRepository sectionInstructorRoleRepository,
+            StudentSectionEnrollmentStatusRepository studentSectionEnrollmentStatusRepository,
+            StudentSectionGradeTypeRepository studentSectionGradeTypeRepository,
+            GradeMarkRepository gradeMarkRepository,
             CourseRepository courseRepository,
             CourseVersionRepository courseVersionRepository,
             GenderRepository genderRepository,
@@ -68,12 +90,20 @@ public class ReferenceDataService {
             ClassStandingRepository classStandingRepository
     ) {
         this.catalogAcademicYearRepository = catalogAcademicYearRepository;
-        this.courseOfferingStatusRepository = courseOfferingStatusRepository;
+        this.academicDivisionRepository = academicDivisionRepository;
         this.academicSchoolRepository = academicSchoolRepository;
         this.academicDepartmentRepository = academicDepartmentRepository;
         this.academicSubjectRepository = academicSubjectRepository;
         this.academicSubTermRepository = academicSubTermRepository;
         this.academicSubTermStatusRepository = academicSubTermStatusRepository;
+        this.courseSectionStatusRepository = courseSectionStatusRepository;
+        this.deliveryModeRepository = deliveryModeRepository;
+        this.gradingBasisRepository = gradingBasisRepository;
+        this.sectionMeetingTypeRepository = sectionMeetingTypeRepository;
+        this.sectionInstructorRoleRepository = sectionInstructorRoleRepository;
+        this.studentSectionEnrollmentStatusRepository = studentSectionEnrollmentStatusRepository;
+        this.studentSectionGradeTypeRepository = studentSectionGradeTypeRepository;
+        this.gradeMarkRepository = gradeMarkRepository;
         this.courseRepository = courseRepository;
         this.courseVersionRepository = courseVersionRepository;
         this.genderRepository = genderRepository;
@@ -267,6 +297,39 @@ public class ReferenceDataService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public CourseSectionReferenceOptionsResponse getCourseSectionReferenceOptions() {
+        return new CourseSectionReferenceOptionsResponse(
+                courseSectionStatusRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .toList(),
+                academicDivisionRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .toList(),
+                deliveryModeRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .toList(),
+                gradingBasisRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .toList(),
+                sectionMeetingTypeRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .toList(),
+                sectionInstructorRoleRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .toList(),
+                studentSectionEnrollmentStatusRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .toList(),
+                studentSectionGradeTypeRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .toList(),
+                gradeMarkRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(ReferenceDataService::toGradeMarkReferenceOptionResponse)
+                        .toList()
+        );
+    }
+
     public CatalogAdvancedSearchReferenceOptionsResponse getCatalogAdvanceSearchReferenceOptions() {
         return new CatalogAdvancedSearchReferenceOptionsResponse(
                 catalogAcademicYearRepository.findAllAcademicYears().stream()
@@ -301,13 +364,6 @@ public class ReferenceDataService {
                                 subject.getDepartment().getId(),
                                 subject.getDepartment().getCode(),
                                 subject.getDepartment().getName()
-                        ))
-                        .toList(),
-                courseOfferingStatusRepository.findAllByActiveTrueOrderByNameAsc().stream()
-                        .map(status -> new CodeNameReferenceOptionResponse(
-                                status.getId(),
-                                status.getCode(),
-                                status.getName()
                         ))
                         .toList(),
                 academicSubTermStatusRepository.findAllByActiveTrueOrderByNameAsc().stream()
@@ -385,6 +441,67 @@ public class ReferenceDataService {
         return activeCourses.stream()
                 .filter(course -> courseIdsWithCurrentVersions.contains(course.getId()))
                 .toList();
+    }
+
+
+    //TODO -- is there a better way? a place this belongs.
+    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
+            AcademicDivision reference
+    ) {
+        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
+    }
+
+    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
+            CourseSectionStatus reference
+    ) {
+        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
+    }
+
+    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
+            DeliveryMode reference
+    ) {
+        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
+    }
+
+    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
+            GradingBasis reference
+    ) {
+        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
+    }
+
+    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
+            SectionMeetingType reference
+    ) {
+        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
+    }
+
+    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
+            SectionInstructorRole reference
+    ) {
+        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
+    }
+
+    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
+            StudentSectionEnrollmentStatus reference
+    ) {
+        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
+    }
+
+    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
+            StudentSectionGradeType reference
+    ) {
+        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
+    }
+
+    private static GradeMarkReferenceOptionResponse toGradeMarkReferenceOptionResponse(GradeMark gradeMark) {
+        return new GradeMarkReferenceOptionResponse(
+                gradeMark.getId(),
+                gradeMark.getCode(),
+                gradeMark.getName(),
+                gradeMark.getQualityPoints(),
+                gradeMark.isEarnsCredit(),
+                gradeMark.isCountsInGpa()
+        );
     }
 
     private CourseReferenceOptionResponse toCourseReferenceOptionResponse(

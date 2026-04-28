@@ -1,11 +1,13 @@
 import { apiRequest } from './api-client';
 import {
   AcademicSchoolDepartmentSearchReferenceOptionsResponseSchema,
+  CourseSectionReferenceOptionsResponseSchema,
   CoursePickerReferenceOptionsResponseSchema,
   CourseSearchReferenceOptionsResponseSchema,
   StudentReferenceOptionsResponseSchema,
   type AcademicSchoolDepartmentSearchReferenceOptionsResponse,
   type CatalogReferenceOption,
+  type CourseSectionReferenceOptionsResponse,
   type CoursePickerReferenceOptionsResponse,
   type CourseSearchReferenceOptionsResponse,
   type ReferenceOption,
@@ -103,4 +105,11 @@ export const getCoursePickerReferenceOptions =
     path: '/api/reference/course-picker-options',
     parser: CoursePickerReferenceOptionsResponseSchema,
     fallbackMessage: 'Failed to load course picker reference options.',
+  });
+
+export const getCourseSectionReferenceOptions =
+  createCachedReferenceLoader<CourseSectionReferenceOptionsResponse>({
+    path: '/api/reference/course-section-options',
+    parser: CourseSectionReferenceOptionsResponseSchema,
+    fallbackMessage: 'Failed to load course section reference options.',
   });
