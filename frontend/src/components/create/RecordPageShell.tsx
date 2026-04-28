@@ -18,7 +18,7 @@ export function RecordPageShell({
   children,
   description,
   eyebrow,
-  size = 'lg',
+  size = 'xl',
   title,
 }: RecordPageShellProps) {
   return (

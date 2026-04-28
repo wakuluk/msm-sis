@@ -1,4 +1,4 @@
-import { type ComponentProps, type ReactNode, useEffect, useState } from 'react';
+import { type ComponentProps, type ReactNode, useEffect, useEffectEvent, useState } from 'react';
 import { useForm, type UseFormReturnType } from '@mantine/form';
 import {
   Alert,
@@ -15,7 +15,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAccessTokenData } from '@/auth/auth-store';
 import {
   StudentAddressFormFields,
@@ -25,6 +25,7 @@ import {
 } from '@/components/student/StudentProfileFormFields';
 import createClasses from '@/components/create/RecordPageLayout.module.css';
 import { StudentReferenceOptionsAlert } from '@/components/student/StudentReferenceOptionsAlert';
+import { StudentTranscriptView } from '@/components/student/StudentTranscriptView';
 import { useStudentReferenceOptions } from '@/components/student/useStudentReferenceOptions';
 import { hasAnyPortalRole, PORTAL_ROLES, type PortalRole } from '@/portal/PortalRoles';
 import {
@@ -36,8 +37,9 @@ import {
   initialStudentDetailFormValues,
   type StudentDetailFormValues,
   type StudentDetailResponse,
+  type StudentTranscriptResponse,
 } from '@/services/schemas/student-schemas';
-import { getStudentById, patchStudent } from '@/services/student-service';
+import { getStudentById, getStudentTranscriptById, patchStudent } from '@/services/student-service';
 import classes from './StudentDetail.module.css';
 
 type StudentDetailPageState =
@@ -50,6 +52,11 @@ type StudentDetailSaveState =
   | { status: 'saving' }
   | { status: 'success' }
   | { status: 'error'; message: string };
+
+type StudentTranscriptTabState =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'success'; transcript: StudentTranscriptResponse };
 
 type GridSpan = ComponentProps<typeof Grid.Col>['span'];
 
@@ -223,6 +230,65 @@ function PlaceholderTabPanel({ accessLabel, description, title }: PlaceholderTab
   );
 }
 
+function StudentDetailTranscriptPanel({ studentId }: { studentId: number }) {
+  const [transcriptState, setTranscriptState] = useState<StudentTranscriptTabState>({
+    status: 'loading',
+  });
+
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    async function loadTranscript() {
+      setTranscriptState({ status: 'loading' });
+
+      try {
+        const transcript = await getStudentTranscriptById(studentId, abortController.signal);
+        setTranscriptState({ status: 'success', transcript });
+      } catch (error) {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        setTranscriptState({
+          status: 'error',
+          message: getErrorMessage(error, 'Failed to load student transcript.'),
+        });
+      }
+    }
+
+    void loadTranscript();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [studentId]);
+
+  if (transcriptState.status === 'loading') {
+    return (
+      <div className={createClasses.section}>
+        <Group gap="sm">
+          <Loader size="sm" />
+          <Text size="sm" c="dimmed">
+            Loading transcript data.
+          </Text>
+        </Group>
+      </div>
+    );
+  }
+
+  if (transcriptState.status === 'error') {
+    return (
+      <div className={createClasses.section}>
+        <Alert color="red" title="Unable to load transcript">
+          {transcriptState.message}
+        </Alert>
+      </div>
+    );
+  }
+
+  return <StudentTranscriptView transcript={transcriptState.transcript} />;
+}
+
 function OverviewSections({
   canSaveChanges,
   canEdit,
@@ -381,6 +447,7 @@ function OverviewSections({
 
 export function StudentDetailPage() {
   const { studentId: studentIdParam } = useParams();
+  const navigate = useNavigate();
   const tokenData = useAccessTokenData();
   const canEditStudentDetail = hasAnyPortalRole(tokenData?.roles, [PORTAL_ROLES.ADMIN]);
   const [activeTab, setActiveTab] = useState<StudentDetailTabKey>('overview');
@@ -399,6 +466,13 @@ export function StudentDetailPage() {
 
   const form = useForm<StudentDetailFormValues>({
     initialValues: initialStudentDetailFormValues,
+  });
+
+  const applyLoadedDetail = useEffectEvent((detail: StudentDetailResponse) => {
+    setIsEditing(false);
+    setSaveState({ status: 'idle' });
+    form.setValues(mapStudentDetailToFormValues(detail));
+    setPageState({ status: 'success', detail });
   });
 
   useEffect(() => {
@@ -421,10 +495,7 @@ export function StudentDetailPage() {
           return;
         }
 
-        setIsEditing(false);
-        setSaveState({ status: 'idle' });
-        form.setValues(mapStudentDetailToFormValues(detail));
-        setPageState({ status: 'success', detail });
+        applyLoadedDetail(detail);
       } catch (error) {
         if (!cancelled) {
           setPageState({
@@ -458,7 +529,7 @@ export function StudentDetailPage() {
 
   if (pageState.status === 'loading') {
     return (
-      <Container size="lg" py="xl">
+      <Container size="xl" py="xl">
         <Group justify="center" py="xl">
           <Loader />
         </Group>
@@ -468,7 +539,7 @@ export function StudentDetailPage() {
 
   if (pageState.status === 'error') {
     return (
-      <Container size="lg" py="xl">
+      <Container size="xl" py="xl">
         <Alert color="red" title="Unable to load student detail">
           {pageState.message}
         </Alert>
@@ -487,6 +558,7 @@ export function StudentDetailPage() {
   const saveError = saveState.status === 'error' ? saveState.message : null;
   const saveSucceeded = saveState.status === 'success';
   const canSaveChanges = hasStudentDetailChanges(detail, form.values);
+  const transcriptPath = `/students/${detail.studentId}/transcript`;
 
   async function handleSaveEdit() {
     if (saveInProgress) {
@@ -517,7 +589,7 @@ export function StudentDetailPage() {
   }
 
   return (
-    <Container size="lg" py="lg">
+    <Container size="xl" py="lg">
       <Stack className={classes.page}>
         <Paper className={classes.summaryCard}>
           <Stack gap="lg">
@@ -538,6 +610,15 @@ export function StudentDetailPage() {
                   {displayValue(detail.updatedBy)}
                 </Text>
               </Stack>
+              <Button
+                variant="light"
+                onClick={() => {
+                  setActiveTab('transcript');
+                  navigate(transcriptPath);
+                }}
+              >
+                View transcript
+              </Button>
             </Group>
 
             <Group gap="sm" wrap="wrap" className={classes.summaryMeta}>
@@ -622,11 +703,7 @@ export function StudentDetailPage() {
             </Tabs.Panel>
 
             <Tabs.Panel value="transcript" className={classes.tabPanel}>
-              <PlaceholderTabPanel
-                accessLabel="Admin and Professor"
-                title="Transcript"
-                description="Academic history, progress, and transcript tools can live here once the student detail page is broken into role-aware sections."
-              />
+              <StudentDetailTranscriptPanel studentId={detail.studentId} />
             </Tabs.Panel>
 
             <Tabs.Panel value="billing" className={classes.tabPanel}>

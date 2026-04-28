@@ -1,8 +1,10 @@
 import { getAccessToken } from '@/auth/auth-store';
+import { apiRequest } from './api-client';
 import {
   StudentCreateResponseSchema,
   StudentDetailResponseSchema,
   StudentSearchResponseSchema,
+  StudentTranscriptResponseSchema,
   StudentSortBySchema,
   StudentSortDirectionSchema,
   type StudentCreateRequest,
@@ -11,6 +13,7 @@ import {
   type StudentPatchRequest,
   type StudentSearchFilters,
   type StudentSearchResponse,
+  type StudentTranscriptResponse,
   type StudentSortBy,
   type StudentSortDirection,
 } from './schemas/student-schemas';
@@ -223,6 +226,29 @@ export async function getStudentById(studentId: number): Promise<StudentDetailRe
   }
 
   return StudentDetailResponseSchema.parse(payload);
+}
+
+export async function getStudentTranscript(
+  signal?: AbortSignal
+): Promise<StudentTranscriptResponse> {
+  return apiRequest({
+    path: '/api/students/transcript',
+    parser: StudentTranscriptResponseSchema,
+    fallbackMessage: 'Failed to fetch student transcript.',
+    signal,
+  });
+}
+
+export async function getStudentTranscriptById(
+  studentId: number,
+  signal?: AbortSignal
+): Promise<StudentTranscriptResponse> {
+  return apiRequest({
+    path: `/api/students/${studentId}/transcript`,
+    parser: StudentTranscriptResponseSchema,
+    fallbackMessage: 'Failed to fetch student transcript.',
+    signal,
+  });
 }
 
 export async function createStudent(request: StudentCreateRequest): Promise<StudentCreateResponse> {

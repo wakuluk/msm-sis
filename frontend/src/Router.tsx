@@ -29,6 +29,7 @@ import { AcademicTermGroupDetailPage } from './pages/portal/AcademicTermGroupDet
 import { CourseSectionDetailPage } from './pages/portal/CourseSectionDetail.page';
 import {
   StudentCourseHistoryPage,
+  StudentAdminTranscriptPage,
   StudentDegreeTrackerPage,
   StudentTranscriptPage,
 } from './pages/portal/StudentAcademicsPlaceholders.page';
@@ -56,6 +57,7 @@ const portalRouteComponents = {
   student: StudentProfilePage,
   studentCreate: StudentCreatePage,
   studentDetail: StudentDetailPage,
+  studentTranscriptDetail: StudentAdminTranscriptPage,
   studentSearch: StudentSearchPage,
 } satisfies Record<PortalRouteItemKey, ComponentType>;
 

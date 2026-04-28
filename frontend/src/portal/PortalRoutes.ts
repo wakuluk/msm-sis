@@ -5,6 +5,7 @@ export type PortalRouteItemKey =
   | 'student'
   | 'studentCreate'
   | 'studentDetail'
+  | 'studentTranscriptDetail'
   | 'studentSearch'
   | 'catalog'
   | 'catalog-advanced'
@@ -29,6 +30,7 @@ export type PortalRoutePath =
   | '/student/profile'
   | '/students/new'
   | '/students/:studentId'
+  | '/students/:studentId/transcript'
   | '/student-search'
   | '/catalog/search'
   | '/catalog/search-advanced'
@@ -114,6 +116,14 @@ export const portalRoutes: PortalRouteNode[] = [
         key: 'studentDetail',
         label: 'Student Detail',
         path: '/students/:studentId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'studentTranscriptDetail',
+        label: 'Student Transcript',
+        path: '/students/:studentId/transcript',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
       },

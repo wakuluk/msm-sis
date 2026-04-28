@@ -265,5 +265,60 @@ export const StudentSearchResponseSchema = z.object({
   totalPages: z.number(),
 });
 
+export const StudentTranscriptSummaryResponseSchema = z.object({
+  attemptedCredits: z.number(),
+  earnedCredits: z.number(),
+  gpaCredits: z.number(),
+  qualityPoints: z.number(),
+  gpa: z.number(),
+});
+
+export const StudentTranscriptCourseResponseSchema = z.object({
+  recordId: z.number(),
+  source: z.enum(['LOCAL', 'TRANSFER']),
+  courseCode: z.string(),
+  title: z.string().nullable(),
+  statusCode: z.string().nullable(),
+  statusName: z.string().nullable(),
+  repeatCode: z.string().nullable(),
+  repeatName: z.string().nullable(),
+  gradeCode: z.string().nullable(),
+  gradeTypeCode: z.enum(['FINAL', 'MIDTERM', 'TRANSFER']).nullable(),
+  attemptedCredits: z.number(),
+  earnedCredits: z.number(),
+  gpaCredits: z.number(),
+  qualityPoints: z.number(),
+});
+
+export const StudentTranscriptTermResponseSchema = z.object({
+  label: z.string(),
+  source: z.enum(['LOCAL', 'TRANSFER']),
+  sortDate: z.string(),
+  midterm: z.boolean(),
+  courses: z.array(StudentTranscriptCourseResponseSchema),
+  termSummary: StudentTranscriptSummaryResponseSchema,
+  careerSummary: StudentTranscriptSummaryResponseSchema,
+});
+
+export const StudentTranscriptCumulativeSummaryResponseSchema = z.object({
+  transfer: StudentTranscriptSummaryResponseSchema,
+  local: StudentTranscriptSummaryResponseSchema,
+  career: StudentTranscriptSummaryResponseSchema,
+});
+
+export const StudentTranscriptResponseSchema = z.object({
+  studentId: z.number(),
+  studentNumber: z.string().nullable(),
+  studentName: z.string(),
+  terms: z.array(StudentTranscriptTermResponseSchema),
+  cumulativeSummary: StudentTranscriptCumulativeSummaryResponseSchema,
+});
+
 export type StudentSearchResultResponse = z.infer<typeof StudentSearchResultResponseSchema>;
 export type StudentSearchResponse = z.infer<typeof StudentSearchResponseSchema>;
+export type StudentTranscriptSummaryResponse = z.infer<
+  typeof StudentTranscriptSummaryResponseSchema
+>;
+export type StudentTranscriptCourseResponse = z.infer<typeof StudentTranscriptCourseResponseSchema>;
+export type StudentTranscriptTermResponse = z.infer<typeof StudentTranscriptTermResponseSchema>;
+export type StudentTranscriptResponse = z.infer<typeof StudentTranscriptResponseSchema>;

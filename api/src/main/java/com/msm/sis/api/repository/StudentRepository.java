@@ -13,7 +13,8 @@ import java.util.Optional;
 
 public interface StudentRepository extends JpaRepository<Student, Long> {
     @EntityGraph(attributePaths = {"genderLookup", "ethnicity", "classStanding", "address"})
-    Optional<Student> findByUserId(Long userId);
+    @Query("select student from Student student where student.userId = :userId")
+    Optional<Student> findByUserId(@Param("userId") Long userId);
 
     @EntityGraph(attributePaths = {"genderLookup", "ethnicity", "classStanding", "address"})
     @Query("select student from Student student where student.id = :studentId")
