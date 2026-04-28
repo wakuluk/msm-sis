@@ -121,7 +121,7 @@ WITH desired_enrollments(
     manual_add_reason
 ) AS (
     VALUES
-        ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:04'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'COMPLETED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:04'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, 'Repeat attempt completed for transcript POC.'),
         ('STU-1002', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:06'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
         ('STU-1003', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:08'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
         ('STU-1004', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:10'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
@@ -150,6 +150,7 @@ WITH desired_enrollments(
         ('SEC-2023', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'WAITLISTED', 'GRADED', '2028-01-18'::date, NULL::timestamp, '2028-01-18 10:04'::timestamp, 3.00, NULL::numeric, 3, TRUE, FALSE, NULL),
         ('SEC-2024', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, FALSE, 'REGISTERED', 'PASS_FAIL', '2028-01-19'::date, '2028-01-19 11:00'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, FALSE, TRUE, 'Manual registrar placement for seminar balance.'),
         ('SEC-2025', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, FALSE, 'REGISTERED', 'PASS_FAIL', '2028-01-19'::date, '2028-01-19 11:05'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, FALSE, FALSE, NULL),
+        ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'COMPLETED', 'GRADED', '2027-08-21'::date, '2027-08-21 13:55'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, 'Earlier completed attempt replaced by repeat.'),
         ('SEC-2026', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'COMPLETED', 'GRADED', '2027-08-21'::date, '2027-08-21 14:00'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, NULL),
         ('SEC-2027', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'WITHDRAWN', 'GRADED', '2027-08-21'::date, '2027-08-21 14:03'::timestamp, NULL::timestamp, 3.00, 0.00, NULL::int, TRUE, FALSE, 'Withdrew before final grading.'),
         ('SEC-2028', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'COMPLETED', 'GRADED', '2027-01-16'::date, '2027-01-16 10:00'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, NULL),
@@ -264,6 +265,7 @@ WHERE student.alt_id IN (
 WITH desired_grades(alt_id, subject_code, course_number, version_number, academic_year_code, sub_term_code, section_letter, grade_type_code, grade_mark_code) AS (
     VALUES
         ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', 'MIDTERM', 'A-'),
+        ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', 'FINAL', 'A-'),
         ('STU-1002', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', 'MIDTERM', 'B+'),
         ('STU-1003', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', 'MIDTERM', 'B'),
         ('STU-1004', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', 'MIDTERM', 'A'),
@@ -276,6 +278,8 @@ WITH desired_grades(alt_id, subject_code, course_number, version_number, academi
         ('SEC-2007', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', 'MIDTERM', 'B'),
         ('SEC-2008', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', 'MIDTERM', 'A'),
         ('SEC-2021', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', 'MIDTERM', 'B-'),
+        ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', 'MIDTERM', 'C+'),
+        ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', 'FINAL', 'C+'),
         ('SEC-2026', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', 'MIDTERM', 'B+'),
         ('SEC-2026', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', 'FINAL', 'A-'),
         ('SEC-2027', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', 'MIDTERM', 'W'),

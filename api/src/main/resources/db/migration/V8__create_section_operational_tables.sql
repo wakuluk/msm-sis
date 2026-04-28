@@ -166,6 +166,7 @@ CREATE TABLE student_section_enrollment (
     waitlist_position INT NULL,
 
     include_in_gpa BOOLEAN NOT NULL DEFAULT TRUE,
+    repeat_code VARCHAR(30) NULL,
     capacity_override BOOLEAN NOT NULL DEFAULT FALSE,
     manual_add_reason VARCHAR(500) NULL,
 

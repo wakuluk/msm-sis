@@ -9,7 +9,9 @@ import com.msm.sis.api.dto.student.StudentProfileResponse;
 import com.msm.sis.api.dto.student.StudentSearchCriteria;
 import com.msm.sis.api.dto.student.StudentSearchResponse;
 import com.msm.sis.api.dto.student.StudentSearchSortField;
+import com.msm.sis.api.dto.student.transcript.StudentTranscriptResponse;
 import com.msm.sis.api.service.StudentService;
+import com.msm.sis.api.service.StudentTranscriptService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,9 +33,11 @@ import java.net.URI;
 public class StudentController {
 
     private final StudentService studentService;
+    private final StudentTranscriptService studentTranscriptService;
 
-    public StudentController(StudentService studentService) {
+    public StudentController(StudentService studentService, StudentTranscriptService studentTranscriptService) {
         this.studentService = studentService;
+        this.studentTranscriptService = studentTranscriptService;
     }
 
     /***
@@ -47,6 +51,13 @@ public class StudentController {
         return ResponseEntity.ok(studentService.getStudentProfile(jwt.getUserId()));
     }
 
+    @GetMapping("/transcript")
+    @PreAuthorize("hasRole('STUDENT')")
+    @Operation(summary = "Get current student transcript", description = "Returns the transcript rows and summaries linked to the authenticated student user")
+    public ResponseEntity<StudentTranscriptResponse> getStudentTranscript(@AuthenticationPrincipal AuthenticatedJwt jwt) {
+        return ResponseEntity.ok(studentTranscriptService.getTranscriptForAuthenticatedStudent(jwt.getUserId()));
+    }
+
     /***
      * Admin can access these below.
      *
@@ -56,6 +67,13 @@ public class StudentController {
     @Operation(summary = "Get student by id", description = "Returns a single student record")
     public ResponseEntity<StudentDetailResponse> getStudent(@NotNull @PathVariable Long studentId) {
         return ResponseEntity.ok(studentService.getStudentById(studentId));
+    }
+
+    @GetMapping("/{studentId}/transcript")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get student transcript by id", description = "Returns transcript rows and summaries for a student")
+    public ResponseEntity<StudentTranscriptResponse> getStudentTranscriptById(@NotNull @PathVariable Long studentId) {
+        return ResponseEntity.ok(studentTranscriptService.getTranscriptForStudent(studentId));
     }
 
     @PatchMapping("/{studentId}")

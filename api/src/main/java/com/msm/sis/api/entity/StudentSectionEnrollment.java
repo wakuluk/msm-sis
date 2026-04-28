@@ -100,6 +100,9 @@ public class StudentSectionEnrollment {
     @Column(name = "include_in_gpa", nullable = false)
     private boolean includeInGpa = true;
 
+    @Column(name = "repeat_code", length = 30)
+    private String repeatCode;
+
     @Column(name = "capacity_override", nullable = false)
     private boolean capacityOverride = false;
 

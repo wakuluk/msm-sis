@@ -27,11 +27,20 @@ import { AcademicYearDetailPage } from './pages/portal/AcademicYearDetail.page';
 import { AcademicYearCoursesPage } from './pages/portal/AcademicYearCourses.page';
 import { AcademicTermGroupDetailPage } from './pages/portal/AcademicTermGroupDetail.page';
 import { CourseSectionDetailPage } from './pages/portal/CourseSectionDetail.page';
+import {
+  StudentCourseHistoryPage,
+  StudentAdminTranscriptPage,
+  StudentDegreeTrackerPage,
+  StudentTranscriptPage,
+} from './pages/portal/StudentAcademicsPlaceholders.page';
 
 const portalRouteComponents = {
   dashboard: PortalPage,
   catalog: CatalogSearchPage,
   'catalog-advanced': CatalogAdvancedPage,
+  'student-transcript': StudentTranscriptPage,
+  'student-course-history': StudentCourseHistoryPage,
+  'student-degree-tracker': StudentDegreeTrackerPage,
   'academic-schools': AcademicSchoolsPage,
   'academic-school-detail': AcademicSchoolDetailPage,
   'academic-departments': AcademicDepartmentsPage,
@@ -48,6 +57,7 @@ const portalRouteComponents = {
   student: StudentProfilePage,
   studentCreate: StudentCreatePage,
   studentDetail: StudentDetailPage,
+  studentTranscriptDetail: StudentAdminTranscriptPage,
   studentSearch: StudentSearchPage,
 } satisfies Record<PortalRouteItemKey, ComponentType>;
 

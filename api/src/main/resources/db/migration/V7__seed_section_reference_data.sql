@@ -49,9 +49,8 @@ INSERT INTO grade_mark (code, name, quality_points, earns_credit, counts_in_gpa,
     ('D+', 'D+', 1.30, TRUE, TRUE, 9),
     ('D', 'D', 1.00, TRUE, TRUE, 10),
     ('D-', 'D-', 0.70, TRUE, TRUE, 11),
-    ('F', 'F', 0.00, FALSE, TRUE, 12),
+    ('F', 'Failed', 0.00, FALSE, TRUE, 12),
     ('P', 'Pass', NULL, TRUE, FALSE, 13),
-    ('NP', 'No Pass', NULL, FALSE, FALSE, 14),
-    ('W', 'Withdrawn', NULL, FALSE, FALSE, 15),
-    ('I', 'Incomplete', NULL, FALSE, FALSE, 16),
-    ('AU', 'Audit', NULL, FALSE, FALSE, 17);
+    ('W', 'Withdrawn', NULL, FALSE, FALSE, 14),
+    ('I', 'Incomplete', NULL, FALSE, FALSE, 15),
+    ('AU', 'Audit', NULL, FALSE, FALSE, 16);
