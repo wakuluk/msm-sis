@@ -9,6 +9,9 @@ export type PortalRouteItemKey =
   | 'catalog'
   | 'catalog-advanced'
   | 'academic-years-search'
+  | 'student-transcript'
+  | 'student-course-history'
+  | 'student-degree-tracker'
   | 'academic-schools'
   | 'academic-school-detail'
   | 'academic-departments'
@@ -30,6 +33,9 @@ export type PortalRoutePath =
   | '/catalog/search'
   | '/catalog/search-advanced'
   | '/academics/academic-years/search'
+  | '/academics/transcript'
+  | '/academics/course-history'
+  | '/academics/degree-tracker'
   | '/academics/schools'
   | '/academics/schools/:schoolId'
   | '/academics/departments'
@@ -143,6 +149,30 @@ export const portalRoutes: PortalRouteNode[] = [
     label: 'Academics',
     showInNav: true,
     children: [
+      {
+        kind: 'item',
+        key: 'student-transcript',
+        label: 'Transcript',
+        path: '/academics/transcript',
+        requiredRoles: [PORTAL_ROLES.STUDENT],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'student-course-history',
+        label: 'Course History',
+        path: '/academics/course-history',
+        requiredRoles: [PORTAL_ROLES.STUDENT],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'student-degree-tracker',
+        label: 'Degree Tracker',
+        path: '/academics/degree-tracker',
+        requiredRoles: [PORTAL_ROLES.STUDENT],
+        showInNav: true,
+      },
       {
         kind: 'item',
         key: 'academic-schools',
