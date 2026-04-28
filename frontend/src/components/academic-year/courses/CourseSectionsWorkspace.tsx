@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Grid, Group } from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import {
   createCourseSection,
-  getCourseSectionDetail,
   getCourseSectionsForOffering,
   patchCourseSection,
 } from '@/services/course-service';
@@ -87,6 +87,7 @@ export function CourseSectionsWorkspace({
   onCancelAdd,
   onSearchValuesChange,
 }: CourseSectionsWorkspaceProps) {
+  const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [referenceState, setReferenceState] = useState<SectionReferenceState>({
     status: 'loading',
@@ -97,7 +98,7 @@ export function CourseSectionsWorkspace({
     status: 'idle',
     sections: [],
   });
-  const [sectionDetailState, setSectionDetailState] = useState<CourseSectionDetailState>({
+  const [sectionDetailState] = useState<CourseSectionDetailState>({
     status: 'idle',
   });
   const [sectionMutationState, setSectionMutationState] = useState<CourseSectionMutationState>({
@@ -340,41 +341,7 @@ export function CourseSectionsWorkspace({
   }
 
   function handleSectionSelected(section: CourseSectionPreview) {
-    const sectionOffering =
-      activeOfferings.find((offering) => offering.courseOfferingId === section.courseOfferingId) ??
-      null;
-    const nextCreditOptions = buildCreditOptions(sectionOffering);
-
-    setCourseSectionDraft({
-      ...buildDraftFromSection(section),
-      credits: section.credits === null ? nextCreditOptions[0]?.value ?? null : String(section.credits),
-    });
-    setStaffSearchValue(section.instructor === 'Unassigned' ? '' : section.instructor);
-    setSelectedSection(section);
-    setDetailEditing(false);
-    setSectionDetailState({ status: 'loading', sectionId: section.sectionId });
-
-    void getCourseSectionDetail({ sectionId: section.sectionId })
-      .then((response) => {
-        const detailPreview = mapCourseSectionDetailToPreview(response);
-
-        setSelectedSection(detailPreview);
-        setCourseSectionDraft({
-          ...buildDraftFromSection(detailPreview),
-          credits:
-            detailPreview.credits === null
-              ? nextCreditOptions[0]?.value ?? null
-              : String(detailPreview.credits),
-        });
-        setStaffSearchValue(detailPreview.instructor === 'Unassigned' ? '' : detailPreview.instructor);
-        setSectionDetailState({ status: 'idle' });
-      })
-      .catch((error: unknown) => {
-        setSectionDetailState({
-          status: 'error',
-          message: getErrorMessage(error, 'Failed to load course section detail.'),
-        });
-      });
+    navigate(`/academics/course-sections/${section.sectionId}`);
   }
 
   async function handleCreateSection() {

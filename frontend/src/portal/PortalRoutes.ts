@@ -18,6 +18,7 @@ export type PortalRouteItemKey =
   | 'academic-years-create'
   | 'academic-years-detail'
   | 'academic-year-courses'
+  | 'course-section-detail'
   | 'academic-term-detail'
   | 'academic-term-group-detail';
 export type PortalRoutePath =
@@ -38,6 +39,7 @@ export type PortalRoutePath =
   | '/academics/academic-years/create'
   | '/academics/academic-years/:academicYearId'
   | '/academics/academic-years/:academicYearId/courses'
+  | '/academics/course-sections/:sectionId'
   | '/academics/academic-sub-term/:subTermId'
   | '/academics/academic-terms/:termId';
 
@@ -202,6 +204,14 @@ export const portalRoutes: PortalRouteNode[] = [
         key: 'academic-year-courses',
         label: 'Academic Year Courses',
         path: '/academics/academic-years/:academicYearId/courses',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'course-section-detail',
+        label: 'Course Section Detail',
+        path: '/academics/course-sections/:sectionId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
       },

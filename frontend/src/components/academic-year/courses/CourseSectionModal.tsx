@@ -12,6 +12,7 @@ import { CourseSectionIdentityFields } from './CourseSectionIdentityFields';
 import { CourseSectionModalFooter } from './CourseSectionModalFooter';
 import { CourseSectionRegistrationFields } from './CourseSectionRegistrationFields';
 import { CourseSectionScheduleFields } from './CourseSectionScheduleFields';
+import { CourseSectionStudentsPanel } from './CourseSectionStudentsPanel';
 
 type CourseSectionModalProps = {
   opened: boolean;
@@ -47,7 +48,7 @@ type CourseSectionModalProps = {
 
 const readableDisabledInputStyles = {
   input: {
-    backgroundColor: 'var(--mantine-color-gray-0)',
+    backgroundColor: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))',
     color: 'var(--mantine-color-text)',
     opacity: 1,
   },
@@ -219,6 +220,13 @@ export function CourseSectionModal({
               readOnlySwitchStyles={readOnlySwitchStyles}
               setDraft={setDraft}
             />
+
+            {mode === 'detail' && selectedSection ? (
+              <CourseSectionStudentsPanel
+                selectedSection={selectedSection}
+                gradingBasisOptions={gradingBasisOptions}
+              />
+            ) : null}
 
             {mutationError ? (
               <Alert

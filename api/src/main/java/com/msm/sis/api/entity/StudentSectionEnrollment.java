@@ -63,6 +63,14 @@ public class StudentSectionEnrollment {
     @Column(name = "enrollment_date", nullable = false)
     private LocalDate enrollmentDate;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Column(name = "registered_at")
+    private LocalDateTime registeredAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Column(name = "waitlisted_at")
+    private LocalDateTime waitlistedAt;
+
     @JsonFormat(pattern = "yyyy-MM-dd")
     @Column(name = "drop_date")
     private LocalDate dropDate;
@@ -71,18 +79,40 @@ public class StudentSectionEnrollment {
     @Column(name = "withdraw_date")
     private LocalDate withdrawDate;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Column(name = "status_changed_at")
+    private LocalDateTime statusChangedAt;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_changed_by_user_id")
+    private SisUser statusChangedByUser;
+
     @Column(name = "credits_attempted")
     private BigDecimal creditsAttempted;
 
     @Column(name = "credits_earned")
     private BigDecimal creditsEarned;
 
+    @Column(name = "waitlist_position")
+    private Integer waitlistPosition;
+
     @Column(name = "include_in_gpa", nullable = false)
     private boolean includeInGpa = true;
+
+    @Column(name = "capacity_override", nullable = false)
+    private boolean capacityOverride = false;
+
+    @Column(name = "manual_add_reason", length = 500)
+    private String manualAddReason;
 
     @JsonIgnore
     @OneToMany(mappedBy = "studentSectionEnrollment")
     private List<StudentSectionGrade> grades = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "studentSectionEnrollment")
+    private List<StudentSectionEnrollmentEvent> events = new ArrayList<>();
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "created_at", insertable = false, updatable = false)

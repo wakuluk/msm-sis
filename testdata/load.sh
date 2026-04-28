@@ -7,6 +7,7 @@ DB_USER="${DB_USER:-root}"
 DB_PASSWORD="${DB_PASSWORD:-msmsisdb}"
 SEED_FILE="${SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed.sql}"
 COURSE_SEED_FILE="${COURSE_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_courses.sql}"
+ENROLLMENT_SEED_FILE="${ENROLLMENT_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_enrollments.sql}"
 
 if [[ ! -f "$SEED_FILE" ]]; then
   echo "Seed file not found: $SEED_FILE"
@@ -15,6 +16,11 @@ fi
 
 if [[ -n "$COURSE_SEED_FILE" && ! -f "$COURSE_SEED_FILE" ]]; then
   echo "Course seed file not found: $COURSE_SEED_FILE"
+  exit 1
+fi
+
+if [[ -n "$ENROLLMENT_SEED_FILE" && ! -f "$ENROLLMENT_SEED_FILE" ]]; then
+  echo "Enrollment seed file not found: $ENROLLMENT_SEED_FILE"
   exit 1
 fi
 
@@ -28,6 +34,12 @@ if [[ -n "$COURSE_SEED_FILE" ]]; then
   echo "Loading course seed data from: $COURSE_SEED_FILE"
   docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
     psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$COURSE_SEED_FILE"
+fi
+
+if [[ -n "$ENROLLMENT_SEED_FILE" ]]; then
+  echo "Loading enrollment seed data from: $ENROLLMENT_SEED_FILE"
+  docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
+    psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$ENROLLMENT_SEED_FILE"
 fi
 
 echo "Seed load complete."

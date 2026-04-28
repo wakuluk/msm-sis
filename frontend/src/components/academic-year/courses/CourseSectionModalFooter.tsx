@@ -29,7 +29,21 @@ export function CourseSectionModalFooter({
   onStartEdit,
 }: CourseSectionModalFooterProps) {
   return (
-    <Group justify="flex-end" gap="sm" wrap="wrap">
+    <Group
+      justify="flex-end"
+      gap="sm"
+      wrap="wrap"
+      style={{
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 1,
+        marginInline: 'calc(var(--mantine-spacing-md) * -1)',
+        marginBottom: 'calc(var(--mantine-spacing-md) * -1)',
+        padding: 'var(--mantine-spacing-md)',
+        borderTop: '1px solid var(--portal-ui-surface-border-color)',
+        backgroundColor: 'var(--mantine-color-body)',
+      }}
+    >
       {mode === 'detail' ? (
         detailEditing ? (
           <>

@@ -301,6 +301,148 @@ export const CourseSectionDetailResponseSchema = z.object({
 
 export type CourseSectionDetailResponse = z.infer<typeof CourseSectionDetailResponseSchema>;
 
+export const AddCourseSectionStudentRequestSchema = z.object({
+  studentId: z.number(),
+  statusCode: z.string().trim().max(50).nullable().optional(),
+  gradingBasisCode: z.string().trim().max(50).nullable().optional(),
+  creditsAttempted: z.number().nonnegative().nullable().optional(),
+  includeInGpa: z.boolean().nullable().optional(),
+  capacityOverride: z.boolean().nullable().optional(),
+  manualAddReason: z.string().trim().max(500).nullable().optional(),
+});
+
+export type AddCourseSectionStudentRequest = z.infer<
+  typeof AddCourseSectionStudentRequestSchema
+>;
+
+export const PatchCourseSectionStudentEnrollmentRequestSchema = z.object({
+  statusCode: z.string().trim().max(50).nullable().optional(),
+  gradingBasisCode: z.string().trim().max(50).nullable().optional(),
+  creditsAttempted: z.number().nonnegative().nullable().optional(),
+  creditsEarned: z.number().nonnegative().nullable().optional(),
+  waitlistPosition: z.number().int().positive().nullable().optional(),
+  includeInGpa: z.boolean().nullable().optional(),
+  capacityOverride: z.boolean().nullable().optional(),
+  manualAddReason: z.string().trim().max(500).nullable().optional(),
+  reason: z.string().trim().max(500).nullable().optional(),
+});
+
+export type PatchCourseSectionStudentEnrollmentRequest = z.infer<
+  typeof PatchCourseSectionStudentEnrollmentRequestSchema
+>;
+
+export const CourseSectionStudentGradeResponseSchema = z.object({
+  gradeId: z.number(),
+  gradeTypeId: z.number().nullable(),
+  gradeTypeCode: z.string().nullable(),
+  gradeTypeName: z.string().nullable(),
+  gradeMarkId: z.number().nullable(),
+  gradeMarkCode: z.string().nullable(),
+  gradeMarkName: z.string().nullable(),
+  current: z.boolean(),
+  postedByUserId: z.number().nullable(),
+  postedByEmail: z.string().nullable(),
+  postedAt: z.string().nullable(),
+});
+
+export type CourseSectionStudentGradeResponse = z.infer<
+  typeof CourseSectionStudentGradeResponseSchema
+>;
+
+export const CourseSectionStudentResponseSchema = z.object({
+  enrollmentId: z.number(),
+  sectionId: z.number().nullable(),
+  studentId: z.number().nullable(),
+  studentDisplayName: z.string().nullable(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  preferredName: z.string().nullable(),
+  email: z.string().nullable(),
+  classStanding: z.string().nullable(),
+  statusId: z.number().nullable(),
+  statusCode: z.string().nullable(),
+  statusName: z.string().nullable(),
+  gradingBasisId: z.number().nullable(),
+  gradingBasisCode: z.string().nullable(),
+  gradingBasisName: z.string().nullable(),
+  enrollmentDate: z.string().nullable(),
+  registeredAt: z.string().nullable(),
+  waitlistedAt: z.string().nullable(),
+  dropDate: z.string().nullable(),
+  withdrawDate: z.string().nullable(),
+  statusChangedAt: z.string().nullable(),
+  statusChangedByUserId: z.number().nullable(),
+  statusChangedByEmail: z.string().nullable(),
+  creditsAttempted: z.number().nullable(),
+  creditsEarned: z.number().nullable(),
+  waitlistPosition: z.number().nullable(),
+  includeInGpa: z.boolean(),
+  capacityOverride: z.boolean(),
+  manualAddReason: z.string().nullable(),
+  currentMidtermGrade: CourseSectionStudentGradeResponseSchema.nullable(),
+  currentFinalGrade: CourseSectionStudentGradeResponseSchema.nullable(),
+  grades: z.array(CourseSectionStudentGradeResponseSchema),
+});
+
+export type CourseSectionStudentResponse = z.infer<typeof CourseSectionStudentResponseSchema>;
+
+export const CourseSectionStudentListResponseSchema = z.object({
+  sectionId: z.number().nullable(),
+  results: z.array(CourseSectionStudentResponseSchema),
+  page: z.number(),
+  size: z.number(),
+  totalElements: z.number(),
+  totalPages: z.number(),
+});
+
+export type CourseSectionStudentListResponse = z.infer<
+  typeof CourseSectionStudentListResponseSchema
+>;
+
+export const CourseSectionStudentEnrollmentEventResponseSchema = z.object({
+  eventId: z.number(),
+  enrollmentId: z.number().nullable(),
+  eventType: z.string().nullable(),
+  fromStatusId: z.number().nullable(),
+  fromStatusCode: z.string().nullable(),
+  fromStatusName: z.string().nullable(),
+  toStatusId: z.number().nullable(),
+  toStatusCode: z.string().nullable(),
+  toStatusName: z.string().nullable(),
+  actorUserId: z.number().nullable(),
+  actorEmail: z.string().nullable(),
+  reason: z.string().nullable(),
+  createdAt: z.string().nullable(),
+});
+
+export type CourseSectionStudentEnrollmentEventResponse = z.infer<
+  typeof CourseSectionStudentEnrollmentEventResponseSchema
+>;
+
+export const CourseSectionStudentEnrollmentEventListResponseSchema = z.object({
+  sectionId: z.number().nullable(),
+  enrollmentId: z.number().nullable(),
+  results: z.array(CourseSectionStudentEnrollmentEventResponseSchema),
+  page: z.number(),
+  size: z.number(),
+  totalElements: z.number(),
+  totalPages: z.number(),
+});
+
+export type CourseSectionStudentEnrollmentEventListResponse = z.infer<
+  typeof CourseSectionStudentEnrollmentEventListResponseSchema
+>;
+
+export const CourseSectionStudentSortBySchema = z.enum([
+  'student',
+  'status',
+  'registeredAt',
+  'waitlistPosition',
+  'creditsAttempted',
+]);
+
+export type CourseSectionStudentSortBy = z.infer<typeof CourseSectionStudentSortBySchema>;
+
 export const CourseSectionSortBySchema = z.enum([
   'sectionLetter',
   'title',
