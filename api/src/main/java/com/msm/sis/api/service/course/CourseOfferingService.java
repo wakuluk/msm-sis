@@ -5,11 +5,9 @@ import com.msm.sis.api.entity.AcademicSubTerm;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.CourseOffering;
 import com.msm.sis.api.entity.CourseOfferingSubTerm;
-import com.msm.sis.api.entity.CourseOfferingSubTermId;
 import com.msm.sis.api.entity.CourseVersion;
 import com.msm.sis.api.mapper.CourseMapper;
 import com.msm.sis.api.mapper.CourseOfferingAdvancedSearchCriteriaMapper;
-import com.msm.sis.api.repository.AcademicSubTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.repository.CourseOfferingRepository;
 import com.msm.sis.api.repository.CourseOfferingSubTermRepository;
@@ -26,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.LinkedHashSet;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,33 +43,36 @@ public class CourseOfferingService {
 
     private final CourseOfferingRepository courseOfferingRepository;
     private final CourseOfferingSubTermRepository courseOfferingSubTermRepository;
+    private final AcademicYearCourseOfferingSearchService academicYearCourseOfferingSearchService;
     private final AcademicYearRepository academicYearRepository;
-    private final AcademicSubTermRepository academicSubTermRepository;
     private final CourseRepository courseRepository;
     private final CourseVersionRepository courseVersionRepository;
     private final CourseMapper courseMapper;
     private final CourseOfferingAdvancedSearchCriteriaMapper courseOfferingSearchCriteriaMapper;
+    private final CourseOfferingSubTermService courseOfferingSubTermService;
     private final EntityManager entityManager;
 
     public CourseOfferingService(
             CourseOfferingRepository courseOfferingRepository,
             CourseOfferingSubTermRepository courseOfferingSubTermRepository,
+            AcademicYearCourseOfferingSearchService academicYearCourseOfferingSearchService,
             AcademicYearRepository academicYearRepository,
-            AcademicSubTermRepository academicSubTermRepository,
             CourseRepository courseRepository,
             CourseVersionRepository courseVersionRepository,
             CourseMapper courseMapper,
             CourseOfferingAdvancedSearchCriteriaMapper courseOfferingSearchCriteriaMapper,
+            CourseOfferingSubTermService courseOfferingSubTermService,
             EntityManager entityManager
     ) {
         this.courseOfferingRepository = courseOfferingRepository;
         this.courseOfferingSubTermRepository = courseOfferingSubTermRepository;
+        this.academicYearCourseOfferingSearchService = academicYearCourseOfferingSearchService;
         this.academicYearRepository = academicYearRepository;
-        this.academicSubTermRepository = academicSubTermRepository;
         this.courseRepository = courseRepository;
         this.courseVersionRepository = courseVersionRepository;
         this.courseMapper = courseMapper;
         this.courseOfferingSearchCriteriaMapper = courseOfferingSearchCriteriaMapper;
+        this.courseOfferingSubTermService = courseOfferingSubTermService;
         this.entityManager = entityManager;
     }
 
@@ -103,7 +103,7 @@ public class CourseOfferingService {
             );
         }
 
-        List<Long> requestedSubTermIds = normalizeSubTermIds(request.subTermIds());
+        List<Long> requestedSubTermIds = courseOfferingSubTermService.normalizeSubTermIds(request.subTermIds());
         if (requestedSubTermIds.isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -117,7 +117,7 @@ public class CourseOfferingService {
         courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        List<AcademicSubTerm> academicSubTerms = getAcademicSubTermsForAcademicYear(
+        List<AcademicSubTerm> academicSubTerms = courseOfferingSubTermService.getAcademicSubTermsForAcademicYear(
                 academicYearId,
                 requestedSubTermIds
         );
@@ -141,7 +141,7 @@ public class CourseOfferingService {
             }
 
             List<CourseOfferingSubTerm> courseOfferingSubTerms = missingAcademicSubTerms.stream()
-                    .map(academicSubTerm -> buildCourseOfferingSubTerm(
+                    .map(academicSubTerm -> courseOfferingSubTermService.buildCourseOfferingSubTerm(
                             existingCourseOffering,
                             existingCourseOffering.getAcademicYear(),
                             academicSubTerm
@@ -161,7 +161,7 @@ public class CourseOfferingService {
         CourseOffering savedCourseOffering = courseOfferingRepository.saveAndFlush(courseOffering);
 
         List<CourseOfferingSubTerm> courseOfferingSubTerms = academicSubTerms.stream()
-                .map(academicSubTerm -> buildCourseOfferingSubTerm(
+                .map(academicSubTerm -> courseOfferingSubTermService.buildCourseOfferingSubTerm(
                         savedCourseOffering,
                         academicYear,
                         academicSubTerm
@@ -366,7 +366,7 @@ public class CourseOfferingService {
 
         boolean subTermsChanged = false;
         if (request.getSubTermIds().isPresent()) {
-            List<Long> requestedSubTermIds = normalizeSubTermIds(request.getSubTermIds().getValue());
+            List<Long> requestedSubTermIds = courseOfferingSubTermService.normalizeSubTermIds(request.getSubTermIds().getValue());
             if (requestedSubTermIds.isEmpty()) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
@@ -374,7 +374,7 @@ public class CourseOfferingService {
                 );
             }
 
-            List<AcademicSubTerm> academicSubTerms = getAcademicSubTermsForAcademicYear(
+            List<AcademicSubTerm> academicSubTerms = courseOfferingSubTermService.getAcademicSubTermsForAcademicYear(
                     academicYearId,
                     requestedSubTermIds
             );
@@ -394,7 +394,7 @@ public class CourseOfferingService {
                 entityManager.flush();
 
                 List<CourseOfferingSubTerm> courseOfferingSubTerms = academicSubTerms.stream()
-                        .map(academicSubTerm -> buildCourseOfferingSubTerm(
+                        .map(academicSubTerm -> courseOfferingSubTermService.buildCourseOfferingSubTerm(
                                 courseOffering,
                                 courseOffering.getAcademicYear(),
                                 academicSubTerm
@@ -512,46 +512,7 @@ public class CourseOfferingService {
         academicYearRepository.findById(academicYearId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        int page = criteria == null || criteria.getPage() == null ? 0 : criteria.getPage();
-        int size = criteria == null || criteria.getSize() == null ? 25 : criteria.getSize();
-
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
-        }
-
-        if (size < 1 || size > 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size must be between 1 and 100.");
-        }
-
-        List<AcademicYearCourseOfferingSearchResultResponse> filteredResults = courseOfferingRepository
-                .findAllByAcademicYear_Id(academicYearId, Sort.unsorted())
-                .stream()
-                .map(courseMapper::toAcademicYearCourseOfferingSearchResultResponse)
-                .filter(result -> matchesSubTermId(criteria == null ? null : criteria.getSubTermId(), result))
-                .filter(result -> matchesId(criteria == null ? null : criteria.getSchoolId(), result.schoolId()))
-                .filter(result -> matchesId(criteria == null ? null : criteria.getDepartmentId(), result.departmentId()))
-                .filter(result -> matchesId(criteria == null ? null : criteria.getSubjectId(), result.subjectId()))
-                .filter(result -> containsIgnoreCase(result.courseCode(), criteria == null ? null : criteria.getCourseCode()))
-                .filter(result -> containsIgnoreCase(result.title(), criteria == null ? null : criteria.getTitle()))
-                .sorted(buildAcademicYearCourseOfferingComparator(
-                        criteria == null ? null : criteria.getSortBy(),
-                        criteria == null ? null : criteria.getSortDirection()
-                ))
-                .toList();
-
-        long totalElements = filteredResults.size();
-        int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / size);
-        int fromIndex = Math.min(page * size, filteredResults.size());
-        int toIndex = Math.min(fromIndex + size, filteredResults.size());
-        List<AcademicYearCourseOfferingSearchResultResponse> pagedResults = filteredResults.subList(fromIndex, toIndex);
-
-        return courseMapper.toAcademicYearCourseOfferingSearchResponse(
-                pagedResults,
-                page,
-                size,
-                totalElements,
-                totalPages
-        );
+        return academicYearCourseOfferingSearchService.search(academicYearId, criteria);
     }
 
     public CourseOfferingDetailResponse getPublicCourseOfferingById(Long courseOfferingId) {
@@ -562,55 +523,6 @@ public class CourseOfferingService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         return courseMapper.toCourseOfferingDetailResponse(offering);
-    }
-
-    private List<Long> normalizeSubTermIds(List<Long> subTermIds) {
-        if (subTermIds == null) {
-            return List.of();
-        }
-
-        if (subTermIds.stream().anyMatch(Objects::isNull)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic sub term ids cannot contain null values."
-            );
-        }
-
-        return subTermIds.stream().distinct().toList();
-    }
-
-    private List<AcademicSubTerm> getAcademicSubTermsForAcademicYear(
-            Long academicYearId,
-            List<Long> requestedSubTermIds
-    ) {
-        List<AcademicSubTerm> academicSubTerms =
-                academicSubTermRepository.findAllByIdInOrderBySortOrderAsc(requestedSubTermIds);
-        Set<Long> foundSubTermIds = academicSubTerms.stream()
-                .map(AcademicSubTerm::getId)
-                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-
-        if (foundSubTermIds.size() != new LinkedHashSet<>(requestedSubTermIds).size()) {
-            List<Long> missingSubTermIds = requestedSubTermIds.stream()
-                    .filter(subTermId -> !foundSubTermIds.contains(subTermId))
-                    .toList();
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic sub terms not found for ids: " + missingSubTermIds
-            );
-        }
-
-        boolean hasMismatchedAcademicYear = academicSubTerms.stream()
-                .anyMatch(subTerm -> subTerm.getAcademicYear() == null
-                        || !Objects.equals(subTerm.getAcademicYear().getId(), academicYearId));
-
-        if (hasMismatchedAcademicYear) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "All academic sub terms must belong to the target academic year."
-            );
-        }
-
-        return academicSubTerms;
     }
 
     private CourseVersion getCurrentCourseVersion(Long courseId) {
@@ -633,19 +545,6 @@ public class CourseOfferingService {
         return courseOffering;
     }
 
-    private CourseOfferingSubTerm buildCourseOfferingSubTerm(
-            CourseOffering courseOffering,
-            AcademicYear academicYear,
-            AcademicSubTerm academicSubTerm
-    ) {
-        CourseOfferingSubTerm courseOfferingSubTerm = new CourseOfferingSubTerm();
-        courseOfferingSubTerm.setId(new CourseOfferingSubTermId(courseOffering.getId(), academicSubTerm.getId()));
-        courseOfferingSubTerm.setCourseOffering(courseOffering);
-        courseOfferingSubTerm.setAcademicYear(academicYear);
-        courseOfferingSubTerm.setSubTerm(academicSubTerm);
-        return courseOfferingSubTerm;
-    }
-
     private List<String> normalizeStatusCodes(List<String> statusCodes) {
         if (statusCodes == null || statusCodes.isEmpty()) {
             return List.of();
@@ -656,78 +555,6 @@ public class CourseOfferingService {
                 .filter(java.util.Objects::nonNull)
                 .map(statusCode -> statusCode.toUpperCase(java.util.Locale.ROOT))
                 .toList();
-    }
-
-    private boolean matchesId(Long expectedId, Long actualId) {
-        return expectedId == null || Objects.equals(expectedId, actualId);
-    }
-
-    private boolean matchesSubTermId(
-            Long expectedSubTermId,
-            AcademicYearCourseOfferingSearchResultResponse result
-    ) {
-        return expectedSubTermId == null
-                || result.subTerms().stream().anyMatch(
-                        subTerm -> Objects.equals(subTerm.subTermId(), expectedSubTermId)
-                );
-    }
-
-    private boolean containsIgnoreCase(String value, String filter) {
-        if (filter == null || filter.isBlank()) {
-            return true;
-        }
-
-        if (value == null) {
-            return false;
-        }
-
-        return value.toLowerCase(java.util.Locale.ROOT)
-                .contains(filter.trim().toLowerCase(java.util.Locale.ROOT));
-    }
-
-    private Comparator<AcademicYearCourseOfferingSearchResultResponse> buildAcademicYearCourseOfferingComparator(
-            String sortBy,
-            String sortDirection
-    ) {
-        Comparator<String> stringComparator = Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER);
-        Comparator<AcademicYearCourseOfferingSearchResultResponse> comparator = switch (sortBy == null ? "courseCode" : sortBy) {
-            case "schoolName" -> Comparator.comparing(
-                    AcademicYearCourseOfferingSearchResultResponse::schoolName,
-                    stringComparator
-            );
-            case "departmentName" -> Comparator.comparing(
-                    AcademicYearCourseOfferingSearchResultResponse::departmentName,
-                    stringComparator
-            );
-            case "subjectCode" -> Comparator.comparing(
-                    AcademicYearCourseOfferingSearchResultResponse::subjectCode,
-                    stringComparator
-            );
-            case "title" -> Comparator.comparing(
-                    AcademicYearCourseOfferingSearchResultResponse::title,
-                    stringComparator
-            );
-            case "courseCode" -> Comparator.comparing(
-                    AcademicYearCourseOfferingSearchResultResponse::courseCode,
-                    stringComparator
-            );
-            default -> throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Unsupported sort field: " + sortBy
-            );
-        };
-
-        if ("desc".equalsIgnoreCase(sortDirection)) {
-            comparator = comparator.reversed();
-        }
-
-        return comparator.thenComparing(
-                AcademicYearCourseOfferingSearchResultResponse::courseCode,
-                stringComparator
-        ).thenComparing(
-                AcademicYearCourseOfferingSearchResultResponse::courseOfferingId,
-                Comparator.nullsLast(Long::compareTo)
-        );
     }
 
     private Sort buildSearchSort(CourseOfferingSearchSortField sortField, Sort.Direction sortDirection) {
