@@ -1,3 +1,5 @@
+// Modal for manually enrolling a student in a course section.
+// Collects student id, grading basis, credit, override, and reason values before submit.
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -362,7 +364,9 @@ export function CourseSectionAddStudentModal({
                 studentId: selectedStudent.studentId,
                 gradingBasisCode,
                 creditsAttempted:
-                  typeof creditsAttempted === 'number' ? creditsAttempted : Number(creditsAttempted) || null,
+                  typeof creditsAttempted === 'number'
+                    ? creditsAttempted
+                    : Number(creditsAttempted) || null,
                 capacityOverride,
                 manualAddReason: manualAddReason.trim() || null,
               });

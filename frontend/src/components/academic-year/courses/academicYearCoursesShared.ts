@@ -1,3 +1,5 @@
+// Shared academic-year course helpers.
+// Defines term option shape plus common error handling, term option building, and term sorting utilities.
 import type { AcademicYearCoursesSummaryResponse } from '@/services/schemas/admin-courses-schemas';
 import type { AcademicTermResponse } from '@/services/schemas/academic-years-schemas';
 
@@ -23,12 +25,10 @@ function compareSummaryTerms(
 export function sortAcademicYearCoursesTermGroups(
   terms: ReadonlyArray<AcademicYearCoursesSummaryResponse['terms'][number]>
 ) {
-  return [...terms]
-    .sort(compareSummaryTermGroups)
-    .map((term) => ({
-      ...term,
-      subTerms: [...term.subTerms].sort(compareSummaryTerms),
-    }));
+  return [...terms].sort(compareSummaryTermGroups).map((term) => ({
+    ...term,
+    subTerms: [...term.subTerms].sort(compareSummaryTerms),
+  }));
 }
 
 export function buildAcademicYearCoursesTermOptions(

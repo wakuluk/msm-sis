@@ -1,3 +1,5 @@
+// Orchestrates the course-section management workspace.
+// Loads reference data and sections, owns section draft state, and coordinates create/edit/duplicate/detail navigation.
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Grid, Group } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
@@ -92,7 +94,8 @@ export function CourseSectionsWorkspace({
   const [referenceState, setReferenceState] = useState<SectionReferenceState>({
     status: 'loading',
   });
-  const [courseSectionDraft, setCourseSectionDraft] = useState<CourseSectionDraft>(initialCourseSectionDraft);
+  const [courseSectionDraft, setCourseSectionDraft] =
+    useState<CourseSectionDraft>(initialCourseSectionDraft);
   const [selectedSection, setSelectedSection] = useState<CourseSectionPreview | null>(null);
   const [sectionListState, setSectionListState] = useState<CourseSectionListState>({
     status: 'idle',
@@ -115,14 +118,8 @@ export function CourseSectionsWorkspace({
     useState<AcademicYearCourseOfferingSearchResultResponse | null>(null);
   const isSearchScope = selectedOfferings !== undefined;
   const activeOfferings = useMemo(
-    () =>
-      selectedOfferings ??
-      (selectedOffering ? [selectedOffering] : []),
+    () => selectedOfferings ?? (selectedOffering ? [selectedOffering] : []),
     [selectedOffering, selectedOfferings]
-  );
-  const activeOfferingIds = useMemo(
-    () => activeOfferings.map((offering) => offering.courseOfferingId).join(','),
-    [activeOfferings]
   );
   const allSections = sectionListState.sections;
   const filteredSections = useMemo(
@@ -144,13 +141,15 @@ export function CourseSectionsWorkspace({
     : 'Manage sections for the selected course offering in this sub term.';
   const sectionModalMode = selectedSection ? 'detail' : 'create';
   const selectedSectionOffering = selectedSection
-    ? activeOfferings.find((offering) => offering.courseOfferingId === selectedSection.courseOfferingId) ?? null
+    ? (activeOfferings.find(
+        (offering) => offering.courseOfferingId === selectedSection.courseOfferingId
+      ) ?? null)
     : null;
   const sectionModalOffering = selectedSectionOffering ?? duplicateOffering ?? selectedOffering;
   const sectionModalOpened = Boolean(
     selectedSection ||
-      duplicateOffering ||
-      (selectedOffering && !isSearchScope && activeAction === 'add')
+    duplicateOffering ||
+    (selectedOffering && !isSearchScope && activeAction === 'add')
   );
   const sectionPreviewBase = courseSectionDraft.sectionCode.trim() || 'New';
   const sectionPreview = `${sectionPreviewBase}${courseSectionDraft.honors ? 'H' : ''}`;
@@ -267,7 +266,7 @@ export function CourseSectionsWorkspace({
     return () => {
       abortController.abort();
     };
-  }, [activeOfferingIds, sectionListReloadKey, subTermId]);
+  }, [activeOfferings, sectionListReloadKey, subTermId]);
 
   useEffect(() => {
     setPage(0);
@@ -402,10 +401,12 @@ export function CourseSectionsWorkspace({
         ...buildDraftFromSection(updatedSection),
         credits:
           updatedSection.credits === null
-            ? nextCreditOptions[0]?.value ?? null
+            ? (nextCreditOptions[0]?.value ?? null)
             : String(updatedSection.credits),
       });
-      setStaffSearchValue(updatedSection.instructor === 'Unassigned' ? '' : updatedSection.instructor);
+      setStaffSearchValue(
+        updatedSection.instructor === 'Unassigned' ? '' : updatedSection.instructor
+      );
       setDetailEditing(false);
       setSectionMutationState({ status: 'idle' });
       setSectionListReloadKey((current) => current + 1);
@@ -438,10 +439,12 @@ export function CourseSectionsWorkspace({
         ...buildDraftFromSection(updatedSection),
         credits:
           updatedSection.credits === null
-            ? nextCreditOptions[0]?.value ?? null
+            ? (nextCreditOptions[0]?.value ?? null)
             : String(updatedSection.credits),
       });
-      setStaffSearchValue(updatedSection.instructor === 'Unassigned' ? '' : updatedSection.instructor);
+      setStaffSearchValue(
+        updatedSection.instructor === 'Unassigned' ? '' : updatedSection.instructor
+      );
       setDetailEditing(false);
       setSectionMutationState({ status: 'idle' });
       setSectionListReloadKey((current) => current + 1);
@@ -459,8 +462,9 @@ export function CourseSectionsWorkspace({
     }
 
     const sectionOffering =
-      activeOfferings.find((offering) => offering.courseOfferingId === selectedSection.courseOfferingId) ??
-      selectedSectionOffering;
+      activeOfferings.find(
+        (offering) => offering.courseOfferingId === selectedSection.courseOfferingId
+      ) ?? selectedSectionOffering;
     const nextCreditOptions = buildCreditOptions(sectionOffering);
 
     setCourseSectionDraft({
@@ -468,10 +472,12 @@ export function CourseSectionsWorkspace({
       sectionCode: '',
       credits:
         selectedSection.credits === null
-          ? nextCreditOptions[0]?.value ?? null
+          ? (nextCreditOptions[0]?.value ?? null)
           : String(selectedSection.credits),
     });
-    setStaffSearchValue(selectedSection.instructor === 'Unassigned' ? '' : selectedSection.instructor);
+    setStaffSearchValue(
+      selectedSection.instructor === 'Unassigned' ? '' : selectedSection.instructor
+    );
     setDuplicateOffering(sectionOffering);
     setSelectedSection(null);
     setDetailEditing(false);
@@ -494,7 +500,11 @@ export function CourseSectionsWorkspace({
             >
               Clear section filters
             </Button>
-            <Button variant="light" onClick={onAddSection} disabled={!selectedOffering || isSearchScope}>
+            <Button
+              variant="light"
+              onClick={onAddSection}
+              disabled={!selectedOffering || isSearchScope}
+            >
               Add section
             </Button>
           </Group>
@@ -547,7 +557,9 @@ export function CourseSectionsWorkspace({
         staffOptions={staffOptions}
         staffSearchValue={staffSearchValue}
         staffLoading={staffSearchState.status === 'loading'}
-        mutationError={sectionMutationState.status === 'error' ? sectionMutationState.message : null}
+        mutationError={
+          sectionMutationState.status === 'error' ? sectionMutationState.message : null
+        }
         mutating={sectionMutationState.status === 'saving'}
         onStaffSearchChange={setStaffSearchValue}
         onClose={closeSectionModal}
@@ -557,7 +569,7 @@ export function CourseSectionsWorkspace({
               ...buildDraftFromSection(selectedSection),
               credits:
                 selectedSection.credits === null
-                  ? creditOptions[0]?.value ?? null
+                  ? (creditOptions[0]?.value ?? null)
                   : String(selectedSection.credits),
             });
           }

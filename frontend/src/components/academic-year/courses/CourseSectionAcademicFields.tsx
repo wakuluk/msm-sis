@@ -1,6 +1,7 @@
+// Academic setup field group for the course-section form.
+// Handles instructor assignment, academic division, credits, and grading basis inputs.
 import type { Dispatch, SetStateAction } from 'react';
-import type { SelectProps, TextInputProps } from '@mantine/core';
-import { Divider, Grid, Select, Stack } from '@mantine/core';
+import { Divider, Grid, Select, Stack, type SelectProps, type TextInputProps } from '@mantine/core';
 import type {
   CourseSectionDraft,
   SelectOption,

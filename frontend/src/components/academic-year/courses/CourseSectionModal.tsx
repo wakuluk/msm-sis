@@ -1,3 +1,5 @@
+// Modal container for creating, viewing, editing, and duplicating course sections.
+// Composes the section field groups, selected-offering context, mutation state, and footer actions.
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { Alert, Badge, Group, Modal, Stack, Text } from '@mantine/core';
 import type { AcademicYearCourseOfferingSearchResultResponse } from '@/services/schemas/admin-courses-schemas';
@@ -153,7 +155,7 @@ export function CourseSectionModal({
             courseCode={
               selectedSection
                 ? `${selectedSection.courseCode} Section ${selectedSection.sectionCode}`
-                : offering?.courseCode ?? 'Course offering'
+                : (offering?.courseCode ?? 'Course offering')
             }
             title={selectedSection?.courseTitle ?? offering?.title ?? 'Title unavailable'}
             badges={

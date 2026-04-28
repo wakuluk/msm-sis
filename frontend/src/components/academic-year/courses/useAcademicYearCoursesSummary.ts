@@ -1,3 +1,5 @@
+// Hook for loading the academic-year course summary.
+// Produces page summary data and normalized term options consumed by course actions and offering search.
 import { useEffect, useMemo, useState } from 'react';
 import { getAcademicYearCoursesSummary } from '@/services/admin-courses-service';
 import type { AcademicYearCoursesSummaryResponse } from '@/services/schemas/admin-courses-schemas';

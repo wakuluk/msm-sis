@@ -1,3 +1,5 @@
+// Type definitions for the course-section student workspace.
+// Centralizes list/detail/event/mutation state unions plus sortable enrollment table settings.
 import type {
   CourseSectionStudentEnrollmentEventResponse,
   CourseSectionStudentResponse,
@@ -27,7 +29,13 @@ export type EnrollmentEventListState =
   | { status: 'success'; events: CourseSectionStudentEnrollmentEventResponse[] }
   | { status: 'error'; events: CourseSectionStudentEnrollmentEventResponse[]; message: string };
 
-export type StudentSortBy = 'student' | 'studentId' | 'status' | 'credits' | 'grading' | 'registered';
+export type StudentSortBy =
+  | 'student'
+  | 'studentId'
+  | 'status'
+  | 'credits'
+  | 'grading'
+  | 'registered';
 
 export type StudentSortDirection = 'asc' | 'desc';
 

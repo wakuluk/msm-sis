@@ -1,3 +1,5 @@
+// Search/filter/table panel for course sections.
+// Displays sections for either one selected offering or all offerings in the current search scope.
 import { Alert, Badge, Grid, Group, Select, Stack, Table, Text, TextInput } from '@mantine/core';
 import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
 import type { AcademicYearCourseOfferingSearchResultResponse } from '@/services/schemas/admin-courses-schemas';
@@ -109,7 +111,8 @@ export function CourseSectionsTablePanel({
         </Group>
       ) : (
         <Alert color="gray" title="Select a course offering">
-          Choose a course offering above, or use View offering sections to review the current search results.
+          Choose a course offering above, or use View offering sections to review the current search
+          results.
         </Alert>
       )}
 
@@ -252,7 +255,6 @@ export function CourseSectionsTablePanel({
               {pagedSections.map((section) => (
                 <Table.Tr
                   key={section.sectionId}
-                  role="button"
                   tabIndex={0}
                   style={{ cursor: 'pointer' }}
                   onClick={() => {
@@ -298,8 +300,11 @@ export function CourseSectionsTablePanel({
         <Group justify="space-between" align="center" gap="sm" wrap="wrap">
           <Text size="sm" c="dimmed">
             Showing {page * courseSectionsPageSize + 1}-
-            {Math.min(page * courseSectionsPageSize + pagedSections.length, filteredSections.length)} of{' '}
-            {filteredSections.length} sections
+            {Math.min(
+              page * courseSectionsPageSize + pagedSections.length,
+              filteredSections.length
+            )}{' '}
+            of {filteredSections.length} sections
           </Text>
           <SearchPaginationFooter page={page} totalPages={totalPages} onPageChange={onPageChange} />
         </Group>

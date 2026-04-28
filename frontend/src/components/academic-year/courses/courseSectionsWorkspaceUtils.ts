@@ -1,17 +1,20 @@
+// Data mapping and draft helpers for the section workspace.
+// Converts section API responses into UI previews and updates meeting schedule/search/draft structures.
 import type { AcademicYearCourseOfferingSearchResultResponse } from '@/services/schemas/admin-courses-schemas';
 import type {
   CourseSectionDetailResponse,
   CourseSectionListResultResponse,
 } from '@/services/schemas/course-schemas';
 import type { CatalogReferenceOption } from '@/services/schemas/reference-schemas';
-import type {
-  CourseSectionDraft,
-  CourseSectionPreview,
-  CourseSectionSearchValues,
-  MeetingDaySchedule,
-  SelectOption,
+import {
+  initialCourseSectionDraft,
+  initialMeetingSchedule,
+  type CourseSectionDraft,
+  type CourseSectionPreview,
+  type CourseSectionSearchValues,
+  type MeetingDaySchedule,
+  type SelectOption,
 } from './courseSectionsWorkspaceTypes';
-import { initialCourseSectionDraft, initialMeetingSchedule } from './courseSectionsWorkspaceTypes';
 
 const meetingDayKeysByNumber = new Map<number, string>([
   [1, 'MONDAY'],
@@ -307,8 +310,9 @@ export function mapCourseSectionDetailToPreview(
 
 function buildInstructorSummary(section: CourseSectionDetailResponse): string {
   const instructorNames = section.instructors
-    .map((instructor) =>
-      `${instructor.firstName ?? ''} ${instructor.lastName ?? ''}`.trim() || instructor.email
+    .map(
+      (instructor) =>
+        `${instructor.firstName ?? ''} ${instructor.lastName ?? ''}`.trim() || instructor.email
     )
     .filter((name): name is string => Boolean(name));
 
@@ -366,9 +370,9 @@ function buildMeetingScheduleFromSection(
 }
 
 function getMeetingDayKey(dayOfWeek: number | null): string | null {
-  return dayOfWeek === null ? null : meetingDayKeysByNumber.get(dayOfWeek) ?? null;
+  return dayOfWeek === null ? null : (meetingDayKeysByNumber.get(dayOfWeek) ?? null);
 }
 
 function formatMeetingDay(dayOfWeek: number | null): string | null {
-  return dayOfWeek === null ? null : meetingDayLabelsByNumber.get(dayOfWeek) ?? null;
+  return dayOfWeek === null ? null : (meetingDayLabelsByNumber.get(dayOfWeek) ?? null);
 }

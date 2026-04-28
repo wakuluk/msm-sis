@@ -1,3 +1,5 @@
+// Footer controls for the course-section modal.
+// Switches actions based on create/detail mode, edit state, selected section, and mutation state.
 import { Button, Group } from '@mantine/core';
 import type { CourseSectionPreview } from './courseSectionsWorkspaceTypes';
 

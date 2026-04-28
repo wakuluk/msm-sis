@@ -1,3 +1,5 @@
+// Conversion helpers for course-section mutations and staff options.
+// Turns UI draft state into create/patch API payloads and keeps selected instructors visible in combobox data.
 import type {
   CreateCourseSectionRequest,
   PatchCourseSectionRequest,

@@ -1,6 +1,17 @@
+// Identity/status field group for the course-section form.
+// Covers section code, honors flag, section status, capacity, and waitlist capacity.
 import type { Dispatch, SetStateAction } from 'react';
-import type { SelectProps, SwitchProps, TextInputProps } from '@mantine/core';
-import { Divider, Grid, Select, Stack, Switch, TextInput } from '@mantine/core';
+import {
+  Divider,
+  Grid,
+  Select,
+  Stack,
+  Switch,
+  TextInput,
+  type SelectProps,
+  type SwitchProps,
+  type TextInputProps,
+} from '@mantine/core';
 import type { CourseSectionDraft, SelectOption } from './courseSectionsWorkspaceTypes';
 
 type CourseSectionIdentityFieldsProps = {

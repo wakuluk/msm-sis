@@ -98,6 +98,7 @@ public class AcademicYearCourseOfferingSearchService {
             String sortBy,
             String sortDirection
     ) {
+        //TODO find a better solution for case switch
         Comparator<String> stringComparator = Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER);
         Comparator<AcademicYearCourseOfferingSearchResultResponse> comparator = switch (sortBy == null ? "courseCode" : sortBy) {
             case "schoolName" -> Comparator.comparing(

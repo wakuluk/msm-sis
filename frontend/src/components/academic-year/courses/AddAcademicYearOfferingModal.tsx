@@ -1,5 +1,18 @@
+// Modal for adding catalog courses into an academic year.
+// Loads reference/catalog options, collects selected terms, and submits new year-scoped offerings.
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Group, Modal, MultiSelect, Paper, Select, Stack, Text, Textarea } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  Group,
+  Modal,
+  MultiSelect,
+  Paper,
+  Select,
+  Stack,
+  Text,
+  Textarea,
+} from '@mantine/core';
 import { createAcademicYearCourseOffering } from '@/services/admin-courses-service';
 import { getCoursePickerReferenceOptions } from '@/services/reference-service';
 import type { CoursePickerReferenceOptionsResponse } from '@/services/schemas/reference-schemas';
@@ -109,7 +122,8 @@ export function AddAcademicYearOfferingModal({
     };
   }, [opened, normalizedInitialSubTermIds]);
 
-  const coursePickerOptions = coursePickerState.status === 'success' ? coursePickerState.options : null;
+  const coursePickerOptions =
+    coursePickerState.status === 'success' ? coursePickerState.options : null;
   const schoolOptions = useMemo(
     () =>
       (coursePickerOptions?.schools ?? []).map((school) => ({
@@ -122,7 +136,8 @@ export function AddAcademicYearOfferingModal({
     () =>
       (coursePickerOptions?.departments ?? [])
         .filter(
-          (department) => !formValues.schoolId || String(department.schoolId) === formValues.schoolId
+          (department) =>
+            !formValues.schoolId || String(department.schoolId) === formValues.schoolId
         )
         .map((department) => ({
           value: String(department.id),
@@ -366,7 +381,8 @@ export function AddAcademicYearOfferingModal({
           }}
         />
 
-        {coursePickerState.status === 'success' && coursePickerState.options.courses.length === 0 ? (
+        {coursePickerState.status === 'success' &&
+        coursePickerState.options.courses.length === 0 ? (
           <Alert color="gray" title="No eligible courses">
             There are no active courses with a current version available to add right now.
           </Alert>
@@ -391,7 +407,11 @@ export function AddAcademicYearOfferingModal({
         ) : null}
 
         <Group justify="flex-end">
-          <Button variant="default" onClick={onClose} disabled={createOfferingState.status === 'saving'}>
+          <Button
+            variant="default"
+            onClick={onClose}
+            disabled={createOfferingState.status === 'saving'}
+          >
             Cancel
           </Button>
           <Button

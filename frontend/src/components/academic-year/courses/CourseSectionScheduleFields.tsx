@@ -1,8 +1,26 @@
+// Schedule/location field group for the course-section form.
+// Manages delivery mode, room, meeting days, time normalization, and meeting schedule draft updates.
 import type { Dispatch, SetStateAction } from 'react';
-import type { CheckboxProps, SelectProps, SwitchProps, TextInputProps } from '@mantine/core';
-import { Checkbox, Divider, Grid, Group, Select, Stack, Switch, Text, TextInput } from '@mantine/core';
-import type { CourseSectionDraft, SelectOption } from './courseSectionsWorkspaceTypes';
-import { meetingDayOptions } from './courseSectionsWorkspaceTypes';
+import {
+  Checkbox,
+  Divider,
+  Grid,
+  Group,
+  Select,
+  Stack,
+  Switch,
+  Text,
+  TextInput,
+  type CheckboxProps,
+  type SelectProps,
+  type SwitchProps,
+  type TextInputProps,
+} from '@mantine/core';
+import {
+  meetingDayOptions,
+  type CourseSectionDraft,
+  type SelectOption,
+} from './courseSectionsWorkspaceTypes';
 import {
   formatTimeInputValue,
   normalizeTimeInput,
@@ -135,11 +153,11 @@ export function CourseSectionScheduleFields({
                                   enabled,
                                   startTime:
                                     enabled && current.sameMeetingTime
-                                      ? firstSelectedSchedule?.startTime ?? null
+                                      ? (firstSelectedSchedule?.startTime ?? null)
                                       : current.meetingSchedule[day.value].startTime,
                                   endTime:
                                     enabled && current.sameMeetingTime
-                                      ? firstSelectedSchedule?.endTime ?? null
+                                      ? (firstSelectedSchedule?.endTime ?? null)
                                       : current.meetingSchedule[day.value].endTime,
                                 }
                               ),

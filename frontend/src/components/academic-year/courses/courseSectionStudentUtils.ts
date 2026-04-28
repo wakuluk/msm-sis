@@ -1,3 +1,5 @@
+// Display and table helpers for section student enrollment data.
+// Owns student status colors, date/credit formatting, search matching, event descriptions, and sorting logic.
 import type {
   CourseSectionStudentEnrollmentEventResponse,
   CourseSectionStudentResponse,
@@ -128,7 +130,10 @@ export function compareStudentsByColumn(
     case 'studentId':
       return compareNullableNumber(left.studentId, right.studentId);
     case 'status':
-      return compareNullableString(left.statusName ?? left.statusCode, right.statusName ?? right.statusCode);
+      return compareNullableString(
+        left.statusName ?? left.statusCode,
+        right.statusName ?? right.statusCode
+      );
     case 'credits':
       return compareNullableNumber(left.creditsAttempted, right.creditsAttempted);
     case 'grading':

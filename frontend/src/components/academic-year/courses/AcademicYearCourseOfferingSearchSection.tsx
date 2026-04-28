@@ -1,3 +1,5 @@
+// Search/results surface for academic-year course offerings.
+// Supports year-wide browsing plus sub-term locked searches that can drive the real section workspace.
 import { useEffect, useMemo, useState } from 'react';
 import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import {
@@ -6,11 +8,9 @@ import {
   Button,
   Grid,
   Group,
-  Modal,
   Paper,
   Select,
   Stack,
-  Table,
   Text,
   TextInput,
 } from '@mantine/core';
@@ -59,17 +59,6 @@ type YearOfferingSearchState =
   | { status: 'error'; message: string }
   | { status: 'success'; response: AcademicYearCourseOfferingSearchResponse };
 
-type CourseOfferingSectionPreview = {
-  sectionId: number;
-  sectionCode: string;
-  status: string;
-  instructor: string;
-  meetingPattern: string;
-  room: string;
-  capacity: number;
-  enrolled: number;
-};
-
 type AcademicYearCourseOfferingSearchSectionProps = {
   academicYearId: number;
   hasValidAcademicYearId: boolean;
@@ -105,11 +94,6 @@ const yearOfferingResultsViewOptions = [
   { value: 'system', label: 'System' },
 ] satisfies ReadonlyArray<{ label: string; value: YearOfferingResultsView }>;
 
-const sectionStatuses = ['Open', 'Open', 'Draft'] as const;
-const sectionInstructors = ['Jane Smith', 'Alan Reed', 'Unassigned'] as const;
-const sectionMeetingPatterns = ['Mon/Wed 9:00-10:15', 'Tue/Thu 11:00-12:15', 'TBD'] as const;
-const sectionRooms = ['RH 204', 'RH 110', 'TBD'] as const;
-
 function getYearOfferingResultsSummary(state: YearOfferingSearchState): string {
   if (state.status === 'loading') {
     return 'Loading academic year offerings...';
@@ -127,23 +111,6 @@ function getYearOfferingResultsSummary(state: YearOfferingSearchState): string {
   const end = state.response.page * state.response.size + state.response.results.length;
 
   return `Showing ${start}-${end} of ${state.response.totalElements} offerings`;
-}
-
-function buildSectionPreviews(
-  offering: AcademicYearCourseOfferingSearchResultResponse
-): CourseOfferingSectionPreview[] {
-  const seed = offering.courseOfferingId % 7;
-
-  return [0, 1, 2].map((index) => ({
-    sectionId: offering.courseOfferingId * 10 + index + 1,
-    sectionCode: String(index + 1).padStart(2, '0'),
-    status: sectionStatuses[index],
-    instructor: sectionInstructors[index],
-    meetingPattern: sectionMeetingPatterns[index],
-    room: sectionRooms[index],
-    capacity: 24 + ((seed + index) % 3) * 4,
-    enrolled: index === 2 ? 0 : 14 + seed + index * 5,
-  }));
 }
 
 function buildAcademicYearOfferingColumns(): ColumnDef<AcademicYearCourseOfferingSearchResultResponse>[] {
@@ -192,16 +159,6 @@ function buildAcademicYearOfferingColumns(): ColumnDef<AcademicYearCourseOfferin
           ? row.original.subTerms.map((subTerm) => subTerm.code).join(', ')
           : 'N/A',
     },
-    {
-      id: 'sections',
-      header: 'Sections',
-      size: 120,
-      cell: ({ row }) => (
-        <Badge variant="light" color="blue">
-          {buildSectionPreviews(row.original).length} sections
-        </Badge>
-      ),
-    },
   ];
 }
 
@@ -224,19 +181,15 @@ export function AcademicYearCourseOfferingSearchSection({
   const [referenceState, setReferenceState] = useState<YearOfferingReferenceState>({
     status: 'loading',
   });
-  const [searchValues, setSearchValues] = useState<YearOfferingSearchFormValues>(
-    initialSearchValues
-  );
-  const [submittedSearchValues, setSubmittedSearchValues] = useState<YearOfferingSearchFormValues>(
-    initialSearchValues
-  );
+  const [searchValues, setSearchValues] =
+    useState<YearOfferingSearchFormValues>(initialSearchValues);
+  const [submittedSearchValues, setSubmittedSearchValues] =
+    useState<YearOfferingSearchFormValues>(initialSearchValues);
   const [sortBy, setSortBy] = useState<YearOfferingSearchSortBy>('courseCode');
   const [sortDirection, setSortDirection] = useState<YearOfferingSearchSortDirection>('asc');
   const [resultsView, setResultsView] = useState<YearOfferingResultsView>('standard');
   const [page, setPage] = useState(0);
   const [searchState, setSearchState] = useState<YearOfferingSearchState>({ status: 'loading' });
-  const [selectedOffering, setSelectedOffering] =
-    useState<AcademicYearCourseOfferingSearchResultResponse | null>(null);
 
   useEffect(() => {
     setPage(0);
@@ -293,7 +246,9 @@ export function AcademicYearCourseOfferingSearchSection({
       departmentId: submittedSearchValues.departmentId
         ? Number(submittedSearchValues.departmentId)
         : undefined,
-      subjectId: submittedSearchValues.subjectId ? Number(submittedSearchValues.subjectId) : undefined,
+      subjectId: submittedSearchValues.subjectId
+        ? Number(submittedSearchValues.subjectId)
+        : undefined,
       courseCode: submittedSearchValues.courseCode,
       title: submittedSearchValues.title,
       page,
@@ -361,12 +316,14 @@ export function AcademicYearCourseOfferingSearchSection({
         .map((subject) => ({
           value: String(subject.id),
           label: `${subject.name} (${subject.code})`,
-      })),
+        })),
     [referenceOptions, searchValues.departmentId]
   );
   const columns = useMemo(() => buildAcademicYearOfferingColumns(), []);
   const tableData =
-    searchState.status === 'success' ? searchState.response.results : emptyAcademicYearOfferingResults;
+    searchState.status === 'success'
+      ? searchState.response.results
+      : emptyAcademicYearOfferingResults;
   const table = useReactTable({
     columns,
     data: tableData,
@@ -376,11 +333,9 @@ export function AcademicYearCourseOfferingSearchSection({
       columnVisibility: {
         subjectCode: resultsView === 'system',
         subTerms: !lockSubTermFilter,
-        sections: !lockSubTermFilter,
       },
     },
   });
-  const selectedOfferingSections = selectedOffering ? buildSectionPreviews(selectedOffering) : [];
   const showSectionSearch = sectionSearchValues && onSectionSearchValuesChange;
 
   function handleSchoolChange(value: string | null) {
@@ -433,10 +388,7 @@ export function AcademicYearCourseOfferingSearchSection({
   function handleOfferingSelected(offering: AcademicYearCourseOfferingSearchResultResponse) {
     if (onOfferingSelected) {
       onOfferingSelected(offering);
-      return;
     }
-
-    setSelectedOffering(offering);
   }
 
   function handleViewSearchSections() {
@@ -689,19 +641,22 @@ export function AcademicYearCourseOfferingSearchSection({
                   sortBy={sortBy}
                   sortDirection={sortDirection}
                   onToggleSort={handleToggleSort}
-                  getRowProps={(row) => ({
-                    role: 'button',
-                    tabIndex: 0,
-                    onClick: () => {
-                      handleOfferingSelected(row.original);
-                    },
-                    onKeyDown: (event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        handleOfferingSelected(row.original);
-                      }
-                    },
-                  })}
+                  getRowProps={
+                    onOfferingSelected
+                      ? (row) => ({
+                          tabIndex: 0,
+                          onClick: () => {
+                            handleOfferingSelected(row.original);
+                          },
+                          onKeyDown: (event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              handleOfferingSelected(row.original);
+                            }
+                          },
+                        })
+                      : undefined
+                  }
                 />
 
                 <SearchPaginationFooter
@@ -726,87 +681,6 @@ export function AcademicYearCourseOfferingSearchSection({
           </Stack>
         </Paper>
       </Grid.Col>
-
-      <Modal
-        opened={selectedOffering !== null}
-        onClose={() => {
-          setSelectedOffering(null);
-        }}
-        title="Course Offering Sections"
-        size="xl"
-        centered
-      >
-        {selectedOffering ? (
-          <Stack gap="md">
-            <Stack gap={2}>
-              <Text fw={700}>{selectedOffering.courseCode ?? 'Course offering'}</Text>
-              <Text size="sm" c="dimmed">
-                {selectedOffering.title ?? 'Title unavailable'}
-              </Text>
-              <Group gap="xs" wrap="wrap">
-                {(selectedOffering.subTerms.length > 0
-                  ? selectedOffering.subTerms
-                  : [{ code: 'TBD', name: 'Term unavailable', subTermId: 0 }]
-                ).map((subTerm) => (
-                  <Badge key={subTerm.subTermId} variant="light" color="blue">
-                    {subTerm.name} ({subTerm.code})
-                  </Badge>
-                ))}
-              </Group>
-            </Stack>
-
-            <Group justify="space-between" align="center" wrap="wrap">
-              <Text size="sm">{selectedOfferingSections.length} current sections</Text>
-              <Button variant="light">Add section</Button>
-            </Group>
-
-            <Table withTableBorder withColumnBorders striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Section</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                  <Table.Th>Instructor</Table.Th>
-                  <Table.Th>Meeting Pattern</Table.Th>
-                  <Table.Th>Room</Table.Th>
-                  <Table.Th>Seats</Table.Th>
-                  <Table.Th>Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {selectedOfferingSections.map((section) => (
-                  <Table.Tr key={section.sectionId}>
-                    <Table.Td>{section.sectionCode}</Table.Td>
-                    <Table.Td>
-                      <Badge
-                        variant="light"
-                        color={section.status === 'Draft' ? 'gray' : 'green'}
-                      >
-                        {section.status}
-                      </Badge>
-                    </Table.Td>
-                    <Table.Td>{section.instructor}</Table.Td>
-                    <Table.Td>{section.meetingPattern}</Table.Td>
-                    <Table.Td>{section.room}</Table.Td>
-                    <Table.Td>
-                      {section.enrolled}/{section.capacity}
-                    </Table.Td>
-                    <Table.Td>
-                      <Group gap="xs" wrap="nowrap">
-                        <Button variant="default" size="xs">
-                          Edit
-                        </Button>
-                        <Button variant="default" size="xs">
-                          Duplicate
-                        </Button>
-                      </Group>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Stack>
-        ) : null}
-      </Modal>
     </>
   );
 }

@@ -1,6 +1,7 @@
+// Registration policy field group for the course-section form.
+// Currently owns the waitlist-allowed switch and keeps it wired into the shared draft state.
 import type { Dispatch, SetStateAction } from 'react';
-import type { SwitchProps } from '@mantine/core';
-import { Divider, Stack, Switch } from '@mantine/core';
+import { Divider, Stack, Switch, type SwitchProps } from '@mantine/core';
 import type { CourseSectionDraft } from './courseSectionsWorkspaceTypes';
 
 type CourseSectionRegistrationFieldsProps = {

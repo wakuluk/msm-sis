@@ -1,6 +1,16 @@
+// Searchable staff combobox used by section instructor assignment.
+// Displays async staff results with email context and exposes select/clear/search callbacks.
 import { useEffect } from 'react';
-import type { TextInputProps } from '@mantine/core';
-import { CloseButton, Combobox, Loader, Stack, Text, TextInput, useCombobox } from '@mantine/core';
+import {
+  CloseButton,
+  Combobox,
+  Loader,
+  Stack,
+  Text,
+  TextInput,
+  type TextInputProps,
+  useCombobox,
+} from '@mantine/core';
 import type { StaffSelectOption } from './courseSectionsWorkspaceTypes';
 
 type StaffComboboxProps = {

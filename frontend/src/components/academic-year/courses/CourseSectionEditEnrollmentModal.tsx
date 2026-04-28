@@ -1,3 +1,5 @@
+// Modal for editing an existing section enrollment.
+// Lets staff update enrollment status, grading basis, attempted credits, GPA inclusion, and audit reason.
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -185,7 +187,9 @@ export function CourseSectionEditEnrollmentModal({
                       : Number(creditsAttempted) || null,
                   includeInGpa,
                   capacityOverride,
-                  ...(showManualAddReason ? { manualAddReason: manualAddReason.trim() || null } : {}),
+                  ...(showManualAddReason
+                    ? { manualAddReason: manualAddReason.trim() || null }
+                    : {}),
                   ...(showChangeReason ? { reason: reason.trim() || null } : {}),
                 });
               }}

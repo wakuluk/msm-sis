@@ -525,6 +525,7 @@ public class CourseOfferingService {
         return courseMapper.toCourseOfferingDetailResponse(offering);
     }
 
+    //TODO private methods may not be necessary. Do they belong in a nother service?
     private CourseVersion getCurrentCourseVersion(Long courseId) {
         return courseVersionRepository.findCurrentCourseVersionsByCourseId(courseId).stream()
                 .findFirst()

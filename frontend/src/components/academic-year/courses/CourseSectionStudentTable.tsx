@@ -1,8 +1,19 @@
+// Sortable enrollment table for students in a course section.
+// Emits selected enrollment ids so the parent panel can load detail and history data.
 import { Badge, ScrollArea, Table, Text, UnstyledButton } from '@mantine/core';
 import type { CourseSectionStudentResponse } from '@/services/schemas/course-schemas';
 import classes from './CourseSectionStudentsPanel.module.css';
-import type { SortableStudentColumn, StudentSortBy, StudentSortDirection } from './courseSectionStudentTypes';
-import { formatCredits, formatStudentDate, sortableStudentColumns, studentStatusColor } from './courseSectionStudentUtils';
+import type {
+  SortableStudentColumn,
+  StudentSortBy,
+  StudentSortDirection,
+} from './courseSectionStudentTypes';
+import {
+  formatCredits,
+  formatStudentDate,
+  sortableStudentColumns,
+  studentStatusColor,
+} from './courseSectionStudentUtils';
 import tableClasses from '@/components/search/SearchResultsTable.module.css';
 
 function SortableStudentHeader({
@@ -61,7 +72,14 @@ export function CourseSectionStudentTable({
   return (
     <Table.ScrollContainer minWidth={960} w="100%">
       <ScrollArea.Autosize mah={320} type="auto" offsetScrollbars>
-        <Table withTableBorder withColumnBorders striped highlightOnHover stickyHeader style={{ width: '100%' }}>
+        <Table
+          withTableBorder
+          withColumnBorders
+          striped
+          highlightOnHover
+          stickyHeader
+          style={{ width: '100%' }}
+        >
           <Table.Thead>
             <Table.Tr>
               {sortableStudentColumns.map((column) => (
@@ -93,9 +111,7 @@ export function CourseSectionStudentTable({
                 className={`${tableClasses.clickableRow} ${
                   selectedEnrollmentId === student.enrollmentId ? classes.selectedRow : ''
                 }`}
-                role="button"
                 tabIndex={0}
-                aria-selected={selectedEnrollmentId === student.enrollmentId}
                 onClick={() => {
                   onSelectEnrollment(student.enrollmentId);
                 }}
@@ -124,7 +140,9 @@ export function CourseSectionStudentTable({
                 </Table.Td>
                 <Table.Td>{formatCredits(student.creditsAttempted)}</Table.Td>
                 <Table.Td>{student.gradingBasisName ?? 'Not set'}</Table.Td>
-                <Table.Td>{formatStudentDate(student.registeredAt ?? student.enrollmentDate)}</Table.Td>
+                <Table.Td>
+                  {formatStudentDate(student.registeredAt ?? student.enrollmentDate)}
+                </Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>

@@ -1,3 +1,5 @@
+// Action shell for academic-year course management.
+// Owns import/add-offering commands and renders the offerings workspace content passed in by pages.
 import { useState, type ReactNode } from 'react';
 import { Alert, Button, Grid, Group } from '@mantine/core';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
@@ -169,8 +171,8 @@ export function AcademicYearCoursesActionsSection({
               Scanned {syncOfferingsState.response.scannedCourseOfferingCount} offerings. Updated{' '}
               {syncOfferingsState.response.updatedCourseOfferingCount}, already current{' '}
               {syncOfferingsState.response.alreadyCurrentCourseOfferingCount}, skipped{' '}
-              {syncOfferingsState.response.skippedMissingCurrentCourseVersionCount} with no
-              current course version, and skipped{' '}
+              {syncOfferingsState.response.skippedMissingCurrentCourseVersionCount} with no current
+              course version, and skipped{' '}
               {syncOfferingsState.response.skippedDuplicateCurrentOfferingCount} because a current
               offering already existed for that course in this academic year.
             </Alert>

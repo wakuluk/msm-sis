@@ -1,3 +1,5 @@
+// Hook for loading academic-year term groups.
+// Keeps term-group loading/error state near the courses page while reusing shared sorting/error helpers.
 import { useEffect, useState } from 'react';
 import { getAcademicYearTermGroups } from '@/services/academic-term-group-service';
 import type { AcademicTermResponse } from '@/services/schemas/academic-years-schemas';

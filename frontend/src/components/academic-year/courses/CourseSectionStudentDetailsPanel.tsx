@@ -1,3 +1,5 @@
+// Detail panel for the selected student enrollment in a section.
+// Presents student identity, enrollment facts, grades, event history, and profile/edit actions.
 import { Badge, Button, Divider, Grid, Group, Stack, Table, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { CourseSectionStudentResponse } from '@/services/schemas/course-schemas';
@@ -60,7 +62,12 @@ export function CourseSectionStudentDetailsPanel({
               Open student profile
             </Button>
           ) : (
-            <Button component={Link} to={`/students/${student.studentId}`} size="xs" variant="default">
+            <Button
+              component={Link}
+              to={`/students/${student.studentId}`}
+              size="xs"
+              variant="default"
+            >
               Open student profile
             </Button>
           )}
@@ -95,7 +102,10 @@ export function CourseSectionStudentDetailsPanel({
           <DetailField label="Status" value={student.statusName ?? 'Unknown'} />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 4 }}>
-          <DetailField label="Registered" value={formatStudentDate(student.registeredAt ?? student.enrollmentDate)} />
+          <DetailField
+            label="Registered"
+            value={formatStudentDate(student.registeredAt ?? student.enrollmentDate)}
+          />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 4 }}>
           <DetailField label="Waitlisted" value={formatStudentDate(student.waitlistedAt)} />
@@ -107,7 +117,10 @@ export function CourseSectionStudentDetailsPanel({
           <DetailField label="Withdrawn" value={formatStudentDate(student.withdrawDate)} />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 4 }}>
-          <DetailField label="Waitlist position" value={student.waitlistPosition?.toString() ?? 'Not set'} />
+          <DetailField
+            label="Waitlist position"
+            value={student.waitlistPosition?.toString() ?? 'Not set'}
+          />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 4 }}>
           <DetailField label="Grading basis" value={student.gradingBasisName ?? 'Not set'} />
@@ -200,7 +213,9 @@ export function CourseSectionStudentDetailsPanel({
                 </Table.Td>
               </Table.Tr>
             ) : null}
-            {eventState.status !== 'loading' && eventState.status !== 'error' && eventState.events.length === 0 ? (
+            {eventState.status !== 'loading' &&
+            eventState.status !== 'error' &&
+            eventState.events.length === 0 ? (
               <Table.Tr>
                 <Table.Td colSpan={5}>
                   <Text size="sm" c="dimmed" ta="center" py="sm">

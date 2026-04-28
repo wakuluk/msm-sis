@@ -1,3 +1,5 @@
+// Main student-enrollment workspace for a selected course section.
+// Loads students, selected enrollment detail, enrollment events, and coordinates add/edit mutations.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import {
@@ -8,7 +10,10 @@ import {
   patchCourseSectionStudentEnrollment,
 } from '@/services/course-service';
 import type { CourseSectionStudentResponse } from '@/services/schemas/course-schemas';
-import { CourseSectionAddStudentModal, type AddStudentFormValues } from './CourseSectionAddStudentModal';
+import {
+  CourseSectionAddStudentModal,
+  type AddStudentFormValues,
+} from './CourseSectionAddStudentModal';
 import { CourseSectionEditEnrollmentModal } from './CourseSectionEditEnrollmentModal';
 import { CourseSectionStudentDetailsPanel } from './CourseSectionStudentDetailsPanel';
 import { CourseSectionStudentTable } from './CourseSectionStudentTable';
@@ -92,7 +97,7 @@ export function CourseSectionStudentsPanel({
   const selectedStudentFromList =
     selectedEnrollmentId === null
       ? null
-      : students.find((student) => student.enrollmentId === selectedEnrollmentId) ?? null;
+      : (students.find((student) => student.enrollmentId === selectedEnrollmentId) ?? null);
   const selectedStudent = selectedEnrollmentDetailState.student ?? selectedStudentFromList;
 
   const updateEnrollmentInList = useCallback((updatedStudent: CourseSectionStudentResponse) => {

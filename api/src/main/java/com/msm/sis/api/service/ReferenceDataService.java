@@ -10,12 +10,7 @@ import com.msm.sis.api.dto.course.CourseReferenceOptionResponse;
 import com.msm.sis.api.dto.course.CourseSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.reference.CourseSectionReferenceOptionsResponse;
 import com.msm.sis.api.dto.reference.GradeMarkReferenceOptionResponse;
-import com.msm.sis.api.entity.AcademicDepartment;
-import com.msm.sis.api.entity.AcademicSchool;
-import com.msm.sis.api.entity.AcademicSubject;
-import com.msm.sis.api.entity.Course;
-import com.msm.sis.api.entity.CourseVersion;
-import com.msm.sis.api.entity.GradeMark;
+import com.msm.sis.api.entity.*;
 import com.msm.sis.api.repository.AcademicDivisionRepository;
 import com.msm.sis.api.repository.AcademicSchoolRepository;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
@@ -448,50 +443,52 @@ public class ReferenceDataService {
                 .toList();
     }
 
+
+    //TODO -- is there a better way? a place this belongs.
     private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            com.msm.sis.api.entity.AcademicDivision reference
+            AcademicDivision reference
     ) {
         return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
     }
 
     private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            com.msm.sis.api.entity.CourseSectionStatus reference
+            CourseSectionStatus reference
     ) {
         return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
     }
 
     private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            com.msm.sis.api.entity.DeliveryMode reference
+            DeliveryMode reference
     ) {
         return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
     }
 
     private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            com.msm.sis.api.entity.GradingBasis reference
+            GradingBasis reference
     ) {
         return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
     }
 
     private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            com.msm.sis.api.entity.SectionMeetingType reference
+            SectionMeetingType reference
     ) {
         return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
     }
 
     private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            com.msm.sis.api.entity.SectionInstructorRole reference
+            SectionInstructorRole reference
     ) {
         return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
     }
 
     private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            com.msm.sis.api.entity.StudentSectionEnrollmentStatus reference
+            StudentSectionEnrollmentStatus reference
     ) {
         return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
     }
 
     private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            com.msm.sis.api.entity.StudentSectionGradeType reference
+            StudentSectionGradeType reference
     ) {
         return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
     }

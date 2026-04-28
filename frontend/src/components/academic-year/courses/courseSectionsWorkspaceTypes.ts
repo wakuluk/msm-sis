@@ -1,3 +1,5 @@
+// Shared type and initial-state definitions for the section workspace.
+// Describes section previews, editable draft state, search filters, reference loading state, and select options.
 import type { CourseSectionReferenceOptionsResponse } from '@/services/schemas/reference-schemas';
 
 export type CourseSectionPreview = {
