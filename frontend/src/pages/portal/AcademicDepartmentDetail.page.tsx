@@ -15,6 +15,8 @@ import {
   TextInput,
 } from '@mantine/core';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { CourseCreateModal } from '@/components/course/CourseCreateModal';
+import { useCourseCreateReferenceOptions } from '@/components/course/useCourseCreateReferenceOptions';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
@@ -138,6 +140,7 @@ export function AcademicDepartmentDetailPage() {
   const hasValidDepartmentId = Number.isInteger(parsedDepartmentId) && parsedDepartmentId > 0;
   const [isEditing, setIsEditing] = useState(false);
   const [isCreateSubjectOpen, setIsCreateSubjectOpen] = useState(false);
+  const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false);
   const [pageState, setPageState] = useState<AcademicDepartmentDetailPageState>({
     status: 'loading',
   });
@@ -162,6 +165,7 @@ export function AcademicDepartmentDetailPage() {
   const createSubjectForm = useForm<CreateAcademicSubjectRequest>({
     initialValues: initialCreateAcademicSubjectRequest,
   });
+  const courseCreateReferenceOptions = useCourseCreateReferenceOptions();
 
   useEffect(() => {
     if (saveState.status !== 'success') {
@@ -676,6 +680,25 @@ export function AcademicDepartmentDetailPage() {
           </Group>
         </Stack>
       </Modal>
+      <CourseCreateModal
+        {...courseCreateReferenceOptions}
+        initialDepartmentId={detail.departmentId}
+        initialSchoolId={detail.schoolId}
+        opened={isCreateCourseModalOpen}
+        onClose={() => {
+          setIsCreateCourseModalOpen(false);
+        }}
+        onCreated={(courseVersion) => {
+          if (courseVersion.courseId !== null) {
+            navigate(`/academics/courses/${courseVersion.courseId}`, {
+              state: {
+                source: 'department',
+                departmentId: detail.departmentId,
+              },
+            });
+          }
+        }}
+      />
       <Stack gap={0}>
         {saveError ? (
           <RecordPageSection
@@ -815,17 +838,27 @@ export function AcademicDepartmentDetailPage() {
         <RecordPageSection
           title="Academic Subjects"
           action={
-            <Button
-              variant="light"
-              onClick={() => {
-                createSubjectForm.reset();
-                setCreateSubjectState({ status: 'idle' });
-                setIsCreateSubjectOpen(true);
-              }}
-              disabled={isEditing || saveInProgress}
-            >
-              Add subject
-            </Button>
+            <Group gap="sm" wrap="wrap" justify="flex-end">
+              <Button
+                variant="light"
+                onClick={() => {
+                  createSubjectForm.reset();
+                  setCreateSubjectState({ status: 'idle' });
+                  setIsCreateSubjectOpen(true);
+                }}
+                disabled={isEditing || saveInProgress}
+              >
+                Add subject
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsCreateCourseModalOpen(true);
+                }}
+                disabled={isEditing || saveInProgress}
+              >
+                Create course
+              </Button>
+            </Group>
           }
         >
           <Grid.Col span={12}>

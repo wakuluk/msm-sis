@@ -10,6 +10,15 @@ export const CreateCourseVersionRequestSchema = z.object({
 
 export type CreateCourseVersionRequest = z.infer<typeof CreateCourseVersionRequestSchema>;
 
+export const CreateCourseRequestSchema = z.object({
+  subjectId: z.number().int().positive(),
+  courseNumber: z.string().trim().min(1).max(20),
+  active: z.boolean().nullable(),
+  initialVersion: CreateCourseVersionRequestSchema,
+});
+
+export type CreateCourseRequest = z.infer<typeof CreateCourseRequestSchema>;
+
 export const CourseVersionDetailResponseSchema = z.object({
   courseVersionId: z.number(),
   courseId: z.number().nullable(),

@@ -20,6 +20,7 @@ import { AcademicSchoolDetailPage } from './pages/portal/AcademicSchoolDetail.pa
 import { AcademicDepartmentsPage } from './pages/portal/AcademicDepartments.page';
 import { AcademicDepartmentDetailPage } from './pages/portal/AcademicDepartmentDetail.page';
 import { CourseSearchPage } from './pages/portal/CourseSearch.page';
+import { CourseCreatePlaceholderPage } from './pages/portal/CourseCreatePlaceholder.page';
 import { CourseDetailPage } from './pages/portal/CourseDetail.page';
 import { AcademicYearsSearchPage } from './pages/portal/AcademicYearsSearch.page';
 import { AcademicYearCreatePage } from './pages/portal/AcademicYearCreate.page';
@@ -27,6 +28,12 @@ import { AcademicYearDetailPage } from './pages/portal/AcademicYearDetail.page';
 import { AcademicYearCoursesPage } from './pages/portal/AcademicYearCourses.page';
 import { AcademicTermGroupDetailPage } from './pages/portal/AcademicTermGroupDetail.page';
 import { CourseSectionDetailPage } from './pages/portal/CourseSectionDetail.page';
+import {
+  AcademicDegreeRequestsPage,
+  AcademicProgramCreatePage,
+  AcademicProgramsPage,
+  AcademicRequirementsPage,
+} from './pages/portal/AdminProgramPlaceholders.page';
 import {
   StudentCourseHistoryPage,
   StudentAdminTranscriptPage,
@@ -38,6 +45,10 @@ const portalRouteComponents = {
   dashboard: PortalPage,
   catalog: CatalogSearchPage,
   'catalog-advanced': CatalogAdvancedPage,
+  'academic-programs': AcademicProgramsPage,
+  'academic-program-create': AcademicProgramCreatePage,
+  'academic-requirements': AcademicRequirementsPage,
+  'academic-degree-requests': AcademicDegreeRequestsPage,
   'student-transcript': StudentTranscriptPage,
   'student-course-history': StudentCourseHistoryPage,
   'student-degree-tracker': StudentDegreeTrackerPage,
@@ -46,6 +57,7 @@ const portalRouteComponents = {
   'academic-departments': AcademicDepartmentsPage,
   'academic-department-detail': AcademicDepartmentDetailPage,
   'course-search': CourseSearchPage,
+  'course-create': CourseCreatePlaceholderPage,
   'course-detail': CourseDetailPage,
   'academic-years-create': AcademicYearCreatePage,
   'academic-years-detail': AcademicYearDetailPage,

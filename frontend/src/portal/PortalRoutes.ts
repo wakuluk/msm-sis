@@ -10,6 +10,10 @@ export type PortalRouteItemKey =
   | 'catalog'
   | 'catalog-advanced'
   | 'academic-years-search'
+  | 'academic-programs'
+  | 'academic-program-create'
+  | 'academic-requirements'
+  | 'academic-degree-requests'
   | 'student-transcript'
   | 'student-course-history'
   | 'student-degree-tracker'
@@ -18,6 +22,7 @@ export type PortalRouteItemKey =
   | 'academic-departments'
   | 'academic-department-detail'
   | 'course-search'
+  | 'course-create'
   | 'course-detail'
   | 'academic-years-create'
   | 'academic-years-detail'
@@ -35,6 +40,10 @@ export type PortalRoutePath =
   | '/catalog/search'
   | '/catalog/search-advanced'
   | '/academics/academic-years/search'
+  | '/academics/programs'
+  | '/academics/programs/new'
+  | '/academics/requirements'
+  | '/academics/degree-requests'
   | '/academics/transcript'
   | '/academics/course-history'
   | '/academics/degree-tracker'
@@ -43,6 +52,7 @@ export type PortalRoutePath =
   | '/academics/departments'
   | '/academics/departments/:departmentId'
   | '/academics/courses/search'
+  | '/academics/courses/new'
   | '/academics/courses/:courseId'
   | '/academics/academic-years/create'
   | '/academics/academic-years/:academicYearId'
@@ -51,7 +61,7 @@ export type PortalRoutePath =
   | '/academics/academic-sub-term/:subTermId'
   | '/academics/academic-terms/:termId';
 
-export type PortalRouteGroupKey = 'people' | 'catalog' | 'academics' | 'calendar';
+export type PortalRouteGroupKey = 'people' | 'catalog' | 'academics' | 'programs' | 'calendar';
 
 export type PortalRouteItem = {
   kind: 'item';
@@ -225,6 +235,14 @@ export const portalRoutes: PortalRouteNode[] = [
       },
       {
         kind: 'item',
+        key: 'course-create',
+        label: 'Create Course',
+        path: '/academics/courses/new',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
         key: 'course-detail',
         label: 'Course Detail',
         path: '/academics/courses/:courseId',
@@ -270,6 +288,47 @@ export const portalRoutes: PortalRouteNode[] = [
         path: '/academics/academic-terms/:termId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
+      },
+    ],
+  },
+  {
+    kind: 'group',
+    key: 'programs',
+    label: 'Programs',
+    requiredRoles: [PORTAL_ROLES.ADMIN],
+    showInNav: true,
+    children: [
+      {
+        kind: 'item',
+        key: 'academic-programs',
+        label: 'Program Search',
+        path: '/academics/programs',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-program-create',
+        label: 'Create Program',
+        path: '/academics/programs/new',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-requirements',
+        label: 'Requirement Library',
+        path: '/academics/requirements',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-degree-requests',
+        label: 'Degree Requests',
+        path: '/academics/degree-requests',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
       },
     ],
   },

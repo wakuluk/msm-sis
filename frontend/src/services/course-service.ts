@@ -2,6 +2,8 @@ import { getAccessToken } from '@/auth/auth-store';
 import {
   AddCourseSectionStudentRequestSchema,
   type AddCourseSectionStudentRequest,
+  CreateCourseRequestSchema,
+  type CreateCourseRequest,
   CreateCourseSectionRequestSchema,
   type CreateCourseSectionRequest,
   CreateCourseVersionRequestSchema,
@@ -47,6 +49,11 @@ export type GetCourseVersionsByCourseIdRequest = {
 export type CreateCourseVersionRequestArgs = {
   courseId: number;
   request: CreateCourseVersionRequest;
+  signal?: AbortSignal;
+};
+
+export type CreateCourseRequestArgs = {
+  request: CreateCourseRequest;
   signal?: AbortSignal;
 };
 
@@ -602,6 +609,37 @@ export async function createCourseVersion({
   if (!response.ok) {
     throw new Error(
       typeof payload?.message === 'string' ? payload.message : 'Failed to create course version.'
+    );
+  }
+
+  return CourseVersionDetailResponseSchema.parse(payload);
+}
+
+export async function createCourse({
+  request,
+  signal,
+}: CreateCourseRequestArgs): Promise<CourseVersionDetailResponse> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error('Not authenticated.');
+  }
+
+  const response = await fetch('/api/courses', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(CreateCourseRequestSchema.parse(request)),
+    signal,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.message === 'string' ? payload.message : 'Failed to create course.'
     );
   }
 

@@ -1,8 +1,20 @@
 import { useEffect, useState } from 'react';
 import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Alert, Checkbox, Container, Grid, Paper, Select, Stack, TextInput, Title } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  Checkbox,
+  Container,
+  Grid,
+  Group,
+  Paper,
+  Select,
+  Stack,
+  TextInput,
+  Title,
+} from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { SearchFormActions } from '@/components/search/SearchFormActions';
 import { SearchFormSection } from '@/components/search/SearchFormSection';
 import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
@@ -11,10 +23,8 @@ import { SearchResultsStateNotice } from '@/components/search/SearchResultsState
 import { SearchResultsTable } from '@/components/search/SearchResultsTable';
 import type { StringOption } from '@/components/search/SearchQueryControls';
 import { searchCourses } from '@/services/course-service';
-import {
-  getCourseSearchReferenceOptions,
-  mapCodeNameReferenceOptionsToSelectOptions,
-} from '@/services/reference-service';
+import { CourseCreateModal } from '@/components/course/CourseCreateModal';
+import { useCourseCreateReferenceOptions } from '@/components/course/useCourseCreateReferenceOptions';
 import type {
   CourseSearchResponse,
   CourseSearchResultResponse,
@@ -198,9 +208,11 @@ function parseOptionalId(value: string): number | undefined {
 }
 
 export function CourseSearchPage() {
+  const navigate = useNavigate();
   const form = useForm<CourseSearchFilters>({
     initialValues: initialCourseSearchFilters,
   });
+  const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false);
   const [resultsState, setResultsState] = useState<CourseSearchResultsState>({ status: 'idle' });
   const [submittedFilters, setSubmittedFilters] = useState<CourseSearchFilters>(
     initialCourseSearchFilters
@@ -211,15 +223,14 @@ export function CourseSearchPage() {
   const [size, setSize] = useState<CourseSearchSize>('25');
   const [page, setPage] = useState(0);
   const [resultsView, setResultsView] = useState<CourseSearchResultsView>('standard');
-  const [schoolOptions, setSchoolOptions] = useState<ReadonlyArray<StringOption>>([]);
-  const [departmentOptions, setDepartmentOptions] = useState<
-    ReadonlyArray<{ schoolId: number } & StringOption>
-  >([]);
-  const [subjectOptions, setSubjectOptions] = useState<
-    ReadonlyArray<{ departmentId: number } & StringOption>
-  >([]);
-  const [referenceOptionsLoading, setReferenceOptionsLoading] = useState(true);
-  const [referenceOptionsError, setReferenceOptionsError] = useState<string | null>(null);
+  const courseCreateReferenceOptions = useCourseCreateReferenceOptions();
+  const {
+    schoolOptions,
+    departmentOptions,
+    subjectOptions,
+    referenceOptionsError,
+    referenceOptionsLoading,
+  } = courseCreateReferenceOptions;
 
   const tableData =
     resultsState.status === 'success' || resultsState.status === 'empty'
@@ -237,51 +248,6 @@ export function CourseSearchPage() {
       },
     },
   });
-
-  useEffect(() => {
-    let mounted = true;
-    setReferenceOptionsLoading(true);
-    setReferenceOptionsError(null);
-
-    getCourseSearchReferenceOptions()
-      .then((response) => {
-        if (!mounted) {
-          return;
-        }
-
-        setSchoolOptions(mapCodeNameReferenceOptionsToSelectOptions(response.schools));
-        setDepartmentOptions(
-          response.departments.map((department) => ({
-            schoolId: department.schoolId,
-            value: String(department.id),
-            label: `${department.name} (${department.code})`,
-          }))
-        );
-        setSubjectOptions(
-          response.subjects.map((subject) => ({
-            departmentId: subject.departmentId,
-            value: String(subject.id),
-            label: `${subject.name} (${subject.code})`,
-          }))
-        );
-        setReferenceOptionsLoading(false);
-      })
-      .catch((error) => {
-        if (!mounted) {
-          return;
-        }
-
-        setSchoolOptions([]);
-        setDepartmentOptions([]);
-        setSubjectOptions([]);
-        setReferenceOptionsError(getErrorMessage(error, 'Failed to load course search filters.'));
-        setReferenceOptionsLoading(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (!hasSearched) {
@@ -363,7 +329,17 @@ export function CourseSearchPage() {
       <Stack gap="lg">
         <Paper withBorder radius="md" p="lg">
           <Stack gap="lg">
-            <Title order={1}>Course Search</Title>
+            <Group justify="space-between" align="center" gap="md">
+              <Title order={1}>Course Search</Title>
+              <Button
+                type="button"
+                onClick={() => {
+                  setIsCreateCourseModalOpen(true);
+                }}
+              >
+                Create Course
+              </Button>
+            </Group>
             <form
               onSubmit={form.onSubmit((values) => {
                 setSubmittedFilters({ ...values });
@@ -568,6 +544,18 @@ export function CourseSearchPage() {
             )}
           </Stack>
         </Paper>
+        <CourseCreateModal
+          {...courseCreateReferenceOptions}
+          opened={isCreateCourseModalOpen}
+          onClose={() => {
+            setIsCreateCourseModalOpen(false);
+          }}
+          onCreated={(courseVersion) => {
+            if (courseVersion.courseId !== null) {
+              navigate(`/academics/courses/${courseVersion.courseId}`);
+            }
+          }}
+        />
       </Stack>
     </Container>
   );

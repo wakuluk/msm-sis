@@ -1,9 +1,11 @@
 package com.msm.sis.api.service.course;
 
 import com.msm.sis.api.dto.course.*;
+import com.msm.sis.api.entity.AcademicSubject;
 import com.msm.sis.api.entity.Course;
 import com.msm.sis.api.entity.CourseVersion;
 import com.msm.sis.api.mapper.CourseMapper;
+import com.msm.sis.api.repository.AcademicSubjectRepository;
 import com.msm.sis.api.repository.CourseRepository;
 import com.msm.sis.api.repository.CourseVersionRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,9 +28,36 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class CourseService {
+    private final AcademicSubjectRepository academicSubjectRepository;
     private final CourseRepository courseRepository;
     private final CourseVersionRepository courseVersionRepository;
     private final CourseMapper courseMapper;
+
+    @Transactional
+    public CourseVersionDetailResponse createCourse(CreateCourseRequest request) {
+        validateCreateCourseRequest(request);
+        validateCreateCourseVersionRequest(request.initialVersion());
+
+        AcademicSubject subject = academicSubjectRepository.findById(request.subjectId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subject id is invalid."));
+        String courseNumber = request.courseNumber().trim();
+
+        if (courseRepository.existsBySubject_CodeAndCourseNumber(subject.getCode(), courseNumber)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "A course with this subject and course number already exists."
+            );
+        }
+
+        Course course = new Course();
+        course.setSubject(subject);
+        course.setCourseNumber(courseNumber);
+        course.setActive(request.active() == null || request.active());
+
+        Course savedCourse = courseRepository.save(course);
+        CourseVersion savedCourseVersion = createInitialCourseVersion(savedCourse, request.initialVersion());
+        return courseMapper.toCourseVersionDetailResponse(savedCourseVersion);
+    }
 
     @Transactional
     public CourseVersionDetailResponse createCourseVersion(
@@ -63,6 +92,19 @@ public class CourseService {
 
         CourseVersion savedCourseVersion = courseVersionRepository.save(courseVersion);
         return courseMapper.toCourseVersionDetailResponse(savedCourseVersion);
+    }
+
+    private CourseVersion createInitialCourseVersion(Course course, CreateCourseVersionRequest request) {
+        CourseVersion courseVersion = new CourseVersion();
+        courseVersion.setCourse(course);
+        courseVersion.setVersionNumber(1);
+        courseVersion.setTitle(request.title().trim());
+        courseVersion.setCatalogDescription(normalizeCatalogDescription(request.catalogDescription()));
+        courseVersion.setMinCredits(request.minCredits());
+        courseVersion.setMaxCredits(request.maxCredits());
+        courseVersion.setVariableCredit(request.variableCredit());
+        courseVersion.setCurrentVersion(true);
+        return courseVersionRepository.save(courseVersion);
     }
 
     @Transactional(readOnly = true)
@@ -203,6 +245,20 @@ public class CourseService {
                     HttpStatus.BAD_REQUEST,
                     "Min credits and max credits must match for non-variable-credit courses."
             );
+        }
+    }
+
+    private void validateCreateCourseRequest(CreateCourseRequest request) {
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
+        }
+
+        if (request.subjectId() == null || request.subjectId() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subject id must be a positive number.");
+        }
+
+        if (request.courseNumber() == null || request.courseNumber().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Course number is required.");
         }
     }
 
