@@ -28,11 +28,13 @@ import { AcademicYearDetailPage } from './pages/portal/AcademicYearDetail.page';
 import { AcademicYearCoursesPage } from './pages/portal/AcademicYearCourses.page';
 import { AcademicTermGroupDetailPage } from './pages/portal/AcademicTermGroupDetail.page';
 import { CourseSectionDetailPage } from './pages/portal/CourseSectionDetail.page';
+import { ProgramDetailPage } from './pages/portal/ProgramDetail.page';
+import { ProgramSearchPage } from './pages/portal/ProgramSearch.page';
+import { RequirementDetailPage } from './pages/portal/RequirementDetail.page';
+import { RequirementLibraryPage } from './pages/portal/RequirementLibrary.page';
 import {
   AcademicDegreeRequestsPage,
   AcademicProgramCreatePage,
-  AcademicProgramsPage,
-  AcademicRequirementsPage,
 } from './pages/portal/AdminProgramPlaceholders.page';
 import {
   StudentCourseHistoryPage,
@@ -45,9 +47,11 @@ const portalRouteComponents = {
   dashboard: PortalPage,
   catalog: CatalogSearchPage,
   'catalog-advanced': CatalogAdvancedPage,
-  'academic-programs': AcademicProgramsPage,
+  'academic-programs': ProgramSearchPage,
   'academic-program-create': AcademicProgramCreatePage,
-  'academic-requirements': AcademicRequirementsPage,
+  'academic-program-detail': ProgramDetailPage,
+  'academic-requirements': RequirementLibraryPage,
+  'academic-requirement-detail': RequirementDetailPage,
   'academic-degree-requests': AcademicDegreeRequestsPage,
   'student-transcript': StudentTranscriptPage,
   'student-course-history': StudentCourseHistoryPage,

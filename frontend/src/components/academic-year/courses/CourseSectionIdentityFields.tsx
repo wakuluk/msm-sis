@@ -90,10 +90,11 @@ export function CourseSectionIdentityFields({
             value={draft.status}
             disabled={fieldsDisabled || referencesAreLoading}
             styles={readOnlyInputStyles as SelectProps['styles']}
+            allowDeselect={false}
             onChange={(value) => {
               setDraft((current) => ({
                 ...current,
-                status: value,
+                status: value ?? current.status,
               }));
             }}
           />

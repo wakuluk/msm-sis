@@ -75,6 +75,17 @@ export type CourseSearchReferenceOptionsResponse = z.infer<
   typeof CourseSearchReferenceOptionsResponseSchema
 >;
 
+export const ProgramReferenceOptionsResponseSchema = z.object({
+  programTypes: z.array(CatalogReferenceOptionSchema),
+  degreeTypes: z.array(CatalogReferenceOptionSchema),
+  schools: z.array(CatalogReferenceOptionSchema),
+  departments: z.array(AcademicDepartmentReferenceOptionSchema),
+});
+
+export type ProgramReferenceOptionsResponse = z.infer<
+  typeof ProgramReferenceOptionsResponseSchema
+>;
+
 export const CourseReferenceOptionSchema = z.object({
   courseId: z.number(),
   schoolId: z.number(),

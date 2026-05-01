@@ -5,6 +5,7 @@ import com.msm.sis.api.dto.catalog.CatalogAdvancedSearchReferenceOptionsResponse
 import com.msm.sis.api.dto.catalog.CatalogSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CoursePickerReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CourseSearchReferenceOptionsResponse;
+import com.msm.sis.api.dto.program.ProgramReferenceOptionsResponse;
 import com.msm.sis.api.dto.reference.CourseSectionReferenceOptionsResponse;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
 import com.msm.sis.api.service.ReferenceDataService;
@@ -59,6 +60,16 @@ public class ReferenceController {
     )
     public ResponseEntity<CourseSearchReferenceOptionsResponse> getCourseSearchReferenceOptions() {
         return ResponseEntity.ok(referenceDataService.getCourseSearchReferenceOptions());
+    }
+
+    @GetMapping("/program-options")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Get program reference options",
+            description = "Returns active program types, degree types, schools, and departments used by program workflows."
+    )
+    public ResponseEntity<ProgramReferenceOptionsResponse> getProgramReferenceOptions() {
+        return ResponseEntity.ok(referenceDataService.getProgramReferenceOptions());
     }
 
     @GetMapping("/course-picker-options")

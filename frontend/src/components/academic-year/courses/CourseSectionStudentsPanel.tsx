@@ -237,6 +237,7 @@ export function CourseSectionStudentsPanel({
         sectionId: selectedSection.sectionId,
         request: {
           studentId: values.studentId,
+          statusCode: values.statusCode,
           gradingBasisCode: values.gradingBasisCode,
           creditsAttempted: values.creditsAttempted,
           capacityOverride: values.capacityOverride,
@@ -392,6 +393,7 @@ export function CourseSectionStudentsPanel({
         opened={addStudentModalOpened}
         capacity={capacity}
         registeredCount={registeredCount}
+        waitlistAllowed={selectedSection.waitlistAllowed}
         gradingBasisOptions={gradingBasisOptions}
         defaultCredits={selectedSection.credits}
         defaultGradingBasisCode={selectedSection.gradingBasisCode}

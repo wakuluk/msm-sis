@@ -26,6 +26,7 @@ type CourseSectionAddStudentModalProps = {
   opened: boolean;
   capacity: number;
   registeredCount: number;
+  waitlistAllowed: boolean;
   gradingBasisOptions: SelectOption[];
   defaultCredits: number | null;
   defaultGradingBasisCode: string | null;
@@ -37,6 +38,7 @@ type CourseSectionAddStudentModalProps = {
 
 export type AddStudentFormValues = {
   studentId: number;
+  statusCode: string | null;
   gradingBasisCode: string | null;
   creditsAttempted: number | null;
   capacityOverride: boolean;
@@ -128,6 +130,7 @@ export function CourseSectionAddStudentModal({
   opened,
   capacity,
   registeredCount,
+  waitlistAllowed,
   gradingBasisOptions,
   defaultCredits,
   defaultGradingBasisCode,
@@ -148,14 +151,20 @@ export function CourseSectionAddStudentModal({
   });
   const [gradingBasisCode, setGradingBasisCode] = useState<string | null>(defaultGradingBasisCode);
   const [creditsAttempted, setCreditsAttempted] = useState<number | string>(defaultCredits ?? '');
+  const [statusCode, setStatusCode] = useState<string | null>(null);
   const [capacityOverride, setCapacityOverride] = useState(false);
   const [manualAddReason, setManualAddReason] = useState('');
   const hasCapacity = registeredCount < capacity;
-  const requiresCapacityOverride = !hasCapacity;
+  const willWaitlist = statusCode === 'WAITLISTED';
+  const requiresCapacityOverride = !hasCapacity && !willWaitlist;
   const canSubmit =
     selectedStudent !== null &&
     (!requiresCapacityOverride || capacityOverride) &&
     (!capacityOverride || manualAddReason.trim().length > 0);
+  const statusOptions = [
+    { value: 'REGISTERED', label: 'Registered' },
+    ...(waitlistAllowed ? [{ value: 'WAITLISTED', label: 'Waitlisted' }] : []),
+  ];
   const dropdownContent = useMemo(() => {
     if (studentSearchState.status === 'loading') {
       return <Combobox.Empty>Searching...</Combobox.Empty>;
@@ -195,9 +204,10 @@ export function CourseSectionAddStudentModal({
     setStudentSearchState({ status: 'idle', results: [] });
     setGradingBasisCode(defaultGradingBasisCode);
     setCreditsAttempted(defaultCredits ?? '');
+    setStatusCode(!hasCapacity && waitlistAllowed ? 'WAITLISTED' : 'REGISTERED');
     setCapacityOverride(false);
     setManualAddReason('');
-  }, [defaultCredits, defaultGradingBasisCode, opened]);
+  }, [defaultCredits, defaultGradingBasisCode, hasCapacity, opened, waitlistAllowed]);
 
   useEffect(() => {
     if (!opened || searchValue.trim().length < 2 || selectedStudent) {
@@ -242,8 +252,10 @@ export function CourseSectionAddStudentModal({
     <Modal opened={opened} onClose={onClose} title="Add Student" size="lg" centered>
       <Stack gap="md">
         {!hasCapacity ? (
-          <Alert color="yellow" title="Section is at capacity">
-            Adding another registered student will require a capacity override.
+          <Alert color={waitlistAllowed ? 'blue' : 'yellow'} title="Section is at capacity">
+            {waitlistAllowed
+              ? 'Students can be added to the waitlist for this section.'
+              : 'Adding another registered student will require a capacity override.'}
           </Alert>
         ) : null}
 
@@ -305,6 +317,20 @@ export function CourseSectionAddStudentModal({
 
         <Group grow align="flex-start">
           <Select
+            label="Enrollment status"
+            data={statusOptions}
+            value={statusCode}
+            allowDeselect={false}
+            onChange={(value) => {
+              const nextStatusCode = value ?? 'REGISTERED';
+              setStatusCode(nextStatusCode);
+
+              if (nextStatusCode === 'WAITLISTED') {
+                setCapacityOverride(false);
+              }
+            }}
+          />
+          <Select
             label="Grading basis"
             placeholder="Default from section"
             data={gradingBasisOptions}
@@ -321,13 +347,15 @@ export function CourseSectionAddStudentModal({
           />
         </Group>
 
-        <Checkbox
-          label={`Allow capacity override (${registeredCount}/${capacity} registered)`}
-          checked={capacityOverride}
-          onChange={(event) => {
-            setCapacityOverride(event.currentTarget.checked);
-          }}
-        />
+        {!willWaitlist ? (
+          <Checkbox
+            label={`Allow capacity override (${registeredCount}/${capacity} registered)`}
+            checked={capacityOverride}
+            onChange={(event) => {
+              setCapacityOverride(event.currentTarget.checked);
+            }}
+          />
+        ) : null}
 
         {capacityOverride ? (
           <Textarea
@@ -362,6 +390,7 @@ export function CourseSectionAddStudentModal({
 
               onAdd({
                 studentId: selectedStudent.studentId,
+                statusCode,
                 gradingBasisCode,
                 creditsAttempted:
                   typeof creditsAttempted === 'number'

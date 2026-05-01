@@ -12,7 +12,9 @@ export type PortalRouteItemKey =
   | 'academic-years-search'
   | 'academic-programs'
   | 'academic-program-create'
+  | 'academic-program-detail'
   | 'academic-requirements'
+  | 'academic-requirement-detail'
   | 'academic-degree-requests'
   | 'student-transcript'
   | 'student-course-history'
@@ -42,7 +44,9 @@ export type PortalRoutePath =
   | '/academics/academic-years/search'
   | '/academics/programs'
   | '/academics/programs/new'
+  | '/academics/programs/:programId'
   | '/academics/requirements'
+  | '/academics/requirements/:requirementId'
   | '/academics/degree-requests'
   | '/academics/transcript'
   | '/academics/course-history'
@@ -316,11 +320,27 @@ export const portalRoutes: PortalRouteNode[] = [
       },
       {
         kind: 'item',
+        key: 'academic-program-detail',
+        label: 'Program Detail',
+        path: '/academics/programs/:programId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
         key: 'academic-requirements',
         label: 'Requirement Library',
         path: '/academics/requirements',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-requirement-detail',
+        label: 'Requirement Detail',
+        path: '/academics/requirements/:requirementId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
       },
       {
         kind: 'item',
