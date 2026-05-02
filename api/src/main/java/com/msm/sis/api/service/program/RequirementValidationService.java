@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
+import static com.msm.sis.api.util.ValidationUtils.requireRequestBody;
 
 @Service
 @RequiredArgsConstructor
@@ -33,19 +34,11 @@ public class RequirementValidationService {
     private final RequirementRepository requirementRepository;
 
     public void validatePageRequest(int page, int size) {
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
-        }
-
-        if (size < 1 || size > 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size must be between 1 and 100.");
-        }
+        com.msm.sis.api.util.PagingUtils.validatePageRequest(page, size, 100);
     }
 
     public void validateCreateRequirementRequest(CreateRequirementRequest request) {
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
-        }
+        requireRequestBody(request);
 
         if (trimToNull(request.code()) == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Requirement code is required.");

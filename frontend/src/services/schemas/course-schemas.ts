@@ -158,6 +158,7 @@ export const CreateCourseSectionRequestSchema = z.object({
   gradingBasisCode: z.string().trim().min(1).max(50),
   credits: z.number().nonnegative(),
   capacity: z.number().int().nonnegative(),
+  hardCapacity: z.number().int().nonnegative().nullable(),
   waitlistAllowed: z.boolean(),
   startDate: z.string().nullable(),
   endDate: z.string().nullable(),
@@ -177,6 +178,7 @@ export const CourseSectionEnrollmentSummaryResponseSchema = z.object({
   enrolledCount: z.number(),
   waitlistedCount: z.number(),
   capacity: z.number(),
+  hardCapacity: z.number().nullable(),
   waitlistAllowed: z.boolean(),
 });
 
@@ -242,6 +244,7 @@ export const CourseSectionListResultResponseSchema = z.object({
   gradingBasisName: z.string().nullable(),
   credits: z.number().nullable(),
   capacity: z.number().nullable(),
+  hardCapacity: z.number().nullable(),
   waitlistAllowed: z.boolean(),
   startDate: z.string().nullable(),
   endDate: z.string().nullable(),
@@ -297,6 +300,7 @@ export const CourseSectionDetailResponseSchema = z.object({
   gradingBasisName: z.string().nullable(),
   credits: z.number().nullable(),
   capacity: z.number().nullable(),
+  hardCapacity: z.number().nullable(),
   waitlistAllowed: z.boolean(),
   startDate: z.string().nullable(),
   endDate: z.string().nullable(),

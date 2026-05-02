@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentProps } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from '@mantine/form';
 import { type ColumnDef, getCoreRowModel, type Row, useReactTable } from '@tanstack/react-table';
 import {
@@ -7,7 +7,6 @@ import {
   Button,
   Grid,
   Group,
-  Modal,
   Stack,
   Switch,
   Table,
@@ -15,11 +14,13 @@ import {
   TextInput,
 } from '@mantine/core';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { CreateAcademicSubjectModal } from '@/components/academic-department/CreateAcademicSubjectModal';
 import { CourseCreateModal } from '@/components/course/CourseCreateModal';
 import { useCourseCreateReferenceOptions } from '@/components/course/useCourseCreateReferenceOptions';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { ReadOnlyField } from '@/components/fields/ReadOnlyField';
 import { SearchResultsStateNotice } from '@/components/search/SearchResultsStateNotice';
 import { SearchResultsTable } from '@/components/search/SearchResultsTable';
 import {
@@ -48,6 +49,8 @@ import {
   initialCreateAcademicSubjectRequest,
 } from '@/services/schemas/academic-department-schemas';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
+import { getErrorMessage } from '@/utils/errors';
+import { displayValue } from '@/utils/form-values';
 import classes from './AcademicDepartmentDetail.module.css';
 
 type AcademicDepartmentDetailPageState =
@@ -78,45 +81,6 @@ type AcademicDepartmentDetailLocationState = {
 };
 
 const emptyAcademicDepartmentSubjects: AcademicDepartmentSubjectResponse[] = [];
-
-function displayValue(value: boolean | number | string | null | undefined): string {
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-
-  if (value === null || value === undefined || value === '') {
-    return '—';
-  }
-
-  return String(value);
-}
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
-
-function ReadOnlyField({
-  label,
-  value,
-  span = { base: 12, md: 6 },
-}: {
-  label: string;
-  value: string;
-  span?: ComponentProps<typeof Grid.Col>['span'];
-}) {
-  const isEmptyValue = value === '—';
-
-  return (
-    <Grid.Col span={span}>
-      <TextInput
-        label={label}
-        value={isEmptyValue ? '' : value}
-        placeholder={isEmptyValue ? '—' : undefined}
-        readOnly
-      />
-    </Grid.Col>
-  );
-}
 
 export function AcademicDepartmentDetailPage() {
   const navigate = useNavigate();
@@ -641,45 +605,16 @@ export function AcademicDepartmentDetailPage() {
         </Group>
       }
     >
-      <Modal
+      <CreateAcademicSubjectModal
         opened={isCreateSubjectOpen}
         onClose={closeCreateSubjectModal}
-        title="Add academic subject"
-        centered
-      >
-        <Stack gap="md">
-          {createSubjectError ? (
-            <Alert color="red" title="Unable to create academic subject">
-              {createSubjectError}
-            </Alert>
-          ) : null}
-          <TextInput
-            withAsterisk
-            label="Code"
-            maxLength={20}
-            {...createSubjectForm.getInputProps('code')}
-          />
-          <TextInput
-            withAsterisk
-            label="Name"
-            maxLength={255}
-            {...createSubjectForm.getInputProps('name')}
-          />
-          <Group justify="flex-end">
-            <Button variant="default" onClick={closeCreateSubjectModal} disabled={createSubjectInProgress}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                void handleCreateSubject(detail);
-              }}
-              loading={createSubjectInProgress}
-            >
-              Add subject
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        createError={createSubjectError}
+        form={createSubjectForm}
+        isSaving={createSubjectInProgress}
+        onSubmit={() => {
+          void handleCreateSubject(detail);
+        }}
+      />
       <CourseCreateModal
         {...courseCreateReferenceOptions}
         initialDepartmentId={detail.departmentId}

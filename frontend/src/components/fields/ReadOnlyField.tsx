@@ -12,14 +12,14 @@ export function ReadOnlyField({
   value,
   span = { base: 12, md: 6 },
 }: ReadOnlyFieldProps) {
-  const isEmptyValue = value === '—';
+  const isEmptyValue = value === '—' || value === '-';
 
   return (
     <Grid.Col span={span}>
       <TextInput
         label={label}
         value={isEmptyValue ? '' : value}
-        placeholder={isEmptyValue ? '—' : undefined}
+        placeholder={isEmptyValue ? value : undefined}
         readOnly
       />
     </Grid.Col>

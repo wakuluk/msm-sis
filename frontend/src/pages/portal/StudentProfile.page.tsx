@@ -3,10 +3,13 @@ import { useForm } from '@mantine/form';
 import { Alert, Badge, Button, Grid, Group, Loader, Stack, Text, TextInput } from '@mantine/core';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { ReadOnlyField } from '@/components/fields/ReadOnlyField';
 import {
   fetchStudentProfile,
   type StudentProfileResponse,
 } from '@/services/student-profile-service';
+import { getErrorMessage } from '@/utils/errors';
+import { displayValue } from '@/utils/form-values';
 
 const editableFieldKeys = [
   'preferredName',
@@ -42,10 +45,6 @@ function formatValue(value: number | string | null | undefined) {
   }
 
   return String(value);
-}
-
-function displayValue(value: number | string | null | undefined) {
-  return formatValue(value) || '—';
 }
 
 function formatDate(value: string | null) {
@@ -97,33 +96,6 @@ function hasEditableProfileChanges(
   editableValues: EditableStudentProfileValues
 ) {
   return editableFieldKeys.some((key) => (profile[key] ?? '') !== editableValues[key]);
-}
-
-function getErrorMessage(error: unknown, fallbackMessage: string) {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
-
-function ReadOnlyField({
-  label,
-  value,
-  span = { base: 12, md: 6 },
-}: {
-  label: string;
-  value: string;
-  span?: GridSpan;
-}) {
-  const isEmptyValue = value === '—';
-
-  return (
-    <Grid.Col span={span}>
-      <TextInput
-        label={label}
-        value={isEmptyValue ? '' : value}
-        placeholder={isEmptyValue ? '—' : undefined}
-        readOnly
-      />
-    </Grid.Col>
-  );
 }
 
 function EditableField({

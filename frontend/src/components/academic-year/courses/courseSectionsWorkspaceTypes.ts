@@ -22,6 +22,7 @@ export type CourseSectionPreview = {
   room: string;
   credits: number | null;
   capacity: number;
+  hardCapacity: number | null;
   enrolled: number;
   waitlistAllowed: boolean;
   meetings: ReadonlyArray<{
@@ -59,6 +60,7 @@ export type CourseSectionDraft = {
   meetingSchedule: Record<string, MeetingDaySchedule>;
   room: string;
   capacity: string;
+  hardCapacity: string;
   credits: string | null;
   status: string | null;
   waitlistAllowed: boolean;
@@ -121,6 +123,7 @@ export const initialCourseSectionDraft: CourseSectionDraft = {
   meetingSchedule: initialMeetingSchedule,
   room: '',
   capacity: '',
+  hardCapacity: '',
   credits: null,
   status: 'DRAFT',
   waitlistAllowed: false,

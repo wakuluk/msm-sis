@@ -3,6 +3,7 @@ import {
   getStudentReferenceOptions,
   mapReferenceOptionsToSelectOptions,
 } from '@/services/reference-service';
+import { getErrorMessage } from '@/utils/errors';
 
 export type StudentReferenceSelectOption = {
   value: string;
@@ -29,10 +30,6 @@ export type UseStudentReferenceOptionsResult = {
 };
 
 const emptyOptions: StudentReferenceSelectOption[] = [];
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Failed to load student reference options.';
-}
 
 export function useStudentReferenceOptions(
   options: { enabled?: boolean } = {}
@@ -72,7 +69,7 @@ export function useStudentReferenceOptions(
           requestInFlightRef.current = false;
           setState({
             status: 'error',
-            message: getErrorMessage(error),
+            message: getErrorMessage(error, 'Failed to load student reference options.'),
           });
         }
       }

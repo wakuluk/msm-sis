@@ -8,12 +8,11 @@ import com.msm.sis.api.dto.student.StudentSearchResponse;
 import com.msm.sis.api.dto.student.StudentSearchResultResponse;
 import com.msm.sis.api.entity.Address;
 import com.msm.sis.api.entity.Student;
-import com.msm.sis.api.patch.PatchValue;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
-import java.util.function.Consumer;
-
+import static com.msm.sis.api.patch.PatchUtils.apply;
+import static com.msm.sis.api.patch.PatchUtils.applyTrimmed;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 @Component
@@ -142,16 +141,16 @@ public class StudentMapper {
         applyTrimmed(request.getFirstName(), student::setFirstName);
         applyTrimmed(request.getMiddleName(), student::setMiddleName);
         applyTrimmed(request.getNameSuffix(), student::setNameSuffix);
-        applyDirect(request.getGenderId(), student::setGenderId);
-        applyDirect(request.getEthnicityId(), student::setEthnicityId);
-        applyDirect(request.getClassStandingId(), student::setClassStandingId);
+        apply(request.getGenderId(), student::setGenderId);
+        apply(request.getEthnicityId(), student::setEthnicityId);
+        apply(request.getClassStandingId(), student::setClassStandingId);
         applyTrimmed(request.getPreferredName(), student::setPreferredName);
-        applyDirect(request.getDateOfBirth(), student::setDateOfBirth);
-        applyDirect(request.getEstimatedGradDate(), student::setEstimatedGradDate);
+        apply(request.getDateOfBirth(), student::setDateOfBirth);
+        apply(request.getEstimatedGradDate(), student::setEstimatedGradDate);
         applyTrimmed(request.getAltId(), student::setAltId);
         applyTrimmed(request.getEmail(), student::setEmail);
         applyTrimmed(request.getPhone(), student::setPhone);
-        applyDirect(request.getDisabled(), student::setDisabled);
+        apply(request.getDisabled(), student::setDisabled);
     }
 
     private String buildFullName(Student student) {
@@ -176,15 +175,4 @@ public class StudentMapper {
         fullName.append(trimmedValue);
     }
 
-    private <T> void applyDirect(PatchValue<T> value, Consumer<T> consumer) {
-        if (value.isPresent()) {
-            consumer.accept(value.orElse(null));
-        }
-    }
-
-    private void applyTrimmed(PatchValue<String> value, Consumer<String> consumer) {
-        if (value.isPresent()) {
-            consumer.accept(trimToNull(value.orElse(null)));
-        }
-    }
 }

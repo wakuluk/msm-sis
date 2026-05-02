@@ -11,10 +11,16 @@ INSERT INTO delivery_mode (code, name, sort_order) VALUES
     ('ONLINE', 'Online', 2),
     ('HYBRID', 'Hybrid', 3);
 
-INSERT INTO grading_basis (code, name, sort_order) VALUES
-    ('GRADED', 'Graded', 1),
-    ('PASS_FAIL', 'Pass/Fail', 2),
-    ('AUDIT', 'Audit', 3);
+INSERT INTO grading_basis (
+    code,
+    name,
+    sort_order,
+    allowed_for_course_sections,
+    allowed_for_student_enrollments
+) VALUES
+    ('GRADED', 'Graded', 1, TRUE, TRUE),
+    ('PASS_FAIL', 'Pass/Fail', 2, TRUE, TRUE),
+    ('AUDIT', 'Audit', 3, FALSE, TRUE);
 
 INSERT INTO section_meeting_type (code, name, sort_order) VALUES
     ('CLASS', 'Class', 1),

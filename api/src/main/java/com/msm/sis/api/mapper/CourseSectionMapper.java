@@ -31,8 +31,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 
+import static com.msm.sis.api.patch.PatchUtils.apply;
+import static com.msm.sis.api.patch.PatchUtils.applyTrimmed;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 @Component
@@ -89,6 +90,7 @@ public class CourseSectionMapper {
                 gradingBasis == null ? null : gradingBasis.getName(),
                 section.getCredits(),
                 section.getCapacity(),
+                section.getHardCapacity(),
                 section.isWaitlistAllowed(),
                 section.getStartDate(),
                 section.getEndDate(),
@@ -140,6 +142,7 @@ public class CourseSectionMapper {
                 gradingBasis == null ? null : gradingBasis.getName(),
                 section.getCredits(),
                 section.getCapacity(),
+                section.getHardCapacity(),
                 section.isWaitlistAllowed(),
                 section.getStartDate(),
                 section.getEndDate(),
@@ -199,19 +202,20 @@ public class CourseSectionMapper {
             PatchValue<DeliveryMode> deliveryMode,
             PatchValue<GradingBasis> gradingBasis
     ) {
-        applyDirect(request.getSectionLetter(), ignored -> section.setSectionLetter(finalSectionLetter));
+        apply(request.getSectionLetter(), ignored -> section.setSectionLetter(finalSectionLetter));
         applyTrimmed(request.getTitle(), section::setTitle);
-        applyDirect(request.getHonors(), section::setHonors);
-        applyDirect(request.getLab(), section::setLab);
-        applyDirect(status, section::setStatus);
-        applyDirect(academicDivision, section::setAcademicDivision);
-        applyDirect(deliveryMode, section::setDeliveryMode);
-        applyDirect(gradingBasis, section::setGradingBasis);
-        applyDirect(request.getCredits(), section::setCredits);
-        applyDirect(request.getCapacity(), section::setCapacity);
-        applyDirect(request.getWaitlistAllowed(), section::setWaitlistAllowed);
-        applyDirect(request.getStartDate(), section::setStartDate);
-        applyDirect(request.getEndDate(), section::setEndDate);
+        apply(request.getHonors(), section::setHonors);
+        apply(request.getLab(), section::setLab);
+        apply(status, section::setStatus);
+        apply(academicDivision, section::setAcademicDivision);
+        apply(deliveryMode, section::setDeliveryMode);
+        apply(gradingBasis, section::setGradingBasis);
+        apply(request.getCredits(), section::setCredits);
+        apply(request.getCapacity(), section::setCapacity);
+        apply(request.getHardCapacity(), section::setHardCapacity);
+        apply(request.getWaitlistAllowed(), section::setWaitlistAllowed);
+        apply(request.getStartDate(), section::setStartDate);
+        apply(request.getEndDate(), section::setEndDate);
         applyTrimmed(request.getLinkedGroupCode(), section::setLinkedGroupCode);
         applyTrimmed(request.getNotes(), section::setNotes);
     }
@@ -247,6 +251,7 @@ public class CourseSectionMapper {
                 enrolledCount,
                 waitlistedCount,
                 section.getCapacity() == null ? 0 : section.getCapacity(),
+                section.getHardCapacity(),
                 section.isWaitlistAllowed()
         );
     }
@@ -406,15 +411,4 @@ public class CourseSectionMapper {
         return subject.getCode() + course.getCourseNumber();
     }
 
-    private <T> void applyDirect(PatchValue<T> value, Consumer<T> consumer) {
-        if (value.isPresent()) {
-            consumer.accept(value.orElse(null));
-        }
-    }
-
-    private void applyTrimmed(PatchValue<String> value, Consumer<String> consumer) {
-        if (value.isPresent()) {
-            consumer.accept(trimToNull(value.orElse(null)));
-        }
-    }
 }

@@ -1,16 +1,5 @@
 import type { AcademicYearCreateResponse } from '@/services/schemas/academic-years-schemas';
-
-export function displayValue(value: boolean | number | string | null | undefined): string {
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-
-  if (value === null || value === undefined || value === '') {
-    return '—';
-  }
-
-  return String(value);
-}
+export { displayValue } from '@/utils/form-values';
 
 export function displayDate(value: string | null | undefined): string {
   if (!value) {

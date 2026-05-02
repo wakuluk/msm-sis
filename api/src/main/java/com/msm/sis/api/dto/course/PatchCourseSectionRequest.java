@@ -22,6 +22,7 @@ public class PatchCourseSectionRequest {
     private PatchValue<String> gradingBasisCode = PatchValue.absent();
     private PatchValue<BigDecimal> credits = PatchValue.absent();
     private PatchValue<Integer> capacity = PatchValue.absent();
+    private PatchValue<Integer> hardCapacity = PatchValue.absent();
     private PatchValue<Boolean> waitlistAllowed = PatchValue.absent();
     private PatchValue<LocalDate> startDate = PatchValue.absent();
     private PatchValue<LocalDate> endDate = PatchValue.absent();

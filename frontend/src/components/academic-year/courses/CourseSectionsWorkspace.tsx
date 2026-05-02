@@ -166,8 +166,22 @@ export function CourseSectionsWorkspace({
     () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.deliveryModes ?? []),
     [referenceOptions]
   );
-  const gradingBasisOptions = useMemo(
-    () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.gradingBases ?? []),
+  const sectionGradingBasisOptions = useMemo(
+    () =>
+      mapReferenceOptionsToCodeSelectOptions(
+        (referenceOptions?.gradingBases ?? []).filter(
+          (gradingBasis) => gradingBasis.allowedForCourseSections
+        )
+      ),
+    [referenceOptions]
+  );
+  const enrollmentGradingBasisOptions = useMemo(
+    () =>
+      mapReferenceOptionsToCodeSelectOptions(
+        (referenceOptions?.gradingBases ?? []).filter(
+          (gradingBasis) => gradingBasis.allowedForStudentEnrollments
+        )
+      ),
     [referenceOptions]
   );
   const creditOptions = useMemo(
@@ -550,7 +564,8 @@ export function CourseSectionsWorkspace({
         selectedStatusName={selectedStatusName}
         sectionStatusOptions={sectionStatusOptions}
         academicDivisionOptions={academicDivisionOptions}
-        gradingBasisOptions={gradingBasisOptions}
+        sectionGradingBasisOptions={sectionGradingBasisOptions}
+        enrollmentGradingBasisOptions={enrollmentGradingBasisOptions}
         deliveryModeOptions={deliveryModeOptions}
         creditOptions={creditOptions}
         referencesAreLoading={referencesAreLoading}

@@ -46,6 +46,7 @@ import {
   type AcademicYearStatusShiftDirection,
   type AcademicYearStatusesResponse,
 } from '@/services/schemas/academic-years-schemas';
+import { getErrorMessage } from '@/utils/errors';
 
 type AcademicYearDetailLocationState = {
   academicYear?: AcademicYearCreateResponse;
@@ -79,10 +80,6 @@ type AcademicYearCoursesSummaryState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
   | { status: 'success'; summary: AcademicYearCoursesSummaryResponse };
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
 
 function getAcademicYearStatusCode(detail: AcademicYearCreateResponse): string | null {
   return (

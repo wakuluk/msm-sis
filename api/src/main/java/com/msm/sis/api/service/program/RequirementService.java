@@ -5,25 +5,14 @@ import com.msm.sis.api.dto.program.CreateRequirementRequest;
 import com.msm.sis.api.dto.program.PatchProgramVersionRequirementRequest;
 import com.msm.sis.api.dto.program.PatchRequirementRequest;
 import com.msm.sis.api.dto.program.ProgramVersionRequirementResponse;
-import com.msm.sis.api.dto.program.RequirementCourseResponse;
-import com.msm.sis.api.dto.program.RequirementCourseRuleResponse;
 import com.msm.sis.api.dto.program.RequirementDetailResponse;
 import com.msm.sis.api.dto.program.RequirementSearchCriteria;
 import com.msm.sis.api.dto.program.RequirementSearchResponse;
 import com.msm.sis.api.dto.program.RequirementSearchResultResponse;
-import com.msm.sis.api.dto.program.UpsertRequirementCourseRequest;
-import com.msm.sis.api.dto.program.UpsertRequirementCourseRuleRequest;
-import com.msm.sis.api.entity.AcademicDepartment;
-import com.msm.sis.api.entity.AcademicSubject;
-import com.msm.sis.api.entity.Course;
 import com.msm.sis.api.entity.ProgramVersion;
 import com.msm.sis.api.entity.ProgramVersionRequirement;
 import com.msm.sis.api.entity.Requirement;
-import com.msm.sis.api.entity.RequirementCourse;
-import com.msm.sis.api.entity.RequirementCourseRule;
-import com.msm.sis.api.mapper.ProgramMapper;
-import com.msm.sis.api.repository.AcademicDepartmentRepository;
-import com.msm.sis.api.repository.CourseRepository;
+import com.msm.sis.api.mapper.RequirementMapper;
 import com.msm.sis.api.repository.ProgramVersionRepository;
 import com.msm.sis.api.repository.ProgramVersionRequirementRepository;
 import com.msm.sis.api.repository.RequirementCourseRepository;
@@ -37,10 +26,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
+import static com.msm.sis.api.util.TextUtils.containsIgnoreCase;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
+import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
+import static com.msm.sis.api.util.ValidationUtils.requireRequestBody;
 
 @Service
 @RequiredArgsConstructor
@@ -50,9 +41,8 @@ public class RequirementService {
     private static final String DEPARTMENT_LEVEL_COURSES = "DEPARTMENT_LEVEL_COURSES";
     private static final String MANUAL = "MANUAL";
 
-    private final AcademicDepartmentRepository academicDepartmentRepository;
-    private final CourseRepository courseRepository;
-    private final ProgramMapper programMapper;
+    private final RequirementComponentService requirementComponentService;
+    private final RequirementMapper requirementMapper;
     private final ProgramVersionRepository programVersionRepository;
     private final ProgramVersionRequirementRepository programVersionRequirementRepository;
     private final RequirementRepository requirementRepository;
@@ -84,7 +74,7 @@ public class RequirementService {
 
         List<RequirementSearchResultResponse> results = filteredRequirements.subList(fromIndex, toIndex)
                 .stream()
-                .map(this::toRequirementSearchResultResponse)
+                .map(this::mapRequirementSearchResultResponse)
                 .toList();
 
         return new RequirementSearchResponse(results, page, size, totalElements, totalPages);
@@ -95,24 +85,10 @@ public class RequirementService {
         Requirement requirement = findRequirement(requirementId);
         List<Long> requirementIds = List.of(requirement.getId());
 
-        return new RequirementDetailResponse(
-                requirement.getId(),
-                requirement.getCode(),
-                requirement.getName(),
-                requirement.getRequirementType(),
-                requirement.getDescription(),
-                requirement.getMinimumCredits(),
-                requirement.getMinimumCourses(),
-                requirement.getCourseMatchMode(),
-                requirement.getMinimumGrade(),
-                requirementCourseRepository.findCoursesForRequirements(requirementIds).stream()
-                        .map(this::toRequirementCourseResponse)
-                        .toList(),
-                requirementCourseRuleRepository.findRulesForRequirements(requirementIds).stream()
-                        .map(this::toRequirementCourseRuleResponse)
-                        .toList(),
-                requirement.getCreatedAt(),
-                requirement.getUpdatedAt()
+        return requirementMapper.toRequirementDetailResponse(
+                requirement,
+                requirementCourseRepository.findCoursesForRequirements(requirementIds),
+                requirementCourseRuleRepository.findRulesForRequirements(requirementIds)
         );
     }
 
@@ -134,17 +110,15 @@ public class RequirementService {
         normalizeRequirementFieldsForType(requirement);
 
         Requirement savedRequirement = requirementRepository.save(requirement);
-        replaceRequirementCourses(savedRequirement, request.requirementCourses());
-        replaceRequirementCourseRules(savedRequirement, request.requirementCourseRules());
+        requirementComponentService.replaceRequirementCourses(savedRequirement, request.requirementCourses());
+        requirementComponentService.replaceRequirementCourseRules(savedRequirement, request.requirementCourseRules());
 
-        return toRequirementSearchResultResponse(savedRequirement);
+        return mapRequirementSearchResultResponse(savedRequirement);
     }
 
     @Transactional
     public RequirementSearchResultResponse patchRequirement(Long requirementId, PatchRequirementRequest request) {
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
-        }
+        requireRequestBody(request);
 
         Requirement requirement = findRequirement(requirementId);
         applyRequirementPatch(requirement, request);
@@ -162,14 +136,14 @@ public class RequirementService {
         Requirement savedRequirement = requirementRepository.save(requirement);
 
         if (request.requirementCourses() != null) {
-            replaceRequirementCourses(savedRequirement, request.requirementCourses());
+            requirementComponentService.replaceRequirementCourses(savedRequirement, request.requirementCourses());
         }
 
         if (request.requirementCourseRules() != null) {
-            replaceRequirementCourseRules(savedRequirement, request.requirementCourseRules());
+            requirementComponentService.replaceRequirementCourseRules(savedRequirement, request.requirementCourseRules());
         }
 
-        return toRequirementSearchResultResponse(savedRequirement);
+        return mapRequirementSearchResultResponse(savedRequirement);
     }
 
     @Transactional
@@ -177,9 +151,7 @@ public class RequirementService {
             Long programVersionId,
             AttachProgramVersionRequirementRequest request
     ) {
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
-        }
+        requireRequestBody(request);
 
         ProgramVersion programVersion = programVersionRepository.findById(programVersionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Program version was not found."));
@@ -194,7 +166,7 @@ public class RequirementService {
         assignment.setRequired(true);
         assignment.setNotes(trimToNull(request.notes()));
 
-        return toProgramVersionRequirementResponse(programVersionRequirementRepository.save(assignment));
+        return mapProgramVersionRequirementResponse(programVersionRequirementRepository.save(assignment));
     }
 
     @Transactional
@@ -202,9 +174,7 @@ public class RequirementService {
             Long programVersionRequirementId,
             PatchProgramVersionRequirementRequest request
     ) {
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
-        }
+        requireRequestBody(request);
 
         ProgramVersionRequirement assignment = programVersionRequirementRepository.findById(programVersionRequirementId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -220,7 +190,7 @@ public class RequirementService {
             assignment.setNotes(trimToNull(request.notes()));
         }
 
-        return toProgramVersionRequirementResponse(programVersionRequirementRepository.save(assignment));
+        return mapProgramVersionRequirementResponse(programVersionRequirementRepository.save(assignment));
     }
 
     @Transactional
@@ -301,152 +271,34 @@ public class RequirementService {
         }
     }
 
-    private void replaceRequirementCourses(
-            Requirement requirement,
-            List<UpsertRequirementCourseRequest> requests
-    ) {
-        List<RequirementCourse> existingCourses =
-                requirementCourseRepository.findCoursesForRequirements(List.of(requirement.getId()));
-        requirementCourseRepository.deleteAll(existingCourses);
-        requirementCourseRepository.flush();
-
-        if (requests == null || requests.isEmpty()) {
-            return;
-        }
-
-        List<RequirementCourse> requirementCourses = requests.stream()
-                .map(request -> toRequirementCourse(requirement, request))
-                .toList();
-        requirementCourseRepository.saveAll(requirementCourses);
-    }
-
-    private RequirementCourse toRequirementCourse(
-            Requirement requirement,
-            UpsertRequirementCourseRequest request
-    ) {
-        Course course = courseRepository.findById(request.courseId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Course id is invalid."));
-
-        RequirementCourse requirementCourse = new RequirementCourse();
-        requirementCourse.setRequirement(requirement);
-        requirementCourse.setCourse(course);
-        requirementCourse.setRequired(true);
-        requirementCourse.setMinimumGrade(trimToNull(request.minimumGrade()));
-        return requirementCourse;
-    }
-
-    private void replaceRequirementCourseRules(
-            Requirement requirement,
-            List<UpsertRequirementCourseRuleRequest> requests
-    ) {
-        List<RequirementCourseRule> existingRules =
-                requirementCourseRuleRepository.findRulesForRequirements(List.of(requirement.getId()));
-        requirementCourseRuleRepository.deleteAll(existingRules);
-        requirementCourseRuleRepository.flush();
-
-        if (requests == null || requests.isEmpty()) {
-            return;
-        }
-
-        List<RequirementCourseRule> requirementCourseRules = requests.stream()
-                .map(request -> toRequirementCourseRule(requirement, request))
-                .toList();
-        requirementCourseRuleRepository.saveAll(requirementCourseRules);
-    }
-
-    private RequirementCourseRule toRequirementCourseRule(
-            Requirement requirement,
-            UpsertRequirementCourseRuleRequest request
-    ) {
-        requirementValidationService.validateRequirementCourseRuleRange(
-                request.minimumCourseNumber(),
-                request.maximumCourseNumber()
-        );
-
-        AcademicDepartment department = academicDepartmentRepository.findById(request.departmentId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Department id is invalid."));
-
-        RequirementCourseRule requirementCourseRule = new RequirementCourseRule();
-        requirementCourseRule.setRequirement(requirement);
-        requirementCourseRule.setDepartment(department);
-        requirementCourseRule.setMinimumCourseNumber(request.minimumCourseNumber());
-        requirementCourseRule.setMaximumCourseNumber(request.maximumCourseNumber());
-        requirementCourseRule.setMinimumCredits(request.minimumCredits());
-        requirementCourseRule.setMinimumCourses(request.minimumCourses());
-        requirementCourseRule.setMinimumGrade(trimToNull(request.minimumGrade()));
-        return requirementCourseRule;
-    }
-
-    private ProgramVersionRequirementResponse toProgramVersionRequirementResponse(
+    private ProgramVersionRequirementResponse mapProgramVersionRequirementResponse(
             ProgramVersionRequirement assignment
     ) {
         Long requirementId = assignment.getRequirement() == null ? null : assignment.getRequirement().getId();
 
         if (requirementId == null) {
-            return programMapper.toProgramVersionRequirementResponse(assignment, List.of(), List.of());
+            return requirementMapper.toProgramVersionRequirementResponse(assignment, List.of(), List.of());
         }
 
-        return programMapper.toProgramVersionRequirementResponse(
+        return requirementMapper.toProgramVersionRequirementResponse(
                 assignment,
                 requirementCourseRepository.findCoursesForRequirements(List.of(requirementId)),
                 requirementCourseRuleRepository.findRulesForRequirements(List.of(requirementId))
         );
     }
 
-    private RequirementSearchResultResponse toRequirementSearchResultResponse(Requirement requirement) {
+    private RequirementSearchResultResponse mapRequirementSearchResultResponse(Requirement requirement) {
         List<Long> requirementIds = List.of(requirement.getId());
 
-        return new RequirementSearchResultResponse(
-                requirement.getId(),
-                requirement.getCode(),
-                requirement.getName(),
-                requirement.getRequirementType(),
-                requirement.getDescription(),
-                requirement.getMinimumCredits(),
-                requirement.getMinimumCourses(),
-                requirement.getCourseMatchMode(),
-                requirement.getMinimumGrade(),
+        return requirementMapper.toRequirementSearchResultResponse(
+                requirement,
                 requirementCourseRepository.findCoursesForRequirements(requirementIds).size(),
                 requirementCourseRuleRepository.findRulesForRequirements(requirementIds).size()
         );
     }
 
-    private RequirementCourseResponse toRequirementCourseResponse(RequirementCourse requirementCourse) {
-        Course course = requirementCourse.getCourse();
-        AcademicSubject subject = course == null ? null : course.getSubject();
-
-        return new RequirementCourseResponse(
-                requirementCourse.getId(),
-                course == null ? null : course.getId(),
-                subject == null ? null : subject.getCode(),
-                course == null ? null : course.getCourseNumber(),
-                requirementCourse.isRequired(),
-                requirementCourse.getMinimumGrade()
-        );
-    }
-
-    private RequirementCourseRuleResponse toRequirementCourseRuleResponse(
-            RequirementCourseRule requirementCourseRule
-    ) {
-        AcademicDepartment department = requirementCourseRule.getDepartment();
-
-        return new RequirementCourseRuleResponse(
-                requirementCourseRule.getId(),
-                department == null ? null : department.getId(),
-                department == null ? null : department.getCode(),
-                department == null ? null : department.getName(),
-                requirementCourseRule.getMinimumCourseNumber(),
-                requirementCourseRule.getMaximumCourseNumber(),
-                requirementCourseRule.getMinimumCredits(),
-                requirementCourseRule.getMinimumCourses(),
-                requirementCourseRule.getMinimumGrade()
-        );
-    }
-
     private Requirement findRequirement(Long requirementId) {
-        if (requirementId == null || requirementId <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Requirement id must be a positive number.");
-        }
+        requirePositiveId(requirementId, "Requirement id");
 
         return requirementRepository.findById(requirementId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Requirement was not found."));
@@ -456,20 +308,6 @@ public class RequirementService {
         String normalizedRequirementType = trimToNull(requirementType);
         return normalizedRequirementType == null
                 || Objects.equals(requirement.getRequirementType(), normalizedRequirementType);
-    }
-
-    private boolean containsIgnoreCase(String value, String filter) {
-        String normalizedFilter = trimToNull(filter);
-
-        if (normalizedFilter == null) {
-            return true;
-        }
-
-        if (value == null) {
-            return false;
-        }
-
-        return value.toLowerCase(Locale.US).contains(normalizedFilter.toLowerCase(Locale.US));
     }
 
 }

@@ -26,11 +26,9 @@ import {
 } from '@/services/schemas/academic-years-schemas';
 import { SearchFormActions } from '@/components/search/SearchFormActions';
 import { SearchFormSection } from '@/components/search/SearchFormSection';
-import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
-import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
-import { SearchResultsStateNotice } from '@/components/search/SearchResultsStateNotice';
-import { SearchResultsTable } from '@/components/search/SearchResultsTable';
+import { SearchResultsPanel } from '@/components/search/SearchResultsPanel';
 import type { StringOption } from '@/components/search/SearchQueryControls';
+import { getErrorMessage } from '@/utils/errors';
 
 type AcademicYearResultsView = 'standard' | 'system';
 
@@ -89,10 +87,6 @@ const academicYearResultsColumns: ColumnDef<AcademicYearSearchResultResponse>[] 
     meta: { sortBy: 'isPublished' satisfies AcademicYearSortBy },
   },
 ];
-
-function getErrorMessage(error: unknown, fallbackMessage = 'Failed to search academic years.'): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
 
 function getResultsSummary(
   searchResultsState: AcademicYearSearchResultsState,
@@ -226,7 +220,7 @@ export function AcademicYearsSearchPage() {
 
         setSearchResultsState({
           status: 'error',
-          message: getErrorMessage(error),
+          message: getErrorMessage(error, 'Failed to search academic years.'),
         });
       });
 
@@ -358,57 +352,48 @@ export function AcademicYearsSearchPage() {
           </form>
         </Paper>
 
-        <Paper p="lg">
-          <Stack gap="lg">
-            <SearchResultsHeader
-              data={academicYearResultsViewOptions}
-              value={resultsView}
-              onChange={setResultsView}
-              summary={getResultsSummary(searchResultsState, page, size)}
-            />
-
-            <SearchResultsStateNotice
-              status={searchResultsState.status}
-              idleTitle="Start a search"
-              idleMessage="Enter one or more search filters, then run the academic year search."
-              loadingMessage="Loading academic years..."
-              errorMessage={searchResultsState.status === 'error' ? searchResultsState.message : null}
-              emptyTitle="No academic years found"
-              emptyMessage="No academic years matched the current search criteria."
-            />
-
-            {searchResultsState.status === 'success' ? (
-              <SearchResultsTable
-                table={academicYearResultsTable}
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                onToggleSort={handleToggleSort}
-                getRowProps={(row) => ({
-                  role: 'button',
-                  tabIndex: 0,
-                  onClick: () => {
-                    handleOpenAcademicYearDetail(row.original.academicYearId);
-                  },
-                  onKeyDown: (event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      handleOpenAcademicYearDetail(row.original.academicYearId);
-                    }
-                  },
-                })}
-              />
-            ) : null}
-
-            {submittedFilters &&
-            (searchResultsState.status === 'success' || searchResultsState.status === 'empty') ? (
-              <SearchPaginationFooter
-                page={page}
-                totalPages={getTotalPages(searchResultsState, page, size)}
-                onPageChange={setPage}
-              />
-            ) : null}
-          </Stack>
-        </Paper>
+        <SearchResultsPanel
+          status={searchResultsState.status}
+          summary={getResultsSummary(searchResultsState, page, size)}
+          table={academicYearResultsTable}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onToggleSort={handleToggleSort}
+          viewOptions={academicYearResultsViewOptions}
+          view={resultsView}
+          onViewChange={setResultsView}
+          notice={{
+            idleTitle: 'Start a search',
+            idleMessage: 'Enter one or more search filters, then run the academic year search.',
+            loadingMessage: 'Loading academic years...',
+            errorMessage: searchResultsState.status === 'error' ? searchResultsState.message : null,
+            emptyTitle: 'No academic years found',
+            emptyMessage: 'No academic years matched the current search criteria.',
+          }}
+          getRowProps={(row) => ({
+            role: 'button',
+            tabIndex: 0,
+            onClick: () => {
+              handleOpenAcademicYearDetail(row.original.academicYearId);
+            },
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleOpenAcademicYearDetail(row.original.academicYearId);
+              }
+            },
+          })}
+          pagination={
+            submittedFilters &&
+            (searchResultsState.status === 'success' || searchResultsState.status === 'empty')
+              ? {
+                  page,
+                  totalPages: getTotalPages(searchResultsState, page, size),
+                  onPageChange: setPage,
+                }
+              : null
+          }
+        />
       </Stack>
     </Container>
   );

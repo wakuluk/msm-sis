@@ -2,16 +2,14 @@ package com.msm.sis.api.service;
 
 import com.msm.sis.api.dto.academic.AcademicDepartmentReferenceOptionResponse;
 import com.msm.sis.api.dto.academic.AcademicSchoolDepartmentSearchReferenceOptionsResponse;
-import com.msm.sis.api.dto.academic.AcademicSubjectReferenceOptionResponse;
-import com.msm.sis.api.dto.academic.AcademicSubTermReferenceOptionResponse;
 import com.msm.sis.api.dto.catalog.*;
 import com.msm.sis.api.dto.course.CoursePickerReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CourseReferenceOptionResponse;
 import com.msm.sis.api.dto.course.CourseSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.program.ProgramReferenceOptionsResponse;
 import com.msm.sis.api.dto.reference.CourseSectionReferenceOptionsResponse;
-import com.msm.sis.api.dto.reference.GradeMarkReferenceOptionResponse;
 import com.msm.sis.api.entity.*;
+import com.msm.sis.api.mapper.ReferenceDataMapper;
 import com.msm.sis.api.repository.AcademicDivisionRepository;
 import com.msm.sis.api.repository.AcademicSchoolRepository;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
@@ -69,6 +67,7 @@ public class ReferenceDataService {
     private final EthnicityRepository ethnicityRepository;
     private final ClassStandingRepository classStandingRepository;
     private final GenderRepository genderRepository;
+    private final ReferenceDataMapper referenceDataMapper;
     private final ProgramTypeRepository programTypeRepository;
     private final DegreeTypeRepository degreeTypeRepository;
 
@@ -93,6 +92,7 @@ public class ReferenceDataService {
             GenderRepository genderRepository,
             EthnicityRepository ethnicityRepository,
             ClassStandingRepository classStandingRepository,
+            ReferenceDataMapper referenceDataMapper,
             ProgramTypeRepository programTypeRepository,
             DegreeTypeRepository degreeTypeRepository
     ) {
@@ -116,6 +116,7 @@ public class ReferenceDataService {
         this.genderRepository = genderRepository;
         this.ethnicityRepository = ethnicityRepository;
         this.classStandingRepository = classStandingRepository;
+        this.referenceDataMapper = referenceDataMapper;
         this.programTypeRepository = programTypeRepository;
         this.degreeTypeRepository = degreeTypeRepository;
     }
@@ -125,11 +126,7 @@ public class ReferenceDataService {
     getAcademicSchoolDepartmentSearchReferenceOptions() {
         List<AcademicSchool> schools = academicSchoolRepository.findAllByActiveTrueOrderByNameAsc();
         List<CodeNameReferenceOptionResponse> schoolOptions = schools.stream()
-                .map(school -> new CodeNameReferenceOptionResponse(
-                        school.getId(),
-                        school.getCode(),
-                        school.getName()
-                ))
+                .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                 .toList();
 
         if (schools.isEmpty()) {
@@ -144,12 +141,7 @@ public class ReferenceDataService {
                                         .and(Sort.by(Sort.Direction.ASC, "code"))
                                         .and(Sort.by(Sort.Direction.ASC, "id"))
                         ).stream()
-                        .map(department -> new AcademicDepartmentReferenceOptionResponse(
-                                department.getId(),
-                                department.getCode(),
-                                department.getName(),
-                                department.getSchool().getId()
-                        ))
+                        .map(referenceDataMapper::toAcademicDepartmentReferenceOptionResponse)
                         .toList()
         );
     }
@@ -158,11 +150,7 @@ public class ReferenceDataService {
     public CourseSearchReferenceOptionsResponse getCourseSearchReferenceOptions() {
         List<AcademicSchool> schools = academicSchoolRepository.findAllByActiveTrueOrderByNameAsc();
         List<CodeNameReferenceOptionResponse> schoolOptions = schools.stream()
-                .map(school -> new CodeNameReferenceOptionResponse(
-                        school.getId(),
-                        school.getCode(),
-                        school.getName()
-                ))
+                .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                 .toList();
 
         if (schools.isEmpty()) {
@@ -181,22 +169,10 @@ public class ReferenceDataService {
                                         .and(Sort.by(Sort.Direction.ASC, "code"))
                                         .and(Sort.by(Sort.Direction.ASC, "id"))
                         ).stream()
-                        .map(department -> new AcademicDepartmentReferenceOptionResponse(
-                                department.getId(),
-                                department.getCode(),
-                                department.getName(),
-                                department.getSchool().getId()
-                        ))
+                        .map(referenceDataMapper::toAcademicDepartmentReferenceOptionResponse)
                         .toList(),
                 academicSubjectRepository.findAllByActiveTrueOrderByCodeAsc().stream()
-                        .map(subject -> new AcademicSubjectReferenceOptionResponse(
-                                subject.getId(),
-                                subject.getCode(),
-                                subject.getName(),
-                                subject.getDepartment().getId(),
-                                subject.getDepartment().getCode(),
-                                subject.getDepartment().getName()
-                        ))
+                        .map(referenceDataMapper::toAcademicSubjectReferenceOptionResponse)
                         .toList()
         );
     }
@@ -205,11 +181,7 @@ public class ReferenceDataService {
     public ProgramReferenceOptionsResponse getProgramReferenceOptions() {
         List<AcademicSchool> schools = academicSchoolRepository.findAllByActiveTrueOrderByNameAsc();
         List<CodeNameReferenceOptionResponse> schoolOptions = schools.stream()
-                .map(school -> new CodeNameReferenceOptionResponse(
-                        school.getId(),
-                        school.getCode(),
-                        school.getName()
-                ))
+                .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                 .toList();
 
         List<AcademicDepartmentReferenceOptionResponse> departmentOptions = schools.isEmpty()
@@ -220,20 +192,15 @@ public class ReferenceDataService {
                                         .and(Sort.by(Sort.Direction.ASC, "code"))
                                         .and(Sort.by(Sort.Direction.ASC, "id"))
                         ).stream()
-                        .map(department -> new AcademicDepartmentReferenceOptionResponse(
-                                department.getId(),
-                                department.getCode(),
-                                department.getName(),
-                                department.getSchool().getId()
-                        ))
+                        .map(referenceDataMapper::toAcademicDepartmentReferenceOptionResponse)
                         .toList();
 
         return new ProgramReferenceOptionsResponse(
                 programTypeRepository.findOptions().stream()
-                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 degreeTypeRepository.findOptions().stream()
-                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 schoolOptions,
                 departmentOptions
@@ -293,32 +260,16 @@ public class ReferenceDataService {
 
         return new CoursePickerReferenceOptionsResponse(
                 schools.stream()
-                        .map(school -> new CodeNameReferenceOptionResponse(
-                                school.getId(),
-                                school.getCode(),
-                                school.getName()
-                        ))
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 departments.stream()
-                        .map(department -> new AcademicDepartmentReferenceOptionResponse(
-                                department.getId(),
-                                department.getCode(),
-                                department.getName(),
-                                department.getSchool() == null ? null : department.getSchool().getId()
-                        ))
+                        .map(referenceDataMapper::toAcademicDepartmentReferenceOptionResponse)
                         .toList(),
                 subjects.stream()
-                        .map(subject -> new AcademicSubjectReferenceOptionResponse(
-                                subject.getId(),
-                                subject.getCode(),
-                                subject.getName(),
-                                subject.getDepartment() == null ? null : subject.getDepartment().getId(),
-                                subject.getDepartment() == null ? null : subject.getDepartment().getCode(),
-                                subject.getDepartment() == null ? null : subject.getDepartment().getName()
-                        ))
+                        .map(referenceDataMapper::toAcademicSubjectReferenceOptionResponse)
                         .toList(),
                 eligibleCourses.stream()
-                        .map(course -> toCourseReferenceOptionResponse(
+                        .map(course -> referenceDataMapper.toCourseReferenceOptionResponse(
                                 course,
                                 currentVersionsByCourseId.get(course.getId())
                         ))
@@ -334,13 +285,13 @@ public class ReferenceDataService {
     public StudentReferenceOptionsResponse getStudentReferenceOptions() {
         return new StudentReferenceOptionsResponse(
                 genderRepository.findAll(Sort.by(Sort.Direction.ASC, "name")).stream()
-                        .map(gender -> new com.msm.sis.api.dto.reference.ReferenceOptionResponse(gender.getId(), gender.getName()))
+                        .map(referenceDataMapper::toReferenceOptionResponse)
                         .toList(),
                 ethnicityRepository.findAll(Sort.by(Sort.Direction.ASC, "name")).stream()
-                        .map(ethnicity -> new com.msm.sis.api.dto.reference.ReferenceOptionResponse(ethnicity.getId(), ethnicity.getName()))
+                        .map(referenceDataMapper::toReferenceOptionResponse)
                         .toList(),
                 classStandingRepository.findAll(Sort.by(Sort.Direction.ASC, "name")).stream()
-                        .map(classStanding -> new com.msm.sis.api.dto.reference.ReferenceOptionResponse(classStanding.getId(), classStanding.getName()))
+                        .map(referenceDataMapper::toReferenceOptionResponse)
                         .toList()
         );
     }
@@ -349,31 +300,31 @@ public class ReferenceDataService {
     public CourseSectionReferenceOptionsResponse getCourseSectionReferenceOptions() {
         return new CourseSectionReferenceOptionsResponse(
                 courseSectionStatusRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 academicDivisionRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 deliveryModeRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 gradingBasisRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .map(referenceDataMapper::toGradingBasisReferenceOptionResponse)
                         .toList(),
                 sectionMeetingTypeRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 sectionInstructorRoleRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 studentSectionEnrollmentStatusRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 studentSectionGradeTypeRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(ReferenceDataService::toCodeNameReferenceOptionResponse)
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 gradeMarkRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(ReferenceDataService::toGradeMarkReferenceOptionResponse)
+                        .map(referenceDataMapper::toGradeMarkReferenceOptionResponse)
                         .toList()
         );
     }
@@ -381,45 +332,19 @@ public class ReferenceDataService {
     public CatalogAdvancedSearchReferenceOptionsResponse getCatalogAdvanceSearchReferenceOptions() {
         return new CatalogAdvancedSearchReferenceOptionsResponse(
                 catalogAcademicYearRepository.findAllAcademicYears().stream()
-                        .map(academicYear -> new CodeNameReferenceOptionResponse(
-                                academicYear.getId(),
-                                academicYear.getCode(),
-                                academicYear.getName()
-                        ))
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 academicSubTermRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
-                        .map(subTerm -> new AcademicSubTermReferenceOptionResponse(
-                                subTerm.getId(),
-                                subTerm.getCode(),
-                                subTerm.getName(),
-                                subTerm.getAcademicYear().getId(),
-                                subTerm.getAcademicYear().getCode(),
-                                subTerm.getAcademicYear().getName()
-                        ))
+                        .map(referenceDataMapper::toAcademicSubTermReferenceOptionResponse)
                         .toList(),
                 academicDepartmentRepository.findAllByActiveTrueOrderByNameAsc().stream()
-                        .map(department -> new CodeNameReferenceOptionResponse(
-                                department.getId(),
-                                department.getCode(),
-                                department.getName()
-                        ))
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 academicSubjectRepository.findAllByActiveTrueOrderByCodeAsc().stream()
-                        .map(subject -> new AcademicSubjectReferenceOptionResponse(
-                                subject.getId(),
-                                subject.getCode(),
-                                subject.getName(),
-                                subject.getDepartment().getId(),
-                                subject.getDepartment().getCode(),
-                                subject.getDepartment().getName()
-                        ))
+                        .map(referenceDataMapper::toAcademicSubjectReferenceOptionResponse)
                         .toList(),
                 academicSubTermStatusRepository.findAllByActiveTrueOrderByNameAsc().stream()
-                        .map(status -> new CodeNameReferenceOptionResponse(
-                                status.getId(),
-                                status.getCode(),
-                                status.getName()
-                        ))
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList()
         );
     }
@@ -427,38 +352,16 @@ public class ReferenceDataService {
     public CatalogSearchReferenceOptionsResponse getCatalogSearchReferenceOptions() {
         return new CatalogSearchReferenceOptionsResponse(
                 catalogAcademicYearRepository.findAllPublishedActiveOrderByStartDateAsc().stream()
-                        .map(academicYear -> new CodeNameReferenceOptionResponse(
-                                academicYear.getId(),
-                                academicYear.getCode(),
-                                academicYear.getName()
-                        ))
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 academicSubTermRepository.findAllForStudentCatalogSearchOrderBySortOrderAsc().stream()
-                        .map(subTerm -> new AcademicSubTermReferenceOptionResponse(
-                                subTerm.getId(),
-                                subTerm.getCode(),
-                                subTerm.getName(),
-                                subTerm.getAcademicYear().getId(),
-                                subTerm.getAcademicYear().getCode(),
-                                subTerm.getAcademicYear().getName()
-                        ))
+                        .map(referenceDataMapper::toAcademicSubTermReferenceOptionResponse)
                         .toList(),
                 academicDepartmentRepository.findAllByActiveTrueOrderByNameAsc().stream()
-                        .map(department -> new CodeNameReferenceOptionResponse(
-                                department.getId(),
-                                department.getCode(),
-                                department.getName()
-                        ))
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 academicSubjectRepository.findAllByActiveTrueOrderByCodeAsc().stream()
-                        .map(subject -> new AcademicSubjectReferenceOptionResponse(
-                                subject.getId(),
-                                subject.getCode(),
-                                subject.getName(),
-                                subject.getDepartment().getId(),
-                                subject.getDepartment().getCode(),
-                                subject.getDepartment().getName()
-                        ))
+                        .map(referenceDataMapper::toAcademicSubjectReferenceOptionResponse)
                         .toList()
         );
     }
@@ -491,110 +394,4 @@ public class ReferenceDataService {
                 .toList();
     }
 
-
-    //TODO -- is there a better way? a place this belongs.
-    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            AcademicDivision reference
-    ) {
-        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
-    }
-
-    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            CourseSectionStatus reference
-    ) {
-        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
-    }
-
-    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            DeliveryMode reference
-    ) {
-        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
-    }
-
-    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            GradingBasis reference
-    ) {
-        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
-    }
-
-    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            SectionMeetingType reference
-    ) {
-        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
-    }
-
-    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            SectionInstructorRole reference
-    ) {
-        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
-    }
-
-    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            StudentSectionEnrollmentStatus reference
-    ) {
-        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
-    }
-
-    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            StudentSectionGradeType reference
-    ) {
-        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
-    }
-
-    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            ProgramType reference
-    ) {
-        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
-    }
-
-    private static CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(
-            DegreeType reference
-    ) {
-        return new CodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
-    }
-
-    private static GradeMarkReferenceOptionResponse toGradeMarkReferenceOptionResponse(GradeMark gradeMark) {
-        return new GradeMarkReferenceOptionResponse(
-                gradeMark.getId(),
-                gradeMark.getCode(),
-                gradeMark.getName(),
-                gradeMark.getQualityPoints(),
-                gradeMark.isEarnsCredit(),
-                gradeMark.isCountsInGpa()
-        );
-    }
-
-    private CourseReferenceOptionResponse toCourseReferenceOptionResponse(
-            Course course,
-            CourseVersion currentCourseVersion
-    ) {
-        AcademicSubject subject = course.getSubject();
-        AcademicDepartment department = subject == null ? null : subject.getDepartment();
-        AcademicSchool school = department == null ? null : department.getSchool();
-
-        //TODO this feels wrong / off.
-        return new CourseReferenceOptionResponse(
-                course.getId(),
-                school == null ? null : school.getId(),
-                school == null ? null : school.getCode(),
-                school == null ? null : school.getName(),
-                department == null ? null : department.getId(),
-                department == null ? null : department.getCode(),
-                department == null ? null : department.getName(),
-                subject == null ? null : subject.getId(),
-                subject == null ? null : subject.getCode(),
-                subject == null ? null : subject.getName(),
-                course.getCourseNumber(),
-                buildCourseCode(course),
-                currentCourseVersion == null ? null : currentCourseVersion.getId(),
-                currentCourseVersion == null ? null : currentCourseVersion.getTitle(),
-                currentCourseVersion == null ? null : currentCourseVersion.getMinCredits(),
-                currentCourseVersion == null ? null : currentCourseVersion.getMaxCredits(),
-                currentCourseVersion != null && currentCourseVersion.isVariableCredit()
-        );
-    }
-
-    private String buildCourseCode(Course course) {
-        return course.getSubject() == null ? null : course.getSubject().getCode() + course.getCourseNumber();
-    }
 }

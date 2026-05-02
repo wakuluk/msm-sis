@@ -7,18 +7,16 @@ import {
   Button,
   Grid,
   Group,
-  Modal,
-  Select,
   Stack,
-  Switch,
   Text,
-  TextInput,
-  Textarea,
 } from '@mantine/core';
 import { useLocation, useParams } from 'react-router-dom';
+import { CreateCourseVersionModal } from '@/components/course/CreateCourseVersionModal';
+import { CourseVersionDetailModal } from '@/components/course/CourseVersionDetailModal';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { ReadOnlyField } from '@/components/fields/ReadOnlyField';
 import { SearchResultsTable } from '@/components/search/SearchResultsTable';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import {
@@ -33,6 +31,8 @@ import type {
   CourseVersionSearchSortBy,
   CourseVersionSearchSortDirection,
 } from '@/services/schemas/course-schemas';
+import { getErrorMessage } from '@/utils/errors';
+import { displayValue } from '@/utils/form-values';
 
 type CourseDetailPageLocationState = {
   source?: 'department' | 'search';
@@ -54,22 +54,6 @@ type MakeCourseVersionCurrentState =
   | { status: 'saving' }
   | { status: 'error'; message: string };
 
-type CreateCourseVersionFormValues = {
-  title: string;
-  catalogDescription: string;
-  minCredits: string | null;
-  maxCredits: string | null;
-  variableCredit: boolean;
-};
-
-function displayValue(value: number | string | null | undefined): string {
-  if (value === null || value === undefined || value === '') {
-    return '—';
-  }
-
-  return String(value);
-}
-
 function displayCredits(courseVersion: CourseVersionDetailResponse): string {
   if (courseVersion.variableCredit) {
     return `${courseVersion.minCredits}-${courseVersion.maxCredits}`;
@@ -77,31 +61,6 @@ function displayCredits(courseVersion: CourseVersionDetailResponse): string {
 
   return String(courseVersion.minCredits);
 }
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
-
-function displayTimestamp(value: string | null | undefined): string {
-  return displayValue(value);
-}
-
-const creditOptions = Array.from({ length: 21 }, (_, index) => {
-  const value = (1 + index * 0.25).toFixed(2);
-
-  return {
-    value,
-    label: value,
-  };
-});
-
-const initialCreateCourseVersionFormValues: CreateCourseVersionFormValues = {
-  title: '',
-  catalogDescription: '',
-  minCredits: '3.00',
-  maxCredits: '3.00',
-  variableCredit: false,
-};
 
 const courseVersionColumns: ColumnDef<CourseVersionDetailResponse>[] = [
   {
@@ -147,306 +106,6 @@ const courseVersionColumns: ColumnDef<CourseVersionDetailResponse>[] = [
     meta: { sortBy: 'current' satisfies CourseVersionSearchSortBy },
   },
 ];
-
-function ReadOnlyField({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  const isEmptyValue = value === '—';
-
-  return (
-    <Grid.Col span={{ base: 12, md: 6 }}>
-      <TextInput
-        label={label}
-        value={isEmptyValue ? '' : value}
-        placeholder={isEmptyValue ? '—' : undefined}
-        readOnly
-      />
-    </Grid.Col>
-  );
-}
-
-function CreateCourseVersionModal({
-  opened,
-  onClose,
-  createState,
-  onCreate,
-  courseId,
-  courseCode,
-}: {
-  opened: boolean;
-  onClose: () => void;
-  createState: CreateCourseVersionState;
-  onCreate: (request: CreateCourseVersionRequest) => Promise<void>;
-  courseId: number;
-  courseCode: string | null;
-}) {
-  const [formValues, setFormValues] = useState<CreateCourseVersionFormValues>(
-    initialCreateCourseVersionFormValues
-  );
-  const [validationMessage, setValidationMessage] = useState<string | null>(null);
-  const isSaving = createState.status === 'saving';
-
-  useEffect(() => {
-    if (!opened) {
-      return;
-    }
-
-    setFormValues(initialCreateCourseVersionFormValues);
-    setValidationMessage(null);
-  }, [opened, courseId]);
-
-  async function handleSubmit() {
-    const normalizedTitle = formValues.title.trim();
-    const normalizedCatalogDescription = formValues.catalogDescription.trim();
-    const minCredits = formValues.minCredits ? Number(formValues.minCredits) : Number.NaN;
-    const maxCredits = formValues.variableCredit
-      ? formValues.maxCredits
-        ? Number(formValues.maxCredits)
-        : Number.NaN
-      : minCredits;
-
-    if (!normalizedTitle) {
-      setValidationMessage('Title is required.');
-      return;
-    }
-
-    if (Number.isNaN(minCredits)) {
-      setValidationMessage('Min credits is required.');
-      return;
-    }
-
-    if (Number.isNaN(maxCredits)) {
-      setValidationMessage('Max credits is required.');
-      return;
-    }
-
-    if (formValues.variableCredit && minCredits > maxCredits) {
-      setValidationMessage('Min credits must be less than or equal to max credits.');
-      return;
-    }
-
-    setValidationMessage(null);
-
-    await onCreate({
-      title: normalizedTitle,
-      catalogDescription: normalizedCatalogDescription.length > 0 ? normalizedCatalogDescription : null,
-      minCredits,
-      maxCredits,
-      variableCredit: formValues.variableCredit,
-    });
-  }
-
-  return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title="Create New Version"
-      centered
-      size="lg"
-      closeOnClickOutside={!isSaving}
-      closeOnEscape={!isSaving}
-    >
-      <Stack gap="md">
-        {validationMessage ? (
-          <Alert color="red" title="Invalid course version">
-            {validationMessage}
-          </Alert>
-        ) : null}
-
-        {createState.status === 'error' ? (
-          <Alert color="red" title="Unable to create course version">
-            {createState.message}
-          </Alert>
-        ) : null}
-
-        <Grid gap="md">
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <TextInput label="Course ID" value={String(courseId)} readOnly />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <TextInput label="Course Code" value={courseCode ?? ''} placeholder="—" readOnly />
-          </Grid.Col>
-          <Grid.Col span={12}>
-            <TextInput
-              label="Title"
-              placeholder="Enter course version title"
-              value={formValues.title}
-              onChange={(event) => {
-                setFormValues((current) => ({
-                  ...current,
-                  title: event.currentTarget.value,
-                }));
-              }}
-            />
-          </Grid.Col>
-          <Grid.Col span={12}>
-            <Textarea
-              label="Catalog Description"
-              placeholder="Enter catalog description"
-              minRows={4}
-              value={formValues.catalogDescription}
-              onChange={(event) => {
-                setFormValues((current) => ({
-                  ...current,
-                  catalogDescription: event.currentTarget.value,
-                }));
-              }}
-            />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Select
-              label="Min Credits"
-              placeholder="Select minimum credits"
-              data={creditOptions}
-              searchable
-              value={formValues.minCredits}
-              onChange={(value) => {
-                setFormValues((current) => ({
-                  ...current,
-                  minCredits: value,
-                  maxCredits: current.variableCredit ? current.maxCredits : value,
-                }));
-              }}
-            />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Select
-              label="Max Credits"
-              placeholder="Select maximum credits"
-              data={creditOptions}
-              searchable
-              value={formValues.variableCredit ? formValues.maxCredits : formValues.minCredits}
-              disabled={!formValues.variableCredit}
-              onChange={(value) => {
-                setFormValues((current) => ({
-                  ...current,
-                  maxCredits: value,
-                }));
-              }}
-            />
-          </Grid.Col>
-          <Grid.Col span={12}>
-            <Switch
-              label="Variable Credit"
-              checked={formValues.variableCredit}
-              onChange={(event) => {
-                const checked = event.currentTarget.checked;
-
-                setFormValues((current) => ({
-                  ...current,
-                  variableCredit: checked,
-                  maxCredits: checked ? current.maxCredits : current.minCredits,
-                }));
-              }}
-            />
-          </Grid.Col>
-        </Grid>
-
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button onClick={() => void handleSubmit()} loading={isSaving}>
-            Create Version
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
-  );
-}
-
-function CourseVersionDetailModal({
-  opened,
-  onClose,
-  courseVersion,
-  makeCurrentState,
-  onMakeCurrent,
-}: {
-  opened: boolean;
-  onClose: () => void;
-  courseVersion: CourseVersionDetailResponse | null;
-  makeCurrentState: MakeCourseVersionCurrentState;
-  onMakeCurrent: (courseVersion: CourseVersionDetailResponse) => Promise<void>;
-}) {
-  if (!courseVersion) {
-    return null;
-  }
-
-  const isSaving = makeCurrentState.status === 'saving';
-
-  return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title={`Version ${courseVersion.versionNumber} Details`}
-      centered
-      size="lg"
-      closeOnClickOutside={!isSaving}
-      closeOnEscape={!isSaving}
-    >
-      <Stack gap="md">
-        {makeCurrentState.status === 'error' ? (
-          <Alert color="red" title="Unable to make version current">
-            {makeCurrentState.message}
-          </Alert>
-        ) : null}
-
-        <Grid gap="md">
-          <ReadOnlyField
-            label="Course Version ID"
-            value={displayValue(courseVersion.courseVersionId)}
-          />
-          <ReadOnlyField label="Course Code" value={displayValue(courseVersion.courseCode)} />
-          <ReadOnlyField label="Version Number" value={displayValue(courseVersion.versionNumber)} />
-          <ReadOnlyField label="Subject" value={displayValue(courseVersion.subjectCode)} />
-          <ReadOnlyField label="Course Number" value={displayValue(courseVersion.courseNumber)} />
-          <ReadOnlyField
-            label="Current"
-            value={courseVersion.current ? 'Yes' : 'No'}
-          />
-          <ReadOnlyField
-            label="Variable Credit"
-            value={courseVersion.variableCredit ? 'Yes' : 'No'}
-          />
-          <ReadOnlyField label="Min Credits" value={displayValue(courseVersion.minCredits)} />
-          <ReadOnlyField label="Max Credits" value={displayValue(courseVersion.maxCredits)} />
-          <ReadOnlyField label="Created At" value={displayTimestamp(courseVersion.createdAt)} />
-          <ReadOnlyField label="Updated At" value={displayTimestamp(courseVersion.updatedAt)} />
-          <Grid.Col span={12}>
-            <TextInput label="Title" value={courseVersion.title} readOnly />
-          </Grid.Col>
-          <Grid.Col span={12}>
-            <Textarea
-              label="Catalog Description"
-              value={courseVersion.catalogDescription ?? ''}
-              placeholder="—"
-              minRows={4}
-              readOnly
-            />
-          </Grid.Col>
-        </Grid>
-
-        <Group justify="flex-end">
-          {!courseVersion.current ? (
-            <Button
-              onClick={() => void onMakeCurrent(courseVersion)}
-              loading={isSaving}
-            >
-              Make Current
-            </Button>
-          ) : null}
-          <Button variant="default" onClick={onClose} disabled={isSaving}>
-            Close
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
-  );
-}
 
 export function CourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>();

@@ -6,6 +6,7 @@ import {
   initialCourseCreateFormValues,
   type CourseCreateFormValues,
 } from './courseCreateValidation';
+import { getErrorMessage } from '@/utils/errors';
 
 type UseCourseCreateFormArgs = {
   initialDepartmentId?: number | null;
@@ -19,10 +20,6 @@ export type CourseCreateSubmitState =
   | { status: 'idle' }
   | { status: 'submitting' }
   | { status: 'error'; message: string };
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Failed to create course.';
-}
 
 export function useCourseCreateForm({
   initialDepartmentId = null,
@@ -85,7 +82,7 @@ export function useCourseCreateForm({
     } catch (error) {
       setSubmitState({
         status: 'error',
-        message: getErrorMessage(error),
+        message: getErrorMessage(error, 'Failed to create course.'),
       });
     }
   }

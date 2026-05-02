@@ -18,12 +18,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
+
+import static com.msm.sis.api.util.CourseGroupingUtils.collectCourseIds;
+import static com.msm.sis.api.util.CourseGroupingUtils.indexFirstVersionByCourseId;
+import static com.msm.sis.api.util.PagingUtils.validatePageRequest;
+import static com.msm.sis.api.util.SortUtils.parseDirection;
+import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
+import static com.msm.sis.api.util.ValidationUtils.requireRequestBody;
 
 @Service
 @RequiredArgsConstructor
@@ -49,11 +52,7 @@ public class CourseService {
             );
         }
 
-        Course course = new Course();
-        course.setSubject(subject);
-        course.setCourseNumber(courseNumber);
-        course.setActive(request.active() == null || request.active());
-
+        Course course = courseMapper.toCourse(subject, courseNumber, request);
         Course savedCourse = courseRepository.save(course);
         CourseVersion savedCourseVersion = createInitialCourseVersion(savedCourse, request.initialVersion());
         return courseMapper.toCourseVersionDetailResponse(savedCourseVersion);
@@ -64,9 +63,7 @@ public class CourseService {
             Long courseId,
             CreateCourseVersionRequest request
     ) {
-        if (courseId == null || courseId <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Course id must be a positive number.");
-        }
+        requirePositiveId(courseId, "Course id");
 
         validateCreateCourseVersionRequest(request);
 
@@ -80,31 +77,23 @@ public class CourseService {
                 .map(courseVersion -> courseVersion.getVersionNumber() + 1)
                 .orElse(1);
 
-        CourseVersion courseVersion = new CourseVersion();
-        courseVersion.setCourse(course);
-        courseVersion.setVersionNumber(nextVersionNumber);
-        courseVersion.setTitle(request.title().trim());
-        courseVersion.setCatalogDescription(normalizeCatalogDescription(request.catalogDescription()));
-        courseVersion.setMinCredits(request.minCredits());
-        courseVersion.setMaxCredits(request.maxCredits());
-        courseVersion.setVariableCredit(request.variableCredit());
-        courseVersion.setCurrentVersion(true);
-
+        CourseVersion courseVersion = courseMapper.toCourseVersion(
+                course,
+                nextVersionNumber,
+                request,
+                normalizeCatalogDescription(request.catalogDescription())
+        );
         CourseVersion savedCourseVersion = courseVersionRepository.save(courseVersion);
         return courseMapper.toCourseVersionDetailResponse(savedCourseVersion);
     }
 
     private CourseVersion createInitialCourseVersion(Course course, CreateCourseVersionRequest request) {
-        CourseVersion courseVersion = new CourseVersion();
-        courseVersion.setCourse(course);
-        courseVersion.setVersionNumber(1);
-        courseVersion.setTitle(request.title().trim());
-        courseVersion.setCatalogDescription(normalizeCatalogDescription(request.catalogDescription()));
-        courseVersion.setMinCredits(request.minCredits());
-        courseVersion.setMaxCredits(request.maxCredits());
-        courseVersion.setVariableCredit(request.variableCredit());
-        courseVersion.setCurrentVersion(true);
-        return courseVersionRepository.save(courseVersion);
+        return courseVersionRepository.save(courseMapper.toCourseVersion(
+                course,
+                1,
+                request,
+                normalizeCatalogDescription(request.catalogDescription())
+        ));
     }
 
     @Transactional(readOnly = true)
@@ -115,25 +104,19 @@ public class CourseService {
             String sortBy,
             String sortDirection
     ) {
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
-        }
-
-        if (size < 1 || size > 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size must be between 1 and 100.");
-        }
+        validatePageRequest(page, size, 100);
 
         CourseSearchCriteria effectiveCriteria = criteria == null ? new CourseSearchCriteria() : criteria;
         List<Course> courses = courseRepository.findAll();
         Map<Long, CourseVersion> currentVersionsByCourseId = buildCurrentVersionsByCourseId(courses);
 
         List<CourseSearchResultResponse> filteredResults = courses.stream()
-                .filter(course -> matchesCourseSearchCriteria(
+                .filter(course -> CourseSearchFilter.matches(
                         course,
                         currentVersionsByCourseId.get(course.getId()),
                         effectiveCriteria
                 ))
-                .sorted(buildCourseSearchComparator(
+                .sorted(CourseSearchSort.buildComparator(
                         sortBy == null ? effectiveCriteria.getSortBy() : sortBy,
                         sortDirection == null ? effectiveCriteria.getSortDirection() : sortDirection,
                         currentVersionsByCourseId
@@ -166,17 +149,9 @@ public class CourseService {
             String sortBy,
             String sortDirection
     ) {
-        if (courseId == null || courseId <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Course id must be a positive number.");
-        }
+        requirePositiveId(courseId, "Course id");
 
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
-        }
-
-        if (size < 1 || size > 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size must be between 1 and 100.");
-        }
+        validatePageRequest(page, size, 100);
 
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -212,20 +187,11 @@ public class CourseService {
     }
 
     private Sort.Direction parseSortDirection(String sortDirection) {
-        try {
-            return Sort.Direction.fromString(sortDirection == null ? "desc" : sortDirection);
-        } catch (IllegalArgumentException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Sort direction must be 'asc' or 'desc'."
-            );
-        }
+        return parseDirection(sortDirection, Sort.Direction.DESC);
     }
 
     private void validateCreateCourseVersionRequest(CreateCourseVersionRequest request) {
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
-        }
+        requireRequestBody(request);
 
         BigDecimal minCredits = request.minCredits();
         BigDecimal maxCredits = request.maxCredits();
@@ -249,13 +215,9 @@ public class CourseService {
     }
 
     private void validateCreateCourseRequest(CreateCourseRequest request) {
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
-        }
+        requireRequestBody(request);
 
-        if (request.subjectId() == null || request.subjectId() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subject id must be a positive number.");
-        }
+        requirePositiveId(request.subjectId(), "Subject id");
 
         if (request.courseNumber() == null || request.courseNumber().trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Course number is required.");
@@ -272,167 +234,13 @@ public class CourseService {
     }
 
     private Map<Long, CourseVersion> buildCurrentVersionsByCourseId(List<Course> courses) {
-        List<Long> courseIds = courses.stream()
-                .map(Course::getId)
-                .filter(Objects::nonNull)
-                .toList();
+        List<Long> courseIds = collectCourseIds(courses);
 
         if (courseIds.isEmpty()) {
             return Map.of();
         }
 
-        Map<Long, CourseVersion> currentVersionsByCourseId = new LinkedHashMap<>();
-        courseVersionRepository.findCurrentCourseVersionsByCourseIds(courseIds)
-                .forEach(courseVersion -> {
-                    if (courseVersion.getCourse() == null || courseVersion.getCourse().getId() == null) {
-                        return;
-                    }
-
-                    currentVersionsByCourseId.putIfAbsent(courseVersion.getCourse().getId(), courseVersion);
-                });
-
-        return currentVersionsByCourseId;
-    }
-
-    private boolean matchesCourseSearchCriteria(
-            Course course,
-            CourseVersion currentCourseVersion,
-            CourseSearchCriteria criteria
-    ) {
-        if (course == null || course.getSubject() == null || course.getSubject().getDepartment() == null) {
-            return false;
-        }
-
-        if (!Boolean.TRUE.equals(criteria.getIncludeInactive()) && !course.isActive()) {
-            return false;
-        }
-
-        if (criteria.getSchoolId() != null) {
-            Long schoolId = course.getSubject().getDepartment().getSchool() == null
-                    ? null
-                    : course.getSubject().getDepartment().getSchool().getId();
-            if (!Objects.equals(criteria.getSchoolId(), schoolId)) {
-                return false;
-            }
-        }
-
-        if (criteria.getDepartmentId() != null && !Objects.equals(criteria.getDepartmentId(), course.getSubject().getDepartment().getId())) {
-            return false;
-        }
-
-        if (criteria.getSubjectId() != null && !Objects.equals(criteria.getSubjectId(), course.getSubject().getId())) {
-            return false;
-        }
-
-        if (Boolean.TRUE.equals(criteria.getCurrentVersionOnly()) && currentCourseVersion == null) {
-            return false;
-        }
-
-        if (!containsIgnoreCase(course.getCourseNumber(), criteria.getCourseNumber())) {
-            return false;
-        }
-
-        if (!containsIgnoreCase(buildCourseCode(course), criteria.getCourseCode())) {
-            return false;
-        }
-
-        return containsIgnoreCase(
-                currentCourseVersion == null ? null : currentCourseVersion.getTitle(),
-                criteria.getTitle()
-        );
-    }
-
-    private Comparator<Course> buildCourseSearchComparator(
-            String sortBy,
-            String sortDirection,
-            Map<Long, CourseVersion> currentVersionsByCourseId
-    ) {
-        Sort.Direction direction = parseSortDirection(sortDirection);
-        String normalizedSortBy = normalizeSortBy(sortBy, "courseNumber");
-
-        Comparator<Course> primaryComparator = switch (normalizedSortBy) {
-            case "schoolCode" -> compareStrings(direction, course -> course.getSubject().getDepartment().getSchool().getCode());
-            case "schoolName" -> compareStrings(direction, course -> course.getSubject().getDepartment().getSchool().getName());
-            case "departmentCode" -> compareStrings(direction, course -> course.getSubject().getDepartment().getCode());
-            case "departmentName" -> compareStrings(direction, course -> course.getSubject().getDepartment().getName());
-            case "subjectCode" -> compareStrings(direction, course -> course.getSubject().getCode());
-            case "subjectName" -> compareStrings(direction, course -> course.getSubject().getName());
-            case "courseNumber" -> compareStrings(direction, Course::getCourseNumber);
-            case "courseCode" -> compareStrings(direction, this::buildCourseCode);
-            case "title" -> compareStrings(direction, course -> {
-                CourseVersion currentCourseVersion = currentVersionsByCourseId.get(course.getId());
-                return currentCourseVersion == null ? null : currentCourseVersion.getTitle();
-            });
-            case "credits" -> compareBigDecimals(direction, course -> {
-                CourseVersion currentCourseVersion = currentVersionsByCourseId.get(course.getId());
-                return currentCourseVersion == null ? null : currentCourseVersion.getMinCredits();
-            });
-            case "active" -> Comparator.comparing(
-                    Course::isActive,
-                    direction == Sort.Direction.ASC ? Comparator.naturalOrder() : Comparator.reverseOrder()
-            );
-            default -> throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Sort by must be one of: schoolCode, schoolName, departmentCode, departmentName, subjectCode, subjectName, courseNumber, courseCode, title, credits, active."
-            );
-        };
-
-        return primaryComparator
-                .thenComparing(compareStrings(Sort.Direction.ASC, this::buildCourseCode))
-                .thenComparing(Comparator.comparing(Course::getId, Comparator.nullsLast(Long::compareTo)));
-    }
-
-    private Comparator<Course> compareStrings(
-            Sort.Direction direction,
-            java.util.function.Function<Course, String> valueExtractor
-    ) {
-        Comparator<String> stringComparator = Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER);
-        if (direction == Sort.Direction.DESC) {
-            stringComparator = stringComparator.reversed();
-        }
-
-        return Comparator.comparing(valueExtractor, stringComparator);
-    }
-
-    private Comparator<Course> compareBigDecimals(
-            Sort.Direction direction,
-            java.util.function.Function<Course, BigDecimal> valueExtractor
-    ) {
-        Comparator<BigDecimal> bigDecimalComparator = Comparator.nullsLast(BigDecimal::compareTo);
-        if (direction == Sort.Direction.DESC) {
-            bigDecimalComparator = bigDecimalComparator.reversed();
-        }
-
-        return Comparator.comparing(valueExtractor, bigDecimalComparator);
-    }
-
-    private boolean containsIgnoreCase(String value, String filter) {
-        if (filter == null || filter.isBlank()) {
-            return true;
-        }
-
-        if (value == null) {
-            return false;
-        }
-
-        return value.toLowerCase(Locale.US).contains(filter.trim().toLowerCase(Locale.US));
-    }
-
-    private String buildCourseCode(Course course) {
-        if (course == null || course.getSubject() == null || course.getSubject().getCode() == null) {
-            return null;
-        }
-
-        return course.getSubject().getCode() + course.getCourseNumber();
-    }
-
-    private String normalizeSortBy(String sortBy, String defaultSortBy) {
-        if (sortBy == null) {
-            return defaultSortBy;
-        }
-
-        String trimmedSortBy = sortBy.trim();
-        return trimmedSortBy.isEmpty() ? defaultSortBy : trimmedSortBy;
+        return indexFirstVersionByCourseId(courseVersionRepository.findCurrentCourseVersionsByCourseIds(courseIds));
     }
 
 }

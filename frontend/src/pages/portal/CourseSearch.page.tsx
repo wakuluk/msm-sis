@@ -17,10 +17,7 @@ import { useForm } from '@mantine/form';
 import { Link, useNavigate } from 'react-router-dom';
 import { SearchFormActions } from '@/components/search/SearchFormActions';
 import { SearchFormSection } from '@/components/search/SearchFormSection';
-import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
-import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
-import { SearchResultsStateNotice } from '@/components/search/SearchResultsStateNotice';
-import { SearchResultsTable } from '@/components/search/SearchResultsTable';
+import { SearchResultsPanel } from '@/components/search/SearchResultsPanel';
 import type { StringOption } from '@/components/search/SearchQueryControls';
 import { searchCourses } from '@/services/course-service';
 import { CourseCreateModal } from '@/components/course/CourseCreateModal';
@@ -31,6 +28,8 @@ import type {
   CourseSearchSortBy,
   CourseSearchSortDirection,
 } from '@/services/schemas/course-schemas';
+import { getErrorMessage } from '@/utils/errors';
+import { parseOptionalId } from '@/utils/form-values';
 
 type CourseSearchFilters = {
   schoolId: string;
@@ -165,13 +164,6 @@ const courseSearchColumns: ColumnDef<CourseSearchResultResponse>[] = [
   },
 ];
 
-function getErrorMessage(
-  error: unknown,
-  fallbackMessage = 'Failed to search courses.'
-): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
-
 function getResultsSummary(state: CourseSearchResultsState): string {
   if (state.status === 'loading') {
     return 'Loading course search results...';
@@ -193,18 +185,6 @@ function getResultsSummary(state: CourseSearchResultsState): string {
   }
 
   return 'Course search is ready.';
-}
-
-function parseOptionalId(value: string): number | undefined {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return undefined;
-  }
-
-  const parsedValue = Number(trimmedValue);
-
-  return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : undefined;
 }
 
 export function CourseSearchPage() {
@@ -273,6 +253,10 @@ export function CourseSearchPage() {
       signal: abortController.signal,
     })
       .then((response) => {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         setResultsState(
           response.results.length === 0
             ? { status: 'empty', response }
@@ -286,7 +270,7 @@ export function CourseSearchPage() {
 
         setResultsState({
           status: 'error',
-          message: getErrorMessage(error),
+          message: getErrorMessage(error, 'Failed to search courses.'),
         });
       });
 
@@ -506,44 +490,37 @@ export function CourseSearchPage() {
           </Stack>
         </Paper>
 
-        <Paper withBorder radius="md" p="lg">
-          <Stack gap="lg">
-            <SearchResultsHeader
-              data={resultsViewOptions}
-              value={resultsView}
-              onChange={setResultsView}
-              summary={getResultsSummary(resultsState)}
-            />
-
-            {resultsState.status === 'success' ? (
-              <>
-                <SearchResultsTable
-                  table={courseSearchTable}
-                  sortBy={sortBy}
-                  sortDirection={sortDirection}
-                  onToggleSort={handleToggleSort}
-                />
-
-                <SearchPaginationFooter
-                  page={resultsState.response.page}
-                  totalPages={Math.max(resultsState.response.totalPages, 1)}
-                  onPageChange={setPage}
-                />
-              </>
-            ) : (
-              <SearchResultsStateNotice
-                status={resultsState.status}
-                idleTitle="Course search is ready"
-                idleMessage="Search for courses using school, department, subject, course number, course code, or title."
-                loadingMessage="Loading course search results..."
-                errorTitle="Unable to load course search results"
-                errorMessage={resultsState.status === 'error' ? resultsState.message : null}
-                emptyTitle="No course search results found"
-                emptyMessage="Try adjusting the current search filters."
-              />
-            )}
-          </Stack>
-        </Paper>
+        <SearchResultsPanel
+          status={resultsState.status}
+          summary={getResultsSummary(resultsState)}
+          table={courseSearchTable}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onToggleSort={handleToggleSort}
+          viewOptions={resultsViewOptions}
+          view={resultsView}
+          onViewChange={setResultsView}
+          withBorder
+          notice={{
+            idleTitle: 'Course search is ready',
+            idleMessage:
+              'Search for courses using school, department, subject, course number, course code, or title.',
+            loadingMessage: 'Loading course search results...',
+            errorTitle: 'Unable to load course search results',
+            errorMessage: resultsState.status === 'error' ? resultsState.message : null,
+            emptyTitle: 'No course search results found',
+            emptyMessage: 'Try adjusting the current search filters.',
+          }}
+          pagination={
+            resultsState.status === 'success'
+              ? {
+                  page: resultsState.response.page,
+                  totalPages: Math.max(resultsState.response.totalPages, 1),
+                  onPageChange: setPage,
+                }
+              : null
+          }
+        />
         <CourseCreateModal
           {...courseCreateReferenceOptions}
           opened={isCreateCourseModalOpen}

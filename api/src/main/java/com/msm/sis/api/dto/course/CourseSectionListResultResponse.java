@@ -27,6 +27,7 @@ public record CourseSectionListResultResponse(
         String gradingBasisName,
         BigDecimal credits,
         Integer capacity,
+        Integer hardCapacity,
         boolean waitlistAllowed,
         LocalDate startDate,
         LocalDate endDate,

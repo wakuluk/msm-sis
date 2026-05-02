@@ -15,6 +15,7 @@ CREATE TABLE course_section (
 
     credits DECIMAL(4,2) NOT NULL,
     capacity INT NOT NULL DEFAULT 0,
+    hard_capacity INT NULL,
     waitlist_allowed BOOLEAN NOT NULL DEFAULT FALSE,
 
     start_date DATE NULL,
@@ -55,6 +56,9 @@ CREATE TABLE course_section (
 
     CONSTRAINT chk_course_section_capacity
         CHECK (capacity >= 0),
+
+    CONSTRAINT chk_course_section_hard_capacity
+        CHECK (hard_capacity IS NULL OR hard_capacity >= capacity),
 
     CONSTRAINT chk_course_section_date_range
         CHECK (start_date IS NULL OR end_date IS NULL OR start_date <= end_date)

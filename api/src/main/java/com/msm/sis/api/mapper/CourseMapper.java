@@ -6,10 +6,13 @@ import com.msm.sis.api.dto.course.CourseOfferingSearchResultResponse;
 import com.msm.sis.api.dto.course.AcademicYearCourseOfferingSearchResponse;
 import com.msm.sis.api.dto.course.AcademicYearCourseOfferingSearchResultResponse;
 import com.msm.sis.api.dto.course.CourseResponse;
+import com.msm.sis.api.dto.course.CreateCourseRequest;
+import com.msm.sis.api.dto.course.CreateCourseVersionRequest;
 import com.msm.sis.api.dto.course.CourseSearchResponse;
 import com.msm.sis.api.dto.course.CourseSearchResultResponse;
 import com.msm.sis.api.dto.course.CourseVersionDetailResponse;
 import com.msm.sis.api.dto.course.CourseVersionSearchResponse;
+import com.msm.sis.api.entity.AcademicSubject;
 import com.msm.sis.api.entity.AcademicSubTerm;
 import com.msm.sis.api.entity.Course;
 import com.msm.sis.api.entity.CourseOffering;
@@ -23,6 +26,36 @@ import java.util.List;
 
 @Component
 public class CourseMapper {
+
+    public Course toCourse(
+            AcademicSubject subject,
+            String courseNumber,
+            CreateCourseRequest request
+    ) {
+        Course course = new Course();
+        course.setSubject(subject);
+        course.setCourseNumber(courseNumber);
+        course.setActive(request.active() == null || request.active());
+        return course;
+    }
+
+    public CourseVersion toCourseVersion(
+            Course course,
+            int versionNumber,
+            CreateCourseVersionRequest request,
+            String catalogDescription
+    ) {
+        CourseVersion courseVersion = new CourseVersion();
+        courseVersion.setCourse(course);
+        courseVersion.setVersionNumber(versionNumber);
+        courseVersion.setTitle(request.title().trim());
+        courseVersion.setCatalogDescription(catalogDescription);
+        courseVersion.setMinCredits(request.minCredits());
+        courseVersion.setMaxCredits(request.maxCredits());
+        courseVersion.setVariableCredit(request.variableCredit());
+        courseVersion.setCurrentVersion(true);
+        return courseVersion;
+    }
 
     public CourseOfferingSearchResultResponse toCourseOfferingSearchResultResponse(CourseOffering offering) {
         return toCourseOfferingSearchResultResponse(offering, null);

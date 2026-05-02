@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.msm.sis.api.util.PagingUtils.validatePageRequest;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 @Service
@@ -220,26 +221,10 @@ public class AcademicYearService {
                         CourseOfferingRepository.SubTermCourseOfferingCount::getCourseOfferingCount
                 ));
 
-        List<AcademicYearCoursesSummaryResponse.TermSummary> termSummaries = academicTerms.stream()
-                .map(term -> toCoursesTermSummary(term, courseOfferingCountsBySubTermId))
-                .toList();
-
-        long subTermCount = termSummaries.stream()
-                .mapToLong(AcademicYearCoursesSummaryResponse.TermSummary::subTermCount)
-                .sum();
-
-        long courseOfferingCount = termSummaries.stream()
-                .mapToLong(AcademicYearCoursesSummaryResponse.TermSummary::courseOfferingCount)
-                .sum();
-
-        return new AcademicYearCoursesSummaryResponse(
-                academicYear.getId(),
-                academicYear.getCode(),
-                academicYear.getName(),
-                termSummaries.size(),
-                subTermCount,
-                courseOfferingCount,
-                termSummaries
+        return academicYearMapper.toAcademicYearCoursesSummaryResponse(
+                academicYear,
+                academicTerms,
+                courseOfferingCountsBySubTermId
         );
     }
 
@@ -250,16 +235,7 @@ public class AcademicYearService {
         Map<Long, List<CourseOfferingSearchResultResponse>> courseOfferingsBySubTermId =
                 getCourseOfferingsBySubTermId(id);
 
-        List<AcademicYearCoursesResponse.TermCoursesResponse> terms = academicTerms.stream()
-                .map(term -> toAcademicYearCoursesTermResponse(term, courseOfferingsBySubTermId))
-                .toList();
-
-        return new AcademicYearCoursesResponse(
-                academicYear.getId(),
-                academicYear.getCode(),
-                academicYear.getName(),
-                terms
-        );
+        return academicYearMapper.toAcademicYearCoursesResponse(academicYear, academicTerms, courseOfferingsBySubTermId);
     }
 
     @Transactional
@@ -297,18 +273,12 @@ public class AcademicYearService {
         int page = criteria.getPage() == null ? 0 : criteria.getPage();
         int size = criteria.getSize() == null ? 25 : criteria.getSize();
 
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
-        }
-
-        if (size < 1 || size > 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size must be between 1 and 100.");
-        }
+        validatePageRequest(page, size, 100);
 
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                buildSearchSort(criteria)
+                AcademicYearSearchSort.build(criteria)
         );
 
         Page<AcademicYear> academicYearsPage = academicYearRepository.findAll(
@@ -324,11 +294,7 @@ public class AcademicYearService {
     @Transactional(readOnly = true)
     public List<AcademicYearStatusResponse> getAcademicYearStatuses() {
         return academicYearStatusRepository.findAllByOrderBySortOrderAsc().stream()
-                .map(status -> new AcademicYearStatusResponse(
-                        status.getCode(),
-                        status.getName(),
-                        status.getSortOrder()
-                ))
+                .map(academicYearMapper::toAcademicYearStatusResponse)
                 .toList();
     }
 
@@ -361,42 +327,6 @@ public class AcademicYearService {
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
-    }
-
-    private AcademicYearCoursesResponse.TermCoursesResponse toAcademicYearCoursesTermResponse(
-            AcademicTermResponse term,
-            Map<Long, List<CourseOfferingSearchResultResponse>> courseOfferingsBySubTermId
-    ) {
-        List<AcademicYearCoursesResponse.SubTermCoursesResponse> subTerms = safeSubTerms(term).stream()
-                .map(subTerm -> toAcademicYearCoursesSubTermResponse(subTerm, courseOfferingsBySubTermId))
-                .toList();
-
-        return new AcademicYearCoursesResponse.TermCoursesResponse(
-                term.getTermId(),
-                term.getCode(),
-                term.getName(),
-                term.getStartDate(),
-                term.getEndDate(),
-                subTerms
-        );
-    }
-
-    private AcademicYearCoursesResponse.SubTermCoursesResponse toAcademicYearCoursesSubTermResponse(
-            AcademicSubTermResponse subTerm,
-            Map<Long, List<CourseOfferingSearchResultResponse>> courseOfferingsBySubTermId
-    ) {
-        List<CourseOfferingSearchResultResponse> courseOfferings =
-                courseOfferingsBySubTermId.getOrDefault(subTerm.subTermId(), List.of());
-
-        return new AcademicYearCoursesResponse.SubTermCoursesResponse(
-                subTerm.subTermId(),
-                subTerm.code(),
-                subTerm.name(),
-                subTerm.startDate(),
-                subTerm.endDate(),
-                courseOfferings.size(),
-                courseOfferings
-        );
     }
 
     private Map<Long, List<CourseOfferingSearchResultResponse>> getCourseOfferingsBySubTermId(
@@ -441,44 +371,6 @@ public class AcademicYearService {
                 .and(Sort.by("id").ascending());
     }
 
-    private Sort buildSearchSort(AcademicYearSearchCriteria criteria) {
-        String sortBy = trimToNull(criteria.getSortBy());
-        Sort.Direction sortDirection = parseSortDirection(criteria.getSortDirection());
-
-        String sortProperty = switch (sortBy == null ? "startDate" : sortBy) {
-            case "code" -> "code";
-            case "name" -> "name";
-            case "startDate" -> "startDate";
-            case "endDate" -> "endDate";
-            case "yearStatus", "status", "yearStatusCode" -> "status.sortOrder";
-            case "isPublished", "published" -> "isPublished";
-            default -> throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Sort by must be one of: code, name, startDate, endDate, yearStatus, isPublished."
-            );
-        };
-
-        return Sort.by(sortDirection, sortProperty)
-                .and(Sort.by(Sort.Direction.DESC, "startDate"))
-                .and(Sort.by(Sort.Direction.ASC, "code"))
-                .and(Sort.by(Sort.Direction.ASC, "id"));
-    }
-
-    private Sort.Direction parseSortDirection(String sortDirection) {
-        if (trimToNull(sortDirection) == null) {
-            return Sort.Direction.DESC;
-        }
-
-        try {
-            return Sort.Direction.fromString(sortDirection);
-        } catch (IllegalArgumentException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Sort direction must be 'asc' or 'desc'."
-            );
-        }
-    }
-
     private boolean hasPatchableChanges(
             AcademicYear existingAcademicYear,
             AcademicYear candidateAcademicYear
@@ -508,41 +400,7 @@ public class AcademicYearService {
                 ));
     }
 
-    private AcademicYearCoursesSummaryResponse.TermSummary toCoursesTermSummary(
-            AcademicTermResponse academicTerm,
-            java.util.Map<Long, Long> courseOfferingCountsBySubTermId
-    ) {
-        List<AcademicYearCoursesSummaryResponse.SubTermSummary> subTermSummaries = safeSubTerms(academicTerm).stream()
-                .map(subTerm -> toCoursesSubTermSummary(subTerm, courseOfferingCountsBySubTermId))
-                .toList();
-
-        long courseOfferingCount = subTermSummaries.stream()
-                .mapToLong(AcademicYearCoursesSummaryResponse.SubTermSummary::courseOfferingCount)
-                .sum();
-
-        return new AcademicYearCoursesSummaryResponse.TermSummary(
-                academicTerm.getTermId(),
-                academicTerm.getCode(),
-                academicTerm.getName(),
-                subTermSummaries.size(),
-                courseOfferingCount,
-                subTermSummaries
-        );
-    }
-
-    private AcademicYearCoursesSummaryResponse.SubTermSummary toCoursesSubTermSummary(
-            AcademicSubTermResponse academicSubTerm,
-            java.util.Map<Long, Long> courseOfferingCountsBySubTermId
-    ) {
-        return new AcademicYearCoursesSummaryResponse.SubTermSummary(
-                academicSubTerm.subTermId(),
-                academicSubTerm.code(),
-                academicSubTerm.name(),
-                courseOfferingCountsBySubTermId.getOrDefault(academicSubTerm.subTermId(), 0L)
-        );
-    }
-
     private List<AcademicSubTermResponse> safeSubTerms(AcademicTermResponse academicTerm) {
-        return academicTerm.getSubTerms() == null ? List.of() : academicTerm.getSubTerms();
+        return academicYearMapper.safeSubTerms(academicTerm);
     }
 }

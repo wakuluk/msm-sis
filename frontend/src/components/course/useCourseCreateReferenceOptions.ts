@@ -4,6 +4,7 @@ import {
   getCourseSearchReferenceOptions,
   mapCodeNameReferenceOptionsToSelectOptions,
 } from '@/services/reference-service';
+import { getErrorMessage } from '@/utils/errors';
 
 type CourseCreateReferenceOptionsState =
   | { status: 'idle' }
@@ -27,10 +28,6 @@ export type UseCourseCreateReferenceOptionsResult = {
 const emptySchoolOptions: StringOption[] = [];
 const emptyDepartmentOptions: Array<{ schoolId: number } & StringOption> = [];
 const emptySubjectOptions: Array<{ departmentId: number } & StringOption> = [];
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Failed to load course reference options.';
-}
 
 export function useCourseCreateReferenceOptions(
   options: { enabled?: boolean } = {}
@@ -78,7 +75,7 @@ export function useCourseCreateReferenceOptions(
           requestInFlightRef.current = false;
           setState({
             status: 'error',
-            message: getErrorMessage(error),
+            message: getErrorMessage(error, 'Failed to load course reference options.'),
           });
         }
       }

@@ -14,9 +14,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
-import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
-import { SearchResultsTable } from '@/components/search/SearchResultsTable';
+import { SearchResultsPanel } from '@/components/search/SearchResultsPanel';
 import { searchAcademicYearCourseOfferings } from '@/services/admin-courses-service';
 import { getCourseSearchReferenceOptions } from '@/services/reference-service';
 import type {
@@ -258,6 +256,10 @@ export function AcademicYearCourseOfferingSearchSection({
       signal: abortController.signal,
     })
       .then((response) => {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         setSearchState({ status: 'success', response });
       })
       .catch((error) => {
@@ -336,6 +338,10 @@ export function AcademicYearCourseOfferingSearchSection({
       },
     },
   });
+  const resultsPanelStatus =
+    searchState.status === 'success' && searchState.response.results.length === 0
+      ? 'empty'
+      : searchState.status;
   const showSectionSearch = sectionSearchValues && onSectionSearchValuesChange;
 
   function handleSchoolChange(value: string | null) {
@@ -609,75 +615,66 @@ export function AcademicYearCourseOfferingSearchSection({
               </Grid.Col>
             </Grid>
 
-            {searchState.status === 'error' ? (
-              <Alert color="red" title="Unable to load academic year offerings">
-                {searchState.message}
-              </Alert>
-            ) : null}
-
-            {searchState.status === 'loading' ? (
-              <Alert color="blue" title="Loading academic year offerings">
-                Fetching the paged course offering list for this academic year.
-              </Alert>
-            ) : null}
-
-            {searchState.status === 'success' && searchState.response.results.length === 0 ? (
-              <Alert color="gray" title="No offerings match these filters">
-                No course offerings were found for the selected academic year filters.
-              </Alert>
-            ) : null}
-
-            {searchState.status === 'success' && searchState.response.results.length > 0 ? (
-              <>
-                <SearchResultsHeader
-                  data={yearOfferingResultsViewOptions}
-                  value={resultsView}
-                  onChange={setResultsView}
-                  summary={getYearOfferingResultsSummary(searchState)}
-                />
-
-                <SearchResultsTable
-                  table={table}
-                  sortBy={sortBy}
-                  sortDirection={sortDirection}
-                  onToggleSort={handleToggleSort}
-                  getRowProps={
-                    onOfferingSelected
-                      ? (row) => ({
-                          tabIndex: 0,
-                          onClick: () => {
-                            handleOfferingSelected(row.original);
-                          },
-                          onKeyDown: (event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              handleOfferingSelected(row.original);
-                            }
-                          },
-                        })
-                      : undefined
-                  }
-                />
-
-                <SearchPaginationFooter
-                  page={searchState.response.page}
-                  totalPages={searchState.response.totalPages}
-                  onPageChange={setPage}
-                />
-
-                <Group justify="space-between" align="center" gap="sm" wrap="wrap">
-                  <Text size="sm" c="dimmed">
-                    {searchState.response.totalElements} offerings found, limited to{' '}
-                    {searchState.response.size} rows per page.
-                  </Text>
-                  {onViewSearchSections ? (
-                    <Button variant="light" onClick={handleViewSearchSections}>
-                      View offering sections
-                    </Button>
-                  ) : null}
-                </Group>
-              </>
-            ) : null}
+            <SearchResultsPanel
+              status={resultsPanelStatus}
+              summary={getYearOfferingResultsSummary(searchState)}
+              table={table}
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              onToggleSort={handleToggleSort}
+              viewOptions={yearOfferingResultsViewOptions}
+              view={resultsView}
+              onViewChange={setResultsView}
+              notice={{
+                idleTitle: '',
+                idleMessage: '',
+                loadingMessage: 'Fetching the paged course offering list for this academic year.',
+                errorTitle: 'Unable to load academic year offerings',
+                errorMessage: searchState.status === 'error' ? searchState.message : null,
+                emptyTitle: 'No offerings match these filters',
+                emptyMessage: 'No course offerings were found for the selected academic year filters.',
+              }}
+              getRowProps={
+                onOfferingSelected
+                  ? (row) => ({
+                      tabIndex: 0,
+                      onClick: () => {
+                        handleOfferingSelected(row.original);
+                      },
+                      onKeyDown: (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleOfferingSelected(row.original);
+                        }
+                      },
+                    })
+                  : undefined
+              }
+              pagination={
+                searchState.status === 'success' && searchState.response.results.length > 0
+                  ? {
+                      page: searchState.response.page,
+                      totalPages: searchState.response.totalPages,
+                      onPageChange: setPage,
+                    }
+                  : null
+              }
+              footerContent={
+                searchState.status === 'success' && searchState.response.results.length > 0 ? (
+                  <Group justify="space-between" align="center" gap="sm" wrap="wrap">
+                    <Text size="sm" c="dimmed">
+                      {searchState.response.totalElements} offerings found, limited to{' '}
+                      {searchState.response.size} rows per page.
+                    </Text>
+                    {onViewSearchSections ? (
+                      <Button variant="light" onClick={handleViewSearchSections}>
+                        View offering sections
+                      </Button>
+                    ) : null}
+                  </Group>
+                ) : null
+              }
+            />
           </Stack>
         </Paper>
       </Grid.Col>

@@ -1,15 +1,13 @@
 package com.msm.sis.api.mapper;
 
+import com.msm.sis.api.dto.program.CreateProgramRequest;
+import com.msm.sis.api.dto.program.CreateProgramVersionRequest;
 import com.msm.sis.api.dto.program.ProgramDetailResponse;
 import com.msm.sis.api.dto.program.ProgramSearchResponse;
 import com.msm.sis.api.dto.program.ProgramSearchResultResponse;
 import com.msm.sis.api.dto.program.ProgramVersionDetailResponse;
 import com.msm.sis.api.dto.program.ProgramVersionRequirementResponse;
-import com.msm.sis.api.dto.program.RequirementCourseResponse;
-import com.msm.sis.api.dto.program.RequirementCourseRuleResponse;
 import com.msm.sis.api.entity.AcademicDepartment;
-import com.msm.sis.api.entity.AcademicSubject;
-import com.msm.sis.api.entity.Course;
 import com.msm.sis.api.entity.AcademicSchool;
 import com.msm.sis.api.entity.DegreeType;
 import com.msm.sis.api.entity.Program;
@@ -24,8 +22,15 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
+import static com.msm.sis.api.util.TextUtils.trimToNull;
+
 @Component
 public class ProgramMapper {
+    private final RequirementMapper requirementMapper;
+
+    public ProgramMapper(RequirementMapper requirementMapper) {
+        this.requirementMapper = requirementMapper;
+    }
 
     public ProgramSearchResultResponse toProgramSearchResultResponse(
             Program program,
@@ -70,6 +75,39 @@ public class ProgramMapper {
             int totalPages
     ) {
         return new ProgramSearchResponse(results, page, size, totalElements, totalPages);
+    }
+
+    public Program toProgram(
+            AcademicSchool school,
+            AcademicDepartment department,
+            ProgramType programType,
+            DegreeType degreeType,
+            String programCode,
+            CreateProgramRequest request
+    ) {
+        Program program = new Program();
+        program.setSchool(school);
+        program.setDepartment(department);
+        program.setProgramType(programType);
+        program.setDegreeType(degreeType);
+        program.setCode(programCode);
+        program.setName(request.name().trim());
+        program.setDescription(trimToNull(request.description()));
+        return program;
+    }
+
+    public ProgramVersion toInitialProgramVersion(
+            Program program,
+            CreateProgramVersionRequest request
+    ) {
+        ProgramVersion programVersion = new ProgramVersion();
+        programVersion.setProgram(program);
+        programVersion.setVersionNumber(1);
+        programVersion.setPublished(Boolean.TRUE.equals(request.published()));
+        programVersion.setClassYearStart(request.classYearStart());
+        programVersion.setClassYearEnd(request.classYearEnd());
+        programVersion.setNotes(trimToNull(request.notes()));
+        return programVersion;
     }
 
     public ProgramDetailResponse toProgramDetailResponse(
@@ -146,28 +184,10 @@ public class ProgramMapper {
             List<RequirementCourse> requirementCourses,
             List<RequirementCourseRule> requirementCourseRules
     ) {
-        Requirement requirement = programVersionRequirement.getRequirement();
-
-        return new ProgramVersionRequirementResponse(
-                programVersionRequirement.getId(),
-                requirement == null ? null : requirement.getId(),
-                requirement == null ? null : requirement.getCode(),
-                requirement == null ? null : requirement.getName(),
-                requirement == null ? null : requirement.getRequirementType(),
-                requirement == null ? null : requirement.getDescription(),
-                requirement == null ? null : requirement.getMinimumCredits(),
-                requirement == null ? null : requirement.getMinimumCourses(),
-                requirement == null ? null : requirement.getCourseMatchMode(),
-                requirement == null ? null : requirement.getMinimumGrade(),
-                requirementCourses.stream()
-                        .map(this::toRequirementCourseResponse)
-                        .toList(),
-                requirementCourseRules.stream()
-                        .map(this::toRequirementCourseRuleResponse)
-                        .toList(),
-                programVersionRequirement.getSortOrder(),
-                programVersionRequirement.isRequired(),
-                programVersionRequirement.getNotes()
+        return requirementMapper.toProgramVersionRequirementResponse(
+                programVersionRequirement,
+                requirementCourses,
+                requirementCourseRules
         );
     }
 
@@ -187,38 +207,6 @@ public class ProgramMapper {
                 requirementId == null
                         ? List.of()
                         : requirementCourseRulesByRequirementId.getOrDefault(requirementId, List.of())
-        );
-    }
-
-    private RequirementCourseResponse toRequirementCourseResponse(RequirementCourse requirementCourse) {
-        Course course = requirementCourse.getCourse();
-        AcademicSubject subject = course == null ? null : course.getSubject();
-
-        return new RequirementCourseResponse(
-                requirementCourse.getId(),
-                course == null ? null : course.getId(),
-                subject == null ? null : subject.getCode(),
-                course == null ? null : course.getCourseNumber(),
-                requirementCourse.isRequired(),
-                requirementCourse.getMinimumGrade()
-        );
-    }
-
-    private RequirementCourseRuleResponse toRequirementCourseRuleResponse(
-            RequirementCourseRule requirementCourseRule
-    ) {
-        AcademicDepartment department = requirementCourseRule.getDepartment();
-
-        return new RequirementCourseRuleResponse(
-                requirementCourseRule.getId(),
-                department == null ? null : department.getId(),
-                department == null ? null : department.getCode(),
-                department == null ? null : department.getName(),
-                requirementCourseRule.getMinimumCourseNumber(),
-                requirementCourseRule.getMaximumCourseNumber(),
-                requirementCourseRule.getMinimumCredits(),
-                requirementCourseRule.getMinimumCourses(),
-                requirementCourseRule.getMinimumGrade()
         );
     }
 }

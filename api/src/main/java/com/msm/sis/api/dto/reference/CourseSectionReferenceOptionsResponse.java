@@ -8,7 +8,7 @@ public record CourseSectionReferenceOptionsResponse(
         List<CodeNameReferenceOptionResponse> courseSectionStatuses,
         List<CodeNameReferenceOptionResponse> academicDivisions,
         List<CodeNameReferenceOptionResponse> deliveryModes,
-        List<CodeNameReferenceOptionResponse> gradingBases,
+        List<GradingBasisReferenceOptionResponse> gradingBases,
         List<CodeNameReferenceOptionResponse> sectionMeetingTypes,
         List<CodeNameReferenceOptionResponse> sectionInstructorRoles,
         List<CodeNameReferenceOptionResponse> studentSectionEnrollmentStatuses,

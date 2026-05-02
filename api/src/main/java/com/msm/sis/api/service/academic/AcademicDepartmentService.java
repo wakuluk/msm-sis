@@ -9,7 +9,6 @@ import com.msm.sis.api.entity.AcademicSubject;
 import com.msm.sis.api.entity.Course;
 import com.msm.sis.api.mapper.CourseMapper;
 import com.msm.sis.api.mapper.AcademicDepartmentMapper;
-import com.msm.sis.api.patch.PatchValue;
 import com.msm.sis.api.repository.AcademicDepartmentRepository;
 import com.msm.sis.api.repository.AcademicSubjectRepository;
 import com.msm.sis.api.repository.CourseRepository;
@@ -24,9 +23,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 
+import static com.msm.sis.api.patch.PatchUtils.applyRequiredBoolean;
+import static com.msm.sis.api.patch.PatchUtils.applyTrimmed;
+import static com.msm.sis.api.util.SortUtils.parseDirection;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
+import static com.msm.sis.api.util.ValidationUtils.requireGreaterThanZero;
 
 @Service
 public class AcademicDepartmentService {
@@ -116,9 +118,7 @@ public class AcademicDepartmentService {
     public List<CourseResponse> getDepartmentSubjectCourses(Long departmentId, Long subjectId) {
         AcademicDepartment academicDepartment = getAcademicDepartmentEntity(departmentId);
 
-        if (subjectId == null || subjectId < 1) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subject ID must be greater than zero.");
-        }
+        requireGreaterThanZero(subjectId, "Subject ID");
 
         academicSubjectRepository.findByIdAndDepartment_Id(subjectId, academicDepartment.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -224,14 +224,7 @@ public class AcademicDepartmentService {
     }
 
     private Sort.Direction parseSortDirection(String sortDirection) {
-        try {
-            return Sort.Direction.fromString(sortDirection);
-        } catch (IllegalArgumentException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Sort direction must be 'asc' or 'desc'."
-            );
-        }
+        return parseDirection(sortDirection, Sort.Direction.ASC);
     }
 
     private AcademicDepartment copyAcademicDepartment(AcademicDepartment academicDepartment) {
@@ -259,29 +252,6 @@ public class AcademicDepartmentService {
         return !Objects.equals(trimToNull(existing.getCode()), trimToNull(candidate.getCode()))
                 || !Objects.equals(trimToNull(existing.getName()), trimToNull(candidate.getName()))
                 || existing.isActive() != candidate.isActive();
-    }
-
-    private void applyTrimmed(PatchValue<String> value, Consumer<String> consumer) {
-        if (value.isPresent()) {
-            consumer.accept(trimToNull(value.orElse(null)));
-        }
-    }
-
-    private void applyRequiredBoolean(
-            PatchValue<Boolean> value,
-            Consumer<Boolean> consumer,
-            String fieldName
-    ) {
-        if (!value.isPresent()) {
-            return;
-        }
-
-        Boolean patchedValue = value.orElse(null);
-        if (patchedValue == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " is required.");
-        }
-
-        consumer.accept(patchedValue);
     }
 
 }

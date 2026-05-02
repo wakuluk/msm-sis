@@ -130,8 +130,22 @@ export function CourseSectionDetailPage() {
     () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.deliveryModes ?? []),
     [referenceOptions]
   );
-  const gradingBasisOptions = useMemo(
-    () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.gradingBases ?? []),
+  const sectionGradingBasisOptions = useMemo(
+    () =>
+      mapReferenceOptionsToCodeSelectOptions(
+        (referenceOptions?.gradingBases ?? []).filter(
+          (gradingBasis) => gradingBasis.allowedForCourseSections
+        )
+      ),
+    [referenceOptions]
+  );
+  const enrollmentGradingBasisOptions = useMemo(
+    () =>
+      mapReferenceOptionsToCodeSelectOptions(
+        (referenceOptions?.gradingBases ?? []).filter(
+          (gradingBasis) => gradingBasis.allowedForStudentEnrollments
+        )
+      ),
     [referenceOptions]
   );
   const enrollmentStatusOptions = useMemo(
@@ -438,7 +452,7 @@ export function CourseSectionDetailPage() {
                     creditOptions={creditOptions}
                     draft={draft}
                     fieldsDisabled={fieldsDisabled}
-                    gradingBasisOptions={gradingBasisOptions}
+                    gradingBasisOptions={sectionGradingBasisOptions}
                     readOnlyInputStyles={readOnlyInputStyles}
                     referencesAreLoading={referencesAreLoading}
                     staffLoading={staffSearchState.status === 'loading'}
@@ -479,7 +493,7 @@ export function CourseSectionDetailPage() {
               <Grid.Col span={12}>
                 <CourseSectionStudentsPanel
                   selectedSection={section}
-                  gradingBasisOptions={gradingBasisOptions}
+                  gradingBasisOptions={enrollmentGradingBasisOptions}
                   enrollmentStatusOptions={enrollmentStatusOptions}
                 />
               </Grid.Col>

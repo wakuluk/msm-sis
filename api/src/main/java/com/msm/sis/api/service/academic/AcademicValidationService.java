@@ -9,7 +9,6 @@ import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.repository.AcademicTermRepository;
 import com.msm.sis.api.repository.AcademicSubTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
-import com.msm.sis.api.validation.ValidationUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,6 +20,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
+import static com.msm.sis.api.util.ValidationUtils.validateMaxLength;
 
 @Service
 public class AcademicValidationService {
@@ -229,8 +229,8 @@ public class AcademicValidationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Academic year code and name are required.");
         }
 
-        ValidationUtils.validateMaxLength(academicYear.getCode(), 20, "Academic year code");
-        ValidationUtils.validateMaxLength(academicYear.getName(), 100, "Academic year name");
+        validateMaxLength(academicYear.getCode(), 20, "Academic year code");
+        validateMaxLength(academicYear.getName(), 100, "Academic year name");
         validateDateRange(academicYear.getStartDate(), academicYear.getEndDate(), "Academic year");
     }
 
@@ -394,8 +394,8 @@ public class AcademicValidationService {
             );
         }
 
-        ValidationUtils.validateMaxLength(normalizedCode, 20, "Academic sub term code");
-        ValidationUtils.validateMaxLength(normalizedName, 100, "Academic sub term name");
+        validateMaxLength(normalizedCode, 20, "Academic sub term code");
+        validateMaxLength(normalizedName, 100, "Academic sub term name");
         validateDateRange(startDate, endDate, "Academic sub term");
 
         if (academicYear.getStartDate() == null || academicYear.getEndDate() == null) {
@@ -427,8 +427,8 @@ public class AcademicValidationService {
             );
         }
 
-        ValidationUtils.validateMaxLength(normalizedCode, 20, "Academic term code");
-        ValidationUtils.validateMaxLength(normalizedName, 100, "Academic term name");
+        validateMaxLength(normalizedCode, 20, "Academic term code");
+        validateMaxLength(normalizedName, 100, "Academic term name");
         validateDateRange(startDate, endDate, "Academic term");
 
         if (academicYear.getStartDate() == null || academicYear.getEndDate() == null) {

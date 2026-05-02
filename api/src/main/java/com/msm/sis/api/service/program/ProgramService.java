@@ -14,7 +14,6 @@ import com.msm.sis.api.entity.Program;
 import com.msm.sis.api.entity.ProgramType;
 import com.msm.sis.api.entity.ProgramVersion;
 import com.msm.sis.api.entity.ProgramVersionRequirement;
-import com.msm.sis.api.entity.Requirement;
 import com.msm.sis.api.entity.RequirementCourse;
 import com.msm.sis.api.entity.RequirementCourseRule;
 import com.msm.sis.api.mapper.ProgramMapper;
@@ -28,21 +27,24 @@ import com.msm.sis.api.repository.ProgramVersionRequirementRepository;
 import com.msm.sis.api.repository.RequirementCourseRepository;
 import com.msm.sis.api.repository.RequirementCourseRuleRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 
-import static com.msm.sis.api.util.TextUtils.trimToNull;
+import static com.msm.sis.api.util.PagingUtils.validatePageRequest;
+import static com.msm.sis.api.util.ProgramGroupingUtils.collectProgramIds;
+import static com.msm.sis.api.util.ProgramGroupingUtils.indexFirstVersionByProgramId;
+import static com.msm.sis.api.util.RequirementGroupingUtils.collectRequirementIds;
+import static com.msm.sis.api.util.RequirementGroupingUtils.groupRequirementCourseRulesByRequirementId;
+import static com.msm.sis.api.util.RequirementGroupingUtils.groupRequirementCoursesByRequirementId;
+import static com.msm.sis.api.util.TextUtils.containsIgnoreCase;
+import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
 
 @Service
 @RequiredArgsConstructor
@@ -72,15 +74,7 @@ public class ProgramService {
         DegreeType degreeType = resolveDegreeType(request.degreeTypeId());
         programValidationService.validateProgramTypeRelationships(programType, school, department, degreeType);
 
-        Program program = new Program();
-        program.setSchool(school);
-        program.setDepartment(department);
-        program.setProgramType(programType);
-        program.setDegreeType(degreeType);
-        program.setCode(programCode);
-        program.setName(request.name().trim());
-        program.setDescription(trimToNull(request.description()));
-
+        Program program = programMapper.toProgram(school, department, programType, degreeType, programCode, request);
         Program savedProgram = programRepository.save(program);
         ProgramVersion savedProgramVersion = createInitialProgramVersion(savedProgram, request.initialVersion());
 
@@ -98,9 +92,7 @@ public class ProgramService {
 
     @Transactional(readOnly = true)
     public ProgramDetailResponse getProgramDetail(Long programId) {
-        if (programId == null || programId <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Program id must be a positive number.");
-        }
+        requirePositiveId(programId, "Program id");
 
         Program program = programRepository.findById(programId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Program was not found."));
@@ -108,9 +100,9 @@ public class ProgramService {
         Map<Long, List<ProgramVersionRequirement>> requirementsByVersionId = buildRequirementsByVersionId(versions);
         List<Long> requirementIds = collectRequirementIds(requirementsByVersionId);
         Map<Long, List<RequirementCourse>> requirementCoursesByRequirementId =
-                buildRequirementCoursesByRequirementId(requirementIds);
+                groupRequirementCoursesByRequirementId(findRequirementCourses(requirementIds));
         Map<Long, List<RequirementCourseRule>> requirementCourseRulesByRequirementId =
-                buildRequirementCourseRulesByRequirementId(requirementIds);
+                groupRequirementCourseRulesByRequirementId(findRequirementCourseRules(requirementIds));
 
         return programMapper.toProgramDetailResponse(
                 program,
@@ -129,13 +121,7 @@ public class ProgramService {
             String sortBy,
             String sortDirection
     ) {
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
-        }
-
-        if (size < 1 || size > 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size must be between 1 and 100.");
-        }
+        validatePageRequest(page, size, 100);
 
         ProgramSearchCriteria effectiveCriteria = criteria == null ? new ProgramSearchCriteria() : criteria;
         List<Program> programs = programRepository.findAll();
@@ -143,7 +129,7 @@ public class ProgramService {
 
         List<ProgramSearchResultResponse> filteredResults = programs.stream()
                 .filter(program -> matchesProgramSearchCriteria(program, effectiveCriteria))
-                .sorted(buildProgramSearchComparator(
+                .sorted(ProgramSearchSort.buildComparator(
                         sortBy == null ? effectiveCriteria.getSortBy() : sortBy,
                         sortDirection == null ? effectiveCriteria.getSortDirection() : sortDirection
                 ))
@@ -171,14 +157,7 @@ public class ProgramService {
             Program program,
             CreateProgramVersionRequest request
     ) {
-        ProgramVersion programVersion = new ProgramVersion();
-        programVersion.setProgram(program);
-        programVersion.setVersionNumber(1);
-        programVersion.setPublished(Boolean.TRUE.equals(request.published()));
-        programVersion.setClassYearStart(request.classYearStart());
-        programVersion.setClassYearEnd(request.classYearEnd());
-        programVersion.setNotes(trimToNull(request.notes()));
-        return programVersionRepository.save(programVersion);
+        return programVersionRepository.save(programMapper.toInitialProgramVersion(program, request));
     }
 
     private AcademicDepartment resolveDepartment(Long departmentId, AcademicSchool school) {
@@ -219,89 +198,30 @@ public class ProgramService {
         return requirementsByVersionId;
     }
 
-    private List<Long> collectRequirementIds(
-            Map<Long, List<ProgramVersionRequirement>> requirementsByVersionId
-    ) {
-        return requirementsByVersionId.values().stream()
-                .flatMap(List::stream)
-                .map(ProgramVersionRequirement::getRequirement)
-                .filter(Objects::nonNull)
-                .map(Requirement::getId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-    }
-
-    private Map<Long, List<RequirementCourse>> buildRequirementCoursesByRequirementId(
-            List<Long> requirementIds
-    ) {
+    private List<RequirementCourse> findRequirementCourses(List<Long> requirementIds) {
         if (requirementIds.isEmpty()) {
-            return Map.of();
+            return List.of();
         }
 
-        Map<Long, List<RequirementCourse>> requirementCoursesByRequirementId = new LinkedHashMap<>();
-        requirementCourseRepository.findCoursesForRequirements(requirementIds)
-                .forEach(requirementCourse -> {
-                    if (requirementCourse.getRequirement() == null
-                            || requirementCourse.getRequirement().getId() == null) {
-                        return;
-                    }
-
-                    requirementCoursesByRequirementId
-                            .computeIfAbsent(requirementCourse.getRequirement().getId(), ignored -> new java.util.ArrayList<>())
-                            .add(requirementCourse);
-                });
-
-        return requirementCoursesByRequirementId;
+        return requirementCourseRepository.findCoursesForRequirements(requirementIds);
     }
 
-    private Map<Long, List<RequirementCourseRule>> buildRequirementCourseRulesByRequirementId(
-            List<Long> requirementIds
-    ) {
+    private List<RequirementCourseRule> findRequirementCourseRules(List<Long> requirementIds) {
         if (requirementIds.isEmpty()) {
-            return Map.of();
+            return List.of();
         }
 
-        Map<Long, List<RequirementCourseRule>> requirementCourseRulesByRequirementId = new LinkedHashMap<>();
-        requirementCourseRuleRepository.findRulesForRequirements(requirementIds)
-                .forEach(requirementCourseRule -> {
-                    if (requirementCourseRule.getRequirement() == null
-                            || requirementCourseRule.getRequirement().getId() == null) {
-                        return;
-                    }
-
-                    requirementCourseRulesByRequirementId
-                            .computeIfAbsent(requirementCourseRule.getRequirement().getId(), ignored -> new java.util.ArrayList<>())
-                            .add(requirementCourseRule);
-                });
-
-        return requirementCourseRulesByRequirementId;
+        return requirementCourseRuleRepository.findRulesForRequirements(requirementIds);
     }
 
     private Map<Long, ProgramVersion> buildCurrentVersionsByProgramId(List<Program> programs) {
-        List<Long> programIds = programs.stream()
-                .map(Program::getId)
-                .filter(Objects::nonNull)
-                .toList();
+        List<Long> programIds = collectProgramIds(programs);
 
         if (programIds.isEmpty()) {
             return Map.of();
         }
 
-        Map<Long, ProgramVersion> currentVersionsByProgramId = new LinkedHashMap<>();
-        programVersionRepository.findOpenEndedVersionsForPrograms(programIds)
-                .forEach(programVersion -> {
-                    if (programVersion.getProgram() == null || programVersion.getProgram().getId() == null) {
-                        return;
-                    }
-
-                    currentVersionsByProgramId.putIfAbsent(
-                            programVersion.getProgram().getId(),
-                            programVersion
-                    );
-                });
-
-        return currentVersionsByProgramId;
+        return indexFirstVersionByProgramId(programVersionRepository.findOpenEndedVersionsForPrograms(programIds));
     }
 
     private boolean matchesProgramSearchCriteria(Program program, ProgramSearchCriteria criteria) {
@@ -339,92 +259,6 @@ public class ProgramService {
 
         return containsIgnoreCase(program.getCode(), criteria.getCode())
                 && containsIgnoreCase(program.getName(), criteria.getName());
-    }
-
-    private Comparator<Program> buildProgramSearchComparator(String sortBy, String sortDirection) {
-        Sort.Direction direction = parseSortDirection(sortDirection);
-        String normalizedSortBy = normalizeSortBy(sortBy, "code");
-
-        Comparator<Program> primaryComparator = switch (normalizedSortBy) {
-            case "programTypeName" -> compareStrings(direction, program -> {
-                return program.getProgramType() == null ? null : program.getProgramType().getName();
-            });
-            case "degreeTypeName" -> compareStrings(direction, program -> {
-                return program.getDegreeType() == null ? null : program.getDegreeType().getName();
-            });
-            case "schoolName" -> compareStrings(direction, program -> {
-                return program.getSchool() == null ? null : program.getSchool().getName();
-            });
-            case "departmentName" -> compareStrings(direction, program -> {
-                return program.getDepartment() == null ? null : program.getDepartment().getName();
-            });
-            case "code" -> compareStrings(direction, Program::getCode);
-            case "name" -> compareStrings(direction, Program::getName);
-            case "createdAt" -> Comparator.comparing(
-                    Program::getCreatedAt,
-                    direction == Sort.Direction.ASC
-                            ? Comparator.nullsLast(Comparator.naturalOrder())
-                            : Comparator.nullsLast(Comparator.reverseOrder())
-            );
-            case "updatedAt" -> Comparator.comparing(
-                    Program::getUpdatedAt,
-                    direction == Sort.Direction.ASC
-                            ? Comparator.nullsLast(Comparator.naturalOrder())
-                            : Comparator.nullsLast(Comparator.reverseOrder())
-            );
-            default -> throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Sort by must be one of: programTypeName, degreeTypeName, schoolName, departmentName, code, name, createdAt, updatedAt."
-            );
-        };
-
-        return primaryComparator
-                .thenComparing(compareStrings(Sort.Direction.ASC, Program::getCode))
-                .thenComparing(Comparator.comparing(Program::getId, Comparator.nullsLast(Long::compareTo)));
-    }
-
-    private Sort.Direction parseSortDirection(String sortDirection) {
-        try {
-            return Sort.Direction.fromString(sortDirection == null ? "asc" : sortDirection);
-        } catch (IllegalArgumentException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Sort direction must be 'asc' or 'desc'."
-            );
-        }
-    }
-
-    private Comparator<Program> compareStrings(
-            Sort.Direction direction,
-            Function<Program, String> valueExtractor
-    ) {
-        Comparator<String> stringComparator = Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER);
-        if (direction == Sort.Direction.DESC) {
-            stringComparator = stringComparator.reversed();
-        }
-
-        return Comparator.comparing(valueExtractor, stringComparator);
-    }
-
-    private boolean containsIgnoreCase(String value, String filter) {
-        if (filter == null || filter.isBlank()) {
-            return true;
-        }
-
-        if (value == null) {
-            return false;
-        }
-
-        return value.toLowerCase(Locale.US).contains(filter.trim().toLowerCase(Locale.US));
-    }
-
-    private String normalizeSortBy(String sortBy, String defaultSortBy) {
-        if (sortBy == null) {
-            return defaultSortBy;
-        }
-
-        String trimmedSortBy = sortBy.trim();
-        return trimmedSortBy.isEmpty() ? defaultSortBy : trimmedSortBy;
     }
 
 }

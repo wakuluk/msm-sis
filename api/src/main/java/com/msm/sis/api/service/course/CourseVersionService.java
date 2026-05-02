@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
+
 @Service
 public class CourseVersionService {
 
@@ -25,12 +27,7 @@ public class CourseVersionService {
 
     @Transactional
     public CourseVersionDetailResponse makeVersionCurrent(Long versionId) {
-        if (versionId == null || versionId <= 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Course version id must be a positive number."
-            );
-        }
+        requirePositiveId(versionId, "Course version id");
 
         CourseVersion courseVersion = courseVersionRepository.findCourseVersionById(versionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));

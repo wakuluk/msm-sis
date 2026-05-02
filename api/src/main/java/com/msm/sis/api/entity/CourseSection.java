@@ -87,6 +87,9 @@ public class CourseSection {
     @Column(name = "capacity", nullable = false)
     private Integer capacity = 0;
 
+    @Column(name = "hard_capacity")
+    private Integer hardCapacity;
+
     @Column(name = "waitlist_allowed", nullable = false)
     private boolean waitlistAllowed = false;
 

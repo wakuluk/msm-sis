@@ -4,10 +4,7 @@ import { Container, Paper, Stack, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { StudentSearchForm } from '@/components/student/StudentSearchForm';
-import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
-import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
-import { SearchResultsStateNotice } from '@/components/search/SearchResultsStateNotice';
-import { SearchResultsTable } from '@/components/search/SearchResultsTable';
+import { SearchResultsPanel } from '@/components/search/SearchResultsPanel';
 import {
   getStudentReferenceOptions,
   mapReferenceOptionsToSelectOptions,
@@ -31,6 +28,7 @@ import {
   type StudentSortBy,
   type StudentSortDirection,
 } from '@/services/schemas/student-schemas';
+import { getErrorMessage } from '@/utils/errors';
 
 const advancedSearchKeys: (keyof StudentSearchFilters)[] = [
   'genderId',
@@ -136,10 +134,6 @@ function parseStudentSearchPage(value: string | null | undefined): number {
   const parsedValue = Number(value);
 
   return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : 0;
-}
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Failed to search students.';
 }
 
 function formatResultValue(value: string | number | null | undefined): string {
@@ -274,7 +268,7 @@ export function StudentSearchPage() {
         setReferenceOptionsError(null);
       } catch (error) {
         if (!cancelled) {
-          setReferenceOptionsError(getErrorMessage(error));
+          setReferenceOptionsError(getErrorMessage(error, 'Failed to load student reference options.'));
         }
       }
     })();
@@ -329,7 +323,7 @@ export function StudentSearchPage() {
           return;
         }
 
-        setSearchResultsState({ status: 'error', message: getErrorMessage(error) });
+        setSearchResultsState({ status: 'error', message: getErrorMessage(error, 'Failed to search students.') });
       }
     })();
 
@@ -421,71 +415,63 @@ export function StudentSearchPage() {
           onSubmit={handleSubmit}
         />
 
-        <Paper p="lg">
-          <Stack gap="md">
-            <Title order={3}>Results</Title>
-
-            {searchResultsState.status === 'empty' || searchResultsState.status === 'success' ? (
-              <SearchResultsHeader
-                data={[
-                  { label: 'Standard', value: 'standard' },
-                  { label: 'System', value: 'system' },
-                ]}
-                value={resultsView}
-                onChange={(value) => {
-                  setResultsView(value as StudentResultsView);
-                }}
-                summary={getResultsSummary(searchResultsState.response)}
-              />
-            ) : null}
-
-            <SearchResultsStateNotice
-              status={searchResultsState.status}
-              idleTitle="Search students"
-              idleMessage="Enter filters if needed, then click `Search Students` to load results."
-              loadingMessage="Loading students..."
-              errorMessage={
-                searchResultsState.status === 'error' ? searchResultsState.message : null
+        <SearchResultsPanel
+          title="Results"
+          status={searchResultsState.status}
+          summary={
+            searchResultsState.status === 'empty' || searchResultsState.status === 'success'
+              ? getResultsSummary(searchResultsState.response)
+              : ''
+          }
+          table={studentResultsTable}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onToggleSort={toggleColumnSort}
+          showHeader={searchResultsState.status === 'empty' || searchResultsState.status === 'success'}
+          viewOptions={[
+            { label: 'Standard', value: 'standard' },
+            { label: 'System', value: 'system' },
+          ]}
+          view={resultsView}
+          onViewChange={(value) => {
+            setResultsView(value as StudentResultsView);
+          }}
+          notice={{
+            idleTitle: 'Search students',
+            idleMessage: 'Enter filters if needed, then click `Search Students` to load results.',
+            loadingMessage: 'Loading students...',
+            errorMessage: searchResultsState.status === 'error' ? searchResultsState.message : null,
+            emptyTitle: 'No students found',
+            emptyMessage: 'No students matched the current search criteria.',
+          }}
+          getRowProps={(row) => ({
+            role: 'link',
+            tabIndex: 0,
+            onClick: () => {
+              openStudentDetail(row.original.studentId);
+            },
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openStudentDetail(row.original.studentId);
               }
-              emptyTitle="No students found"
-              emptyMessage="No students matched the current search criteria."
-            />
-
-            {searchResultsState.status === 'success' ? (
-              <Stack gap="lg">
-                <SearchResultsTable
-                  table={studentResultsTable}
-                  sortBy={sortBy}
-                  sortDirection={sortDirection}
-                  onToggleSort={toggleColumnSort}
-                  getRowProps={(row) => ({
-                    role: 'link',
-                    tabIndex: 0,
-                    onClick: () => {
-                      openStudentDetail(row.original.studentId);
-                    },
-                    onKeyDown: (event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        openStudentDetail(row.original.studentId);
-                      }
-                    },
-                  })}
-                />
-                <SearchPaginationFooter
-                  page={searchResultsState.response.page}
-                  totalPages={searchResultsState.response.totalPages}
-                  onPageChange={(nextPage) => {
+            },
+          })}
+          pagination={
+            searchResultsState.status === 'success'
+              ? {
+                  page: searchResultsState.response.page,
+                  totalPages: searchResultsState.response.totalPages,
+                  onPageChange: (nextPage) => {
                     applySearchParams({
                       ...searchParamValues,
                       page: nextPage,
                     });
-                  }}
-                />
-              </Stack>
-            ) : null}
-          </Stack>
-        </Paper>
+                  },
+                }
+              : null
+          }
+        />
       </Stack>
     </Container>
   );

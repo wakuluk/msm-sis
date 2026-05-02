@@ -15,6 +15,7 @@ import {
   type MeetingDaySchedule,
   type SelectOption,
 } from './courseSectionsWorkspaceTypes';
+export { getErrorMessage } from '@/utils/errors';
 
 const meetingDayKeysByNumber = new Map<number, string>([
   [1, 'MONDAY'],
@@ -70,10 +71,6 @@ export function filterSections(
 
     return !searchValues.status || section.statusCode === searchValues.status;
   });
-}
-
-export function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
 }
 
 export function mapReferenceOptionsToCodeSelectOptions(
@@ -235,6 +232,7 @@ export function buildDraftFromSection(section: CourseSectionPreview): CourseSect
     meetingSchedule: buildMeetingScheduleFromSection(section),
     room: section.room === 'TBD' ? '' : section.room,
     capacity: String(section.capacity),
+    hardCapacity: section.hardCapacity === null ? '' : String(section.hardCapacity),
     credits: section.credits === null ? null : String(section.credits),
     status: section.statusCode,
     waitlistAllowed: section.waitlistAllowed,
@@ -265,6 +263,7 @@ export function mapCourseSectionResultToPreview(
     room: section.roomSummary ?? 'TBD',
     credits: section.credits,
     capacity: section.capacity ?? 0,
+    hardCapacity: section.hardCapacity,
     enrolled: section.enrollmentSummary.enrolledCount,
     waitlistAllowed: section.waitlistAllowed,
     meetings: section.meetings.map((meeting) => ({
@@ -298,6 +297,7 @@ export function mapCourseSectionDetailToPreview(
     room: buildRoomSummary(section),
     credits: section.credits,
     capacity: section.capacity ?? 0,
+    hardCapacity: section.hardCapacity,
     enrolled: section.enrollmentSummary.enrolledCount,
     waitlistAllowed: section.waitlistAllowed,
     meetings: section.meetings.map((meeting) => ({

@@ -5,9 +5,7 @@ import { useForm } from '@mantine/form';
 import { Link } from 'react-router-dom';
 import { SearchFormActions } from '@/components/search/SearchFormActions';
 import { SearchFormSection } from '@/components/search/SearchFormSection';
-import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
-import { SearchResultsStateNotice } from '@/components/search/SearchResultsStateNotice';
-import { SearchResultsTable } from '@/components/search/SearchResultsTable';
+import { SearchResultsPanel } from '@/components/search/SearchResultsPanel';
 import {
   getAcademicSchoolDepartmentReferenceOptions,
   mapCodeNameReferenceOptionsToSelectOptions,
@@ -20,6 +18,8 @@ import type {
 } from '@/services/schemas/academic-school-schemas';
 import { initialAcademicSchoolSearchFilters } from '@/services/schemas/academic-school-schemas';
 import type { StringOption } from '@/components/search/SearchQueryControls';
+import { getErrorMessage } from '@/utils/errors';
+import { parseOptionalId } from '@/utils/form-values';
 
 type AcademicSchoolsPageState =
   | { status: 'loading' }
@@ -99,13 +99,6 @@ const academicSchoolSearchColumns: ColumnDef<AcademicSchoolDepartmentSearchResul
     meta: { sortBy: 'departmentActive' satisfies AcademicSchoolSearchSortBy },
   },
 ];
-
-function getErrorMessage(
-  error: unknown,
-  fallbackMessage = 'Failed to load academic schools.'
-): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
 
 function getResultsSummary(state: AcademicSchoolsPageState): string {
   if (state.status === 'loading') {
@@ -208,7 +201,7 @@ export function AcademicSchoolsPage() {
 
         setPageState({
           status: 'error',
-          message: getErrorMessage(error),
+          message: getErrorMessage(error, 'Failed to load academic schools.'),
         });
       });
 
@@ -335,49 +328,27 @@ export function AcademicSchoolsPage() {
           </Stack>
         </Paper>
 
-        <Paper p="lg">
-          <Stack gap="md">
-            <SearchResultsHeader
-              data={academicSchoolResultsViewOptions}
-              value={resultsView}
-              onChange={setResultsView}
-              summary={getResultsSummary(pageState)}
-            />
-
-            {pageState.status === 'loading' || pageState.status === 'error' || pageState.status === 'empty' ? (
-              <SearchResultsStateNotice
-                status={pageState.status}
-                idleTitle=""
-                idleMessage=""
-                loadingMessage="Loading academic school search results..."
-                errorTitle="Unable to load academic school search results"
-                errorMessage={pageState.status === 'error' ? pageState.message : null}
-                emptyTitle="No academic school search results found"
-                emptyMessage="Try again after academic schools and departments are configured."
-              />
-            ) : (
-              <SearchResultsTable
-                table={academicSchoolSearchTable}
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                onToggleSort={handleToggleSort}
-              />
-            )}
-          </Stack>
-        </Paper>
+        <SearchResultsPanel
+          status={pageState.status}
+          summary={getResultsSummary(pageState)}
+          table={academicSchoolSearchTable}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onToggleSort={handleToggleSort}
+          viewOptions={academicSchoolResultsViewOptions}
+          view={resultsView}
+          onViewChange={setResultsView}
+          notice={{
+            idleTitle: '',
+            idleMessage: '',
+            loadingMessage: 'Loading academic school search results...',
+            errorTitle: 'Unable to load academic school search results',
+            errorMessage: pageState.status === 'error' ? pageState.message : null,
+            emptyTitle: 'No academic school search results found',
+            emptyMessage: 'Try again after academic schools and departments are configured.',
+          }}
+        />
       </Stack>
     </Container>
   );
-}
-
-function parseOptionalId(value: string): number | undefined {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return undefined;
-  }
-
-  const parsedValue = Number(trimmedValue);
-
-  return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : undefined;
 }

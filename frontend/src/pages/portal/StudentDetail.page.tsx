@@ -40,6 +40,8 @@ import {
   type StudentTranscriptResponse,
 } from '@/services/schemas/student-schemas';
 import { getStudentById, getStudentTranscriptById, patchStudent } from '@/services/student-service';
+import { getErrorMessage } from '@/utils/errors';
+import { displayValue } from '@/utils/form-values';
 import classes from './StudentDetail.module.css';
 
 type StudentDetailPageState =
@@ -129,18 +131,6 @@ const studentDetailTabs: StudentDetailTabConfig[] = [
   },
 ];
 
-function displayValue(value: boolean | number | string | null | undefined): string {
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-
-  if (value === null || value === undefined || value === '') {
-    return '—';
-  }
-
-  return String(value);
-}
-
 function displayDate(value: string | null | undefined): string {
   if (!value) {
     return '—';
@@ -174,10 +164,6 @@ function displayDateTime(value: string | null | undefined): string {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(parsedDate);
-}
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
 }
 
 function ReadOnlyTextField({ label, value, span = { base: 12, md: 6 } }: ReadOnlyTextFieldProps) {

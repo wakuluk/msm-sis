@@ -30,6 +30,11 @@ export type CourseOfferingSearchRequest = {
   signal?: AbortSignal;
 };
 
+export type CourseOfferingDetailRequest = {
+  courseOfferingId: number;
+  signal?: AbortSignal;
+};
+
 export function buildCourseOfferingSearchQueryParams({
   filters,
   subTermStatusCodes,
@@ -115,29 +120,30 @@ export async function searchCourseOfferings(
 
 async function fetchCourseOfferingById(
   path: string,
-  courseOfferingId: number
+  { courseOfferingId, signal }: CourseOfferingDetailRequest
 ): Promise<CourseOfferingDetailResponse> {
   return apiRequest({
     path: `${path}/${courseOfferingId}`,
     parser: CourseOfferingDetailResponseSchema,
     fallbackMessage: 'Failed to fetch course offering detail.',
+    signal,
   });
 }
 
 export async function getPublicCourseOfferingById(
-  courseOfferingId: number
+  request: CourseOfferingDetailRequest
 ): Promise<CourseOfferingDetailResponse> {
-  return fetchCourseOfferingById('/api/course-offerings/details', courseOfferingId);
+  return fetchCourseOfferingById('/api/course-offerings/details', request);
 }
 
 export async function getAdvancedCourseOfferingById(
-  courseOfferingId: number
+  request: CourseOfferingDetailRequest
 ): Promise<CourseOfferingDetailResponse> {
-  return fetchCourseOfferingById('/api/course-offerings/details-advanced', courseOfferingId);
+  return fetchCourseOfferingById('/api/course-offerings/details-advanced', request);
 }
 
 export async function getCourseOfferingById(
   courseOfferingId: number
 ): Promise<CourseOfferingDetailResponse> {
-  return getPublicCourseOfferingById(courseOfferingId);
+  return getPublicCourseOfferingById({ courseOfferingId });
 }

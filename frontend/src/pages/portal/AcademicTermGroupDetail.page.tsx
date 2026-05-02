@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useEffect, useState } from 'react';
 import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { Alert, Badge, Button, Grid, Group, Stack, Table, Text, TextInput } from '@mantine/core';
@@ -6,6 +6,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { ReadOnlyField } from '@/components/fields/ReadOnlyField';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import {
   getAcademicTermById,
@@ -21,6 +22,8 @@ import {
   type AcademicTermDetailFormValues,
   type AcademicTermResponse,
 } from '@/services/schemas/academic-years-schemas';
+import { getErrorMessage } from '@/utils/errors';
+import { displayValue } from '@/utils/form-values';
 
 type AcademicTermGroupDetailLocationState = {
   academicYearId?: number;
@@ -36,18 +39,6 @@ type AcademicTermGroupDetailSaveState =
   | { status: 'saving' }
   | { status: 'success' }
   | { status: 'error'; message: string };
-
-function displayValue(value: boolean | number | string | null | undefined): string {
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-
-  if (value === null || value === undefined || value === '') {
-    return '—';
-  }
-
-  return String(value);
-}
 
 function displayDate(value: string | null | undefined): string {
   if (!value) {
@@ -65,10 +56,6 @@ function displayDate(value: string | null | undefined): string {
     month: 'long',
     year: 'numeric',
   }).format(parsedDate);
-}
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
 }
 
 function compareAcademicTerms(
@@ -131,29 +118,6 @@ function parseDateInputValue(value: string): Date | null {
   }
 
   return parsedDate;
-}
-
-function ReadOnlyField({
-  label,
-  value,
-  span = { base: 12, md: 6 },
-}: {
-  label: string;
-  value: string;
-  span?: ComponentProps<typeof Grid.Col>['span'];
-}) {
-  const isEmptyValue = value === '—';
-
-  return (
-    <Grid.Col span={span}>
-      <TextInput
-        label={label}
-        value={isEmptyValue ? '' : value}
-        placeholder={isEmptyValue ? '—' : undefined}
-        readOnly
-      />
-    </Grid.Col>
-  );
 }
 
 export function AcademicTermGroupDetailPage() {

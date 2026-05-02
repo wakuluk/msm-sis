@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import static com.msm.sis.api.util.PagingUtils.validatePageRequest;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 /**
@@ -132,13 +133,7 @@ public class StudentService {
             StudentSearchSortField sortField,
             Sort.Direction sortDirection
     ) {
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
-        }
-
-        if (size < 1 || size > 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size must be between 1 and 100.");
-        }
+        validatePageRequest(page, size, 100);
 
         Pageable pageable = PageRequest.of(
                 page,

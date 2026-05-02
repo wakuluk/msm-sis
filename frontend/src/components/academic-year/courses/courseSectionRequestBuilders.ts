@@ -29,6 +29,7 @@ export function buildCreateSectionRequest(
   const sectionLetter = draft.sectionCode.trim();
   const credits = draft.credits === null ? Number.NaN : Number(draft.credits);
   const capacity = Number(draft.capacity);
+  const hardCapacity = draft.hardCapacity.trim() === '' ? null : Number(draft.hardCapacity);
 
   if (!sectionLetter) {
     return 'Section is required.';
@@ -49,6 +50,12 @@ export function buildCreateSectionRequest(
   if (!Number.isInteger(capacity) || capacity < 0) {
     return 'Capacity must be zero or greater.';
   }
+  if (hardCapacity !== null && (!Number.isInteger(hardCapacity) || hardCapacity < 0)) {
+    return 'Hard capacity must be zero or greater.';
+  }
+  if (hardCapacity !== null && hardCapacity < capacity) {
+    return 'Hard capacity must be greater than or equal to capacity.';
+  }
 
   return {
     subTermId,
@@ -62,6 +69,7 @@ export function buildCreateSectionRequest(
     gradingBasisCode: draft.gradingBasis,
     credits,
     capacity,
+    hardCapacity,
     waitlistAllowed: draft.waitlistAllowed,
     startDate: null,
     endDate: null,

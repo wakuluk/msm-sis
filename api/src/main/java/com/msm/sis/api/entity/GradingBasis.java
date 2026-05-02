@@ -29,4 +29,10 @@ public class GradingBasis {
 
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder;
+
+    @Column(name = "allowed_for_course_sections", nullable = false)
+    private boolean allowedForCourseSections = true;
+
+    @Column(name = "allowed_for_student_enrollments", nullable = false)
+    private boolean allowedForStudentEnrollments = true;
 }

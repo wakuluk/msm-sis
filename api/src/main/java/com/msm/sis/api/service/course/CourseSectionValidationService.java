@@ -7,6 +7,7 @@ import com.msm.sis.api.dto.course.PatchCourseSectionRequest;
 import com.msm.sis.api.entity.CourseOffering;
 import com.msm.sis.api.entity.CourseSection;
 import com.msm.sis.api.entity.CourseVersion;
+import com.msm.sis.api.entity.GradingBasis;
 import com.msm.sis.api.repository.CourseSectionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
+import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
+import static com.msm.sis.api.util.ValidationUtils.requireRequestBody;
 
 @Service
 @RequiredArgsConstructor
@@ -25,9 +28,7 @@ public class CourseSectionValidationService {
     private final CourseSectionRepository courseSectionRepository;
 
     public void validateCreateRequest(CreateCourseSectionRequest request) {
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
-        }
+        requireRequestBody(request);
 
         validatePositiveId(request.subTermId(), "Academic sub term id");
 
@@ -42,6 +43,7 @@ public class CourseSectionValidationService {
         if (request.capacity() == null || request.capacity() < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Capacity must be zero or greater.");
         }
+        validateHardCapacity(request.capacity(), request.hardCapacity());
 
         if (
                 request.startDate() != null
@@ -56,9 +58,7 @@ public class CourseSectionValidationService {
     }
 
     public void validatePatchRequest(PatchCourseSectionRequest request, CourseSection existingSection) {
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
-        }
+        requireRequestBody(request);
 
         if (existingSection == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Existing course section is required.");
@@ -98,6 +98,9 @@ public class CourseSectionValidationService {
                 request.getGradingBasisCode().getValue(),
                 "Grading basis"
         );
+        if (request.getGradingBasisCode().isPresent()) {
+            validateSectionGradingBasisCode(request.getGradingBasisCode().getValue());
+        }
 
         if (
                 request.getCredits().isPresent()
@@ -113,6 +116,14 @@ public class CourseSectionValidationService {
         ) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Capacity must be zero or greater.");
         }
+        if (request.getHardCapacity().isPresent()
+                && request.getHardCapacity().getValue() != null
+                && request.getHardCapacity().getValue() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hard capacity must be zero or greater.");
+        }
+        Integer finalCapacity = request.getCapacity().orElse(existingSection.getCapacity());
+        Integer finalHardCapacity = request.getHardCapacity().orElse(existingSection.getHardCapacity());
+        validateHardCapacity(finalCapacity, finalHardCapacity);
 
         LocalDate finalStartDate = request.getStartDate().orElse(existingSection.getStartDate());
         LocalDate finalEndDate = request.getEndDate().orElse(existingSection.getEndDate());
@@ -146,6 +157,15 @@ public class CourseSectionValidationService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Credits must match the course offering credits."
+            );
+        }
+    }
+
+    public void validateSectionGradingBasis(GradingBasis gradingBasis) {
+        if (gradingBasis != null && !gradingBasis.isAllowedForCourseSections()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Selected grading basis cannot be used as a course section grading basis."
             );
         }
     }
@@ -247,22 +267,11 @@ public class CourseSectionValidationService {
     }
 
     public void validatePageRequest(int page, int size) {
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
-        }
-
-        if (size < 1 || size > 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size must be between 1 and 100.");
-        }
+        com.msm.sis.api.util.PagingUtils.validatePageRequest(page, size, 100);
     }
 
     public void validatePositiveId(Long id, String label) {
-        if (id == null || id <= 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    label + " must be a positive number."
-            );
-        }
+        requirePositiveId(id, label);
     }
 
     private void validatePresentBoolean(boolean present, Boolean value, String label) {
@@ -286,6 +295,29 @@ public class CourseSectionValidationService {
     private void validateDateRange(LocalDate startDate, LocalDate endDate, String message) {
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+        }
+    }
+
+    private void validateSectionGradingBasisCode(String gradingBasisCode) {
+        String normalizedGradingBasisCode = trimToNull(gradingBasisCode);
+
+        if (normalizedGradingBasisCode == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Grading basis code cannot be blank.");
+        }
+    }
+
+    private void validateHardCapacity(Integer capacity, Integer hardCapacity) {
+        if (hardCapacity == null) {
+            return;
+        }
+        if (hardCapacity < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hard capacity must be zero or greater.");
+        }
+        if (capacity != null && hardCapacity < capacity) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Hard capacity must be greater than or equal to capacity."
+            );
         }
     }
 }

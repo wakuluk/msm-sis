@@ -82,7 +82,7 @@ export function CourseSectionIdentityFields({
             }}
           />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 3 }}>
+        <Grid.Col span={{ base: 12, md: 2 }}>
           <Select
             label="Status"
             placeholder="Status"
@@ -99,7 +99,7 @@ export function CourseSectionIdentityFields({
             }}
           />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 3 }}>
+        <Grid.Col span={{ base: 12, md: 2 }}>
           <TextInput
             label="Capacity"
             placeholder="24"
@@ -111,6 +111,22 @@ export function CourseSectionIdentityFields({
               setDraft((current) => ({
                 ...current,
                 capacity: event.currentTarget.value,
+              }));
+            }}
+          />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 2 }}>
+          <TextInput
+            label="Hard capacity"
+            placeholder="30"
+            inputMode="numeric"
+            value={draft.hardCapacity}
+            readOnly={fieldsDisabled}
+            styles={readOnlyInputStyles}
+            onChange={(event) => {
+              setDraft((current) => ({
+                ...current,
+                hardCapacity: event.currentTarget.value,
               }));
             }}
           />

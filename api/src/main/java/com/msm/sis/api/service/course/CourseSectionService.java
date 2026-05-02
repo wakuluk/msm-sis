@@ -10,6 +10,7 @@ import com.msm.sis.api.entity.CourseOfferingSubTermId;
 import com.msm.sis.api.entity.CourseSection;
 import com.msm.sis.api.entity.CourseSectionInstructor;
 import com.msm.sis.api.entity.CourseSectionMeeting;
+import com.msm.sis.api.entity.GradingBasis;
 import com.msm.sis.api.mapper.CourseSectionMapper;
 import com.msm.sis.api.repository.AcademicDivisionRepository;
 import com.msm.sis.api.repository.CourseOfferingRepository;
@@ -113,13 +114,16 @@ public class CourseSectionService {
                 deliveryModeRepository::findByCode,
                 "Delivery mode"
         ));
-        courseSection.setGradingBasis(resolveRequiredReference(
+        GradingBasis gradingBasis = resolveRequiredReference(
                 request.gradingBasisCode(),
                 gradingBasisRepository::findByCode,
                 "Grading basis"
-        ));
+        );
+        courseSectionValidationService.validateSectionGradingBasis(gradingBasis);
+        courseSection.setGradingBasis(gradingBasis);
         courseSection.setCredits(request.credits());
         courseSection.setCapacity(request.capacity());
+        courseSection.setHardCapacity(request.hardCapacity());
         courseSection.setWaitlistAllowed(request.waitlistAllowed());
         courseSection.setStartDate(request.startDate());
         courseSection.setEndDate(request.endDate());

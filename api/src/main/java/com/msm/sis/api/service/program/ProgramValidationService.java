@@ -15,20 +15,21 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Objects;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
+import static com.msm.sis.api.util.ValidationUtils.requireRequestBody;
 
 @Service
 @RequiredArgsConstructor
 public class ProgramValidationService {
     private static final String MAJOR_PROGRAM_TYPE_CODE = "MAJOR";
+    private static final String MASTERS_PROGRAM_TYPE_CODE = "MASTERS";
     private static final String MINOR_PROGRAM_TYPE_CODE = "MINOR";
+    private static final String CERTIFICATE_PROGRAM_TYPE_CODE = "CERTIFICATE";
     private static final String CORE_PROGRAM_TYPE_CODE = "CORE";
 
     private final ProgramRepository programRepository;
 
     public void validateCreateProgramRequest(CreateProgramRequest request) {
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
-        }
+        requireRequestBody(request);
 
         if (trimToNull(request.code()) == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Program code is required.");
@@ -85,25 +86,39 @@ public class ProgramValidationService {
 
         String programTypeCode = programType.getCode();
 
-        if (MAJOR_PROGRAM_TYPE_CODE.equals(programTypeCode)) {
+        if (MAJOR_PROGRAM_TYPE_CODE.equals(programTypeCode)
+                || MASTERS_PROGRAM_TYPE_CODE.equals(programTypeCode)) {
             if (school == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Major programs require a school.");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        programType.getName() + " programs require a school."
+                );
             }
 
             if (degreeType == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Major programs require a degree type.");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        programType.getName() + " programs require a degree type."
+                );
             }
 
             return;
         }
 
-        if (MINOR_PROGRAM_TYPE_CODE.equals(programTypeCode)) {
+        if (MINOR_PROGRAM_TYPE_CODE.equals(programTypeCode)
+                || CERTIFICATE_PROGRAM_TYPE_CODE.equals(programTypeCode)) {
             if (school == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Minor programs require a school.");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        programType.getName() + " programs require a school."
+                );
             }
 
             if (degreeType != null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Minor programs cannot have a degree type.");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        programType.getName() + " programs cannot have a degree type."
+                );
             }
 
             return;

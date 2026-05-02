@@ -30,7 +30,8 @@ type CourseSectionModalProps = {
   selectedStatusName: string | null;
   sectionStatusOptions: SelectOption[];
   academicDivisionOptions: SelectOption[];
-  gradingBasisOptions: SelectOption[];
+  sectionGradingBasisOptions: SelectOption[];
+  enrollmentGradingBasisOptions: SelectOption[];
   deliveryModeOptions: SelectOption[];
   creditOptions: SelectOption[];
   staffOptions: StaffSelectOption[];
@@ -119,7 +120,8 @@ export function CourseSectionModal({
   selectedStatusName,
   sectionStatusOptions,
   academicDivisionOptions,
-  gradingBasisOptions,
+  sectionGradingBasisOptions,
+  enrollmentGradingBasisOptions,
   deliveryModeOptions,
   creditOptions,
   staffOptions,
@@ -195,7 +197,7 @@ export function CourseSectionModal({
               creditOptions={creditOptions}
               draft={draft}
               fieldsDisabled={fieldsDisabled}
-              gradingBasisOptions={gradingBasisOptions}
+              gradingBasisOptions={sectionGradingBasisOptions}
               readOnlyInputStyles={readOnlyInputStyles}
               referencesAreLoading={referencesAreLoading}
               staffLoading={staffLoading}
@@ -226,7 +228,7 @@ export function CourseSectionModal({
             {mode === 'detail' && selectedSection ? (
               <CourseSectionStudentsPanel
                 selectedSection={selectedSection}
-                gradingBasisOptions={gradingBasisOptions}
+                gradingBasisOptions={enrollmentGradingBasisOptions}
               />
             ) : null}
 

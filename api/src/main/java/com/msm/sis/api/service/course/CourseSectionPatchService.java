@@ -111,6 +111,9 @@ public class CourseSectionPatchService {
                 gradingBasisRepository::findByCode,
                 "Grading basis"
         );
+        if (gradingBasis.isPresent()) {
+            courseSectionValidationService.validateSectionGradingBasis(gradingBasis.getValue());
+        }
 
         courseSectionMapper.applyPatch(
                 courseSection,

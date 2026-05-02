@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
+import static com.msm.sis.api.util.ValidationUtils.validateMaxLength;
 
 /**
  * Centralizes student validation so create and patch flows enforce the same
@@ -38,14 +39,14 @@ public class StudentValidator {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "First name and last name are required.");
         }
 
-        ValidationUtils.validateMaxLength(student.getLastName(), 50, "Last name");
-        ValidationUtils.validateMaxLength(student.getFirstName(), 50, "First name");
-        ValidationUtils.validateMaxLength(student.getMiddleName(), 50, "Middle name");
-        ValidationUtils.validateMaxLength(student.getNameSuffix(), 10, "Name suffix");
-        ValidationUtils.validateMaxLength(student.getPreferredName(), 255, "Preferred name");
-        ValidationUtils.validateMaxLength(student.getAltId(), 50, "Alt ID");
-        ValidationUtils.validateMaxLength(student.getEmail(), 255, "Email");
-        ValidationUtils.validateMaxLength(student.getPhone(), 30, "Phone");
+        validateMaxLength(student.getLastName(), 50, "Last name");
+        validateMaxLength(student.getFirstName(), 50, "First name");
+        validateMaxLength(student.getMiddleName(), 50, "Middle name");
+        validateMaxLength(student.getNameSuffix(), 10, "Name suffix");
+        validateMaxLength(student.getPreferredName(), 255, "Preferred name");
+        validateMaxLength(student.getAltId(), 50, "Alt ID");
+        validateMaxLength(student.getEmail(), 255, "Email");
+        validateMaxLength(student.getPhone(), 30, "Phone");
 
         if (student.getDateOfBirth() != null && student.getDateOfBirth().isAfter(LocalDate.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Date of birth cannot be in the future.");

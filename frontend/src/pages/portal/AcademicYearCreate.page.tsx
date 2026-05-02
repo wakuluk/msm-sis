@@ -27,15 +27,12 @@ import {
   initialAcademicYearTermFormValues,
   type AcademicYearCreateFormValues,
 } from '@/services/schemas/academic-years-schemas';
+import { getErrorMessage } from '@/utils/errors';
 
 type AcademicYearCreateSubmitState =
   | { status: 'idle' }
   | { status: 'submitting' }
   | { status: 'error'; message: string };
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
 
 function formatDateForFormValue(value: Date): string {
   const year = value.getFullYear();

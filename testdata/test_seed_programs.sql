@@ -26,7 +26,7 @@ WITH desired_programs(
             'Graduate historical study with research methods and thesis preparation.',
             'SHS',
             'HIST',
-            'MAJOR',
+            'MASTERS',
             'MASTER'
         ),
         (
@@ -96,7 +96,7 @@ WITH desired_programs(
 ) AS (
     VALUES
         ('HIST-BA', 'History BA', 'A broad historical studies program with upper-level seminar work.', 'SHS', 'HIST', 'MAJOR', 'BACHELOR'),
-        ('HIST-MA', 'History MA', 'Graduate historical study with research methods and thesis preparation.', 'SHS', 'HIST', 'MAJOR', 'MASTER'),
+        ('HIST-MA', 'History MA', 'Graduate historical study with research methods and thesis preparation.', 'SHS', 'HIST', 'MASTERS', 'MASTER'),
         ('HUM-MIN', 'Humanities Minor', 'A flexible minor focused on literature, philosophy, and cultural studies.', 'SLL', 'HUM', 'MINOR', NULL),
         ('TOLK-BA', 'Tolkien Studies BA', 'Interdisciplinary study of literature, language, mythology, and worldbuilding.', 'SLL', 'HUM', 'MAJOR', 'BACHELOR'),
         ('CORE-UG', 'Undergraduate Core Curriculum', 'University-wide undergraduate core curriculum requirements.', NULL, NULL, 'CORE', NULL)

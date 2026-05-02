@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Container, Paper, Stack, Text, Title } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
-import { SearchResultsStateNotice } from '@/components/search/SearchResultsStateNotice';
-import { SearchResultsTable } from '@/components/search/SearchResultsTable';
+import { SearchResultsPanel } from '@/components/search/SearchResultsPanel';
 import { searchAcademicDepartments } from '@/services/academic-department-service';
 import type {
   AcademicDepartmentResponse,
@@ -11,6 +10,7 @@ import type {
   AcademicDepartmentSortDirection,
   AcademicDepartmentsResponse,
 } from '@/services/schemas/academic-department-schemas';
+import { getErrorMessage } from '@/utils/errors';
 
 type AcademicDepartmentsPageState =
   | { status: 'loading' }
@@ -41,13 +41,6 @@ const academicDepartmentColumns: ColumnDef<AcademicDepartmentResponse>[] = [
     meta: { sortBy: 'active' satisfies AcademicDepartmentSortBy },
   },
 ];
-
-function getErrorMessage(
-  error: unknown,
-  fallbackMessage = 'Failed to load academic departments.'
-): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
 
 function getResultsSummary(state: AcademicDepartmentsPageState): string {
   if (state.status === 'loading') {
@@ -98,7 +91,7 @@ export function AcademicDepartmentsPage() {
 
         setPageState({
           status: 'error',
-          message: getErrorMessage(error),
+          message: getErrorMessage(error, 'Failed to load academic departments.'),
         });
       });
 
@@ -150,44 +143,36 @@ export function AcademicDepartmentsPage() {
           </Stack>
         </Paper>
 
-        <Paper p="lg">
-          <Stack gap="md">
-            <Text size="sm">{getResultsSummary(pageState)}</Text>
-
-            {pageState.status === 'loading' || pageState.status === 'error' || pageState.status === 'empty' ? (
-              <SearchResultsStateNotice
-                status={pageState.status}
-                idleTitle=""
-                idleMessage=""
-                loadingMessage="Loading academic departments..."
-                errorTitle="Unable to load academic departments"
-                errorMessage={pageState.status === 'error' ? pageState.message : null}
-                emptyTitle="No academic departments found"
-                emptyMessage="Add academic departments before using this page."
-              />
-            ) : (
-              <SearchResultsTable
-                table={academicDepartmentsTable}
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                onToggleSort={handleToggleSort}
-                getRowProps={(row) => ({
-                  role: 'button',
-                  tabIndex: 0,
-                  onClick: () => {
-                    handleOpenAcademicDepartmentDetail(row.original.departmentId);
-                  },
-                  onKeyDown: (event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      handleOpenAcademicDepartmentDetail(row.original.departmentId);
-                    }
-                  },
-                })}
-              />
-            )}
-          </Stack>
-        </Paper>
+        <SearchResultsPanel
+          status={pageState.status}
+          summary={getResultsSummary(pageState)}
+          table={academicDepartmentsTable}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onToggleSort={handleToggleSort}
+          notice={{
+            idleTitle: '',
+            idleMessage: '',
+            loadingMessage: 'Loading academic departments...',
+            errorTitle: 'Unable to load academic departments',
+            errorMessage: pageState.status === 'error' ? pageState.message : null,
+            emptyTitle: 'No academic departments found',
+            emptyMessage: 'Add academic departments before using this page.',
+          }}
+          getRowProps={(row) => ({
+            role: 'button',
+            tabIndex: 0,
+            onClick: () => {
+              handleOpenAcademicDepartmentDetail(row.original.departmentId);
+            },
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleOpenAcademicDepartmentDetail(row.original.departmentId);
+              }
+            },
+          })}
+        />
       </Stack>
     </Container>
   );

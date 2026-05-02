@@ -25,6 +25,7 @@ import { getErrorMessage } from './courseSectionsWorkspaceUtils';
 type CourseSectionAddStudentModalProps = {
   opened: boolean;
   capacity: number;
+  hardCapacity: number | null;
   registeredCount: number;
   waitlistAllowed: boolean;
   gradingBasisOptions: SelectOption[];
@@ -129,6 +130,7 @@ async function searchStudentOptions(searchValue: string, signal: AbortSignal) {
 export function CourseSectionAddStudentModal({
   opened,
   capacity,
+  hardCapacity,
   registeredCount,
   waitlistAllowed,
   gradingBasisOptions,
@@ -155,10 +157,13 @@ export function CourseSectionAddStudentModal({
   const [capacityOverride, setCapacityOverride] = useState(false);
   const [manualAddReason, setManualAddReason] = useState('');
   const hasCapacity = registeredCount < capacity;
+  const hardCapacityReached = hardCapacity !== null && registeredCount >= hardCapacity;
   const willWaitlist = statusCode === 'WAITLISTED';
-  const requiresCapacityOverride = !hasCapacity && !willWaitlist;
+  const willRegister = statusCode === 'REGISTERED';
+  const requiresCapacityOverride = !hasCapacity && !willWaitlist && !hardCapacityReached;
   const canSubmit =
     selectedStudent !== null &&
+    !(hardCapacityReached && willRegister) &&
     (!requiresCapacityOverride || capacityOverride) &&
     (!capacityOverride || manualAddReason.trim().length > 0);
   const statusOptions = [
@@ -251,7 +256,13 @@ export function CourseSectionAddStudentModal({
   return (
     <Modal opened={opened} onClose={onClose} title="Add Student" size="lg" centered>
       <Stack gap="md">
-        {!hasCapacity ? (
+        {hardCapacityReached ? (
+          <Alert color="red" title="Section has reached hard capacity">
+            {waitlistAllowed
+              ? 'No additional students can be registered. Students can still be added to the waitlist.'
+              : 'No additional students can be registered for this section.'}
+          </Alert>
+        ) : !hasCapacity ? (
           <Alert color={waitlistAllowed ? 'blue' : 'yellow'} title="Section is at capacity">
             {waitlistAllowed
               ? 'Students can be added to the waitlist for this section.'
@@ -347,7 +358,7 @@ export function CourseSectionAddStudentModal({
           />
         </Group>
 
-        {!willWaitlist ? (
+        {!willWaitlist && !hardCapacityReached ? (
           <Checkbox
             label={`Allow capacity override (${registeredCount}/${capacity} registered)`}
             checked={capacityOverride}

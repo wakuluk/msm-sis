@@ -48,6 +48,9 @@ public record CreateCourseSectionRequest(
         @Min(0)
         Integer capacity,
 
+        @Min(0)
+        Integer hardCapacity,
+
         boolean waitlistAllowed,
 
         LocalDate startDate,

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useEffect, useState } from 'react';
 import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { Alert, Badge, Button, Grid, Group, Stack, Text, TextInput } from '@mantine/core';
@@ -14,6 +14,7 @@ import type { CourseTermOption } from '@/components/academic-year/courses/academ
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { ReadOnlyField } from '@/components/fields/ReadOnlyField';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import { WorkflowStatusStepperSection } from '@/components/status/WorkflowStatusStepperSection';
 import {
@@ -35,6 +36,8 @@ import type {
   AcademicSubTermStatusesResponse,
 } from '@/services/schemas/academic-years-schemas';
 import { initialAcademicSubTermDetailFormValues } from '@/services/schemas/academic-years-schemas';
+import { getErrorMessage } from '@/utils/errors';
+import { displayValue } from '@/utils/form-values';
 
 type AcademicTermDetailLocationState = {
   academicYearId?: number;
@@ -56,18 +59,6 @@ type AcademicTermDetailSaveState =
   | { status: 'saving' }
   | { status: 'success' }
   | { status: 'error'; message: string };
-
-function displayValue(value: boolean | number | string | null | undefined): string {
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-
-  if (value === null || value === undefined || value === '') {
-    return '—';
-  }
-
-  return String(value);
-}
 
 function displayDate(value: string | null | undefined): string {
   if (!value) {
@@ -158,37 +149,10 @@ function parseDateInputValue(value: string): Date | null {
   return parsedDate;
 }
 
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
-
 function isConditionalAcademicTermStatus(code: string | null | undefined): boolean {
   const normalizedCode = code?.trim().toUpperCase() ?? null;
 
   return normalizedCode === 'CANCELLED';
-}
-
-function ReadOnlyField({
-  label,
-  value,
-  span = { base: 12, md: 6 },
-}: {
-  label: string;
-  value: string;
-  span?: ComponentProps<typeof Grid.Col>['span'];
-}) {
-  const isEmptyValue = value === '—';
-
-  return (
-    <Grid.Col span={span}>
-      <TextInput
-        label={label}
-        value={isEmptyValue ? '' : value}
-        placeholder={isEmptyValue ? '—' : undefined}
-        readOnly
-      />
-    </Grid.Col>
-  );
 }
 
 export function AcademicTermDetailPage() {
