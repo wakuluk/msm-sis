@@ -62,7 +62,6 @@ export function buildCreateSectionRequest(
     sectionLetter,
     title: null,
     honors: draft.honors,
-    lab: draft.lab,
     statusCode: draft.status,
     academicDivisionCode: draft.academicDivision,
     deliveryModeCode: draft.deliveryMode,
@@ -126,7 +125,7 @@ function buildCreateMeetingRequests(
   const meetings = Object.entries(draft.meetingSchedule)
     .filter(([, schedule]) => schedule.enabled)
     .map(([day, schedule], index) => ({
-      meetingTypeCode: draft.lab ? 'LAB' : 'CLASS',
+      meetingTypeCode: 'CLASS',
       dayOfWeek: meetingDayNumbersByKey.get(day) ?? null,
       startTime: schedule.startTime,
       endTime: schedule.endTime,

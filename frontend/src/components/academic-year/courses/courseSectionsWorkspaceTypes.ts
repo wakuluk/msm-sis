@@ -10,7 +10,6 @@ export type CourseSectionPreview = {
   sectionCode: string;
   sectionLetter: string;
   honors: boolean;
-  lab: boolean;
   statusCode: string;
   statusName: string;
   academicDivisionCode: string | null;
@@ -50,7 +49,6 @@ export type MeetingDaySchedule = {
 export type CourseSectionDraft = {
   sectionCode: string;
   honors: boolean;
-  lab: boolean;
   teacherAssignment: string;
   teacherStaffId: number | null;
   academicDivision: string | null;
@@ -113,7 +111,6 @@ export const initialMeetingSchedule = Object.fromEntries(
 export const initialCourseSectionDraft: CourseSectionDraft = {
   sectionCode: '',
   honors: false,
-  lab: false,
   teacherAssignment: '',
   teacherStaffId: null,
   academicDivision: null,

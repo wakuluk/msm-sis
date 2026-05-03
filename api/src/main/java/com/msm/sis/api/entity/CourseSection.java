@@ -28,7 +28,7 @@ import java.util.List;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uq_course_section_offering_sub_term_letter",
-                        columnNames = {"course_offering_id", "sub_term_id", "section_letter", "is_honors", "is_lab"}
+                        columnNames = {"course_offering_id", "sub_term_id", "section_letter", "is_honors"}
                 )
         }
 )
@@ -62,9 +62,6 @@ public class CourseSection {
 
     @Column(name = "is_honors", nullable = false)
     private boolean honors = false;
-
-    @Column(name = "is_lab", nullable = false)
-    private boolean lab = false;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)

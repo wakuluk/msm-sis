@@ -16,7 +16,6 @@ public record CourseSectionDetailResponse(
         String displaySectionCode,
         String title,
         boolean honors,
-        boolean lab,
         Long statusId,
         String statusCode,
         String statusName,

@@ -1,23 +1,23 @@
-import { useEffect, useState } from 'react';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import type { SearchResultsTableRowProps } from '@/components/search/SearchResultsTable';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Badge,
   Button,
   Grid,
-  Group,
   Stack,
-  Text,
 } from '@mantine/core';
 import { useLocation, useParams } from 'react-router-dom';
-import { CreateCourseVersionModal } from '@/components/course/CreateCourseVersionModal';
-import { CourseVersionDetailModal } from '@/components/course/CourseVersionDetailModal';
+import {
+  CreateCourseVersionModal,
+  type CreateCourseVersionFormValues,
+} from '@/components/course/CreateCourseVersionModal';
+import { CourseVersionDetailsSection } from '@/components/course/CourseVersionDetailsSection';
+import { CourseVersionsSection } from '@/components/course/CourseVersionsSection';
+import { courseVersionToRequisiteDrafts } from '@/components/course/courseRequisiteDrafts';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
 import { ReadOnlyField } from '@/components/fields/ReadOnlyField';
-import { SearchResultsTable } from '@/components/search/SearchResultsTable';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import {
   createCourseVersion,
@@ -54,59 +54,6 @@ type MakeCourseVersionCurrentState =
   | { status: 'saving' }
   | { status: 'error'; message: string };
 
-function displayCredits(courseVersion: CourseVersionDetailResponse): string {
-  if (courseVersion.variableCredit) {
-    return `${courseVersion.minCredits}-${courseVersion.maxCredits}`;
-  }
-
-  return String(courseVersion.minCredits);
-}
-
-const courseVersionColumns: ColumnDef<CourseVersionDetailResponse>[] = [
-  {
-    accessorKey: 'versionNumber',
-    header: 'Version',
-    size: 120,
-    meta: { sortBy: 'versionNumber' satisfies CourseVersionSearchSortBy },
-  },
-  {
-    accessorKey: 'title',
-    header: 'Title',
-    size: 520,
-    cell: ({ row }) => (
-      <Stack gap={2}>
-        <Text size="sm">{displayValue(row.original.title)}</Text>
-        {row.original.catalogDescription ? (
-          <Text size="xs" c="dimmed">
-            {row.original.catalogDescription}
-          </Text>
-        ) : null}
-      </Stack>
-    ),
-    meta: { sortBy: 'title' satisfies CourseVersionSearchSortBy },
-  },
-  {
-    id: 'credits',
-    header: 'Credits',
-    size: 140,
-    cell: ({ row }) => displayCredits(row.original),
-    meta: { sortBy: 'credits' satisfies CourseVersionSearchSortBy },
-  },
-  {
-    accessorKey: 'current',
-    header: 'Current',
-    size: 140,
-    cell: ({ row }) => (
-      <Group gap="xs">
-        <Badge size="sm" variant="light" color={row.original.current ? 'green' : 'gray'}>
-          {row.original.current ? 'Current' : 'Historical'}
-        </Badge>
-      </Group>
-    ),
-    meta: { sortBy: 'current' satisfies CourseVersionSearchSortBy },
-  },
-];
-
 export function CourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const location = useLocation();
@@ -123,6 +70,7 @@ export function CourseDetailPage() {
   const [isCreateVersionModalOpen, setIsCreateVersionModalOpen] = useState(false);
   const [selectedCourseVersion, setSelectedCourseVersion] =
     useState<CourseVersionDetailResponse | null>(null);
+  const [versionToCopy, setVersionToCopy] = useState<CourseVersionDetailResponse | null>(null);
   const [createVersionState, setCreateVersionState] = useState<CreateCourseVersionState>({
     status: 'idle',
   });
@@ -145,12 +93,20 @@ export function CourseDetailPage() {
   const courseVersions = response?.results ?? [];
   const pageTitle = response?.courseCode || `Course ${parsedCourseId}`;
   const courseVersionCount = response?.totalElements ?? 0;
-  const courseVersionsTable = useReactTable({
-    columns: courseVersionColumns,
-    data: courseVersions,
-    getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => String(row.courseVersionId),
-  });
+  const copiedVersionInitialValues = useMemo<CreateCourseVersionFormValues | null>(
+    () =>
+      versionToCopy
+        ? {
+            title: versionToCopy.title,
+            catalogDescription: versionToCopy.catalogDescription ?? '',
+            minCredits: versionToCopy.minCredits.toFixed(2),
+            maxCredits: versionToCopy.maxCredits.toFixed(2),
+            variableCredit: versionToCopy.variableCredit,
+            requisites: courseVersionToRequisiteDrafts(versionToCopy),
+          }
+        : null,
+    [versionToCopy]
+  );
 
   useEffect(() => {
     if (!hasValidCourseId) {
@@ -311,16 +267,8 @@ export function CourseDetailPage() {
     }
 
     setIsCreateVersionModalOpen(false);
+    setVersionToCopy(null);
     setCreateVersionState({ status: 'idle' });
-  }
-
-  function closeCourseVersionDetailModal() {
-    if (makeCurrentState.status === 'saving') {
-      return;
-    }
-
-    setMakeCurrentState({ status: 'idle' });
-    setSelectedCourseVersion(null);
   }
 
   function openCourseVersionDetailModal(courseVersion: CourseVersionDetailResponse) {
@@ -328,24 +276,16 @@ export function CourseDetailPage() {
     setSelectedCourseVersion(courseVersion);
   }
 
-  function getCourseVersionRowProps(
-    courseVersion: CourseVersionDetailResponse
-  ): SearchResultsTableRowProps {
-    return {
-      role: 'button',
-      tabIndex: 0,
-      onClick: () => {
-        openCourseVersionDetailModal(courseVersion);
-      },
-      onKeyDown: (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') {
-          return;
-        }
+  function openCreateVersionModal() {
+    setVersionToCopy(null);
+    setCreateVersionState({ status: 'idle' });
+    setIsCreateVersionModalOpen(true);
+  }
 
-        event.preventDefault();
-        openCourseVersionDetailModal(courseVersion);
-      },
-    };
+  function openCreateVersionModalFromCopy(courseVersion: CourseVersionDetailResponse) {
+    setVersionToCopy(courseVersion);
+    setCreateVersionState({ status: 'idle' });
+    setIsCreateVersionModalOpen(true);
   }
 
   async function handleCreateCourseVersion(request: CreateCourseVersionRequest) {
@@ -361,6 +301,8 @@ export function CourseDetailPage() {
       });
       setCreateVersionState({ status: 'idle' });
       setIsCreateVersionModalOpen(false);
+      setVersionToCopy(null);
+      setSelectedCourseVersion(null);
       setSortBy('versionNumber');
       setSortDirection('desc');
       setPage(0);
@@ -413,15 +355,8 @@ export function CourseDetailPage() {
         onCreate={handleCreateCourseVersion}
         courseId={parsedCourseId}
         courseCode={response?.courseCode ?? null}
+        initialValues={copiedVersionInitialValues}
       />
-      <CourseVersionDetailModal
-        opened={selectedCourseVersion !== null}
-        onClose={closeCourseVersionDetailModal}
-        courseVersion={selectedCourseVersion}
-        makeCurrentState={makeCurrentState}
-        onMakeCurrent={handleMakeCourseVersionCurrent}
-      />
-
       <Stack gap={0}>
         <RecordPageSection
           title="Course"
@@ -441,81 +376,34 @@ export function CourseDetailPage() {
             value={displayValue(response?.courseNumber)}
           />
           <ReadOnlyField
+            label="Lab course"
+            value={response?.lab ? 'Yes' : 'No'}
+          />
+          <ReadOnlyField
             label="Version count"
             value={displayValue(courseVersionCount)}
           />
           <ReadOnlyField label="Source department" value={displayValue(fallbackDepartmentId)} />
         </RecordPageSection>
 
-        <RecordPageSection
-          title="Course Versions"
-          description="Versions currently returned by the backend for this course."
-        >
-          <Grid.Col span={12}>
-            <Stack gap="md">
-              <Group justify="space-between" align="center" wrap="wrap">
-                <Text size="sm">
-                  {courseVersions.length === 0
-                    ? 'This course does not have any versions yet.'
-                    : `Showing ${courseVersions.length} of ${response?.totalElements ?? 0} course versions`}
-                </Text>
-                <Button
-                  size="xs"
-                  onClick={() => {
-                    setCreateVersionState({ status: 'idle' });
-                    setIsCreateVersionModalOpen(true);
-                  }}
-                >
-                  New version
-                </Button>
-              </Group>
+        <CourseVersionsSection
+          response={response}
+          courseVersions={courseVersions}
+          selectedCourseVersionId={selectedCourseVersion?.courseVersionId ?? null}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onCreateVersion={openCreateVersionModal}
+          onOpenVersion={openCourseVersionDetailModal}
+          onPageChange={setPage}
+          onToggleSort={handleToggleSort}
+        />
 
-              {courseVersions.length === 0 ? (
-                <Alert color="gray" title="No course versions found">
-                  This course does not have any versions yet.
-                </Alert>
-              ) : (
-                <Stack gap="md">
-                  <Group justify="flex-end" align="center" wrap="wrap">
-                    <Group gap="sm">
-                      <Button
-                        size="xs"
-                        variant="light"
-                        disabled={(response?.page ?? 0) <= 0}
-                        onClick={() => {
-                          setPage((currentPage) => Math.max(0, currentPage - 1));
-                        }}
-                      >
-                        Previous
-                      </Button>
-                      <Text size="sm">
-                        Page {(response?.page ?? 0) + 1} of {Math.max(response?.totalPages ?? 0, 1)}
-                      </Text>
-                      <Button
-                        size="xs"
-                        variant="light"
-                        disabled={(response?.page ?? 0) + 1 >= (response?.totalPages ?? 0)}
-                        onClick={() => {
-                          setPage((currentPage) => currentPage + 1);
-                        }}
-                      >
-                        Next
-                      </Button>
-                    </Group>
-                  </Group>
-
-                  <SearchResultsTable
-                    table={courseVersionsTable}
-                    sortBy={sortBy}
-                    sortDirection={sortDirection}
-                    onToggleSort={handleToggleSort}
-                    getRowProps={(row) => getCourseVersionRowProps(row.original)}
-                  />
-                </Stack>
-              )}
-            </Stack>
-          </Grid.Col>
-        </RecordPageSection>
+        <CourseVersionDetailsSection
+          courseVersion={selectedCourseVersion}
+          makeCurrentState={makeCurrentState}
+          onCopyVersion={openCreateVersionModalFromCopy}
+          onMakeCurrent={handleMakeCourseVersionCurrent}
+        />
 
         <RecordPageFooter description="Return to the previous academic page.">
           <Button onClick={handleBack}>

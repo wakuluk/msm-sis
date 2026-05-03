@@ -107,7 +107,6 @@ WITH desired_enrollments(
     sub_term_code,
     section_letter,
     is_honors,
-    is_lab,
     status_code,
     grading_basis_code,
     enrollment_date,
@@ -121,41 +120,41 @@ WITH desired_enrollments(
     manual_add_reason
 ) AS (
     VALUES
-        ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'COMPLETED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:04'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, 'Repeat attempt completed for transcript POC.'),
-        ('STU-1002', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:06'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('STU-1003', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:08'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('STU-1004', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:10'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2001', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:12'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2002', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:14'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2003', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'PASS_FAIL', '2028-01-18'::date, '2028-01-18 09:16'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, FALSE, FALSE, NULL),
-        ('SEC-2004', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:18'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2005', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:20'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2006', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:22'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2007', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:24'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2008', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:26'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2009', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:28'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2010', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:30'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2011', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:32'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2012', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:34'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2013', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:36'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2014', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:38'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2015', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:40'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2016', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:42'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2017', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:44'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2018', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:46'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2019', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:48'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2020', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:50'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2021', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'WAITLISTED', 'GRADED', '2028-01-18'::date, NULL::timestamp, '2028-01-18 10:00'::timestamp, 3.00, NULL::numeric, 1, TRUE, FALSE, NULL),
-        ('SEC-2022', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'WAITLISTED', 'GRADED', '2028-01-18'::date, NULL::timestamp, '2028-01-18 10:02'::timestamp, 3.00, NULL::numeric, 2, TRUE, FALSE, NULL),
-        ('SEC-2023', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'WAITLISTED', 'GRADED', '2028-01-18'::date, NULL::timestamp, '2028-01-18 10:04'::timestamp, 3.00, NULL::numeric, 3, TRUE, FALSE, NULL),
-        ('SEC-2024', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, FALSE, 'REGISTERED', 'PASS_FAIL', '2028-01-19'::date, '2028-01-19 11:00'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, FALSE, TRUE, 'Manual registrar placement for seminar balance.'),
-        ('SEC-2025', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, FALSE, 'REGISTERED', 'PASS_FAIL', '2028-01-19'::date, '2028-01-19 11:05'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, FALSE, FALSE, NULL),
-        ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'COMPLETED', 'GRADED', '2027-08-21'::date, '2027-08-21 13:55'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, 'Earlier completed attempt replaced by repeat.'),
-        ('SEC-2026', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'COMPLETED', 'GRADED', '2027-08-21'::date, '2027-08-21 14:00'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2027', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'WITHDRAWN', 'GRADED', '2027-08-21'::date, '2027-08-21 14:03'::timestamp, NULL::timestamp, 3.00, 0.00, NULL::int, TRUE, FALSE, 'Withdrew before final grading.'),
-        ('SEC-2028', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'COMPLETED', 'GRADED', '2027-01-16'::date, '2027-01-16 10:00'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2029', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'COMPLETED', 'GRADED', '2027-01-16'::date, '2027-01-16 10:03'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, NULL),
-        ('SEC-2030', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'DROPPED', 'GRADED', '2027-01-16'::date, '2027-01-16 10:05'::timestamp, NULL::timestamp, 3.00, 0.00, NULL::int, TRUE, FALSE, 'Dropped during add/drop.')
+        ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'COMPLETED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:04'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, 'Repeat attempt completed for transcript POC.'),
+        ('STU-1002', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:06'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('STU-1003', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:08'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('STU-1004', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:10'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2001', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:12'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2002', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:14'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2003', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'PASS_FAIL', '2028-01-18'::date, '2028-01-18 09:16'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, FALSE, FALSE, NULL),
+        ('SEC-2004', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:18'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2005', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:20'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2006', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:22'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2007', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:24'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2008', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:26'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2009', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:28'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2010', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:30'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2011', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:32'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2012', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:34'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2013', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:36'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2014', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:38'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2015', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:40'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2016', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:42'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2017', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:44'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2018', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:46'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2019', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:48'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2020', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'REGISTERED', 'GRADED', '2028-01-18'::date, '2028-01-18 09:50'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2021', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'WAITLISTED', 'GRADED', '2028-01-18'::date, NULL::timestamp, '2028-01-18 10:00'::timestamp, 3.00, NULL::numeric, 1, TRUE, FALSE, NULL),
+        ('SEC-2022', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'WAITLISTED', 'GRADED', '2028-01-18'::date, NULL::timestamp, '2028-01-18 10:02'::timestamp, 3.00, NULL::numeric, 2, TRUE, FALSE, NULL),
+        ('SEC-2023', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'WAITLISTED', 'GRADED', '2028-01-18'::date, NULL::timestamp, '2028-01-18 10:04'::timestamp, 3.00, NULL::numeric, 3, TRUE, FALSE, NULL),
+        ('SEC-2024', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, 'REGISTERED', 'PASS_FAIL', '2028-01-19'::date, '2028-01-19 11:00'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, FALSE, TRUE, 'Manual registrar placement for seminar balance.'),
+        ('SEC-2025', 'MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, 'REGISTERED', 'PASS_FAIL', '2028-01-19'::date, '2028-01-19 11:05'::timestamp, NULL::timestamp, 3.00, NULL::numeric, NULL::int, FALSE, FALSE, NULL),
+        ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'COMPLETED', 'GRADED', '2027-08-21'::date, '2027-08-21 13:55'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, 'Earlier completed attempt replaced by repeat.'),
+        ('SEC-2026', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'COMPLETED', 'GRADED', '2027-08-21'::date, '2027-08-21 14:00'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2027', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'WITHDRAWN', 'GRADED', '2027-08-21'::date, '2027-08-21 14:03'::timestamp, NULL::timestamp, 3.00, 0.00, NULL::int, TRUE, FALSE, 'Withdrew before final grading.'),
+        ('SEC-2028', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'COMPLETED', 'GRADED', '2027-01-16'::date, '2027-01-16 10:00'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2029', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'COMPLETED', 'GRADED', '2027-01-16'::date, '2027-01-16 10:03'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, NULL),
+        ('SEC-2030', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'DROPPED', 'GRADED', '2027-01-16'::date, '2027-01-16 10:05'::timestamp, NULL::timestamp, 3.00, 0.00, NULL::int, TRUE, FALSE, 'Dropped during add/drop.')
 )
 INSERT INTO student_section_enrollment (
     student_id,
@@ -204,12 +203,11 @@ JOIN academic_year year ON year.code = desired_enrollments.academic_year_code
 JOIN course_offering offering ON offering.course_version_id = version.course_version_id
                              AND offering.academic_year_id = year.academic_year_id
 JOIN academic_sub_term sub_term ON sub_term.academic_year_id = year.academic_year_id
-                               AND sub_term.code = desired_enrollments.sub_term_code
+                           AND sub_term.code = desired_enrollments.sub_term_code
 JOIN course_section section ON section.course_offering_id = offering.course_offering_id
                            AND section.sub_term_id = sub_term.sub_term_id
                            AND section.section_letter = desired_enrollments.section_letter
                            AND section.is_honors = desired_enrollments.is_honors
-                           AND section.is_lab = desired_enrollments.is_lab
 JOIN student_section_enrollment_status enrollment_status ON enrollment_status.code = desired_enrollments.status_code
 JOIN grading_basis ON grading_basis.code = desired_enrollments.grading_basis_code
 LEFT JOIN users actor ON actor.email = 'frodo@shire.me';

@@ -39,7 +39,7 @@ import {
 import {
   StudentCourseHistoryPage,
   StudentAdminTranscriptPage,
-  StudentDegreeTrackerPage,
+  StudentProgramsPage,
   StudentTranscriptPage,
 } from './pages/portal/StudentAcademicsPlaceholders.page';
 
@@ -55,7 +55,7 @@ const portalRouteComponents = {
   'academic-degree-requests': AcademicDegreeRequestsPage,
   'student-transcript': StudentTranscriptPage,
   'student-course-history': StudentCourseHistoryPage,
-  'student-degree-tracker': StudentDegreeTrackerPage,
+  'student-programs': StudentProgramsPage,
   'academic-schools': AcademicSchoolsPage,
   'academic-school-detail': AcademicSchoolDetailPage,
   'academic-departments': AcademicDepartmentsPage,

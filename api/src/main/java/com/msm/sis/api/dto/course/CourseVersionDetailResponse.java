@@ -2,6 +2,7 @@ package com.msm.sis.api.dto.course;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record CourseVersionDetailResponse(
         Long courseVersionId,
@@ -10,6 +11,7 @@ public record CourseVersionDetailResponse(
         String subjectCode,
         String courseNumber,
         String courseCode,
+        boolean lab,
         Integer versionNumber,
         String title,
         String catalogDescription,
@@ -18,6 +20,8 @@ public record CourseVersionDetailResponse(
         boolean variableCredit,
         boolean current,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        List<CourseVersionRequisiteGroupResponse> requisites,
+        CourseVersionDetailResponse associatedLab
 ) {
 }

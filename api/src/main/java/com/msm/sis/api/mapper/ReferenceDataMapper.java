@@ -186,6 +186,7 @@ public class ReferenceDataMapper {
                 subject == null ? null : subject.getName(),
                 course.getCourseNumber(),
                 buildCourseCode(course),
+                course.isLab(),
                 currentCourseVersion == null ? null : currentCourseVersion.getId(),
                 currentCourseVersion == null ? null : currentCourseVersion.getTitle(),
                 currentCourseVersion == null ? null : currentCourseVersion.getMinCredits(),

@@ -1,19 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Grid, Select, Switch, Textarea, TextInput } from '@mantine/core';
+import { Divider, Grid, Select, Switch, Textarea, TextInput } from '@mantine/core';
 import { FormModalShell } from '@/components/modals/FormModalShell';
 import type { CreateCourseVersionRequest } from '@/services/schemas/course-schemas';
+import { CourseRequisitesEditor } from './CourseRequisitesEditor';
+import {
+  buildCourseRequisitesRequest,
+  emptyCourseRequisites,
+  type CourseRequisiteGroupDraft,
+} from './courseRequisiteDrafts';
+import { useCoursePickerOptions } from './useCoursePickerOptions';
 
 type CreateCourseVersionState =
   | { status: 'idle' }
   | { status: 'saving' }
   | { status: 'error'; message: string };
 
-type CreateCourseVersionFormValues = {
+export type CreateCourseVersionFormValues = {
   title: string;
   catalogDescription: string;
   minCredits: string | null;
   maxCredits: string | null;
   variableCredit: boolean;
+  requisites: CourseRequisiteGroupDraft[];
 };
 
 const creditOptions = Array.from({ length: 21 }, (_, index) => {
@@ -31,6 +39,7 @@ const initialCreateCourseVersionFormValues: CreateCourseVersionFormValues = {
   minCredits: '3.00',
   maxCredits: '3.00',
   variableCredit: false,
+  requisites: emptyCourseRequisites,
 };
 
 export function CreateCourseVersionModal({
@@ -40,6 +49,7 @@ export function CreateCourseVersionModal({
   onCreate,
   courseId,
   courseCode,
+  initialValues,
 }: {
   opened: boolean;
   onClose: () => void;
@@ -47,21 +57,23 @@ export function CreateCourseVersionModal({
   onCreate: (request: CreateCourseVersionRequest) => Promise<void>;
   courseId: number;
   courseCode: string | null;
+  initialValues?: CreateCourseVersionFormValues | null;
 }) {
   const [formValues, setFormValues] = useState<CreateCourseVersionFormValues>(
     initialCreateCourseVersionFormValues
   );
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const isSaving = createState.status === 'saving';
+  const coursePickerOptions = useCoursePickerOptions(opened);
 
   useEffect(() => {
     if (!opened) {
       return;
     }
 
-    setFormValues(initialCreateCourseVersionFormValues);
+    setFormValues(initialValues ?? initialCreateCourseVersionFormValues);
     setValidationMessage(null);
-  }, [opened, courseId]);
+  }, [opened, courseId, initialValues]);
 
   async function handleSubmit() {
     const normalizedTitle = formValues.title.trim();
@@ -93,6 +105,12 @@ export function CreateCourseVersionModal({
       return;
     }
 
+    const requisitesResult = buildCourseRequisitesRequest(formValues.requisites);
+    if (requisitesResult.status === 'invalid') {
+      setValidationMessage(requisitesResult.message);
+      return;
+    }
+
     setValidationMessage(null);
 
     await onCreate({
@@ -101,6 +119,7 @@ export function CreateCourseVersionModal({
       minCredits,
       maxCredits,
       variableCredit: formValues.variableCredit,
+      requisites: requisitesResult.requisites,
     });
   }
 
@@ -109,7 +128,7 @@ export function CreateCourseVersionModal({
       opened={opened}
       onClose={onClose}
       title="Create New Version"
-      size="lg"
+      size="72rem"
       isSaving={isSaving}
       validationMessage={validationMessage}
       validationTitle="Invalid course version"
@@ -195,6 +214,28 @@ export function CreateCourseVersionModal({
                 ...current,
                 variableCredit: checked,
                 maxCredits: checked ? current.maxCredits : current.minCredits,
+              }));
+            }}
+          />
+        </Grid.Col>
+        <Grid.Col span={12}>
+          <Divider />
+        </Grid.Col>
+        <Grid.Col span={12}>
+          <CourseRequisitesEditor
+            groups={formValues.requisites}
+            courses={coursePickerOptions.courses}
+            departmentOptions={coursePickerOptions.departmentOptions}
+            loading={coursePickerOptions.loading}
+            error={coursePickerOptions.error}
+            disabled={isSaving}
+            onChange={(requisites) => {
+              setFormValues((current) => ({
+                ...current,
+                requisites:
+                  typeof requisites === 'function'
+                    ? requisites(current.requisites)
+                    : requisites,
               }));
             }}
           />

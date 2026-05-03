@@ -99,6 +99,7 @@ export const CourseReferenceOptionSchema = z.object({
   subjectName: z.string(),
   courseNumber: z.string(),
   courseCode: z.string(),
+  lab: z.boolean(),
   currentCourseVersionId: z.number().nullable(),
   currentVersionTitle: z.string().nullable(),
   minCredits: z.number().nullable(),

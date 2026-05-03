@@ -15,7 +15,6 @@ public class PatchCourseSectionRequest {
     private PatchValue<String> sectionLetter = PatchValue.absent();
     private PatchValue<String> title = PatchValue.absent();
     private PatchValue<Boolean> honors = PatchValue.absent();
-    private PatchValue<Boolean> lab = PatchValue.absent();
     private PatchValue<String> statusCode = PatchValue.absent();
     private PatchValue<String> academicDivisionCode = PatchValue.absent();
     private PatchValue<String> deliveryModeCode = PatchValue.absent();

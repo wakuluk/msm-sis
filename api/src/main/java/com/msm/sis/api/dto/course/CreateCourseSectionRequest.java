@@ -24,8 +24,6 @@ public record CreateCourseSectionRequest(
 
         boolean honors,
 
-        boolean lab,
-
         @Size(max = 50)
         String statusCode,
 

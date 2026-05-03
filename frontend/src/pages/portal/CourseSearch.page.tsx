@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import {
   Alert,
+  Badge,
   Button,
   Checkbox,
   Container,
@@ -145,8 +146,21 @@ const courseSearchColumns: ColumnDef<CourseSearchResultResponse>[] = [
         </Link>
       ) : (
         '—'
-      ),
+    ),
     meta: { sortBy: 'courseCode' satisfies CourseSearchSortBy },
+  },
+  {
+    accessorKey: 'lab',
+    header: 'Type',
+    size: 100,
+    cell: ({ row }) =>
+      row.original.lab ? (
+        <Badge size="sm" variant="light" color="indigo">
+          Lab
+        </Badge>
+      ) : (
+        '—'
+      ),
   },
   {
     accessorKey: 'currentVersionTitle',

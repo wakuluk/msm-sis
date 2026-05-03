@@ -1,46 +1,37 @@
-import { Checkbox, Grid, Group, TextInput } from '@mantine/core';
+import { Grid } from '@mantine/core';
 import { CourseCreateSectionFrame } from './CourseCreateSectionFrame';
+import { CourseRequisitesEditor } from './CourseRequisitesEditor';
+import type { CourseRequisiteGroupDraft } from './courseRequisiteDrafts';
+import { useCoursePickerOptions } from './useCoursePickerOptions';
 
 type CourseRulesSectionProps = {
   isSubmitting: boolean;
+  requisites: CourseRequisiteGroupDraft[];
+  onRequisitesChange: React.Dispatch<React.SetStateAction<CourseRequisiteGroupDraft[]>>;
 };
 
-export function CourseRulesSection({ isSubmitting }: CourseRulesSectionProps) {
+export function CourseRulesSection({
+  isSubmitting,
+  requisites,
+  onRequisitesChange,
+}: CourseRulesSectionProps) {
+  const coursePickerOptions = useCoursePickerOptions(true);
+
   return (
     <CourseCreateSectionFrame
-      title="Rules and Relationships"
-      description="Optional setup that determines how the course can be used before sections are created."
+      title="Requisites"
+      description="Optional prerequisites and corequisites for the initial course version."
     >
-      <Grid.Col span={{ base: 12, md: 6 }}>
-        <TextInput
-          label="Prerequisites"
-          placeholder="Example: MATH 120 or placement"
-          disabled={isSubmitting}
-        />
-      </Grid.Col>
-      <Grid.Col span={{ base: 12, md: 6 }}>
-        <TextInput label="Corequisites" placeholder="Example: CMSCI 453L" disabled={isSubmitting} />
-      </Grid.Col>
-      <Grid.Col span={{ base: 12, md: 6 }}>
-        <TextInput
-          label="Equivalent courses"
-          placeholder="Example: CS 453"
-          disabled={isSubmitting}
-        />
-      </Grid.Col>
-      <Grid.Col span={{ base: 12, md: 6 }}>
-        <TextInput
-          label="Mutually exclusive courses"
-          placeholder="Example: MATH 453"
-          disabled={isSubmitting}
-        />
-      </Grid.Col>
       <Grid.Col span={12}>
-        <Group gap="xl" align="center">
-          <Checkbox label="Can satisfy program requirements" defaultChecked disabled={isSubmitting} />
-          <Checkbox label="Can receive transfer substitutions" defaultChecked disabled={isSubmitting} />
-          <Checkbox label="Requires department approval" disabled={isSubmitting} />
-        </Group>
+        <CourseRequisitesEditor
+          groups={requisites}
+          courses={coursePickerOptions.courses}
+          departmentOptions={coursePickerOptions.departmentOptions}
+          loading={coursePickerOptions.loading}
+          error={coursePickerOptions.error}
+          disabled={isSubmitting}
+          onChange={onRequisitesChange}
+        />
       </Grid.Col>
     </CourseCreateSectionFrame>
   );

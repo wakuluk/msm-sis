@@ -1,5 +1,10 @@
 import { Grid, Select, Switch, TextInput } from '@mantine/core';
 import type { StringOption } from '@/components/search/SearchQueryControls';
+import {
+  buildDefaultLabCourseNumber,
+  buildDefaultLabTitle,
+  syncAssociatedLabCorequisite,
+} from './courseCreateFormHelpers';
 import type { CourseCreateFormValues } from './courseCreateValidation';
 import { CourseCreateSectionFrame } from './CourseCreateSectionFrame';
 
@@ -101,10 +106,20 @@ export function CourseIdentitySection({
           value={formValues.courseNumber}
           disabled={isSubmitting}
           onChange={(event) => {
-            onFormValuesChange((current) => ({
-              ...current,
-              courseNumber: event.currentTarget.value,
-            }));
+            const courseNumber = event.currentTarget.value;
+
+            onFormValuesChange((current) =>
+              syncAssociatedLabCorequisite({
+                ...current,
+                courseNumber,
+                associatedLabCourseNumber:
+                  current.createAssociatedLab &&
+                  (!current.associatedLabCourseNumber ||
+                    current.associatedLabCourseNumber === buildDefaultLabCourseNumber(current.courseNumber))
+                    ? buildDefaultLabCourseNumber(courseNumber)
+                    : current.associatedLabCourseNumber,
+              })
+            );
           }}
         />
       </Grid.Col>
@@ -117,9 +132,19 @@ export function CourseIdentitySection({
           value={formValues.title}
           disabled={isSubmitting}
           onChange={(event) => {
+            const title = event.currentTarget.value;
+
             onFormValuesChange((current) => ({
-              ...current,
-              title: event.currentTarget.value,
+              ...syncAssociatedLabCorequisite({
+                ...current,
+                title,
+                associatedLabTitle:
+                  current.createAssociatedLab &&
+                  (!current.associatedLabTitle ||
+                    current.associatedLabTitle === buildDefaultLabTitle(current.title))
+                    ? buildDefaultLabTitle(title)
+                    : current.associatedLabTitle,
+              }),
             }));
           }}
         />
@@ -138,7 +163,22 @@ export function CourseIdentitySection({
         />
       </Grid.Col>
       <Grid.Col span={{ base: 12, md: 4 }}>
-        <Switch label="Visible in catalog" defaultChecked disabled={isSubmitting} />
+        <Switch
+          label="Lab course"
+          checked={formValues.lab}
+          disabled={isSubmitting}
+          onChange={(event) => {
+            const checked = event.currentTarget.checked;
+
+            onFormValuesChange((current) => ({
+              ...syncAssociatedLabCorequisite({
+                ...current,
+                lab: checked,
+                createAssociatedLab: checked ? false : current.createAssociatedLab,
+              }),
+            }));
+          }}
+        />
       </Grid.Col>
       <Grid.Col span={{ base: 12, md: 4 }}>
         <Switch label="Repeatable for credit" disabled={isSubmitting} />

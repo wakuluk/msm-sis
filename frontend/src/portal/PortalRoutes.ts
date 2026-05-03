@@ -18,7 +18,7 @@ export type PortalRouteItemKey =
   | 'academic-degree-requests'
   | 'student-transcript'
   | 'student-course-history'
-  | 'student-degree-tracker'
+  | 'student-programs'
   | 'academic-schools'
   | 'academic-school-detail'
   | 'academic-departments'
@@ -50,7 +50,7 @@ export type PortalRoutePath =
   | '/academics/degree-requests'
   | '/academics/transcript'
   | '/academics/course-history'
-  | '/academics/degree-tracker'
+  | '/academics/student-programs'
   | '/academics/schools'
   | '/academics/schools/:schoolId'
   | '/academics/departments'
@@ -191,9 +191,9 @@ export const portalRoutes: PortalRouteNode[] = [
       },
       {
         kind: 'item',
-        key: 'student-degree-tracker',
-        label: 'Degree Tracker',
-        path: '/academics/degree-tracker',
+        key: 'student-programs',
+        label: 'My Programs',
+        path: '/academics/student-programs',
         requiredRoles: [PORTAL_ROLES.STUDENT],
         showInNav: true,
       },

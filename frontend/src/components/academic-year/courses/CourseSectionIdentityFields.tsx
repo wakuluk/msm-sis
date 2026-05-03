@@ -68,21 +68,6 @@ export function CourseSectionIdentityFields({
           />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 2 }}>
-          <Switch
-            label="Lab"
-            checked={draft.lab}
-            disabled={fieldsDisabled}
-            styles={readOnlySwitchStyles}
-            mt="lg"
-            onChange={(event) => {
-              setDraft((current) => ({
-                ...current,
-                lab: event.currentTarget.checked,
-              }));
-            }}
-          />
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 2 }}>
           <Select
             label="Status"
             placeholder="Status"

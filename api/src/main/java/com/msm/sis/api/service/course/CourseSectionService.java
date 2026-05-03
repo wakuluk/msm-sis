@@ -86,8 +86,7 @@ public class CourseSectionService {
                 courseOfferingId,
                 subTermId,
                 sectionLetter,
-                request.honors(),
-                request.lab()
+                request.honors()
         );
 
         courseSectionValidationService.validateCredits(courseOffering, request.credits());
@@ -103,7 +102,6 @@ public class CourseSectionService {
         courseSection.setSectionLetter(sectionLetter);
         courseSection.setTitle(trimToNull(request.title()));
         courseSection.setHonors(request.honors());
-        courseSection.setLab(request.lab());
         courseSection.setStatus(resolveRequiredReference(
                 Optional.ofNullable(trimToNull(request.statusCode())).orElse(DEFAULT_SECTION_STATUS_CODE),
                 courseSectionStatusRepository::findByCode,

@@ -75,7 +75,6 @@ public class CourseSectionMapper {
                 buildDisplaySectionCode(section),
                 section.getTitle(),
                 section.isHonors(),
-                section.isLab(),
                 status == null ? null : status.getId(),
                 status == null ? null : status.getCode(),
                 status == null ? null : status.getName(),
@@ -127,7 +126,6 @@ public class CourseSectionMapper {
                 buildDisplaySectionCode(section),
                 section.getTitle(),
                 section.isHonors(),
-                section.isLab(),
                 status == null ? null : status.getId(),
                 status == null ? null : status.getCode(),
                 status == null ? null : status.getName(),
@@ -205,7 +203,6 @@ public class CourseSectionMapper {
         apply(request.getSectionLetter(), ignored -> section.setSectionLetter(finalSectionLetter));
         applyTrimmed(request.getTitle(), section::setTitle);
         apply(request.getHonors(), section::setHonors);
-        apply(request.getLab(), section::setLab);
         apply(status, section::setStatus);
         apply(academicDivision, section::setAcademicDivision);
         apply(deliveryMode, section::setDeliveryMode);
@@ -225,10 +222,6 @@ public class CourseSectionMapper {
 
         if (section.isHonors()) {
             displayCode.append("H");
-        }
-
-        if (section.isLab()) {
-            displayCode.append("L");
         }
 
         return displayCode.toString();

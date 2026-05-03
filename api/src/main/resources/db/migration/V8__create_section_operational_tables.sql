@@ -7,7 +7,6 @@ CREATE TABLE course_section (
     section_letter VARCHAR(5) NOT NULL,
     title VARCHAR(255) NULL,
     is_honors BOOLEAN NOT NULL DEFAULT FALSE,
-    is_lab BOOLEAN NOT NULL DEFAULT FALSE,
 
     course_section_status_id BIGINT NOT NULL,
     delivery_mode_id BIGINT NOT NULL,
@@ -49,7 +48,7 @@ CREATE TABLE course_section (
         FOREIGN KEY (parent_section_id) REFERENCES course_section(section_id),
 
     CONSTRAINT uq_course_section_offering_sub_term_letter
-        UNIQUE (course_offering_id, sub_term_id, section_letter, is_honors, is_lab),
+        UNIQUE (course_offering_id, sub_term_id, section_letter, is_honors),
 
     CONSTRAINT chk_course_section_credits
         CHECK (credits >= 0),

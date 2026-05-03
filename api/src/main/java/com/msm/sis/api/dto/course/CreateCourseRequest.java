@@ -15,10 +15,15 @@ public record CreateCourseRequest(
         @Size(max = 20)
         String courseNumber,
 
+        Boolean lab,
+
         Boolean active,
 
         @Valid
         @NotNull
-        CreateCourseVersionRequest initialVersion
+        CreateCourseVersionRequest initialVersion,
+
+        @Valid
+        CreateAssociatedLabCourseRequest associatedLab
 ) {
 }

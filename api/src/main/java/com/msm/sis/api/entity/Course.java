@@ -39,6 +39,9 @@ public class Course {
     @Column(name = "course_number", nullable = false)
     private String courseNumber;
 
+    @Column(name = "is_lab", nullable = false)
+    private boolean lab = false;
+
     @Column(name = "active", nullable = false)
     private boolean active = true;
 

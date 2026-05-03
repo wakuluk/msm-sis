@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +25,6 @@ import static com.msm.sis.api.util.CourseGroupingUtils.indexFirstVersionByCourse
 import static com.msm.sis.api.util.PagingUtils.validatePageRequest;
 import static com.msm.sis.api.util.SortUtils.parseDirection;
 import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
-import static com.msm.sis.api.util.ValidationUtils.requireRequestBody;
 
 @Service
 @RequiredArgsConstructor
@@ -35,27 +33,40 @@ public class CourseService {
     private final CourseRepository courseRepository;
     private final CourseVersionRepository courseVersionRepository;
     private final CourseMapper courseMapper;
+    private final CourseVersionRequisiteService courseVersionRequisiteService;
+    private final CourseValidationService courseValidationService;
 
     @Transactional
     public CourseVersionDetailResponse createCourse(CreateCourseRequest request) {
-        validateCreateCourseRequest(request);
-        validateCreateCourseVersionRequest(request.initialVersion());
+        courseValidationService.validateCreateCourseRequest(request);
 
         AcademicSubject subject = academicSubjectRepository.findById(request.subjectId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subject id is invalid."));
         String courseNumber = request.courseNumber().trim();
 
-        if (courseRepository.existsBySubject_CodeAndCourseNumber(subject.getCode(), courseNumber)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "A course with this subject and course number already exists."
-            );
-        }
+        courseValidationService.validateCourseNumberAvailable(subject, courseNumber);
+        courseValidationService.validateAssociatedLabCourseNumberAvailable(subject, request.associatedLab());
 
         Course course = courseMapper.toCourse(subject, courseNumber, request);
         Course savedCourse = courseRepository.save(course);
         CourseVersion savedCourseVersion = createInitialCourseVersion(savedCourse, request.initialVersion());
-        return courseMapper.toCourseVersionDetailResponse(savedCourseVersion);
+        createCourseVersionRequisites(
+                savedCourseVersion,
+                request.initialVersion()
+        );
+        CourseVersion associatedLabVersion = createAssociatedLabCourse(
+                subject,
+                savedCourse,
+                savedCourseVersion,
+                request.initialVersion(),
+                request.associatedLab()
+        );
+
+        List<CourseVersionRequisiteGroupResponse> requisites =
+                courseVersionRequisiteService.getRequisitesForCourseVersion(savedCourseVersion.getId());
+        CourseVersionDetailResponse associatedLabResponse = toAssociatedLabResponse(associatedLabVersion);
+
+        return courseMapper.toCourseVersionDetailResponse(savedCourseVersion, requisites, associatedLabResponse);
     }
 
     @Transactional
@@ -65,7 +76,7 @@ public class CourseService {
     ) {
         requirePositiveId(courseId, "Course id");
 
-        validateCreateCourseVersionRequest(request);
+        courseValidationService.validateCreateCourseVersionRequest(request);
 
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -84,7 +95,8 @@ public class CourseService {
                 normalizeCatalogDescription(request.catalogDescription())
         );
         CourseVersion savedCourseVersion = courseVersionRepository.save(courseVersion);
-        return courseMapper.toCourseVersionDetailResponse(savedCourseVersion);
+        List<CourseVersionRequisiteGroupResponse> requisites = createCourseVersionRequisites(savedCourseVersion, request);
+        return courseMapper.toCourseVersionDetailResponse(savedCourseVersion, requisites);
     }
 
     private CourseVersion createInitialCourseVersion(Course course, CreateCourseVersionRequest request) {
@@ -94,6 +106,92 @@ public class CourseService {
                 request,
                 normalizeCatalogDescription(request.catalogDescription())
         ));
+    }
+
+    private List<CourseVersionRequisiteGroupResponse> createCourseVersionRequisites(
+            CourseVersion courseVersion,
+            CreateCourseVersionRequest request
+    ) {
+        return courseVersionRequisiteService.createCourseVersionRequisiteGroups(
+                courseVersion.getId(),
+                request.requisites()
+        );
+    }
+
+    private CourseVersion createAssociatedLabCourse(
+            AcademicSubject subject,
+            Course mainCourse,
+            CourseVersion mainCourseVersion,
+            CreateCourseVersionRequest mainCourseVersionRequest,
+            CreateAssociatedLabCourseRequest request
+    ) {
+        if (request == null) {
+            return null;
+        }
+
+        String labCourseNumber = request.courseNumber().trim();
+        Course labCourse = courseMapper.toCourse(subject, labCourseNumber, true, request.active());
+        Course savedLabCourse = courseRepository.save(labCourse);
+        CourseVersion savedLabVersion = createInitialCourseVersion(savedLabCourse, request.initialVersion());
+        createCourseVersionRequisites(savedLabVersion, request.initialVersion());
+        createBidirectionalAssociatedLabCorequisites(
+                mainCourse,
+                mainCourseVersion,
+                mainCourseVersionRequest,
+                savedLabCourse,
+                savedLabVersion,
+                request
+        );
+        return savedLabVersion;
+    }
+
+    private CourseVersionDetailResponse toAssociatedLabResponse(CourseVersion associatedLabVersion) {
+        if (associatedLabVersion == null) {
+            return null;
+        }
+
+        List<CourseVersionRequisiteGroupResponse> requisites =
+                courseVersionRequisiteService.getRequisitesForCourseVersion(associatedLabVersion.getId());
+        return courseMapper.toCourseVersionDetailResponse(associatedLabVersion, requisites);
+    }
+
+    private void createBidirectionalAssociatedLabCorequisites(
+            Course mainCourse,
+            CourseVersion mainCourseVersion,
+            CreateCourseVersionRequest mainCourseVersionRequest,
+            Course labCourse,
+            CourseVersion labCourseVersion,
+            CreateAssociatedLabCourseRequest request
+    ) {
+        if (!request.bidirectionalCorequisite()) {
+            return;
+        }
+
+        courseVersionRequisiteService.createCourseVersionRequisiteGroup(
+                mainCourseVersion.getId(),
+                createSingleCourseCorequisiteRequest(labCourse.getId(), nextSortOrder(mainCourseVersionRequest))
+        );
+        courseVersionRequisiteService.createCourseVersionRequisiteGroup(
+                labCourseVersion.getId(),
+                createSingleCourseCorequisiteRequest(mainCourse.getId(), nextSortOrder(request.initialVersion()))
+        );
+    }
+
+    private CreateCourseVersionRequisiteGroupRequest createSingleCourseCorequisiteRequest(
+            Long courseId,
+            Integer sortOrder
+    ) {
+        return new CreateCourseVersionRequisiteGroupRequest(
+                "COREQUISITE",
+                "ALL",
+                null,
+                sortOrder,
+                List.of(new CreateCourseVersionRequisiteCourseRequest(courseId, 0))
+        );
+    }
+
+    private Integer nextSortOrder(CreateCourseVersionRequest request) {
+        return request.requisites() == null ? 0 : request.requisites().size();
     }
 
     @Transactional(readOnly = true)
@@ -160,8 +258,17 @@ public class CourseService {
                 courseId,
                 PageRequest.of(page, size, buildCourseVersionSort(sortBy, sortDirection))
         );
+        List<Long> courseVersionIds = courseVersionsPage.getContent().stream()
+                .map(CourseVersion::getId)
+                .toList();
+        Map<Long, List<CourseVersionRequisiteGroupResponse>> requisitesByCourseVersionId =
+                courseVersionRequisiteService.getRequisitesForCourseVersions(courseVersionIds);
 
-        return courseMapper.toCourseVersionSearchResponse(courseVersionsPage, course);
+        return courseMapper.toCourseVersionSearchResponse(
+                courseVersionsPage,
+                course,
+                requisitesByCourseVersionId
+        );
     }
 
     private Sort buildCourseVersionSort(String sortBy, String sortDirection) {
@@ -188,40 +295,6 @@ public class CourseService {
 
     private Sort.Direction parseSortDirection(String sortDirection) {
         return parseDirection(sortDirection, Sort.Direction.DESC);
-    }
-
-    private void validateCreateCourseVersionRequest(CreateCourseVersionRequest request) {
-        requireRequestBody(request);
-
-        BigDecimal minCredits = request.minCredits();
-        BigDecimal maxCredits = request.maxCredits();
-
-        if (request.variableCredit()) {
-            if (minCredits.compareTo(maxCredits) > 0) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Min credits must be less than or equal to max credits for variable-credit courses."
-                );
-            }
-            return;
-        }
-
-        if (minCredits.compareTo(maxCredits) != 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Min credits and max credits must match for non-variable-credit courses."
-            );
-        }
-    }
-
-    private void validateCreateCourseRequest(CreateCourseRequest request) {
-        requireRequestBody(request);
-
-        requirePositiveId(request.subjectId(), "Subject id");
-
-        if (request.courseNumber() == null || request.courseNumber().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Course number is required.");
-        }
     }
 
     private String normalizeCatalogDescription(String catalogDescription) {

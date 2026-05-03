@@ -94,14 +94,12 @@ public interface CourseSectionRepository extends JpaRepository<CourseSection, Lo
               and courseSection.subTerm.id = :subTermId
               and lower(courseSection.sectionLetter) = lower(:sectionLetter)
               and courseSection.honors = :honors
-              and courseSection.lab = :lab
             """)
     boolean existsByNaturalKey(
             @Param("courseOfferingId") Long courseOfferingId,
             @Param("subTermId") Long subTermId,
             @Param("sectionLetter") String sectionLetter,
-            @Param("honors") boolean honors,
-            @Param("lab") boolean lab
+            @Param("honors") boolean honors
     );
 
     @Query("""
@@ -112,7 +110,6 @@ public interface CourseSectionRepository extends JpaRepository<CourseSection, Lo
               and courseSection.subTerm.id = :subTermId
               and lower(courseSection.sectionLetter) = lower(:sectionLetter)
               and courseSection.honors = :honors
-              and courseSection.lab = :lab
               and courseSection.id <> :sectionId
             """)
     boolean existsByNaturalKeyExcludingSection(
@@ -120,7 +117,6 @@ public interface CourseSectionRepository extends JpaRepository<CourseSection, Lo
             @Param("subTermId") Long subTermId,
             @Param("sectionLetter") String sectionLetter,
             @Param("honors") boolean honors,
-            @Param("lab") boolean lab,
             @Param("sectionId") Long sectionId
     );
 }

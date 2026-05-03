@@ -15,6 +15,7 @@ public record CourseReferenceOptionResponse(
         String subjectName,
         String courseNumber,
         String courseCode,
+        boolean lab,
         Long currentCourseVersionId,
         String currentVersionTitle,
         BigDecimal minCredits,

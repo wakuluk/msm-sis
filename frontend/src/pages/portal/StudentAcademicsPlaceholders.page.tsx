@@ -3,6 +3,7 @@ import { Alert, Badge, Group, Loader, Text } from '@mantine/core';
 import { useParams } from 'react-router-dom';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { StudentProgramsExperience } from '@/components/student-programs/StudentProgramsExperience';
 import { StudentTranscriptView } from '@/components/student/StudentTranscriptView';
 import { getStudentTranscript, getStudentTranscriptById } from '@/services/student-service';
 import type { StudentTranscriptResponse } from '@/services/schemas/student-schemas';
@@ -170,13 +171,6 @@ export function StudentCourseHistoryPage() {
   );
 }
 
-export function StudentDegreeTrackerPage() {
-  return (
-    <StudentAcademicsPlaceholderPage
-      title="Degree Tracker"
-      description="Track degree progress against program requirements."
-      sectionTitle="Degree Progress"
-      sectionDescription="Program requirements and completion progress will appear here."
-    />
-  );
+export function StudentProgramsPage() {
+  return <StudentProgramsExperience />;
 }

@@ -76,7 +76,6 @@ public class CourseSectionValidationService {
         }
 
         validatePresentBoolean(request.getHonors().isPresent(), request.getHonors().getValue(), "Honors");
-        validatePresentBoolean(request.getLab().isPresent(), request.getLab().getValue(), "Lab");
         validatePresentBoolean(
                 request.getWaitlistAllowed().isPresent(),
                 request.getWaitlistAllowed().getValue(),
@@ -174,15 +173,13 @@ public class CourseSectionValidationService {
             Long courseOfferingId,
             Long subTermId,
             String sectionLetter,
-            boolean honors,
-            boolean lab
+            boolean honors
     ) {
         if (courseSectionRepository.existsByNaturalKey(
                 courseOfferingId,
                 subTermId,
                 sectionLetter,
-                honors,
-                lab
+                honors
         )) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,

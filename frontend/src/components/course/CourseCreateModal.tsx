@@ -1,6 +1,7 @@
 import { Alert, Button, Divider, Group, Modal, Stack, Text } from '@mantine/core';
 import type { StringOption } from '@/components/search/SearchQueryControls';
 import type { CourseVersionDetailResponse } from '@/services/schemas/course-schemas';
+import { CourseAssociatedLabSection } from './CourseAssociatedLabSection';
 import { CourseIdentitySection } from './CourseIdentitySection';
 import { CourseInitialVersionSection } from './CourseInitialVersionSection';
 import { CourseRulesSection } from './CourseRulesSection';
@@ -108,7 +109,27 @@ export function CourseCreateModal({
 
           <Divider />
 
-          <CourseRulesSection isSubmitting={isSubmitting} />
+          <CourseAssociatedLabSection
+            formValues={formValues}
+            isSubmitting={isSubmitting}
+            onFormValuesChange={setFormValues}
+          />
+
+          <Divider />
+
+          <CourseRulesSection
+            isSubmitting={isSubmitting}
+            requisites={formValues.requisites}
+            onRequisitesChange={(requisites) => {
+              setFormValues((current) => ({
+                ...current,
+                requisites:
+                  typeof requisites === 'function'
+                    ? requisites(current.requisites)
+                    : requisites,
+              }));
+            }}
+          />
 
           <Group justify="space-between" align="center" gap="md">
             <Text size="sm" c="dimmed">

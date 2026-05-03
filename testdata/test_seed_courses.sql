@@ -576,8 +576,8 @@ WHERE ay.code = 'AY-2027-2028'
   AND sub_term.code IN ('SUMMER-I-2028', 'SUMMER-II-2028')
 ;
 
-INSERT INTO course (subject_id, course_number, active)
-SELECT s.subject_id, '101', TRUE
+INSERT INTO course (subject_id, course_number, is_lab, active)
+SELECT s.subject_id, '101', FALSE, TRUE
 FROM academic_subject s
 WHERE s.code = 'TOLK'
   AND NOT EXISTS (
@@ -587,8 +587,8 @@ WHERE s.code = 'TOLK'
         AND c.course_number = '101'
   );
 
-INSERT INTO course (subject_id, course_number, active)
-SELECT s.subject_id, '240', TRUE
+INSERT INTO course (subject_id, course_number, is_lab, active)
+SELECT s.subject_id, '240', FALSE, TRUE
 FROM academic_subject s
 WHERE s.code = 'TOLK'
   AND NOT EXISTS (
@@ -598,8 +598,8 @@ WHERE s.code = 'TOLK'
         AND c.course_number = '240'
   );
 
-INSERT INTO course (subject_id, course_number, active)
-SELECT s.subject_id, '201', TRUE
+INSERT INTO course (subject_id, course_number, is_lab, active)
+SELECT s.subject_id, '201', FALSE, TRUE
 FROM academic_subject s
 WHERE s.code = 'ELV'
   AND NOT EXISTS (
@@ -609,8 +609,19 @@ WHERE s.code = 'ELV'
         AND c.course_number = '201'
   );
 
-INSERT INTO course (subject_id, course_number, active)
-SELECT s.subject_id, '310', TRUE
+INSERT INTO course (subject_id, course_number, is_lab, active)
+SELECT s.subject_id, '201L', TRUE, TRUE
+FROM academic_subject s
+WHERE s.code = 'ELV'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM course c
+      WHERE c.subject_id = s.subject_id
+        AND c.course_number = '201L'
+  );
+
+INSERT INTO course (subject_id, course_number, is_lab, active)
+SELECT s.subject_id, '310', FALSE, TRUE
 FROM academic_subject s
 WHERE s.code = 'MEH'
   AND NOT EXISTS (
@@ -620,8 +631,8 @@ WHERE s.code = 'MEH'
         AND c.course_number = '310'
   );
 
-INSERT INTO course (subject_id, course_number, active)
-SELECT s.subject_id, '480', TRUE
+INSERT INTO course (subject_id, course_number, is_lab, active)
+SELECT s.subject_id, '480', FALSE, TRUE
 FROM academic_subject s
 WHERE s.code = 'TOLK'
   AND NOT EXISTS (
@@ -759,6 +770,35 @@ INSERT INTO course_version (
 )
 SELECT c.course_id,
        1,
+       'Elvish Pronunciation Lab',
+       'A required pronunciation and listening lab paired with Sindarin and Quenya Foundations.',
+       0.00,
+       0.00,
+       FALSE,
+       TRUE
+FROM course c
+JOIN academic_subject s ON s.subject_id = c.subject_id
+WHERE s.code = 'ELV'
+  AND c.course_number = '201L'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM course_version cv
+      WHERE cv.course_id = c.course_id
+        AND cv.version_number = 1
+  );
+
+INSERT INTO course_version (
+    course_id,
+    version_number,
+    title,
+    catalog_description,
+    min_credits,
+    max_credits,
+    is_variable_credit,
+    is_current
+)
+SELECT c.course_id,
+       1,
        'Kingship and Stewardship in Middle-earth',
        'A historical and political reading of rulership, succession, and legitimacy from Numenor to Gondor.',
        3.00,
@@ -805,6 +845,107 @@ WHERE s.code = 'TOLK'
         AND cv.version_number = 1
   );
 
+WITH desired_requisite_groups(
+    target_subject_code,
+    target_course_number,
+    target_version_number,
+    requisite_type,
+    condition_type,
+    minimum_required,
+    sort_order
+) AS (
+    VALUES
+        ('TOLK', '240', 1, 'PREREQUISITE', 'ALL', NULL::int, 1),
+        ('ELV', '201', 1, 'PREREQUISITE', 'ALL', NULL::int, 1),
+        ('ELV', '201', 1, 'COREQUISITE', 'ALL', NULL::int, 2),
+        ('MEH', '310', 1, 'PREREQUISITE', 'ANY', 1, 1),
+        ('TOLK', '480', 1, 'COREQUISITE', 'ANY', 1, 1)
+)
+INSERT INTO course_version_requisite_group (
+    course_version_id,
+    requisite_type,
+    condition_type,
+    minimum_required,
+    sort_order
+)
+SELECT target_course_version.course_version_id,
+       desired_requisite_groups.requisite_type,
+       desired_requisite_groups.condition_type,
+       desired_requisite_groups.minimum_required,
+       desired_requisite_groups.sort_order
+FROM desired_requisite_groups
+JOIN academic_subject target_subject
+    ON target_subject.code = desired_requisite_groups.target_subject_code
+JOIN course target_course
+    ON target_course.subject_id = target_subject.subject_id
+   AND target_course.course_number = desired_requisite_groups.target_course_number
+JOIN course_version target_course_version
+    ON target_course_version.course_id = target_course.course_id
+   AND target_course_version.version_number = desired_requisite_groups.target_version_number
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM course_version_requisite_group existing_group
+    WHERE existing_group.course_version_id = target_course_version.course_version_id
+      AND existing_group.requisite_type = desired_requisite_groups.requisite_type
+      AND existing_group.condition_type = desired_requisite_groups.condition_type
+      AND COALESCE(existing_group.minimum_required, -1) = COALESCE(desired_requisite_groups.minimum_required, -1)
+      AND existing_group.sort_order = desired_requisite_groups.sort_order
+);
+
+WITH desired_requisite_courses(
+    target_subject_code,
+    target_course_number,
+    target_version_number,
+    requisite_type,
+    condition_type,
+    group_sort_order,
+    required_subject_code,
+    required_course_number,
+    sort_order
+) AS (
+    VALUES
+        ('TOLK', '240', 1, 'PREREQUISITE', 'ALL', 1, 'TOLK', '101', 1),
+        ('ELV', '201', 1, 'PREREQUISITE', 'ALL', 1, 'TOLK', '101', 1),
+        ('ELV', '201', 1, 'COREQUISITE', 'ALL', 2, 'ELV', '201L', 1),
+        ('MEH', '310', 1, 'PREREQUISITE', 'ANY', 1, 'TOLK', '240', 1),
+        ('MEH', '310', 1, 'PREREQUISITE', 'ANY', 1, 'ELV', '201', 2),
+        ('TOLK', '480', 1, 'COREQUISITE', 'ANY', 1, 'TOLK', '240', 1),
+        ('TOLK', '480', 1, 'COREQUISITE', 'ANY', 1, 'MEH', '310', 2)
+)
+INSERT INTO course_version_requisite_course (
+    course_version_requisite_group_id,
+    course_id,
+    sort_order
+)
+SELECT requisite_group.course_version_requisite_group_id,
+       required_course.course_id,
+       desired_requisite_courses.sort_order
+FROM desired_requisite_courses
+JOIN academic_subject target_subject
+    ON target_subject.code = desired_requisite_courses.target_subject_code
+JOIN course target_course
+    ON target_course.subject_id = target_subject.subject_id
+   AND target_course.course_number = desired_requisite_courses.target_course_number
+JOIN course_version target_course_version
+    ON target_course_version.course_id = target_course.course_id
+   AND target_course_version.version_number = desired_requisite_courses.target_version_number
+JOIN course_version_requisite_group requisite_group
+    ON requisite_group.course_version_id = target_course_version.course_version_id
+   AND requisite_group.requisite_type = desired_requisite_courses.requisite_type
+   AND requisite_group.condition_type = desired_requisite_courses.condition_type
+   AND requisite_group.sort_order = desired_requisite_courses.group_sort_order
+JOIN academic_subject required_subject
+    ON required_subject.code = desired_requisite_courses.required_subject_code
+JOIN course required_course
+    ON required_course.subject_id = required_subject.subject_id
+   AND required_course.course_number = desired_requisite_courses.required_course_number
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM course_version_requisite_course existing_course
+    WHERE existing_course.course_version_requisite_group_id = requisite_group.course_version_requisite_group_id
+      AND existing_course.course_id = required_course.course_id
+);
+
 INSERT INTO staff (first_name, last_name, email)
 SELECT 'Jane', 'Smith', 'jane.smith@msm.edu'
 WHERE NOT EXISTS (
@@ -842,6 +983,7 @@ WITH desired_offerings(subject_code, course_number, version_number, academic_yea
         ('TOLK', '101', 2, 'AY-2026-2027', 'Includes a weekend film-comparison workshop.'),
         ('TOLK', '240', 1, 'AY-2026-2027', 'Seminar format with weekly textual analysis.'),
         ('ELV', '201', 1, 'AY-2026-2027', 'Cross-listed with linguistics discussion groups.'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'Required lab paired with ELV 201.'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'Independent projects require faculty approval.'),
         ('MEH', '310', 1, 'AY-2027-2028', 'Focuses on Gondor, Arnor, and the long defeat.')
 )
@@ -872,6 +1014,7 @@ WITH desired_offerings(subject_code, course_number, version_number, academic_yea
         ('TOLK', '101', 2, 'AY-2026-2027', 'Includes a weekend film-comparison workshop.'),
         ('TOLK', '240', 1, 'AY-2026-2027', 'Seminar format with weekly textual analysis.'),
         ('ELV', '201', 1, 'AY-2026-2027', 'Cross-listed with linguistics discussion groups.'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'Required lab paired with ELV 201.'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'Independent projects require faculty approval.'),
         ('MEH', '310', 1, 'AY-2027-2028', 'Focuses on Gondor, Arnor, and the long defeat.')
 )
@@ -895,6 +1038,7 @@ WITH desired_offering_sub_terms(subject_code, course_number, version_number, aca
         ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027'),
         ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027'),
@@ -927,6 +1071,7 @@ WITH desired_offerings(subject_code, course_number, version_number, academic_yea
         ('TOLK', '101', 2, 'AY-2026-2027'),
         ('TOLK', '240', 1, 'AY-2026-2027'),
         ('ELV', '201', 1, 'AY-2026-2027'),
+        ('ELV', '201L', 1, 'AY-2026-2027'),
         ('TOLK', '480', 1, 'AY-2026-2027'),
         ('MEH', '310', 1, 'AY-2027-2028')
 )
@@ -955,6 +1100,7 @@ WITH desired_offering_sub_terms(subject_code, course_number, version_number, aca
         ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027'),
         ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027'),
@@ -989,7 +1135,6 @@ WITH desired_sections(
     sub_term_code,
     section_letter,
     is_honors,
-    is_lab,
     status_code,
     academic_division_code,
     delivery_mode_code,
@@ -1003,18 +1148,18 @@ WITH desired_sections(
     notes
 ) AS (
     VALUES
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 28, 32, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Lecture section for general registration.'),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, FALSE, 'OPEN', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 3.00, 18, 22, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Honors section with additional seminar discussion.'),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 3.00, 24, 28, TRUE, '2027-05-24'::date, '2027-06-25'::date, 'Condensed online summer section.'),
-        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 16, 18, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Discussion-heavy seminar section.'),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Language lab attached to weekly class meeting.'),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, TRUE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 0.00, 20, 20, FALSE, '2027-01-19'::date, '2027-05-07'::date, 'Required pronunciation lab.'),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 4.00, 18, 22, TRUE, '2027-06-28'::date, '2027-07-30'::date, 'Online summer language intensive.'),
-        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, 6, FALSE, '2027-05-24'::date, '2027-06-25'::date, 'Registrar-managed independent study placements.'),
-        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, 6, FALSE, '2027-06-28'::date, '2027-07-30'::date, 'Registrar-managed independent study placements.'),
-        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'PLANNED', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, 28, TRUE, '2027-08-23'::date, '2027-12-10'::date, 'Graduate lecture section.'),
-        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'DRAFT', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, 28, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'Draft spring lecture section.'),
-        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, FALSE, 'DRAFT', 'GRADUATE', 'HYBRID', 'PASS_FAIL', 3.00, 18, 22, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'Draft seminar section for manual registration testing.')
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 28, 32, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Lecture section for general registration.'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'OPEN', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 3.00, 18, 22, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Honors section with additional seminar discussion.'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 3.00, 24, 28, TRUE, '2027-05-24'::date, '2027-06-25'::date, 'Condensed online summer section.'),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 16, 18, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Discussion-heavy seminar section.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Language lab attached to weekly class meeting.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 4.00, 18, 22, TRUE, '2027-06-28'::date, '2027-07-30'::date, 'Online summer language intensive.'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 0.00, 20, 20, FALSE, '2027-01-19'::date, '2027-05-07'::date, 'Required pronunciation lab.'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, 6, FALSE, '2027-05-24'::date, '2027-06-25'::date, 'Registrar-managed independent study placements.'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, 6, FALSE, '2027-06-28'::date, '2027-07-30'::date, 'Registrar-managed independent study placements.'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'PLANNED', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, 28, TRUE, '2027-08-23'::date, '2027-12-10'::date, 'Graduate lecture section.'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'DRAFT', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, 28, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'Draft spring lecture section.'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, 'DRAFT', 'GRADUATE', 'HYBRID', 'PASS_FAIL', 3.00, 18, 22, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'Draft seminar section for manual registration testing.')
 )
 INSERT INTO course_section (
     course_offering_id,
@@ -1022,7 +1167,6 @@ INSERT INTO course_section (
     academic_division_id,
     section_letter,
     is_honors,
-    is_lab,
     course_section_status_id,
     delivery_mode_id,
     grading_basis_id,
@@ -1039,7 +1183,6 @@ SELECT co.course_offering_id,
        division.academic_division_id,
        desired_sections.section_letter,
        desired_sections.is_honors,
-       desired_sections.is_lab,
        status.course_section_status_id,
        delivery_mode.delivery_mode_id,
        grading_basis.grading_basis_id,
@@ -1075,22 +1218,21 @@ WITH desired_section_instructors(
     sub_term_code,
     section_letter,
     is_honors,
-    is_lab,
     staff_email
 ) AS (
     VALUES
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'jane.smith@msm.edu'),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, FALSE, 'alan.reed@msm.edu'),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'jane.smith@msm.edu'),
-        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, FALSE, 'maria.chen@msm.edu'),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'nadia.rivera@msm.edu'),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, TRUE, 'nadia.rivera@msm.edu'),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'nadia.rivera@msm.edu'),
-        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'alan.reed@msm.edu'),
-        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'alan.reed@msm.edu'),
-        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'maria.chen@msm.edu'),
-        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'maria.chen@msm.edu'),
-        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, FALSE, 'jane.smith@msm.edu')
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'jane.smith@msm.edu'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'alan.reed@msm.edu'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'jane.smith@msm.edu'),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'maria.chen@msm.edu'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'nadia.rivera@msm.edu'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'nadia.rivera@msm.edu'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'nadia.rivera@msm.edu'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'alan.reed@msm.edu'),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'alan.reed@msm.edu'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'maria.chen@msm.edu'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'maria.chen@msm.edu'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, 'jane.smith@msm.edu')
 )
 INSERT INTO course_section_instructor (
     section_id,
@@ -1117,7 +1259,6 @@ JOIN course_section ON course_section.course_offering_id = co.course_offering_id
                    AND course_section.sub_term_id = sub_term.sub_term_id
                    AND course_section.section_letter = desired_section_instructors.section_letter
                    AND course_section.is_honors = desired_section_instructors.is_honors
-                   AND course_section.is_lab = desired_section_instructors.is_lab
 JOIN staff ON staff.email = desired_section_instructors.staff_email
 JOIN section_instructor_role role ON role.code = 'PRIMARY'
 ;
@@ -1130,7 +1271,6 @@ WITH desired_section_meetings(
     sub_term_code,
     section_letter,
     is_honors,
-    is_lab,
     meeting_type_code,
     day_of_week,
     start_time,
@@ -1140,23 +1280,23 @@ WITH desired_section_meetings(
     sequence_number
 ) AS (
     VALUES
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'CLASS', 1, '09:00'::time, '10:15'::time, 'Rivendell Hall', '204', 1),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'CLASS', 3, '09:00'::time, '10:15'::time, 'Rivendell Hall', '204', 2),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, FALSE, 'CLASS', 2, '11:00'::time, '12:15'::time, 'Lore House', '012', 1),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, FALSE, 'CLASS', 4, '13:00'::time, '14:15'::time, 'Lore House', '012', 2),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'CLASS', NULL, NULL, NULL, NULL, NULL, 1),
-        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, FALSE, 'CLASS', 5, '13:00'::time, '15:30'::time, 'Rivendell Hall', '110', 1),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'CLASS', 1, '10:30'::time, '11:45'::time, 'Language Hall', '201', 1),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, FALSE, 'CLASS', 3, '10:30'::time, '11:45'::time, 'Language Hall', '201', 2),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, TRUE, 'LAB', 4, '14:00'::time, '15:30'::time, 'Language Hall', '210', 1),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'CLASS', NULL, NULL, NULL, NULL, NULL, 1),
-        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, FALSE, 'CLASS', 2, '09:00'::time, '10:00'::time, 'Rivendell Hall', 'Faculty Suite', 1),
-        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, FALSE, 'CLASS', 2, '09:00'::time, '10:00'::time, 'Rivendell Hall', 'Faculty Suite', 1),
-        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'CLASS', 2, '09:30'::time, '10:45'::time, 'History Hall', '301', 1),
-        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, FALSE, 'CLASS', 4, '09:30'::time, '10:45'::time, 'History Hall', '301', 2),
-        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'CLASS', 1, '08:00'::time, '09:15'::time, 'History Hall', '302', 1),
-        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, FALSE, 'CLASS', 3, '08:00'::time, '09:15'::time, 'History Hall', '302', 2),
-        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, FALSE, 'CLASS', 5, '12:30'::time, '15:30'::time, 'History Hall', '310', 1)
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'CLASS', 1, '09:00'::time, '10:15'::time, 'Rivendell Hall', '204', 1),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'CLASS', 3, '09:00'::time, '10:15'::time, 'Rivendell Hall', '204', 2),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'CLASS', 2, '11:00'::time, '12:15'::time, 'Lore House', '012', 1),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'CLASS', 4, '13:00'::time, '14:15'::time, 'Lore House', '012', 2),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'CLASS', NULL, NULL, NULL, NULL, NULL, 1),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'CLASS', 5, '13:00'::time, '15:30'::time, 'Rivendell Hall', '110', 1),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'CLASS', 1, '10:30'::time, '11:45'::time, 'Language Hall', '201', 1),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'CLASS', 3, '10:30'::time, '11:45'::time, 'Language Hall', '201', 2),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'LAB', 4, '14:00'::time, '15:30'::time, 'Language Hall', '210', 1),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'CLASS', NULL, NULL, NULL, NULL, NULL, 1),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'CLASS', 2, '09:00'::time, '10:00'::time, 'Rivendell Hall', 'Faculty Suite', 1),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'CLASS', 2, '09:00'::time, '10:00'::time, 'Rivendell Hall', 'Faculty Suite', 1),
+        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'CLASS', 2, '09:30'::time, '10:45'::time, 'History Hall', '301', 1),
+        ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'CLASS', 4, '09:30'::time, '10:45'::time, 'History Hall', '301', 2),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'CLASS', 1, '08:00'::time, '09:15'::time, 'History Hall', '302', 1),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'CLASS', 3, '08:00'::time, '09:15'::time, 'History Hall', '302', 2),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, 'CLASS', 5, '12:30'::time, '15:30'::time, 'History Hall', '310', 1)
 )
 INSERT INTO course_section_meeting (
     section_id,
@@ -1191,6 +1331,5 @@ JOIN course_section ON course_section.course_offering_id = co.course_offering_id
                    AND course_section.sub_term_id = sub_term.sub_term_id
                    AND course_section.section_letter = desired_section_meetings.section_letter
                    AND course_section.is_honors = desired_section_meetings.is_honors
-                   AND course_section.is_lab = desired_section_meetings.is_lab
 JOIN section_meeting_type meeting_type ON meeting_type.code = desired_section_meetings.meeting_type_code
 ;

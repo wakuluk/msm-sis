@@ -64,7 +64,6 @@ public class CourseSectionPatchService {
                 ? request.getSectionLetter().getValue().trim().toUpperCase(Locale.US)
                 : courseSection.getSectionLetter();
         boolean finalHonors = request.getHonors().orElse(courseSection.isHonors());
-        boolean finalLab = request.getLab().orElse(courseSection.isLab());
 
         if (request.getCredits().isPresent()) {
             courseSectionValidationService.validateCredits(courseOffering, request.getCredits().getValue());
@@ -76,7 +75,6 @@ public class CourseSectionPatchService {
                     finalSubTermId,
                     finalSectionLetter,
                     finalHonors,
-                    finalLab,
                     sectionId
             );
         }
@@ -151,7 +149,6 @@ public class CourseSectionPatchService {
             Long subTermId,
             String sectionLetter,
             boolean honors,
-            boolean lab,
             Long sectionId
     ) {
         if (courseSectionRepository.existsByNaturalKeyExcludingSection(
@@ -159,7 +156,6 @@ public class CourseSectionPatchService {
                 subTermId,
                 sectionLetter,
                 honors,
-                lab,
                 sectionId
         )) {
             throw new ResponseStatusException(
@@ -172,8 +168,7 @@ public class CourseSectionPatchService {
     private boolean sectionIdentityChanged(PatchCourseSectionRequest request) {
         return request.getSubTermId().isPresent()
                 || request.getSectionLetter().isPresent()
-                || request.getHonors().isPresent()
-                || request.getLab().isPresent();
+                || request.getHonors().isPresent();
     }
 
     private <T> PatchValue<T> resolveRequiredReferencePatch(
