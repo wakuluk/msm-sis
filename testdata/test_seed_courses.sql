@@ -599,6 +599,50 @@ WHERE s.code = 'TOLK'
   );
 
 INSERT INTO course (subject_id, course_number, is_lab, active)
+SELECT s.subject_id, '260', FALSE, TRUE
+FROM academic_subject s
+WHERE s.code = 'TOLK'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM course c
+      WHERE c.subject_id = s.subject_id
+        AND c.course_number = '260'
+  );
+
+INSERT INTO course (subject_id, course_number, is_lab, active)
+SELECT s.subject_id, '261', FALSE, TRUE
+FROM academic_subject s
+WHERE s.code = 'TOLK'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM course c
+      WHERE c.subject_id = s.subject_id
+        AND c.course_number = '261'
+  );
+
+INSERT INTO course (subject_id, course_number, is_lab, active)
+SELECT s.subject_id, '261L', TRUE, TRUE
+FROM academic_subject s
+WHERE s.code = 'TOLK'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM course c
+      WHERE c.subject_id = s.subject_id
+        AND c.course_number = '261L'
+  );
+
+INSERT INTO course (subject_id, course_number, is_lab, active)
+SELECT s.subject_id, '262', FALSE, TRUE
+FROM academic_subject s
+WHERE s.code = 'TOLK'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM course c
+      WHERE c.subject_id = s.subject_id
+        AND c.course_number = '262'
+  );
+
+INSERT INTO course (subject_id, course_number, is_lab, active)
 SELECT s.subject_id, '201', FALSE, TRUE
 FROM academic_subject s
 WHERE s.code = 'ELV'
@@ -664,6 +708,122 @@ FROM course c
 JOIN academic_subject s ON s.subject_id = c.subject_id
 WHERE s.code = 'TOLK'
   AND c.course_number = '101'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM course_version cv
+      WHERE cv.course_id = c.course_id
+        AND cv.version_number = 1
+  );
+
+INSERT INTO course_version (
+    course_id,
+    version_number,
+    title,
+    catalog_description,
+    min_credits,
+    max_credits,
+    is_variable_credit,
+    is_current
+)
+SELECT c.course_id,
+       1,
+       'Missing Prerequisite Check',
+       'A seeded catalog course used to verify planner prerequisite warnings when a prerequisite is missing.',
+       3.00,
+       3.00,
+       FALSE,
+       TRUE
+FROM course c
+JOIN academic_subject s ON s.subject_id = c.subject_id
+WHERE s.code = 'TOLK'
+  AND c.course_number = '262'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM course_version cv
+      WHERE cv.course_id = c.course_id
+        AND cv.version_number = 1
+  );
+
+INSERT INTO course_version (
+    course_id,
+    version_number,
+    title,
+    catalog_description,
+    min_credits,
+    max_credits,
+    is_variable_credit,
+    is_current
+)
+SELECT c.course_id,
+       1,
+       'Prerequisite Check Seminar',
+       'A seeded catalog course used to verify planner prerequisite warnings against transfer credit.',
+       3.00,
+       3.00,
+       FALSE,
+       TRUE
+FROM course c
+JOIN academic_subject s ON s.subject_id = c.subject_id
+WHERE s.code = 'TOLK'
+  AND c.course_number = '260'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM course_version cv
+      WHERE cv.course_id = c.course_id
+        AND cv.version_number = 1
+  );
+
+INSERT INTO course_version (
+    course_id,
+    version_number,
+    title,
+    catalog_description,
+    min_credits,
+    max_credits,
+    is_variable_credit,
+    is_current
+)
+SELECT c.course_id,
+       1,
+       'Corequisite Check Lecture',
+       'A seeded catalog course used to verify planner corequisite warnings with a paired lab.',
+       3.00,
+       3.00,
+       FALSE,
+       TRUE
+FROM course c
+JOIN academic_subject s ON s.subject_id = c.subject_id
+WHERE s.code = 'TOLK'
+  AND c.course_number = '261'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM course_version cv
+      WHERE cv.course_id = c.course_id
+        AND cv.version_number = 1
+  );
+
+INSERT INTO course_version (
+    course_id,
+    version_number,
+    title,
+    catalog_description,
+    min_credits,
+    max_credits,
+    is_variable_credit,
+    is_current
+)
+SELECT c.course_id,
+       1,
+       'Corequisite Check Lab',
+       'A seeded lab course paired with TOLK 261 for corequisite warning checks.',
+       0.00,
+       0.00,
+       FALSE,
+       TRUE
+FROM course c
+JOIN academic_subject s ON s.subject_id = c.subject_id
+WHERE s.code = 'TOLK'
+  AND c.course_number = '261L'
   AND NOT EXISTS (
       SELECT 1
       FROM course_version cv
@@ -856,6 +1016,10 @@ WITH desired_requisite_groups(
 ) AS (
     VALUES
         ('TOLK', '240', 1, 'PREREQUISITE', 'ALL', NULL::int, 1),
+        ('TOLK', '260', 1, 'PREREQUISITE', 'ALL', NULL::int, 1),
+        ('TOLK', '261', 1, 'COREQUISITE', 'ALL', NULL::int, 1),
+        ('TOLK', '261L', 1, 'COREQUISITE', 'ALL', NULL::int, 1),
+        ('TOLK', '262', 1, 'PREREQUISITE', 'ALL', NULL::int, 1),
         ('ELV', '201', 1, 'PREREQUISITE', 'ALL', NULL::int, 1),
         ('ELV', '201', 1, 'COREQUISITE', 'ALL', NULL::int, 2),
         ('MEH', '310', 1, 'PREREQUISITE', 'ANY', 1, 1),
@@ -905,6 +1069,10 @@ WITH desired_requisite_courses(
 ) AS (
     VALUES
         ('TOLK', '240', 1, 'PREREQUISITE', 'ALL', 1, 'TOLK', '101', 1),
+        ('TOLK', '260', 1, 'PREREQUISITE', 'ALL', 1, 'TOLK', '101', 1),
+        ('TOLK', '261', 1, 'COREQUISITE', 'ALL', 1, 'TOLK', '261L', 1),
+        ('TOLK', '261L', 1, 'COREQUISITE', 'ALL', 1, 'TOLK', '261', 1),
+        ('TOLK', '262', 1, 'PREREQUISITE', 'ALL', 1, 'TOLK', '240', 1),
         ('ELV', '201', 1, 'PREREQUISITE', 'ALL', 1, 'TOLK', '101', 1),
         ('ELV', '201', 1, 'COREQUISITE', 'ALL', 2, 'ELV', '201L', 1),
         ('MEH', '310', 1, 'PREREQUISITE', 'ANY', 1, 'TOLK', '240', 1),
@@ -1036,8 +1204,10 @@ WITH desired_offering_sub_terms(subject_code, course_number, version_number, aca
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027'),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027'),
         ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'FALL-2026'),
         ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027'),
@@ -1098,8 +1268,10 @@ WITH desired_offering_sub_terms(subject_code, course_number, version_number, aca
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027'),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027'),
         ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'FALL-2026'),
         ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027'),
@@ -1152,8 +1324,10 @@ WITH desired_sections(
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'OPEN', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 3.00, 18, 22, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Honors section with additional seminar discussion.'),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 3.00, 24, 28, TRUE, '2027-05-24'::date, '2027-06-25'::date, 'Condensed online summer section.'),
         ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 16, 18, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Discussion-heavy seminar section.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'COMPLETED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Seeded completed first-semester lecture section for planner history testing.'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Language lab attached to weekly class meeting.'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 4.00, 18, 22, TRUE, '2027-06-28'::date, '2027-07-30'::date, 'Online summer language intensive.'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'COMPLETED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 0.00, 20, 20, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Seeded completed first-semester lab section for planner history testing.'),
         ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 0.00, 20, 20, FALSE, '2027-01-19'::date, '2027-05-07'::date, 'Required pronunciation lab.'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, 6, FALSE, '2027-05-24'::date, '2027-06-25'::date, 'Registrar-managed independent study placements.'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, 6, FALSE, '2027-06-28'::date, '2027-07-30'::date, 'Registrar-managed independent study placements.'),

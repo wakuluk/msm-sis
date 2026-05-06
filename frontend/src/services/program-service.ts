@@ -43,7 +43,7 @@ function appendTrimmedQueryParam(queryParams: URLSearchParams, key: string, valu
   }
 }
 
-export async function searchPrograms({
+function buildProgramSearchQueryParams({
   programTypeId,
   degreeTypeId,
   schoolId,
@@ -54,14 +54,7 @@ export async function searchPrograms({
   size = 25,
   sortBy = 'code',
   sortDirection = 'asc',
-  signal,
-}: SearchProgramsRequest): Promise<ProgramSearchResponse> {
-  const accessToken = getAccessToken();
-
-  if (!accessToken) {
-    throw new Error('Not authenticated.');
-  }
-
+}: SearchProgramsRequest) {
   const queryParams = new URLSearchParams({
     page: String(page),
     size: String(size),
@@ -88,22 +81,46 @@ export async function searchPrograms({
   appendTrimmedQueryParam(queryParams, 'code', code);
   appendTrimmedQueryParam(queryParams, 'name', name);
 
-  const response = await fetch(`/api/programs/search?${queryParams.toString()}`, {
+  return queryParams;
+}
+
+async function requestProgramSearch(
+  path: string,
+  request: SearchProgramsRequest,
+  fallbackMessage: string
+): Promise<ProgramSearchResponse> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error('Not authenticated.');
+  }
+
+  const queryParams = buildProgramSearchQueryParams(request);
+
+  const response = await fetch(`${path}?${queryParams.toString()}`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
-    signal,
+    signal: request.signal,
   });
 
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
     throw new Error(
-      typeof payload?.message === 'string' ? payload.message : 'Failed to search programs.'
+      typeof payload?.message === 'string' ? payload.message : fallbackMessage
     );
   }
 
   return ProgramSearchResponseSchema.parse(payload);
+}
+
+export async function searchPrograms(request: SearchProgramsRequest): Promise<ProgramSearchResponse> {
+  return requestProgramSearch('/api/programs/search', request, 'Failed to search programs.');
+}
+
+export async function explorePrograms(request: SearchProgramsRequest): Promise<ProgramSearchResponse> {
+  return requestProgramSearch('/api/programs/explore', request, 'Failed to explore programs.');
 }
 
 export async function getProgramDetail({

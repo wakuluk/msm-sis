@@ -11,7 +11,13 @@ type SortableColumnMeta<TSortBy extends string> = {
 
 export type SearchResultsTableRowProps = Pick<
   ComponentPropsWithoutRef<'tr'>,
-  'aria-expanded' | 'className' | 'onClick' | 'onKeyDown' | 'role' | 'tabIndex'
+  | 'aria-expanded'
+  | 'aria-selected'
+  | 'className'
+  | 'onClick'
+  | 'onKeyDown'
+  | 'role'
+  | 'tabIndex'
 >;
 
 type SearchResultsTableProps<TRow, TSortBy extends string> = {

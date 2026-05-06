@@ -18,6 +18,7 @@ public record ProgramVersionRequirementResponse(
         List<RequirementCourseRuleResponse> requirementCourseRules,
         Integer sortOrder,
         boolean required,
+        String courseReusePolicy,
         String notes
 ) {
 }

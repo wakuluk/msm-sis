@@ -142,7 +142,7 @@ export function CreateProgramModal({
     }
 
     if (!isCoreProgram && !isNonDegreeProgram && degreeTypeId === undefined) {
-      setValidationMessage('Degree type is required for major and masters programs.');
+      setValidationMessage('Degree type is required for degree-granting programs.');
       return null;
     }
 

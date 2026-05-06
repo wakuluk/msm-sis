@@ -95,6 +95,7 @@ public class RequirementMapper {
                         .toList(),
                 programVersionRequirement.getSortOrder(),
                 programVersionRequirement.isRequired(),
+                programVersionRequirement.getCourseReusePolicy(),
                 programVersionRequirement.getNotes()
         );
     }

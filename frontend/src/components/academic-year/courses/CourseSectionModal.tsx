@@ -1,7 +1,7 @@
 // Modal container for creating, viewing, editing, and duplicating course sections.
 // Composes the section field groups, selected-offering context, mutation state, and footer actions.
-import type { Dispatch, ReactNode, SetStateAction } from 'react';
-import { Alert, Badge, Group, Modal, Stack, Text } from '@mantine/core';
+import type { Dispatch, SetStateAction } from 'react';
+import { Modal, Stack } from '@mantine/core';
 import type { AcademicYearCourseOfferingSearchResultResponse } from '@/services/schemas/admin-courses-schemas';
 import type {
   CourseSectionDraft,
@@ -9,12 +9,14 @@ import type {
   SelectOption,
   StaffSelectOption,
 } from './courseSectionsWorkspaceTypes';
-import { CourseSectionAcademicFields } from './CourseSectionAcademicFields';
-import { CourseSectionIdentityFields } from './CourseSectionIdentityFields';
+import { CourseSectionModalBody } from './CourseSectionModalBody';
 import { CourseSectionModalFooter } from './CourseSectionModalFooter';
-import { CourseSectionRegistrationFields } from './CourseSectionRegistrationFields';
-import { CourseSectionScheduleFields } from './CourseSectionScheduleFields';
-import { CourseSectionStudentsPanel } from './CourseSectionStudentsPanel';
+import { CourseSectionModalHeader } from './CourseSectionModalHeader';
+import {
+  readableDisabledCheckboxStyles,
+  readableDisabledInputStyles,
+  readableDisabledSwitchStyles,
+} from './courseSectionReadOnlyStyles';
 
 type CourseSectionModalProps = {
   opened: boolean;
@@ -48,63 +50,6 @@ type CourseSectionModalProps = {
   onCancelSection: () => void;
   onDuplicate: () => void;
 };
-
-const readableDisabledInputStyles = {
-  input: {
-    backgroundColor: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))',
-    color: 'var(--mantine-color-text)',
-    opacity: 1,
-  },
-  label: {
-    color: 'var(--mantine-color-text)',
-    opacity: 1,
-  },
-};
-const readableDisabledSwitchStyles = {
-  label: {
-    color: 'var(--mantine-color-text)',
-    opacity: 1,
-  },
-  description: {
-    opacity: 1,
-  },
-  track: {
-    opacity: 1,
-  },
-};
-const readableDisabledCheckboxStyles = {
-  input: {
-    opacity: 1,
-  },
-  label: {
-    color: 'var(--mantine-color-text)',
-    opacity: 1,
-  },
-};
-
-function CourseSectionModalHeader({
-  badges,
-  courseCode,
-  title,
-}: {
-  badges: ReactNode;
-  courseCode: string;
-  title: string;
-}) {
-  return (
-    <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
-      <Stack gap={2}>
-        <Text fw={700}>{courseCode}</Text>
-        <Text size="sm" c="dimmed">
-          {title}
-        </Text>
-      </Stack>
-      <Group gap="xs" wrap="wrap">
-        {badges}
-      </Group>
-    </Group>
-  );
-}
 
 export function CourseSectionModal({
   opened,
@@ -154,97 +99,35 @@ export function CourseSectionModal({
       {offering || selectedSection ? (
         <Stack gap="md">
           <CourseSectionModalHeader
-            courseCode={
-              selectedSection
-                ? `${selectedSection.courseCode} Section ${selectedSection.sectionCode}`
-                : (offering?.courseCode ?? 'Course offering')
-            }
-            title={selectedSection?.courseTitle ?? offering?.title ?? 'Title unavailable'}
-            badges={
-              <>
-                <Badge variant="light" color="blue">
-                  {subTermLabel}
-                </Badge>
-                {selectedSection ? (
-                  <Badge
-                    variant="light"
-                    color={selectedSection.statusCode === 'DRAFT' ? 'gray' : 'green'}
-                  >
-                    {selectedStatusName ?? selectedSection.statusName}
-                  </Badge>
-                ) : (
-                  <Badge variant="light" color="green">
-                    Section {sectionPreview}
-                  </Badge>
-                )}
-              </>
-            }
+            offering={offering}
+            sectionPreview={sectionPreview}
+            selectedSection={selectedSection}
+            selectedStatusName={selectedStatusName}
+            subTermLabel={subTermLabel}
           />
 
-          <Stack gap="lg">
-            <CourseSectionIdentityFields
-              draft={draft}
-              fieldsDisabled={fieldsDisabled}
-              readOnlyInputStyles={readOnlyInputStyles}
-              readOnlySwitchStyles={readOnlySwitchStyles}
-              referencesAreLoading={referencesAreLoading}
-              sectionStatusOptions={sectionStatusOptions}
-              setDraft={setDraft}
-            />
-
-            <CourseSectionAcademicFields
-              academicDivisionOptions={academicDivisionOptions}
-              creditOptions={creditOptions}
-              draft={draft}
-              fieldsDisabled={fieldsDisabled}
-              gradingBasisOptions={sectionGradingBasisOptions}
-              readOnlyInputStyles={readOnlyInputStyles}
-              referencesAreLoading={referencesAreLoading}
-              staffLoading={staffLoading}
-              staffOptions={staffOptions}
-              staffSearchValue={staffSearchValue}
-              setDraft={setDraft}
-              onStaffSearchChange={onStaffSearchChange}
-            />
-
-            <CourseSectionScheduleFields
-              deliveryModeOptions={deliveryModeOptions}
-              draft={draft}
-              fieldsDisabled={fieldsDisabled}
-              readOnlyCheckboxStyles={readOnlyCheckboxStyles}
-              readOnlyInputStyles={readOnlyInputStyles}
-              readOnlySwitchStyles={readOnlySwitchStyles}
-              referencesAreLoading={referencesAreLoading}
-              setDraft={setDraft}
-            />
-
-            <CourseSectionRegistrationFields
-              draft={draft}
-              fieldsDisabled={fieldsDisabled}
-              readOnlySwitchStyles={readOnlySwitchStyles}
-              setDraft={setDraft}
-            />
-
-            {mode === 'detail' && selectedSection ? (
-              <CourseSectionStudentsPanel
-                selectedSection={selectedSection}
-                gradingBasisOptions={enrollmentGradingBasisOptions}
-              />
-            ) : null}
-
-            {mutationError ? (
-              <Alert
-                color="red"
-                title={
-                  mode === 'detail'
-                    ? 'Unable to update course section'
-                    : 'Unable to create course section'
-                }
-              >
-                {mutationError}
-              </Alert>
-            ) : null}
-          </Stack>
+          <CourseSectionModalBody
+            academicDivisionOptions={academicDivisionOptions}
+            creditOptions={creditOptions}
+            deliveryModeOptions={deliveryModeOptions}
+            draft={draft}
+            enrollmentGradingBasisOptions={enrollmentGradingBasisOptions}
+            fieldsDisabled={fieldsDisabled}
+            mutationError={mutationError}
+            mode={mode}
+            readOnlyCheckboxStyles={readOnlyCheckboxStyles}
+            readOnlyInputStyles={readOnlyInputStyles}
+            readOnlySwitchStyles={readOnlySwitchStyles}
+            referencesAreLoading={referencesAreLoading}
+            sectionGradingBasisOptions={sectionGradingBasisOptions}
+            sectionStatusOptions={sectionStatusOptions}
+            selectedSection={selectedSection}
+            setDraft={setDraft}
+            staffLoading={staffLoading}
+            staffOptions={staffOptions}
+            staffSearchValue={staffSearchValue}
+            onStaffSearchChange={onStaffSearchChange}
+          />
 
           <CourseSectionModalFooter
             mutating={mutating}

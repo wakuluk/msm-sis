@@ -21,7 +21,6 @@ import static com.msm.sis.api.util.ValidationUtils.requireRequestBody;
 @RequiredArgsConstructor
 public class ProgramValidationService {
     private static final String MAJOR_PROGRAM_TYPE_CODE = "MAJOR";
-    private static final String MASTERS_PROGRAM_TYPE_CODE = "MASTERS";
     private static final String MINOR_PROGRAM_TYPE_CODE = "MINOR";
     private static final String CERTIFICATE_PROGRAM_TYPE_CODE = "CERTIFICATE";
     private static final String CORE_PROGRAM_TYPE_CODE = "CORE";
@@ -86,8 +85,7 @@ public class ProgramValidationService {
 
         String programTypeCode = programType.getCode();
 
-        if (MAJOR_PROGRAM_TYPE_CODE.equals(programTypeCode)
-                || MASTERS_PROGRAM_TYPE_CODE.equals(programTypeCode)) {
+        if (MAJOR_PROGRAM_TYPE_CODE.equals(programTypeCode)) {
             if (school == null) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Grid, NumberInput, Select, Textarea, TextInput } from '@mantine/core';
+import { Alert, Grid, NumberInput, Select, Textarea, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { DepartmentCourseRulesEditor } from '@/components/requirements/DepartmentCourseRulesEditor';
 import { FormModalShell } from '@/components/modals/FormModalShell';
@@ -359,6 +359,12 @@ export function CreateRequirementModal({
       onSubmit={() => void handleCreateRequirement()}
     >
       <Grid>
+        <Grid.Col span={12}>
+          <Alert color="blue" title="Program requirements live on program versions">
+            Requirements like another major or minor are added from a program detail page with
+            Add Program Requirement.
+          </Alert>
+        </Grid.Col>
         <Grid.Col span={{ base: 12, md: 4 }}>
           <TextInput label="Code" placeholder="REQ-HIST-CORE-12" {...form.getInputProps('code')} />
         </Grid.Col>

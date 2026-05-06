@@ -26,7 +26,7 @@ WITH desired_programs(
             'Graduate historical study with research methods and thesis preparation.',
             'SHS',
             'HIST',
-            'MASTERS',
+            'MAJOR',
             'MASTER'
         ),
         (
@@ -96,7 +96,7 @@ WITH desired_programs(
 ) AS (
     VALUES
         ('HIST-BA', 'History BA', 'A broad historical studies program with upper-level seminar work.', 'SHS', 'HIST', 'MAJOR', 'BACHELOR'),
-        ('HIST-MA', 'History MA', 'Graduate historical study with research methods and thesis preparation.', 'SHS', 'HIST', 'MASTERS', 'MASTER'),
+        ('HIST-MA', 'History MA', 'Graduate historical study with research methods and thesis preparation.', 'SHS', 'HIST', 'MAJOR', 'MASTER'),
         ('HUM-MIN', 'Humanities Minor', 'A flexible minor focused on literature, philosophy, and cultural studies.', 'SLL', 'HUM', 'MINOR', NULL),
         ('TOLK-BA', 'Tolkien Studies BA', 'Interdisciplinary study of literature, language, mythology, and worldbuilding.', 'SLL', 'HUM', 'MAJOR', 'BACHELOR'),
         ('CORE-UG', 'Undergraduate Core Curriculum', 'University-wide undergraduate core curriculum requirements.', NULL, NULL, 'CORE', NULL)
@@ -115,6 +115,9 @@ LEFT JOIN academic_department department ON department.code = desired_programs.d
 JOIN program_type ON program_type.code = desired_programs.program_type_code
 LEFT JOIN degree_type ON degree_type.code = desired_programs.degree_type_code
 WHERE program.code = desired_programs.code;
+
+DELETE FROM program_type
+WHERE code = 'MASTERS';
 
 WITH desired_versions(
     program_code,
@@ -261,6 +264,36 @@ WITH desired_requirements(
             2,
             'ANY',
             NULL
+        ),
+        (
+            'REQ-TOLK-260-PREREQ',
+            'Complete TOLK260 prerequisite test',
+            'SPECIFIC_COURSES',
+            'Seeded tracker test: TOLK 260 has TOLK 101 as a prerequisite.',
+            NULL,
+            NULL,
+            'ALL',
+            NULL
+        ),
+        (
+            'REQ-TOLK-261-COREQ',
+            'Complete TOLK261 corequisite pair',
+            'SPECIFIC_COURSES',
+            'Seeded tracker test: TOLK 261 has TOLK 261L as a corequisite.',
+            NULL,
+            NULL,
+            'ALL',
+            NULL
+        ),
+        (
+            'REQ-TOLK-262-MISSING-PREREQ',
+            'Complete TOLK262 missing prerequisite test',
+            'SPECIFIC_COURSES',
+            'Seeded tracker test: TOLK 262 has TOLK 240 as an unsatisfied prerequisite.',
+            NULL,
+            NULL,
+            'ALL',
+            NULL
         )
 )
 INSERT INTO requirement (
@@ -305,7 +338,10 @@ WITH desired_requirements(
         ('REQ-FREE-ELECTIVE-30', 'Complete 30 total elective credits', 'TOTAL_ELECTIVE_CREDITS', 'Students must complete at least 30 elective credits.', 30.00, NULL, NULL, NULL),
         ('REQ-HIST-THESIS', 'Complete graduate thesis requirement', 'MANUAL', 'Graduate students must complete an approved thesis or capstone project.', NULL, NULL, NULL, NULL),
         ('REQ-TOLK-101', 'Complete TOLK101', 'SPECIFIC_COURSES', 'Students must complete Tolkien Studies 101.', NULL, NULL, 'ALL', NULL),
-        ('REQ-TOLK-CHOOSE-2', 'Choose two Tolkien studies courses', 'SPECIFIC_COURSES', 'Students must complete two courses from the approved Tolkien studies list.', NULL, 2, 'ANY', NULL)
+        ('REQ-TOLK-CHOOSE-2', 'Choose two Tolkien studies courses', 'SPECIFIC_COURSES', 'Students must complete two courses from the approved Tolkien studies list.', NULL, 2, 'ANY', NULL),
+        ('REQ-TOLK-260-PREREQ', 'Complete TOLK260 prerequisite test', 'SPECIFIC_COURSES', 'Seeded tracker test: TOLK 260 has TOLK 101 as a prerequisite.', NULL, NULL, 'ALL', NULL),
+        ('REQ-TOLK-261-COREQ', 'Complete TOLK261 corequisite pair', 'SPECIFIC_COURSES', 'Seeded tracker test: TOLK 261 has TOLK 261L as a corequisite.', NULL, NULL, 'ALL', NULL),
+        ('REQ-TOLK-262-MISSING-PREREQ', 'Complete TOLK262 missing prerequisite test', 'SPECIFIC_COURSES', 'Seeded tracker test: TOLK 262 has TOLK 240 as an unsatisfied prerequisite.', NULL, NULL, 'ALL', NULL)
 )
 UPDATE requirement
 SET name = desired_requirements.name,
@@ -331,7 +367,11 @@ WITH desired_requirement_courses(
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '101', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '240', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '480', FALSE, NULL),
-        ('REQ-TOLK-CHOOSE-2', 'ELV', '201', FALSE, NULL)
+        ('REQ-TOLK-CHOOSE-2', 'ELV', '201', FALSE, NULL),
+        ('REQ-TOLK-260-PREREQ', 'TOLK', '260', TRUE, NULL),
+        ('REQ-TOLK-261-COREQ', 'TOLK', '261', TRUE, NULL),
+        ('REQ-TOLK-261-COREQ', 'TOLK', '261L', TRUE, NULL),
+        ('REQ-TOLK-262-MISSING-PREREQ', 'TOLK', '262', TRUE, NULL)
 )
 INSERT INTO requirement_course (
     requirement_id,
@@ -368,7 +408,11 @@ WITH desired_requirement_courses(
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '101', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '240', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '480', FALSE, NULL),
-        ('REQ-TOLK-CHOOSE-2', 'ELV', '201', FALSE, NULL)
+        ('REQ-TOLK-CHOOSE-2', 'ELV', '201', FALSE, NULL),
+        ('REQ-TOLK-260-PREREQ', 'TOLK', '260', TRUE, NULL),
+        ('REQ-TOLK-261-COREQ', 'TOLK', '261', TRUE, NULL),
+        ('REQ-TOLK-261-COREQ', 'TOLK', '261L', TRUE, NULL),
+        ('REQ-TOLK-262-MISSING-PREREQ', 'TOLK', '262', TRUE, NULL)
 )
 UPDATE requirement_course
 SET required = desired_requirement_courses.required,
@@ -453,36 +497,44 @@ WITH desired_assignments(
     requirement_code,
     sort_order,
     required,
+    course_reuse_policy,
     notes
 ) AS (
     VALUES
-        ('HIST-BA', 1, 'REQ-MEH-310', 10, TRUE, NULL),
-        ('HIST-BA', 1, 'REQ-HIST-CORE-12', 20, TRUE, NULL),
-        ('HIST-BA', 1, 'REQ-FREE-ELECTIVE-30', 30, TRUE, NULL),
-        ('HIST-BA', 2, 'REQ-MEH-310', 10, TRUE, NULL),
-        ('HIST-BA', 2, 'REQ-HIST-CORE-12', 20, TRUE, NULL),
-        ('HIST-BA', 2, 'REQ-HUM-ELECTIVE-9', 30, TRUE, NULL),
-        ('HIST-BA', 2, 'REQ-FREE-ELECTIVE-30', 40, TRUE, NULL),
-        ('HIST-MA', 1, 'REQ-HIST-THESIS', 10, TRUE, NULL),
-        ('HIST-MA', 1, 'REQ-FREE-ELECTIVE-30', 20, TRUE, NULL),
-        ('HUM-MIN', 1, 'REQ-HUM-ELECTIVE-9', 10, TRUE, NULL),
-        ('TOLK-BA', 1, 'REQ-TOLK-101', 10, TRUE, 'Draft assignment for review.'),
-        ('TOLK-BA', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'Draft assignment for review.'),
-        ('TOLK-BA', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'Draft assignment for review.'),
-        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 10, TRUE, NULL),
-        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, NULL)
+        ('HIST-BA', 1, 'REQ-MEH-310', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 1, 'REQ-HIST-CORE-12', 20, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 1, 'REQ-FREE-ELECTIVE-30', 30, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 2, 'REQ-MEH-310', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 2, 'REQ-HIST-CORE-12', 20, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 2, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 2, 'REQ-FREE-ELECTIVE-30', 40, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-MA', 1, 'REQ-HIST-THESIS', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-MA', 1, 'REQ-FREE-ELECTIVE-30', 20, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-MA', 1, 'REQ-TOLK-262-MISSING-PREREQ', 30, TRUE, 'CONSUME_AVAILABLE', 'Seeded graduate prerequisite test case for Gloinson.'),
+        ('HIST-MA', 1, 'REQ-TOLK-261-COREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded graduate corequisite test case for Gloinson.'),
+        ('HUM-MIN', 1, 'REQ-HUM-ELECTIVE-9', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('TOLK-BA', 1, 'REQ-TOLK-101', 10, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
+        ('TOLK-BA', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
+        ('TOLK-BA', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
+        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 20, TRUE, 'ALLOW_REUSE', NULL),
+        ('CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 30, TRUE, 'CONSUME_AVAILABLE', 'Seeded prerequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-261-COREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded corequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 45, TRUE, 'CONSUME_AVAILABLE', 'Seeded missing prerequisite test case for Samwise.')
 )
 INSERT INTO program_version_requirement (
     program_version_id,
     requirement_id,
     sort_order,
     required,
+    course_reuse_policy,
     notes
 )
 SELECT program_version.program_version_id,
        requirement.requirement_id,
        desired_assignments.sort_order,
        desired_assignments.required,
+       desired_assignments.course_reuse_policy,
        desired_assignments.notes
 FROM desired_assignments
 JOIN program ON program.code = desired_assignments.program_code
@@ -502,28 +554,35 @@ WITH desired_assignments(
     requirement_code,
     sort_order,
     required,
+    course_reuse_policy,
     notes
 ) AS (
     VALUES
-        ('HIST-BA', 1, 'REQ-MEH-310', 10, TRUE, NULL),
-        ('HIST-BA', 1, 'REQ-HIST-CORE-12', 20, TRUE, NULL),
-        ('HIST-BA', 1, 'REQ-FREE-ELECTIVE-30', 30, TRUE, NULL),
-        ('HIST-BA', 2, 'REQ-MEH-310', 10, TRUE, NULL),
-        ('HIST-BA', 2, 'REQ-HIST-CORE-12', 20, TRUE, NULL),
-        ('HIST-BA', 2, 'REQ-HUM-ELECTIVE-9', 30, TRUE, NULL),
-        ('HIST-BA', 2, 'REQ-FREE-ELECTIVE-30', 40, TRUE, NULL),
-        ('HIST-MA', 1, 'REQ-HIST-THESIS', 10, TRUE, NULL),
-        ('HIST-MA', 1, 'REQ-FREE-ELECTIVE-30', 20, TRUE, NULL),
-        ('HUM-MIN', 1, 'REQ-HUM-ELECTIVE-9', 10, TRUE, NULL),
-        ('TOLK-BA', 1, 'REQ-TOLK-101', 10, TRUE, 'Draft assignment for review.'),
-        ('TOLK-BA', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'Draft assignment for review.'),
-        ('TOLK-BA', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'Draft assignment for review.'),
-        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 10, TRUE, NULL),
-        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, NULL)
+        ('HIST-BA', 1, 'REQ-MEH-310', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 1, 'REQ-HIST-CORE-12', 20, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 1, 'REQ-FREE-ELECTIVE-30', 30, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 2, 'REQ-MEH-310', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 2, 'REQ-HIST-CORE-12', 20, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 2, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-BA', 2, 'REQ-FREE-ELECTIVE-30', 40, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-MA', 1, 'REQ-HIST-THESIS', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-MA', 1, 'REQ-FREE-ELECTIVE-30', 20, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('HIST-MA', 1, 'REQ-TOLK-262-MISSING-PREREQ', 30, TRUE, 'CONSUME_AVAILABLE', 'Seeded graduate prerequisite test case for Gloinson.'),
+        ('HIST-MA', 1, 'REQ-TOLK-261-COREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded graduate corequisite test case for Gloinson.'),
+        ('HUM-MIN', 1, 'REQ-HUM-ELECTIVE-9', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('TOLK-BA', 1, 'REQ-TOLK-101', 10, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
+        ('TOLK-BA', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
+        ('TOLK-BA', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
+        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 20, TRUE, 'ALLOW_REUSE', NULL),
+        ('CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 30, TRUE, 'CONSUME_AVAILABLE', 'Seeded prerequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-261-COREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded corequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 45, TRUE, 'CONSUME_AVAILABLE', 'Seeded missing prerequisite test case for Samwise.')
 )
 UPDATE program_version_requirement
 SET sort_order = desired_assignments.sort_order,
     required = desired_assignments.required,
+    course_reuse_policy = desired_assignments.course_reuse_policy,
     notes = desired_assignments.notes
 FROM desired_assignments
 JOIN program ON program.code = desired_assignments.program_code
@@ -532,3 +591,468 @@ JOIN program_version ON program_version.program_id = program.program_id
 JOIN requirement ON requirement.code = desired_assignments.requirement_code
 WHERE program_version_requirement.program_version_id = program_version.program_version_id
   AND program_version_requirement.requirement_id = requirement.requirement_id;
+
+DELETE FROM program_version_requirement
+USING program_version, program, requirement
+WHERE program_version_requirement.program_version_id = program_version.program_version_id
+  AND program_version.program_id = program.program_id
+  AND program.code = 'CORE-UG'
+  AND program_version_requirement.requirement_id = requirement.requirement_id
+  AND requirement.code = 'REQ-ELV-201-COREQ';
+
+DELETE FROM requirement_course
+USING requirement
+WHERE requirement_course.requirement_id = requirement.requirement_id
+  AND requirement.code = 'REQ-ELV-201-COREQ';
+
+DELETE FROM requirement
+WHERE code = 'REQ-ELV-201-COREQ';
+
+DELETE FROM program_version_requirement
+USING program_version, program, requirement
+WHERE program_version_requirement.program_version_id = program_version.program_version_id
+  AND program_version.program_id = program.program_id
+  AND program.code = 'CORE-UG'
+  AND program_version_requirement.requirement_id = requirement.requirement_id
+  AND requirement.code IN ('REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
+
+DELETE FROM student_academic_plan_course
+USING requirement
+WHERE student_academic_plan_course.requirement_id = requirement.requirement_id
+  AND requirement.code IN ('REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
+
+DELETE FROM requirement_course
+USING requirement
+WHERE requirement_course.requirement_id = requirement.requirement_id
+  AND requirement.code IN ('REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
+
+DELETE FROM requirement
+WHERE code IN ('REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
+
+WITH desired_completion_requirements(
+    program_code,
+    version_number,
+    minimum_count,
+    sort_order,
+    notes
+) AS (
+    VALUES
+        ('CORE-UG', 1, 1, 50, 'Student must also complete another major or minor.')
+)
+INSERT INTO program_version_completion_requirement (
+    program_version_id,
+    minimum_count,
+    sort_order,
+    notes
+)
+SELECT program_version.program_version_id,
+       desired_completion_requirements.minimum_count,
+       desired_completion_requirements.sort_order,
+       desired_completion_requirements.notes
+FROM desired_completion_requirements
+JOIN program ON program.code = desired_completion_requirements.program_code
+JOIN program_version ON program_version.program_id = program.program_id
+                    AND program_version.version_number = desired_completion_requirements.version_number
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM program_version_completion_requirement existing_completion_requirement
+    WHERE existing_completion_requirement.program_version_id = program_version.program_version_id
+      AND existing_completion_requirement.notes = desired_completion_requirements.notes
+);
+
+WITH desired_completion_requirements(
+    program_code,
+    version_number,
+    minimum_count,
+    sort_order,
+    notes
+) AS (
+    VALUES
+        ('CORE-UG', 1, 1, 50, 'Student must also complete another major or minor.')
+)
+UPDATE program_version_completion_requirement
+SET minimum_count = desired_completion_requirements.minimum_count,
+    sort_order = desired_completion_requirements.sort_order,
+    notes = desired_completion_requirements.notes
+FROM desired_completion_requirements
+JOIN program ON program.code = desired_completion_requirements.program_code
+JOIN program_version ON program_version.program_id = program.program_id
+                    AND program_version.version_number = desired_completion_requirements.version_number
+WHERE program_version_completion_requirement.program_version_id = program_version.program_version_id
+  AND program_version_completion_requirement.notes = desired_completion_requirements.notes;
+
+WITH desired_completion_requirement_options(
+    program_code,
+    version_number,
+    completion_requirement_sort_order,
+    required_program_type_code
+) AS (
+    VALUES
+        ('CORE-UG', 1, 50, 'MAJOR'),
+        ('CORE-UG', 1, 50, 'MINOR')
+)
+INSERT INTO program_version_completion_requirement_option (
+    program_version_completion_requirement_id,
+    required_program_type_id
+)
+SELECT completion_requirement.program_version_completion_requirement_id,
+       program_type.program_type_id
+FROM desired_completion_requirement_options
+JOIN program ON program.code = desired_completion_requirement_options.program_code
+JOIN program_version ON program_version.program_id = program.program_id
+                    AND program_version.version_number = desired_completion_requirement_options.version_number
+JOIN program_version_completion_requirement completion_requirement
+  ON completion_requirement.program_version_id = program_version.program_version_id
+ AND completion_requirement.sort_order = desired_completion_requirement_options.completion_requirement_sort_order
+JOIN program_type ON program_type.code = desired_completion_requirement_options.required_program_type_code
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM program_version_completion_requirement_option existing_option
+    WHERE existing_option.program_version_completion_requirement_id = completion_requirement.program_version_completion_requirement_id
+      AND existing_option.required_program_type_id = program_type.program_type_id
+);
+
+-- Student program tracker seed data.
+-- This gives the My Programs page attached programs plus a saved planner shape.
+
+WITH desired_student_programs(
+    alt_id,
+    program_code,
+    version_number,
+    status,
+    declared_date,
+    completed_date
+) AS (
+    VALUES
+        ('STU-1001', 'CORE-UG', 1, 'ACTIVE', '2026-08-20'::date, NULL::date),
+        ('STU-1001', 'HIST-BA', 2, 'ACTIVE', '2026-08-20'::date, NULL::date),
+        ('STU-1004', 'HIST-MA', 1, 'ACTIVE', '2026-08-20'::date, NULL::date),
+        ('SEC-2029', 'CORE-UG', 1, 'ACTIVE', '2026-08-20'::date, NULL::date),
+        ('SEC-2029', 'HUM-MIN', 1, 'ACTIVE', '2027-01-10'::date, NULL::date)
+)
+INSERT INTO student_program (
+    student_id,
+    program_version_id,
+    status,
+    declared_date,
+    completed_date,
+    updated_by_user_id
+)
+SELECT student.student_id,
+       program_version.program_version_id,
+       desired_student_programs.status,
+       desired_student_programs.declared_date,
+       desired_student_programs.completed_date,
+       actor.id
+FROM desired_student_programs
+JOIN student ON student.alt_id = desired_student_programs.alt_id
+JOIN program ON program.code = desired_student_programs.program_code
+JOIN program_version ON program_version.program_id = program.program_id
+                    AND program_version.version_number = desired_student_programs.version_number
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me'
+ON CONFLICT ON CONSTRAINT uq_student_program_version DO UPDATE
+    SET status = EXCLUDED.status,
+        declared_date = EXCLUDED.declared_date,
+        completed_date = EXCLUDED.completed_date,
+        updated_by_user_id = EXCLUDED.updated_by_user_id;
+
+WITH target_students AS (
+    SELECT student_id
+    FROM student
+    WHERE alt_id IN ('STU-1001', 'STU-1004', 'SEC-2029')
+)
+UPDATE student_academic_plan
+SET active = FALSE
+WHERE student_id IN (SELECT student_id FROM target_students);
+
+DELETE FROM student_academic_plan
+WHERE name = 'Seeded My Programs Plan'
+  AND student_id IN (
+      SELECT student_id
+      FROM student
+      WHERE alt_id IN ('STU-1001', 'STU-1004', 'SEC-2029')
+  );
+
+WITH target_students AS (
+    SELECT student_id
+    FROM student
+    WHERE alt_id IN ('STU-1001', 'STU-1004', 'SEC-2029')
+)
+INSERT INTO student_academic_plan (
+    student_id,
+    name,
+    active,
+    updated_by_user_id
+)
+SELECT target_students.student_id,
+       'Seeded My Programs Plan',
+       TRUE,
+       actor.id
+FROM target_students
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me';
+
+WITH desired_years(
+    alt_id,
+    label,
+    sort_order,
+    can_remove
+) AS (
+    VALUES
+        ('STU-1001', 'Year 1', 0, FALSE),
+        ('STU-1001', 'Year 2', 1, FALSE),
+        ('STU-1001', 'Year 3', 2, FALSE),
+        ('STU-1001', 'Year 4', 3, FALSE),
+        ('STU-1004', 'Year 1', 0, FALSE),
+        ('STU-1004', 'Year 2', 1, FALSE),
+        ('STU-1004', 'Year 3', 2, FALSE),
+        ('STU-1004', 'Year 4', 3, FALSE),
+        ('SEC-2029', 'Year 1', 0, FALSE),
+        ('SEC-2029', 'Year 2', 1, FALSE),
+        ('SEC-2029', 'Year 3', 2, FALSE),
+        ('SEC-2029', 'Year 4', 3, FALSE)
+)
+INSERT INTO student_academic_plan_year (
+    student_academic_plan_id,
+    label,
+    sort_order,
+    can_remove,
+    updated_by_user_id
+)
+SELECT plan.student_academic_plan_id,
+       desired_years.label,
+       desired_years.sort_order,
+       desired_years.can_remove,
+       actor.id
+FROM desired_years
+JOIN student ON student.alt_id = desired_years.alt_id
+JOIN student_academic_plan plan
+  ON plan.student_id = student.student_id
+ AND plan.name = 'Seeded My Programs Plan'
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me';
+
+WITH desired_terms(
+    label,
+    sort_order
+) AS (
+    VALUES
+        ('Fall', 0),
+        ('Spring', 1),
+        ('Summer I', 2),
+        ('Summer II', 3)
+)
+INSERT INTO student_academic_plan_term (
+    student_academic_plan_year_id,
+    label,
+    sort_order,
+    is_complete,
+    updated_by_user_id
+)
+SELECT plan_year.student_academic_plan_year_id,
+       desired_terms.label,
+       desired_terms.sort_order,
+       (plan_year.sort_order = 0 AND desired_terms.label IN ('Fall', 'Spring')),
+       actor.id
+FROM student_academic_plan_year plan_year
+JOIN student_academic_plan plan
+  ON plan.student_academic_plan_id = plan_year.student_academic_plan_id
+ AND plan.name = 'Seeded My Programs Plan'
+CROSS JOIN desired_terms
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me';
+
+WITH desired_plan_courses(
+    alt_id,
+    year_label,
+    term_label,
+    subject_code,
+    course_number,
+    student_program_code,
+    student_program_version_number,
+    requirement_code,
+    credits,
+    planner_bucket_code,
+    planner_bucket_label,
+    sort_order,
+    notes
+) AS (
+    VALUES
+        ('STU-1001', 'Year 2', 'Fall', 'TOLK', '260', 'CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 3.00::numeric, 'FULL_TERM', NULL::varchar, 0, 'Prerequisite test: Sam has transfer credit for TOLK 101 before taking TOLK 260.'),
+        ('STU-1001', 'Year 2', 'Fall', 'TOLK', '261', 'CORE-UG', 1, 'REQ-TOLK-261-COREQ', 3.00::numeric, 'FULL_TERM', NULL::varchar, 1, 'Corequisite test: TOLK 261 should be planned with TOLK 261L.'),
+        ('STU-1001', 'Year 2', 'Fall', 'TOLK', '261L', 'CORE-UG', 1, 'REQ-TOLK-261-COREQ', 0.00::numeric, 'FULL_TERM', NULL::varchar, 2, 'Corequisite test: TOLK 261L is the paired lab for TOLK 261.'),
+        ('STU-1001', 'Year 2', 'Fall', 'TOLK', '262', 'CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 3.00::numeric, 'FULL_TERM', NULL::varchar, 3, 'Missing prerequisite test: Sam does not have TOLK 240 before taking TOLK 262.'),
+        ('STU-1004', 'Year 1', 'Fall', 'TOLK', '240', 'HIST-MA', 1, 'REQ-FREE-ELECTIVE-30', 3.00::numeric, 'SESSION_A', 'Session A', 0, 'Graduate subterm test: TOLK 240 is planned in Session A.'),
+        ('STU-1004', 'Year 1', 'Fall', 'TOLK', '262', 'HIST-MA', 1, 'REQ-TOLK-262-MISSING-PREREQ', 3.00::numeric, 'SESSION_B', 'Session B', 1, 'Graduate subterm test: TOLK 262 should see TOLK 240 as planned earlier in Session A.'),
+        ('STU-1004', 'Year 1', 'Spring', 'TOLK', '261', 'HIST-MA', 1, 'REQ-TOLK-261-COREQ', 3.00::numeric, 'SESSION_A', 'Session A', 0, 'Graduate subterm corequisite test: lecture is in Session A.'),
+        ('STU-1004', 'Year 1', 'Spring', 'TOLK', '261L', 'HIST-MA', 1, 'REQ-TOLK-261-COREQ', 0.00::numeric, 'SESSION_B', 'Session B', 1, 'Graduate subterm corequisite test: lab is in Session B of the same term.'),
+        ('SEC-2029', 'Year 1', 'Fall', 'TOLK', '101', 'CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 3.00::numeric, 'FULL_TERM', 'Full Term', 0, 'Completed locally before the seeded tracker plan.'),
+        ('SEC-2029', 'Year 2', 'Fall', 'TOLK', '240', 'CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 3.00::numeric, 'SESSION_A', 'Session A', 0, 'Seeded with a planner bucket label for subterm grouping UI.'),
+        ('SEC-2029', 'Year 2', 'Spring', 'ELV', '201', 'HUM-MIN', 1, 'REQ-HUM-ELECTIVE-9', 4.00::numeric, 'SESSION_B', 'Session B', 0, 'Humanities minor elective with a session bucket.')
+)
+INSERT INTO student_academic_plan_course (
+    student_academic_plan_term_id,
+    course_id,
+    student_program_id,
+    requirement_id,
+    status,
+    credits,
+    planner_bucket_code,
+    planner_bucket_label,
+    sort_order,
+    notes,
+    updated_by_user_id
+)
+SELECT plan_term.student_academic_plan_term_id,
+       course.course_id,
+       student_program.student_program_id,
+       requirement.requirement_id,
+       'PLANNED',
+       desired_plan_courses.credits,
+       desired_plan_courses.planner_bucket_code,
+       desired_plan_courses.planner_bucket_label,
+       desired_plan_courses.sort_order,
+       desired_plan_courses.notes,
+       actor.id
+FROM desired_plan_courses
+JOIN student ON student.alt_id = desired_plan_courses.alt_id
+JOIN student_academic_plan plan
+  ON plan.student_id = student.student_id
+ AND plan.name = 'Seeded My Programs Plan'
+JOIN student_academic_plan_year plan_year
+  ON plan_year.student_academic_plan_id = plan.student_academic_plan_id
+ AND plan_year.label = desired_plan_courses.year_label
+JOIN student_academic_plan_term plan_term
+  ON plan_term.student_academic_plan_year_id = plan_year.student_academic_plan_year_id
+ AND plan_term.label = desired_plan_courses.term_label
+JOIN academic_subject subject ON subject.code = desired_plan_courses.subject_code
+JOIN course ON course.subject_id = subject.subject_id
+           AND course.course_number = desired_plan_courses.course_number
+JOIN program ON program.code = desired_plan_courses.student_program_code
+JOIN program_version ON program_version.program_id = program.program_id
+                    AND program_version.version_number = desired_plan_courses.student_program_version_number
+JOIN student_program ON student_program.student_id = student.student_id
+                    AND student_program.program_version_id = program_version.program_version_id
+JOIN requirement ON requirement.code = desired_plan_courses.requirement_code
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me';
+
+WITH desired_placeholder_plan_courses(
+    alt_id,
+    year_label,
+    term_label,
+    student_program_code,
+    student_program_version_number,
+    requirement_code,
+    credits,
+    planner_bucket_code,
+    planner_bucket_label,
+    placeholder_type,
+    placeholder_label,
+    placeholder_subject_code,
+    placeholder_department_code,
+    placeholder_minimum_course_number,
+    placeholder_maximum_course_number,
+    sort_order,
+    notes
+) AS (
+    VALUES
+        (
+            'STU-1001',
+            'Year 3',
+            'Spring',
+            'HIST-BA',
+            2,
+            'REQ-HIST-CORE-12',
+            3.00::numeric,
+            'FULL_TERM',
+            NULL::varchar,
+            'DEPARTMENT_ELECTIVE',
+            'HIST 300+ elective',
+            'HIST',
+            'HIST',
+            300::int,
+            NULL::int,
+            0,
+            'Seeded department elective placeholder for testing planner course replacement.'
+        ),
+        (
+            'STU-1001',
+            'Year 4',
+            'Fall',
+            'HIST-BA',
+            2,
+            'REQ-FREE-ELECTIVE-30',
+            3.00::numeric,
+            'FULL_TERM',
+            NULL::varchar,
+            'ELECTIVE',
+            'Free elective',
+            NULL::varchar,
+            NULL::varchar,
+            NULL::int,
+            NULL::int,
+            0,
+            'Seeded generic elective placeholder for testing planner course replacement.'
+        )
+)
+INSERT INTO student_academic_plan_course (
+    student_academic_plan_term_id,
+    course_id,
+    student_program_id,
+    requirement_id,
+    status,
+    credits,
+    planner_bucket_code,
+    planner_bucket_label,
+    placeholder_type,
+    placeholder_label,
+    placeholder_subject_code,
+    placeholder_department_id,
+    placeholder_minimum_course_number,
+    placeholder_maximum_course_number,
+    sort_order,
+    notes,
+    updated_by_user_id
+)
+SELECT plan_term.student_academic_plan_term_id,
+       NULL,
+       student_program.student_program_id,
+       requirement.requirement_id,
+       'PLANNED',
+       desired_placeholder_plan_courses.credits,
+       desired_placeholder_plan_courses.planner_bucket_code,
+       desired_placeholder_plan_courses.planner_bucket_label,
+       desired_placeholder_plan_courses.placeholder_type,
+       desired_placeholder_plan_courses.placeholder_label,
+       desired_placeholder_plan_courses.placeholder_subject_code,
+       placeholder_department.department_id,
+       desired_placeholder_plan_courses.placeholder_minimum_course_number,
+       desired_placeholder_plan_courses.placeholder_maximum_course_number,
+       desired_placeholder_plan_courses.sort_order,
+       desired_placeholder_plan_courses.notes,
+       actor.id
+FROM desired_placeholder_plan_courses
+JOIN student ON student.alt_id = desired_placeholder_plan_courses.alt_id
+JOIN student_academic_plan plan
+  ON plan.student_id = student.student_id
+ AND plan.name = 'Seeded My Programs Plan'
+JOIN student_academic_plan_year plan_year
+  ON plan_year.student_academic_plan_id = plan.student_academic_plan_id
+ AND plan_year.label = desired_placeholder_plan_courses.year_label
+JOIN student_academic_plan_term plan_term
+  ON plan_term.student_academic_plan_year_id = plan_year.student_academic_plan_year_id
+ AND plan_term.label = desired_placeholder_plan_courses.term_label
+JOIN program ON program.code = desired_placeholder_plan_courses.student_program_code
+JOIN program_version ON program_version.program_id = program.program_id
+                    AND program_version.version_number = desired_placeholder_plan_courses.student_program_version_number
+JOIN student_program ON student_program.student_id = student.student_id
+                    AND student_program.program_version_id = program_version.program_version_id
+JOIN requirement ON requirement.code = desired_placeholder_plan_courses.requirement_code
+LEFT JOIN academic_department placeholder_department
+       ON placeholder_department.code = desired_placeholder_plan_courses.placeholder_department_code
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me';
+
+SELECT setval(pg_get_serial_sequence('student_program', 'student_program_id'), COALESCE((SELECT MAX(student_program_id) FROM student_program), 1), TRUE);
+SELECT setval(pg_get_serial_sequence('program_version_completion_requirement', 'program_version_completion_requirement_id'), COALESCE((SELECT MAX(program_version_completion_requirement_id) FROM program_version_completion_requirement), 1), TRUE);
+SELECT setval(pg_get_serial_sequence('program_version_completion_requirement_option', 'program_version_completion_requirement_option_id'), COALESCE((SELECT MAX(program_version_completion_requirement_option_id) FROM program_version_completion_requirement_option), 1), TRUE);
+SELECT setval(pg_get_serial_sequence('student_academic_plan', 'student_academic_plan_id'), COALESCE((SELECT MAX(student_academic_plan_id) FROM student_academic_plan), 1), TRUE);
+SELECT setval(pg_get_serial_sequence('student_academic_plan_year', 'student_academic_plan_year_id'), COALESCE((SELECT MAX(student_academic_plan_year_id) FROM student_academic_plan_year), 1), TRUE);
+SELECT setval(pg_get_serial_sequence('student_academic_plan_term', 'student_academic_plan_term_id'), COALESCE((SELECT MAX(student_academic_plan_term_id) FROM student_academic_plan_term), 1), TRUE);
+SELECT setval(pg_get_serial_sequence('student_academic_plan_course', 'student_academic_plan_course_id'), COALESCE((SELECT MAX(student_academic_plan_course_id) FROM student_academic_plan_course), 1), TRUE);

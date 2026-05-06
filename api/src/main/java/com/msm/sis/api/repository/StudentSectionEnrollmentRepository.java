@@ -193,6 +193,72 @@ public interface StudentSectionEnrollmentRepository extends JpaRepository<Studen
             """, nativeQuery = true)
     List<StudentTranscriptCourseProjection> findTranscriptLocalCourses(@Param("studentId") Long studentId);
 
+    @Query(value = """
+            select
+                sse.student_section_enrollment_id as enrollmentId,
+                catalog_course.course_id as courseId,
+                department.department_id as departmentId,
+                subject.code as subjectCode,
+                catalog_course.course_number as courseNumber,
+                concat(subject.code, ' ', catalog_course.course_number) as courseCode,
+                coalesce(section.title, course_version.title) as title,
+                sse.credits_earned as creditsEarned,
+                final_mark.code as gradeCode,
+                academic_year.academic_year_id as academicYearId,
+                academic_year.code as academicYearCode,
+                academic_year.name as academicYearName,
+                academic_year.start_date as academicYearStartDate,
+                academic_year.end_date as academicYearEndDate,
+                term.term_id as termId,
+                term.code as termCode,
+                term.name as termName,
+                term.start_date as termStartDate,
+                term.end_date as termEndDate,
+                term.start_date as termSortDate,
+                coalesce(term.end_date, sse.enrollment_date) as completedDate
+            from student_section_enrollment sse
+            join student_section_enrollment_status enrollment_status
+              on enrollment_status.student_section_enrollment_status_id = sse.student_section_enrollment_status_id
+            join course_section section
+              on section.section_id = sse.section_id
+            join course_offering offering
+              on offering.course_offering_id = section.course_offering_id
+            join course_version course_version
+              on course_version.course_version_id = offering.course_version_id
+            join course catalog_course
+              on catalog_course.course_id = course_version.course_id
+            join academic_subject subject
+              on subject.subject_id = catalog_course.subject_id
+            join academic_department department
+              on department.department_id = subject.department_id
+            join academic_term_sub_term term_sub_term
+              on term_sub_term.sub_term_id = section.sub_term_id
+            join academic_term term
+              on term.term_id = term_sub_term.term_id
+            join academic_year academic_year
+              on academic_year.academic_year_id = term.academic_year_id
+            left join student_section_grade final_grade
+              on final_grade.student_section_enrollment_id = sse.student_section_enrollment_id
+             and final_grade.is_current = true
+             and final_grade.student_section_grade_type_id = (
+                select final_type.student_section_grade_type_id
+                from student_section_grade_type final_type
+                where upper(final_type.code) = 'FINAL'
+             )
+            left join grade_mark final_mark
+              on final_mark.grade_mark_id = final_grade.grade_mark_id
+            where sse.student_id = :studentId
+              and upper(enrollment_status.code) = 'COMPLETED'
+              and sse.credits_earned is not null
+            order by
+                academic_year.start_date,
+                term.start_date,
+                subject.code,
+                catalog_course.course_number,
+                sse.student_section_enrollment_id
+            """, nativeQuery = true)
+    List<StudentCompletedLocalCourseProjection> findCompletedLocalCourses(@Param("studentId") Long studentId);
+
     interface StudentTranscriptCourseProjection {
         Long getRecordId();
 
@@ -231,5 +297,49 @@ public interface StudentSectionEnrollmentRepository extends JpaRepository<Studen
         Boolean getCountsInGpa();
 
         BigDecimal getQualityPointsPerCredit();
+    }
+
+    interface StudentCompletedLocalCourseProjection {
+        Long getEnrollmentId();
+
+        Long getCourseId();
+
+        Long getDepartmentId();
+
+        String getSubjectCode();
+
+        String getCourseNumber();
+
+        String getCourseCode();
+
+        String getTitle();
+
+        BigDecimal getCreditsEarned();
+
+        String getGradeCode();
+
+        Long getAcademicYearId();
+
+        String getAcademicYearCode();
+
+        String getAcademicYearName();
+
+        LocalDate getAcademicYearStartDate();
+
+        LocalDate getAcademicYearEndDate();
+
+        Long getTermId();
+
+        String getTermCode();
+
+        String getTermName();
+
+        LocalDate getTermStartDate();
+
+        LocalDate getTermEndDate();
+
+        LocalDate getTermSortDate();
+
+        LocalDate getCompletedDate();
     }
 }

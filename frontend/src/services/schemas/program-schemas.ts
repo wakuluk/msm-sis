@@ -40,11 +40,42 @@ export const ProgramVersionRequirementResponseSchema = z.object({
   requirementCourseRules: z.array(RequirementCourseRuleResponseSchema),
   sortOrder: z.number(),
   required: z.boolean(),
+  courseReusePolicy: z.string(),
   notes: z.string().nullable(),
 });
 
 export type ProgramVersionRequirementResponse = z.infer<
   typeof ProgramVersionRequirementResponseSchema
+>;
+
+export const ProgramVersionCompletionRequirementOptionResponseSchema = z.object({
+  programVersionCompletionRequirementOptionId: z.number(),
+  requiredProgramTypeId: z.number().nullable(),
+  requiredProgramTypeCode: z.string().nullable(),
+  requiredProgramTypeName: z.string().nullable(),
+  requiredProgramId: z.number().nullable(),
+  requiredProgramCode: z.string().nullable(),
+  requiredProgramName: z.string().nullable(),
+  requiredProgramVersionId: z.number().nullable(),
+  requiredProgramVersionNumber: z.number().nullable(),
+  requiredProgramVersionProgramCode: z.string().nullable(),
+  requiredProgramVersionProgramName: z.string().nullable(),
+});
+
+export type ProgramVersionCompletionRequirementOptionResponse = z.infer<
+  typeof ProgramVersionCompletionRequirementOptionResponseSchema
+>;
+
+export const ProgramVersionCompletionRequirementResponseSchema = z.object({
+  programVersionCompletionRequirementId: z.number(),
+  minimumCount: z.number(),
+  sortOrder: z.number(),
+  notes: z.string().nullable(),
+  options: z.array(ProgramVersionCompletionRequirementOptionResponseSchema),
+});
+
+export type ProgramVersionCompletionRequirementResponse = z.infer<
+  typeof ProgramVersionCompletionRequirementResponseSchema
 >;
 
 export const ProgramVersionDetailResponseSchema = z.object({
@@ -55,6 +86,7 @@ export const ProgramVersionDetailResponseSchema = z.object({
   classYearEnd: z.number().nullable(),
   notes: z.string().nullable(),
   requirements: z.array(ProgramVersionRequirementResponseSchema),
+  completionRequirements: z.array(ProgramVersionCompletionRequirementResponseSchema),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
 });
@@ -254,3 +286,31 @@ export type CreateRequirementRequest = z.infer<typeof CreateRequirementRequestSc
 export const PatchRequirementRequestSchema = CreateRequirementRequestSchema.partial();
 
 export type PatchRequirementRequest = z.infer<typeof PatchRequirementRequestSchema>;
+
+export const ProgramVersionCompletionRequirementOptionRequestSchema = z.object({
+  requiredProgramTypeId: z.number().int().positive().nullable().optional(),
+  requiredProgramId: z.number().int().positive().nullable().optional(),
+  requiredProgramVersionId: z.number().int().positive().nullable().optional(),
+});
+
+export type ProgramVersionCompletionRequirementOptionRequest = z.infer<
+  typeof ProgramVersionCompletionRequirementOptionRequestSchema
+>;
+
+export const CreateProgramVersionCompletionRequirementRequestSchema = z.object({
+  minimumCount: z.number().int().positive().nullable().optional(),
+  sortOrder: z.number().int().nonnegative().nullable().optional(),
+  notes: z.string().max(500).nullable().optional(),
+  options: z.array(ProgramVersionCompletionRequirementOptionRequestSchema).min(1),
+});
+
+export type CreateProgramVersionCompletionRequirementRequest = z.infer<
+  typeof CreateProgramVersionCompletionRequirementRequestSchema
+>;
+
+export const PatchProgramVersionCompletionRequirementRequestSchema =
+  CreateProgramVersionCompletionRequirementRequestSchema.partial();
+
+export type PatchProgramVersionCompletionRequirementRequest = z.infer<
+  typeof PatchProgramVersionCompletionRequirementRequestSchema
+>;

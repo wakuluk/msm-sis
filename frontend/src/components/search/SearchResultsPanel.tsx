@@ -9,7 +9,7 @@ import {
   type SearchResultsTableRowProps,
 } from '@/components/search/SearchResultsTable';
 
-type SearchResultsStatus = 'idle' | 'loading' | 'error' | 'empty' | 'success';
+export type SearchResultsStatus = 'idle' | 'loading' | 'error' | 'empty' | 'success';
 type SortDirection = 'asc' | 'desc';
 
 type SearchResultsViewOption<T extends string> = {

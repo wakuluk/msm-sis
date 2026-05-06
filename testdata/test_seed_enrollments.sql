@@ -4,6 +4,8 @@ WITH seeded_sections(subject_code, course_number, version_number, academic_year_
     VALUES
         ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028'),
         ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'FALL-2026'),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027')
 )
 DELETE FROM student_section_enrollment enrollment
@@ -152,6 +154,9 @@ WITH desired_enrollments(
         ('STU-1001', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'COMPLETED', 'GRADED', '2027-08-21'::date, '2027-08-21 13:55'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, 'Earlier completed attempt replaced by repeat.'),
         ('SEC-2026', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'COMPLETED', 'GRADED', '2027-08-21'::date, '2027-08-21 14:00'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, NULL),
         ('SEC-2027', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'WITHDRAWN', 'GRADED', '2027-08-21'::date, '2027-08-21 14:03'::timestamp, NULL::timestamp, 3.00, 0.00, NULL::int, TRUE, FALSE, 'Withdrew before final grading.'),
+        ('STU-1001', 'ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'COMPLETED', 'GRADED', '2026-08-24'::date, '2026-08-24 09:00'::timestamp, NULL::timestamp, 4.00, 4.00, NULL::int, TRUE, FALSE, 'Seeded first-semester completed course for program planner testing.'),
+        ('STU-1001', 'ELV', '201L', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'COMPLETED', 'GRADED', '2026-08-24'::date, '2026-08-24 09:05'::timestamp, NULL::timestamp, 0.00, 0.00, NULL::int, TRUE, FALSE, 'Seeded first-semester completed lab for program planner testing.'),
+        ('STU-1004', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'COMPLETED', 'GRADED', '2027-01-16'::date, '2027-01-16 10:07'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, 'Graduate subterm planner seed prerequisite.'),
         ('SEC-2028', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'COMPLETED', 'GRADED', '2027-01-16'::date, '2027-01-16 10:00'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, NULL),
         ('SEC-2029', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'COMPLETED', 'GRADED', '2027-01-16'::date, '2027-01-16 10:03'::timestamp, NULL::timestamp, 3.00, 3.00, NULL::int, TRUE, FALSE, NULL),
         ('SEC-2030', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'DROPPED', 'GRADED', '2027-01-16'::date, '2027-01-16 10:05'::timestamp, NULL::timestamp, 3.00, 0.00, NULL::int, TRUE, FALSE, 'Dropped during add/drop.')
@@ -257,6 +262,8 @@ WHERE student.alt_id IN (
   AND (
       (subject.code = 'MEH' AND course.course_number = '310' AND version.version_number = 1 AND year.code = 'AY-2027-2028' AND sub_term.code IN ('SPRING-2028', 'FALL-2027'))
       OR
+      (subject.code = 'ELV' AND course.course_number IN ('201', '201L') AND version.version_number = 1 AND year.code = 'AY-2026-2027' AND sub_term.code = 'FALL-2026')
+      OR
       (subject.code = 'TOLK' AND course.course_number = '101' AND version.version_number = 2 AND year.code = 'AY-2026-2027' AND sub_term.code = 'SPRING-2027')
   );
 
@@ -281,6 +288,10 @@ WITH desired_grades(alt_id, subject_code, course_number, version_number, academi
         ('SEC-2026', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', 'MIDTERM', 'B+'),
         ('SEC-2026', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', 'FINAL', 'A-'),
         ('SEC-2027', 'MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', 'MIDTERM', 'W'),
+        ('STU-1001', 'ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'MIDTERM', 'B+'),
+        ('STU-1001', 'ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'FINAL', 'B+'),
+        ('STU-1001', 'ELV', '201L', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'MIDTERM', 'P'),
+        ('STU-1001', 'ELV', '201L', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'FINAL', 'P'),
         ('SEC-2028', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', 'MIDTERM', 'A'),
         ('SEC-2028', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', 'FINAL', 'A'),
         ('SEC-2029', 'TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', 'MIDTERM', 'B'),
@@ -358,6 +369,8 @@ WHERE student.alt_id IN (
 )
   AND (
       (subject.code = 'MEH' AND course.course_number = '310' AND version.version_number = 1 AND year.code = 'AY-2027-2028' AND sub_term.code IN ('SPRING-2028', 'FALL-2027'))
+      OR
+      (subject.code = 'ELV' AND course.course_number IN ('201', '201L') AND version.version_number = 1 AND year.code = 'AY-2026-2027' AND sub_term.code = 'FALL-2026')
       OR
       (subject.code = 'TOLK' AND course.course_number = '101' AND version.version_number = 2 AND year.code = 'AY-2026-2027' AND sub_term.code = 'SPRING-2027')
   );

@@ -36,7 +36,7 @@ public class CourseController {
     }
 
     @GetMapping("/{courseId}/versions")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
     @Operation(summary = "Search course versions by course id", description = "Returns paged version details for a course.")
     public ResponseEntity<CourseVersionSearchResponse> getCourseVersionsForCourseId(
             @AuthenticationPrincipal AuthenticatedJwt jwt,

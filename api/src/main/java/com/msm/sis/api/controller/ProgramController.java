@@ -84,4 +84,27 @@ public class ProgramController {
                 sortDirection
         ));
     }
+
+    @GetMapping("/explore")
+    @PreAuthorize("hasRole('STUDENT')")
+    @Operation(
+            summary = "Explore published programs",
+            description = "Returns paged published program search results for student exploration."
+    )
+    public ResponseEntity<ProgramSearchResponse> explorePrograms(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @ModelAttribute ProgramSearchCriteria criteria,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            @RequestParam(defaultValue = "code") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDirection
+    ) {
+        return ResponseEntity.ok(programService.searchPublishedPrograms(
+                criteria,
+                page,
+                size,
+                sortBy,
+                sortDirection
+        ));
+    }
 }

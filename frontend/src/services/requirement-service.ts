@@ -1,13 +1,19 @@
 import { getAccessToken } from '@/auth/auth-store';
 import {
   CreateRequirementRequestSchema,
+  CreateProgramVersionCompletionRequirementRequestSchema,
   PatchRequirementRequestSchema,
+  PatchProgramVersionCompletionRequirementRequestSchema,
+  ProgramVersionCompletionRequirementResponseSchema,
   ProgramVersionRequirementResponseSchema,
   RequirementDetailResponseSchema,
   RequirementSearchResponseSchema,
   RequirementSearchResultResponseSchema,
   type CreateRequirementRequest,
+  type CreateProgramVersionCompletionRequirementRequest,
   type PatchRequirementRequest,
+  type PatchProgramVersionCompletionRequirementRequest,
+  type ProgramVersionCompletionRequirementResponse,
   type ProgramVersionRequirementResponse,
   type RequirementDetailResponse,
   type RequirementSearchResponse,
@@ -32,12 +38,14 @@ export type AttachProgramVersionRequirementRequest = {
   programVersionId: number;
   requirementId: number;
   sortOrder?: number | null;
+  courseReusePolicy?: string | null;
   notes?: string | null;
 };
 
 export type PatchProgramVersionRequirementRequest = {
   programVersionRequirementId: number;
   sortOrder?: number | null;
+  courseReusePolicy?: string | null;
   notes?: string | null;
 };
 
@@ -52,6 +60,20 @@ export type CreateRequirementServiceRequest = {
 export type PatchRequirementServiceRequest = {
   requirementId: number;
   request: PatchRequirementRequest;
+};
+
+export type CreateProgramVersionCompletionRequirementServiceRequest = {
+  programVersionId: number;
+  request: CreateProgramVersionCompletionRequirementRequest;
+};
+
+export type PatchProgramVersionCompletionRequirementServiceRequest = {
+  programVersionCompletionRequirementId: number;
+  request: PatchProgramVersionCompletionRequirementRequest;
+};
+
+export type RemoveProgramVersionCompletionRequirementRequest = {
+  programVersionCompletionRequirementId: number;
 };
 
 function appendTrimmedQueryParam(queryParams: URLSearchParams, key: string, value?: string) {
@@ -166,6 +188,7 @@ export async function attachProgramVersionRequirement({
   programVersionId,
   requirementId,
   sortOrder,
+  courseReusePolicy,
   notes,
 }: AttachProgramVersionRequirementRequest): Promise<ProgramVersionRequirementResponse> {
   const response = await fetch(`/api/program-versions/${programVersionId}/requirements`, {
@@ -177,6 +200,7 @@ export async function attachProgramVersionRequirement({
     body: JSON.stringify({
       requirementId,
       sortOrder,
+      courseReusePolicy,
       notes,
     }),
   });
@@ -189,6 +213,7 @@ export async function attachProgramVersionRequirement({
 export async function patchProgramVersionRequirement({
   programVersionRequirementId,
   sortOrder,
+  courseReusePolicy,
   notes,
 }: PatchProgramVersionRequirementRequest): Promise<ProgramVersionRequirementResponse> {
   const response = await fetch(`/api/program-version-requirements/${programVersionRequirementId}`, {
@@ -199,6 +224,7 @@ export async function patchProgramVersionRequirement({
     },
     body: JSON.stringify({
       sortOrder,
+      courseReusePolicy,
       notes,
     }),
   });
@@ -217,4 +243,61 @@ export async function removeProgramVersionRequirement({
   });
 
   await readJsonResponse(response, 'Failed to remove requirement from version.');
+}
+
+export async function createProgramVersionCompletionRequirement({
+  programVersionId,
+  request,
+}: CreateProgramVersionCompletionRequirementServiceRequest): Promise<ProgramVersionCompletionRequirementResponse> {
+  const parsedRequest = CreateProgramVersionCompletionRequirementRequestSchema.parse(request);
+
+  const response = await fetch(`/api/program-versions/${programVersionId}/completion-requirements`, {
+    method: 'POST',
+    headers: {
+      ...getAuthenticatedHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(parsedRequest),
+  });
+
+  return ProgramVersionCompletionRequirementResponseSchema.parse(
+    await readJsonResponse(response, 'Failed to create completion requirement.')
+  );
+}
+
+export async function patchProgramVersionCompletionRequirement({
+  programVersionCompletionRequirementId,
+  request,
+}: PatchProgramVersionCompletionRequirementServiceRequest): Promise<ProgramVersionCompletionRequirementResponse> {
+  const parsedRequest = PatchProgramVersionCompletionRequirementRequestSchema.parse(request);
+
+  const response = await fetch(
+    `/api/program-version-completion-requirements/${programVersionCompletionRequirementId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        ...getAuthenticatedHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(parsedRequest),
+    }
+  );
+
+  return ProgramVersionCompletionRequirementResponseSchema.parse(
+    await readJsonResponse(response, 'Failed to update completion requirement.')
+  );
+}
+
+export async function removeProgramVersionCompletionRequirement({
+  programVersionCompletionRequirementId,
+}: RemoveProgramVersionCompletionRequirementRequest): Promise<void> {
+  const response = await fetch(
+    `/api/program-version-completion-requirements/${programVersionCompletionRequirementId}`,
+    {
+      method: 'DELETE',
+      headers: getAuthenticatedHeaders(),
+    }
+  );
+
+  await readJsonResponse(response, 'Failed to remove completion requirement.');
 }

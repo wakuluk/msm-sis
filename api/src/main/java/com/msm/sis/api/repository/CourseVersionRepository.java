@@ -88,4 +88,13 @@ public interface CourseVersionRepository extends JpaRepository<CourseVersion, Lo
             ORDER BY courseVersion.course.id ASC, courseVersion.versionNumber DESC, courseVersion.id DESC
             """)
     List<CourseVersion> findCurrentCourseVersionsByCourseIds(@Param("courseIds") List<Long> courseIds);
+
+    @EntityGraph(attributePaths = {"course", "course.subject", "course.subject.department"})
+    @Query("""
+            SELECT courseVersion
+            FROM CourseVersion courseVersion
+            WHERE courseVersion.course.id IN :courseIds
+            ORDER BY courseVersion.course.id ASC, courseVersion.versionNumber DESC, courseVersion.id DESC
+            """)
+    List<CourseVersion> findLatestCourseVersionsByCourseIds(@Param("courseIds") List<Long> courseIds);
 }

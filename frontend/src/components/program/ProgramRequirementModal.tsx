@@ -76,6 +76,7 @@ export function ProgramRequirementModal({
   onAttach: (request: {
     requirementId: number;
     sortOrder: number | null;
+    courseReusePolicy: string | null;
     notes: string | null;
   }) => Promise<void>;
   onClose: () => void;
@@ -83,6 +84,7 @@ export function ProgramRequirementModal({
   onUpdateAssignment: (request: {
     programVersionRequirementId: number;
     sortOrder: number | null;
+    courseReusePolicy: string | null;
     notes: string | null;
   }) => Promise<void>;
   removeState: SaveState;
@@ -92,6 +94,8 @@ export function ProgramRequirementModal({
 }) {
   const [previewRequirementType, setPreviewRequirementType] = useState<string | null>(null);
   const [assignmentSortOrder, setAssignmentSortOrder] = useState<number | string>('');
+  const [assignmentCourseReusePolicy, setAssignmentCourseReusePolicy] =
+    useState('CONSUME_AVAILABLE');
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [assignmentValidationMessage, setAssignmentValidationMessage] = useState<string | null>(null);
   const [isEditingAssignment, setIsEditingAssignment] = useState(false);
@@ -103,6 +107,7 @@ export function ProgramRequirementModal({
   useEffect(() => {
     setPreviewRequirementType(requirement?.requirementType ?? null);
     setAssignmentSortOrder(requirement?.sortOrder ?? '');
+    setAssignmentCourseReusePolicy(requirement?.courseReusePolicy ?? 'CONSUME_AVAILABLE');
     setAssignmentNotes(requirement?.notes ?? '');
     setAssignmentValidationMessage(null);
     setIsEditingAssignment(false);
@@ -134,6 +139,7 @@ export function ProgramRequirementModal({
     await onUpdateAssignment({
       programVersionRequirementId: effectiveRequirement.programVersionRequirementId,
       sortOrder: normalizedSortOrder,
+      courseReusePolicy: assignmentCourseReusePolicy,
       notes: assignmentNotes.trim() ? assignmentNotes.trim() : null,
     });
     setIsEditingAssignment(false);
@@ -141,6 +147,7 @@ export function ProgramRequirementModal({
 
   function cancelAssignmentEdit() {
     setAssignmentSortOrder(effectiveRequirement?.sortOrder ?? '');
+    setAssignmentCourseReusePolicy(effectiveRequirement?.courseReusePolicy ?? 'CONSUME_AVAILABLE');
     setAssignmentNotes(effectiveRequirement?.notes ?? '');
     setAssignmentValidationMessage(null);
     setIsEditingAssignment(false);
@@ -245,6 +252,33 @@ export function ProgramRequirementModal({
                 label="Sort Order"
                 value={displayValue(effectiveRequirement.sortOrder)}
                 span={{ base: 12, md: 3 }}
+              />
+            )}
+            {isEditingAssignment ? (
+              <EditableFieldHighlight span={{ base: 12, md: 4 }}>
+                <Select
+                  label="Credit Reuse"
+                  data={[
+                    { value: 'CONSUME_AVAILABLE', label: 'Consume available credits' },
+                    { value: 'ALLOW_REUSE', label: 'Allow reuse' },
+                  ]}
+                  value={assignmentCourseReusePolicy}
+                  onChange={(value) => {
+                    setAssignmentCourseReusePolicy(value ?? 'CONSUME_AVAILABLE');
+                  }}
+                  allowDeselect={false}
+                  disabled={isSaving}
+                />
+              </EditableFieldHighlight>
+            ) : (
+              <ReadOnlyField
+                label="Credit Reuse"
+                value={
+                  effectiveRequirement.courseReusePolicy === 'ALLOW_REUSE'
+                    ? 'Allow reuse'
+                    : 'Consume available credits'
+                }
+                span={{ base: 12, md: 4 }}
               />
             )}
             <ReadOnlyField label="Name" value={displayValue(effectiveRequirement.requirementName)} />

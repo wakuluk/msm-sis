@@ -2,9 +2,12 @@ package com.msm.sis.api.controller;
 
 import com.msm.sis.api.config.AuthenticatedJwt;
 import com.msm.sis.api.dto.program.AttachProgramVersionRequirementRequest;
+import com.msm.sis.api.dto.program.CreateProgramVersionCompletionRequirementRequest;
 import com.msm.sis.api.dto.program.CreateRequirementRequest;
+import com.msm.sis.api.dto.program.PatchProgramVersionCompletionRequirementRequest;
 import com.msm.sis.api.dto.program.PatchProgramVersionRequirementRequest;
 import com.msm.sis.api.dto.program.PatchRequirementRequest;
+import com.msm.sis.api.dto.program.ProgramVersionCompletionRequirementResponse;
 import com.msm.sis.api.dto.program.ProgramVersionRequirementResponse;
 import com.msm.sis.api.dto.program.RequirementDetailResponse;
 import com.msm.sis.api.dto.program.RequirementSearchCriteria;
@@ -32,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
-@Tag(name = "requirement", description = "Manage reusable program requirements")
+@Tag(name = "requirement", description = "Manage reusable completion requirements")
 public class RequirementController {
 
     private final RequirementService requirementService;
@@ -73,7 +76,7 @@ public class RequirementController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Create requirement",
-            description = "Creates a reusable program requirement."
+            description = "Creates a reusable completion requirement."
     )
     public ResponseEntity<RequirementSearchResultResponse> createRequirement(
             @AuthenticationPrincipal AuthenticatedJwt jwt,
@@ -87,7 +90,7 @@ public class RequirementController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Patch requirement",
-            description = "Updates a reusable program requirement."
+            description = "Updates a reusable completion requirement."
     )
     public ResponseEntity<RequirementSearchResultResponse> patchRequirement(
             @AuthenticationPrincipal AuthenticatedJwt jwt,
@@ -139,6 +142,51 @@ public class RequirementController {
             @PathVariable Long programVersionRequirementId
     ) {
         requirementService.removeProgramVersionRequirement(programVersionRequirementId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/program-versions/{programVersionId}/completion-requirements")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Create completion requirement for program version",
+            description = "Adds a program-level requirement, such as requiring another major or minor."
+    )
+    public ResponseEntity<ProgramVersionCompletionRequirementResponse> createProgramVersionCompletionRequirement(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @PathVariable Long programVersionId,
+            @Valid @NotNull @RequestBody CreateProgramVersionCompletionRequirementRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(requirementService.createProgramVersionCompletionRequirement(programVersionId, request));
+    }
+
+    @PatchMapping("/program-version-completion-requirements/{programVersionCompletionRequirementId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Patch completion requirement assignment",
+            description = "Updates program-level requirement details and optionally replaces its options."
+    )
+    public ResponseEntity<ProgramVersionCompletionRequirementResponse> patchProgramVersionCompletionRequirement(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @PathVariable Long programVersionCompletionRequirementId,
+            @Valid @NotNull @RequestBody PatchProgramVersionCompletionRequirementRequest request
+    ) {
+        return ResponseEntity.ok(
+                requirementService.patchProgramVersionCompletionRequirement(programVersionCompletionRequirementId, request)
+        );
+    }
+
+    @DeleteMapping("/program-version-completion-requirements/{programVersionCompletionRequirementId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Remove completion requirement assignment",
+            description = "Removes a program-level requirement from a program version."
+    )
+    public ResponseEntity<Void> removeProgramVersionCompletionRequirement(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @PathVariable Long programVersionCompletionRequirementId
+    ) {
+        requirementService.removeProgramVersionCompletionRequirement(programVersionCompletionRequirementId);
         return ResponseEntity.noContent().build();
     }
 }

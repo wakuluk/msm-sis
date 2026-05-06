@@ -14,6 +14,7 @@ import com.msm.sis.api.entity.Program;
 import com.msm.sis.api.entity.ProgramType;
 import com.msm.sis.api.entity.ProgramVersion;
 import com.msm.sis.api.entity.ProgramVersionRequirement;
+import com.msm.sis.api.entity.ProgramVersionCompletionRequirement;
 import com.msm.sis.api.entity.RequirementCourse;
 import com.msm.sis.api.entity.RequirementCourseRule;
 import com.msm.sis.api.mapper.ProgramMapper;
@@ -24,6 +25,7 @@ import com.msm.sis.api.repository.ProgramRepository;
 import com.msm.sis.api.repository.ProgramTypeRepository;
 import com.msm.sis.api.repository.ProgramVersionRepository;
 import com.msm.sis.api.repository.ProgramVersionRequirementRepository;
+import com.msm.sis.api.repository.ProgramVersionCompletionRequirementRepository;
 import com.msm.sis.api.repository.RequirementCourseRepository;
 import com.msm.sis.api.repository.RequirementCourseRuleRepository;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +58,7 @@ public class ProgramService {
     private final ProgramTypeRepository programTypeRepository;
     private final ProgramVersionRepository programVersionRepository;
     private final ProgramVersionRequirementRepository programVersionRequirementRepository;
+    private final ProgramVersionCompletionRequirementRepository programVersionCompletionRequirementRepository;
     private final RequirementCourseRepository requirementCourseRepository;
     private final RequirementCourseRuleRepository requirementCourseRuleRepository;
     private final ProgramMapper programMapper;
@@ -98,6 +101,8 @@ public class ProgramService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Program was not found."));
         List<ProgramVersion> versions = programVersionRepository.findVersionsForProgram(programId);
         Map<Long, List<ProgramVersionRequirement>> requirementsByVersionId = buildRequirementsByVersionId(versions);
+        Map<Long, List<ProgramVersionCompletionRequirement>> completionRequirementsByVersionId =
+                buildCompletionRequirementsByVersionId(versions);
         List<Long> requirementIds = collectRequirementIds(requirementsByVersionId);
         Map<Long, List<RequirementCourse>> requirementCoursesByRequirementId =
                 groupRequirementCoursesByRequirementId(findRequirementCourses(requirementIds));
@@ -108,6 +113,7 @@ public class ProgramService {
                 program,
                 versions,
                 requirementsByVersionId,
+                completionRequirementsByVersionId,
                 requirementCoursesByRequirementId,
                 requirementCourseRulesByRequirementId
         );
@@ -121,6 +127,28 @@ public class ProgramService {
             String sortBy,
             String sortDirection
     ) {
+        return searchPrograms(criteria, page, size, sortBy, sortDirection, false);
+    }
+
+    @Transactional(readOnly = true)
+    public ProgramSearchResponse searchPublishedPrograms(
+            ProgramSearchCriteria criteria,
+            int page,
+            int size,
+            String sortBy,
+            String sortDirection
+    ) {
+        return searchPrograms(criteria, page, size, sortBy, sortDirection, true);
+    }
+
+    private ProgramSearchResponse searchPrograms(
+            ProgramSearchCriteria criteria,
+            int page,
+            int size,
+            String sortBy,
+            String sortDirection,
+            boolean publishedOnly
+    ) {
         validatePageRequest(page, size, 100);
 
         ProgramSearchCriteria effectiveCriteria = criteria == null ? new ProgramSearchCriteria() : criteria;
@@ -129,6 +157,7 @@ public class ProgramService {
 
         List<ProgramSearchResultResponse> filteredResults = programs.stream()
                 .filter(program -> matchesProgramSearchCriteria(program, effectiveCriteria))
+                .filter(program -> !publishedOnly || currentVersionsByProgramId.containsKey(program.getId()))
                 .sorted(ProgramSearchSort.buildComparator(
                         sortBy == null ? effectiveCriteria.getSortBy() : sortBy,
                         sortDirection == null ? effectiveCriteria.getSortDirection() : sortDirection
@@ -196,6 +225,22 @@ public class ProgramService {
         ));
 
         return requirementsByVersionId;
+    }
+
+    private Map<Long, List<ProgramVersionCompletionRequirement>> buildCompletionRequirementsByVersionId(
+            List<ProgramVersion> versions
+    ) {
+        if (versions.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, List<ProgramVersionCompletionRequirement>> completionRequirementsByVersionId = new LinkedHashMap<>();
+        versions.forEach(programVersion -> completionRequirementsByVersionId.put(
+                programVersion.getId(),
+                programVersionCompletionRequirementRepository.findCompletionRequirementsForVersion(programVersion.getId())
+        ));
+
+        return completionRequirementsByVersionId;
     }
 
     private List<RequirementCourse> findRequirementCourses(List<Long> requirementIds) {

@@ -50,6 +50,9 @@ public class ProgramVersionRequirement {
     @Column(name = "required", nullable = false)
     private boolean required = true;
 
+    @Column(name = "course_reuse_policy", nullable = false, length = 40)
+    private String courseReusePolicy = "CONSUME_AVAILABLE";
+
     @Column(name = "notes")
     private String notes;
 

@@ -19,6 +19,26 @@ export function displayDate(value: string | null | undefined): string {
   }).format(parsedDate);
 }
 
+export function displayDateTime(value: string | null | undefined): string {
+  if (!value) {
+    return '—';
+  }
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(parsedDate);
+}
+
 export function formatDateForFormValue(value: Date): string {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, '0');

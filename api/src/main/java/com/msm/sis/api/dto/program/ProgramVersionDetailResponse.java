@@ -13,6 +13,7 @@ public record ProgramVersionDetailResponse(
         Integer classYearEnd,
         String notes,
         List<ProgramVersionRequirementResponse> requirements,
+        List<ProgramVersionCompletionRequirementResponse> completionRequirements,
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         LocalDateTime createdAt,
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

@@ -6,6 +6,8 @@ import com.msm.sis.api.dto.program.ProgramDetailResponse;
 import com.msm.sis.api.dto.program.ProgramSearchResponse;
 import com.msm.sis.api.dto.program.ProgramSearchResultResponse;
 import com.msm.sis.api.dto.program.ProgramVersionDetailResponse;
+import com.msm.sis.api.dto.program.ProgramVersionCompletionRequirementOptionResponse;
+import com.msm.sis.api.dto.program.ProgramVersionCompletionRequirementResponse;
 import com.msm.sis.api.dto.program.ProgramVersionRequirementResponse;
 import com.msm.sis.api.entity.AcademicDepartment;
 import com.msm.sis.api.entity.AcademicSchool;
@@ -13,6 +15,8 @@ import com.msm.sis.api.entity.DegreeType;
 import com.msm.sis.api.entity.Program;
 import com.msm.sis.api.entity.ProgramType;
 import com.msm.sis.api.entity.ProgramVersion;
+import com.msm.sis.api.entity.ProgramVersionCompletionRequirement;
+import com.msm.sis.api.entity.ProgramVersionCompletionRequirementOption;
 import com.msm.sis.api.entity.ProgramVersionRequirement;
 import com.msm.sis.api.entity.Requirement;
 import com.msm.sis.api.entity.RequirementCourse;
@@ -114,6 +118,7 @@ public class ProgramMapper {
             Program program,
             List<ProgramVersion> versions,
             Map<Long, List<ProgramVersionRequirement>> requirementsByVersionId,
+            Map<Long, List<ProgramVersionCompletionRequirement>> completionRequirementsByVersionId,
             Map<Long, List<RequirementCourse>> requirementCoursesByRequirementId,
             Map<Long, List<RequirementCourseRule>> requirementCourseRulesByRequirementId
     ) {
@@ -126,6 +131,7 @@ public class ProgramMapper {
                 .map(programVersion -> toProgramVersionDetailResponse(
                         programVersion,
                         requirementsByVersionId.getOrDefault(programVersion.getId(), List.of()),
+                        completionRequirementsByVersionId.getOrDefault(programVersion.getId(), List.of()),
                         requirementCoursesByRequirementId,
                         requirementCourseRulesByRequirementId
                 ))
@@ -157,6 +163,7 @@ public class ProgramMapper {
     private ProgramVersionDetailResponse toProgramVersionDetailResponse(
             ProgramVersion programVersion,
             List<ProgramVersionRequirement> programVersionRequirements,
+            List<ProgramVersionCompletionRequirement> completionRequirements,
             Map<Long, List<RequirementCourse>> requirementCoursesByRequirementId,
             Map<Long, List<RequirementCourseRule>> requirementCourseRulesByRequirementId
     ) {
@@ -173,6 +180,9 @@ public class ProgramMapper {
                                 requirementCoursesByRequirementId,
                                 requirementCourseRulesByRequirementId
                         ))
+                        .toList(),
+                completionRequirements.stream()
+                        .map(this::toProgramVersionCompletionRequirementResponse)
                         .toList(),
                 programVersion.getCreatedAt(),
                 programVersion.getUpdatedAt()
@@ -207,6 +217,45 @@ public class ProgramMapper {
                 requirementId == null
                         ? List.of()
                         : requirementCourseRulesByRequirementId.getOrDefault(requirementId, List.of())
+        );
+    }
+
+    public ProgramVersionCompletionRequirementResponse toProgramVersionCompletionRequirementResponse(
+            ProgramVersionCompletionRequirement completionRequirement
+    ) {
+        return new ProgramVersionCompletionRequirementResponse(
+                completionRequirement.getId(),
+                completionRequirement.getMinimumCount(),
+                completionRequirement.getSortOrder(),
+                completionRequirement.getNotes(),
+                completionRequirement.getOptions().stream()
+                        .map(this::toProgramVersionCompletionRequirementOptionResponse)
+                        .toList()
+        );
+    }
+
+    private ProgramVersionCompletionRequirementOptionResponse toProgramVersionCompletionRequirementOptionResponse(
+            ProgramVersionCompletionRequirementOption option
+    ) {
+        ProgramType requiredProgramType = option.getRequiredProgramType();
+        Program requiredProgram = option.getRequiredProgram();
+        ProgramVersion requiredProgramVersion = option.getRequiredProgramVersion();
+        Program requiredProgramVersionProgram = requiredProgramVersion == null
+                ? null
+                : requiredProgramVersion.getProgram();
+
+        return new ProgramVersionCompletionRequirementOptionResponse(
+                option.getId(),
+                requiredProgramType == null ? null : requiredProgramType.getId(),
+                requiredProgramType == null ? null : requiredProgramType.getCode(),
+                requiredProgramType == null ? null : requiredProgramType.getName(),
+                requiredProgram == null ? null : requiredProgram.getId(),
+                requiredProgram == null ? null : requiredProgram.getCode(),
+                requiredProgram == null ? null : requiredProgram.getName(),
+                requiredProgramVersion == null ? null : requiredProgramVersion.getId(),
+                requiredProgramVersion == null ? null : requiredProgramVersion.getVersionNumber(),
+                requiredProgramVersionProgram == null ? null : requiredProgramVersionProgram.getCode(),
+                requiredProgramVersionProgram == null ? null : requiredProgramVersionProgram.getName()
         );
     }
 }

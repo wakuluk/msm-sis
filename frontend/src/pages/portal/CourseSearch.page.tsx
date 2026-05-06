@@ -1,57 +1,28 @@
 import { useEffect, useState } from 'react';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import {
-  Alert,
-  Badge,
-  Button,
-  Checkbox,
-  Container,
-  Grid,
-  Group,
-  Paper,
-  Select,
-  Stack,
-  TextInput,
-  Title,
-} from '@mantine/core';
+import { Container, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { Link, useNavigate } from 'react-router-dom';
-import { SearchFormActions } from '@/components/search/SearchFormActions';
-import { SearchFormSection } from '@/components/search/SearchFormSection';
-import { SearchResultsPanel } from '@/components/search/SearchResultsPanel';
+import { useNavigate } from 'react-router-dom';
+import {
+  CourseSearchFormPanel,
+  type CourseSearchFilters,
+} from '@/components/course/CourseSearchFormPanel';
+import {
+  CourseSearchResultsPanel,
+  type CourseSearchResultsState,
+  type CourseSearchResultsView,
+} from '@/components/course/CourseSearchResultsPanel';
 import type { StringOption } from '@/components/search/SearchQueryControls';
 import { searchCourses } from '@/services/course-service';
 import { CourseCreateModal } from '@/components/course/CourseCreateModal';
 import { useCourseCreateReferenceOptions } from '@/components/course/useCourseCreateReferenceOptions';
 import type {
-  CourseSearchResponse,
-  CourseSearchResultResponse,
   CourseSearchSortBy,
   CourseSearchSortDirection,
 } from '@/services/schemas/course-schemas';
 import { getErrorMessage } from '@/utils/errors';
 import { parseOptionalId } from '@/utils/form-values';
 
-type CourseSearchFilters = {
-  schoolId: string;
-  departmentId: string;
-  subjectId: string;
-  courseNumber: string;
-  courseCode: string;
-  title: string;
-  currentVersionOnly: boolean;
-  includeInactive: boolean;
-};
-
-type CourseSearchResultsState =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'empty'; response: CourseSearchResponse }
-  | { status: 'success'; response: CourseSearchResponse };
-
 type CourseSearchSize = '25' | '50' | '100';
-type CourseSearchResultsView = 'standard' | 'system';
 
 const initialCourseSearchFilters: CourseSearchFilters = {
   schoolId: '',
@@ -64,11 +35,6 @@ const initialCourseSearchFilters: CourseSearchFilters = {
   includeInactive: false,
 };
 
-const emptyCourseSearchResults: CourseSearchResultResponse[] = [];
-const resultsViewOptions = [
-  { value: 'standard', label: 'Standard' },
-  { value: 'system', label: 'System' },
-] satisfies ReadonlyArray<{ label: string; value: CourseSearchResultsView }>;
 const sizeOptions = [
   { value: '25', label: '25' },
   { value: '50', label: '50' },
@@ -87,119 +53,6 @@ const sortDirectionOptions = [
   { value: 'asc', label: 'Ascending' },
   { value: 'desc', label: 'Descending' },
 ] satisfies ReadonlyArray<StringOption<CourseSearchSortDirection>>;
-
-const courseSearchColumns: ColumnDef<CourseSearchResultResponse>[] = [
-  {
-    accessorKey: 'schoolName',
-    header: 'School',
-    size: 220,
-    cell: ({ row }) =>
-      row.original.schoolId === null ? (
-        '—'
-      ) : (
-        <Link to={`/academics/schools/${row.original.schoolId}`}>{row.original.schoolName ?? '—'}</Link>
-      ),
-    meta: { sortBy: 'schoolName' satisfies CourseSearchSortBy },
-  },
-  {
-    accessorKey: 'departmentName',
-    header: 'Department',
-    size: 220,
-    cell: ({ row }) =>
-      row.original.departmentId === null ? (
-        '—'
-      ) : (
-        <Link
-          to={`/academics/departments/${row.original.departmentId}`}
-          state={{
-            source: 'search',
-            schoolId: row.original.schoolId,
-          }}
-        >
-          {row.original.departmentName ?? '—'}
-        </Link>
-      ),
-    meta: { sortBy: 'departmentName' satisfies CourseSearchSortBy },
-  },
-  {
-    accessorKey: 'subjectCode',
-    header: 'Subject',
-    size: 140,
-    cell: ({ row }) => row.original.subjectCode ?? '—',
-    meta: { sortBy: 'subjectCode' satisfies CourseSearchSortBy },
-  },
-  {
-    accessorKey: 'courseNumber',
-    header: 'Course Number',
-    size: 160,
-    cell: ({ row }) => row.original.courseNumber ?? '—',
-    meta: { sortBy: 'courseNumber' satisfies CourseSearchSortBy },
-  },
-  {
-    accessorKey: 'courseCode',
-    header: 'Course Code',
-    size: 180,
-    cell: ({ row }) =>
-      row.original.courseId ? (
-        <Link to={`/academics/courses/${row.original.courseId}`} state={{ source: 'search' }}>
-          {row.original.courseCode ?? '—'}
-        </Link>
-      ) : (
-        '—'
-    ),
-    meta: { sortBy: 'courseCode' satisfies CourseSearchSortBy },
-  },
-  {
-    accessorKey: 'lab',
-    header: 'Type',
-    size: 100,
-    cell: ({ row }) =>
-      row.original.lab ? (
-        <Badge size="sm" variant="light" color="indigo">
-          Lab
-        </Badge>
-      ) : (
-        '—'
-      ),
-  },
-  {
-    accessorKey: 'currentVersionTitle',
-    header: 'Title',
-    size: 320,
-    cell: ({ row }) => row.original.currentVersionTitle ?? '—',
-    meta: { sortBy: 'title' satisfies CourseSearchSortBy },
-  },
-  {
-    accessorKey: 'active',
-    header: 'Active',
-    size: 100,
-    cell: ({ row }) => (row.original.active ? 'Yes' : 'No'),
-    meta: { sortBy: 'active' satisfies CourseSearchSortBy },
-  },
-];
-
-function getResultsSummary(state: CourseSearchResultsState): string {
-  if (state.status === 'loading') {
-    return 'Loading course search results...';
-  }
-
-  if (state.status === 'error') {
-    return 'Course search failed.';
-  }
-
-  if (state.status === 'success' || state.status === 'empty') {
-    if (state.response.totalElements === 0 || state.response.results.length === 0) {
-      return 'No courses matched the current search criteria.';
-    }
-
-    const start = state.response.page * state.response.size + 1;
-    const end = state.response.page * state.response.size + state.response.results.length;
-
-    return `Showing ${start}-${end} of ${state.response.totalElements} courses`;
-  }
-
-  return 'Course search is ready.';
-}
 
 export function CourseSearchPage() {
   const navigate = useNavigate();
@@ -225,23 +78,6 @@ export function CourseSearchPage() {
     referenceOptionsError,
     referenceOptionsLoading,
   } = courseCreateReferenceOptions;
-
-  const tableData =
-    resultsState.status === 'success' || resultsState.status === 'empty'
-      ? resultsState.response.results
-      : emptyCourseSearchResults;
-
-  const courseSearchTable = useReactTable({
-    columns: courseSearchColumns,
-    data: tableData,
-    getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => String(row.courseId),
-    state: {
-      columnVisibility: {
-        active: resultsView === 'system',
-      },
-    },
-  });
 
   useEffect(() => {
     if (!hasSearched) {
@@ -325,215 +161,65 @@ export function CourseSearchPage() {
   return (
     <Container size="xl" py="xl">
       <Stack gap="lg">
-        <Paper withBorder radius="md" p="lg">
-          <Stack gap="lg">
-            <Group justify="space-between" align="center" gap="md">
-              <Title order={1}>Course Search</Title>
-              <Button
-                type="button"
-                onClick={() => {
-                  setIsCreateCourseModalOpen(true);
-                }}
-              >
-                Create Course
-              </Button>
-            </Group>
-            <form
-              onSubmit={form.onSubmit((values) => {
-                setSubmittedFilters({ ...values });
-                setHasSearched(true);
-                setPage(0);
-              })}
-            >
-              <Stack gap="lg">
-                <SearchFormSection legend="Course Filters">
-                  <Grid.Col span={{ base: 12, md: 4 }}>
-                    <Select
-                      clearable
-                      searchable
-                      label="School"
-                      placeholder="All schools"
-                      data={schoolOptions}
-                      value={form.values.schoolId || null}
-                      loading={referenceOptionsLoading}
-                      error={referenceOptionsError ?? undefined}
-                      onChange={(value) => {
-                        form.setFieldValue('schoolId', value ?? '');
-
-                        if (
-                          value &&
-                          form.values.departmentId &&
-                          !departmentOptions.some(
-                            (option) =>
-                              option.value === form.values.departmentId &&
-                              option.schoolId === Number(value)
-                          )
-                        ) {
-                          form.setFieldValue('departmentId', '');
-                          form.setFieldValue('subjectId', '');
-                          return;
-                        }
-
-                        if (!value) {
-                          form.setFieldValue('departmentId', '');
-                          form.setFieldValue('subjectId', '');
-                        }
-                      }}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 4 }}>
-                    <Select
-                      clearable
-                      searchable
-                      label="Department"
-                      placeholder="All departments"
-                      data={visibleDepartmentOptions.map(({ label, value }) => ({ label, value }))}
-                      value={form.values.departmentId || null}
-                      loading={referenceOptionsLoading}
-                      error={referenceOptionsError ?? undefined}
-                      onChange={(value) => {
-                        form.setFieldValue('departmentId', value ?? '');
-
-                        if (
-                          value &&
-                          form.values.subjectId &&
-                          !subjectOptions.some(
-                            (option) =>
-                              option.value === form.values.subjectId &&
-                              option.departmentId === Number(value)
-                          )
-                        ) {
-                          form.setFieldValue('subjectId', '');
-                          return;
-                        }
-
-                        if (!value) {
-                          form.setFieldValue('subjectId', '');
-                        }
-                      }}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 4 }}>
-                    <Select
-                      clearable
-                      searchable
-                      label="Subject"
-                      placeholder="All subjects"
-                      data={visibleSubjectOptions.map(({ label, value }) => ({ label, value }))}
-                      value={form.values.subjectId || null}
-                      loading={referenceOptionsLoading}
-                      error={referenceOptionsError ?? undefined}
-                      onChange={(value) => {
-                        form.setFieldValue('subjectId', value ?? '');
-                      }}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 4 }}>
-                    <TextInput label="Course Number" {...form.getInputProps('courseNumber')} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 4 }}>
-                    <TextInput label="Course Code" {...form.getInputProps('courseCode')} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 4 }}>
-                    <TextInput label="Title" {...form.getInputProps('title')} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 6 }}>
-                    <Checkbox
-                      label="Current version only"
-                      checked={form.values.currentVersionOnly}
-                      onChange={(event) => {
-                        form.setFieldValue('currentVersionOnly', event.currentTarget.checked);
-                      }}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 6 }}>
-                    <Checkbox
-                      label="Include inactive"
-                      checked={form.values.includeInactive}
-                      onChange={(event) => {
-                        form.setFieldValue('includeInactive', event.currentTarget.checked);
-                      }}
-                    />
-                  </Grid.Col>
-                </SearchFormSection>
-
-                {referenceOptionsError ? (
-                  <Alert color="red" title="Unable to load course search filters">
-                    {referenceOptionsError}
-                  </Alert>
-                ) : null}
-
-                <SearchFormActions
-                  size={size}
-                  sortBy={sortBy}
-                  sortDirection={sortDirection}
-                  sizeOptions={sizeOptions}
-                  sortByOptions={sortByOptions}
-                  sortDirectionOptions={sortDirectionOptions}
-                  onSizeChange={(value) => {
-                    if (!value) {
-                      return;
-                    }
-
-                    setSize(value as CourseSearchSize);
-                    setPage(0);
-                  }}
-                  onSortByChange={(value) => {
-                    if (!value) {
-                      return;
-                    }
-
-                    setSortBy(value as CourseSearchSortBy);
-                    setPage(0);
-                  }}
-                  onSortDirectionChange={(value) => {
-                    if (!value) {
-                      return;
-                    }
-
-                    setSortDirection(value as CourseSearchSortDirection);
-                    setPage(0);
-                  }}
-                  clearLabel="Clear"
-                  submitLabel="Search Courses"
-                  isSubmitting={resultsState.status === 'loading'}
-                  onClear={handleClear}
-                />
-              </Stack>
-            </form>
-          </Stack>
-        </Paper>
-
-        <SearchResultsPanel
-          status={resultsState.status}
-          summary={getResultsSummary(resultsState)}
-          table={courseSearchTable}
+        <CourseSearchFormPanel
+          form={form}
+          schoolOptions={schoolOptions}
+          departmentOptions={departmentOptions}
+          subjectOptions={subjectOptions}
+          visibleDepartmentOptions={visibleDepartmentOptions}
+          visibleSubjectOptions={visibleSubjectOptions}
+          referenceOptionsLoading={referenceOptionsLoading}
+          referenceOptionsError={referenceOptionsError}
+          size={size}
           sortBy={sortBy}
           sortDirection={sortDirection}
-          onToggleSort={handleToggleSort}
-          viewOptions={resultsViewOptions}
-          view={resultsView}
-          onViewChange={setResultsView}
-          withBorder
-          notice={{
-            idleTitle: 'Course search is ready',
-            idleMessage:
-              'Search for courses using school, department, subject, course number, course code, or title.',
-            loadingMessage: 'Loading course search results...',
-            errorTitle: 'Unable to load course search results',
-            errorMessage: resultsState.status === 'error' ? resultsState.message : null,
-            emptyTitle: 'No course search results found',
-            emptyMessage: 'Try adjusting the current search filters.',
+          sizeOptions={sizeOptions}
+          sortByOptions={sortByOptions}
+          sortDirectionOptions={sortDirectionOptions}
+          isSubmitting={resultsState.status === 'loading'}
+          onSubmit={(values) => {
+            setSubmittedFilters({ ...values });
+            setHasSearched(true);
+            setPage(0);
           }}
-          pagination={
-            resultsState.status === 'success'
-              ? {
-                  page: resultsState.response.page,
-                  totalPages: Math.max(resultsState.response.totalPages, 1),
-                  onPageChange: setPage,
-                }
-              : null
-          }
+          onClear={handleClear}
+          onCreateCourse={() => {
+            setIsCreateCourseModalOpen(true);
+          }}
+          onSizeChange={(value) => {
+            if (!value) {
+              return;
+            }
+
+            setSize(value as CourseSearchSize);
+            setPage(0);
+          }}
+          onSortByChange={(value) => {
+            if (!value) {
+              return;
+            }
+
+            setSortBy(value as CourseSearchSortBy);
+            setPage(0);
+          }}
+          onSortDirectionChange={(value) => {
+            if (!value) {
+              return;
+            }
+
+            setSortDirection(value as CourseSearchSortDirection);
+            setPage(0);
+          }}
+        />
+
+        <CourseSearchResultsPanel
+          resultsState={resultsState}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          resultsView={resultsView}
+          onToggleSort={handleToggleSort}
+          onViewChange={setResultsView}
+          onPageChange={setPage}
         />
         <CourseCreateModal
           {...courseCreateReferenceOptions}

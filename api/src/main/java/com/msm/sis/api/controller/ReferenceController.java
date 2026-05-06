@@ -57,7 +57,7 @@ public class ReferenceController {
     }
 
     @GetMapping("/program-options")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
     @Operation(
             summary = "Get program reference options",
             description = "Returns active program types, degree types, schools, and departments used by program workflows."

@@ -27,7 +27,7 @@ public class RequirementComponentService {
     private final RequirementCourseRepository requirementCourseRepository;
     private final RequirementCourseRuleRepository requirementCourseRuleRepository;
     private final RequirementMapper requirementMapper;
-    private final RequirementValidationService requirementValidationService;
+    private final RequirementShapeValidationService requirementShapeValidationService;
 
     public void replaceRequirementCourses(
             Requirement requirement,
@@ -81,7 +81,7 @@ public class RequirementComponentService {
             Requirement requirement,
             UpsertRequirementCourseRuleRequest request
     ) {
-        requirementValidationService.validateRequirementCourseRuleRange(
+        requirementShapeValidationService.validateRequirementCourseRuleRange(
                 request.minimumCourseNumber(),
                 request.maximumCourseNumber()
         );

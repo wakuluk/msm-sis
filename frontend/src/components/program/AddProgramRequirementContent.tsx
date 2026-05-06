@@ -44,6 +44,7 @@ export function AddProgramRequirementContent({
   onAttach: (request: {
     requirementId: number;
     sortOrder: number | null;
+    courseReusePolicy: string | null;
     notes: string | null;
   }) => Promise<void>;
   onClose: () => void;
@@ -57,6 +58,7 @@ export function AddProgramRequirementContent({
   const [selectedRequirement, setSelectedRequirement] =
     useState<RequirementSearchResultResponse | null>(null);
   const [sortOrder, setSortOrder] = useState<number | string>('');
+  const [courseReusePolicy, setCourseReusePolicy] = useState('CONSUME_AVAILABLE');
   const [notes, setNotes] = useState('');
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const isSaving = attachState.status === 'saving';
@@ -72,6 +74,7 @@ export function AddProgramRequirementContent({
     setRequirementType(null);
     setSelectedRequirement(null);
     setSortOrder(nextSortOrder);
+    setCourseReusePolicy('CONSUME_AVAILABLE');
     setNotes('');
     setValidationMessage(null);
     setSearchState({ status: 'loading' });
@@ -151,6 +154,7 @@ export function AddProgramRequirementContent({
     await onAttach({
       requirementId: selectedRequirement.requirementId,
       sortOrder: normalizedSortOrder,
+      courseReusePolicy,
       notes: notes.trim() ? notes.trim() : null,
     });
   }
@@ -314,7 +318,22 @@ export function AddProgramRequirementContent({
             disabled={isSaving}
           />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 9 }}>
+        <Grid.Col span={{ base: 12, md: 4 }}>
+          <Select
+            label="Credit Reuse"
+            data={[
+              { value: 'CONSUME_AVAILABLE', label: 'Consume available credits' },
+              { value: 'ALLOW_REUSE', label: 'Allow reuse' },
+            ]}
+            value={courseReusePolicy}
+            onChange={(value) => {
+              setCourseReusePolicy(value ?? 'CONSUME_AVAILABLE');
+            }}
+            allowDeselect={false}
+            disabled={isSaving}
+          />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 5 }}>
           <Textarea
             label="Version Notes"
             placeholder="Optional notes for this version assignment"

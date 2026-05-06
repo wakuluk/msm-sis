@@ -1,19 +1,36 @@
 package com.msm.sis.api.service.program;
 
 import com.msm.sis.api.dto.program.AttachProgramVersionRequirementRequest;
+import com.msm.sis.api.dto.program.CreateProgramVersionCompletionRequirementOptionRequest;
+import com.msm.sis.api.dto.program.CreateProgramVersionCompletionRequirementRequest;
 import com.msm.sis.api.dto.program.CreateRequirementRequest;
 import com.msm.sis.api.dto.program.PatchProgramVersionRequirementRequest;
+import com.msm.sis.api.dto.program.PatchProgramVersionCompletionRequirementOptionRequest;
+import com.msm.sis.api.dto.program.PatchProgramVersionCompletionRequirementRequest;
 import com.msm.sis.api.dto.program.PatchRequirementRequest;
+import com.msm.sis.api.dto.program.ProgramVersionCompletionRequirementResponse;
 import com.msm.sis.api.dto.program.ProgramVersionRequirementResponse;
 import com.msm.sis.api.dto.program.RequirementDetailResponse;
 import com.msm.sis.api.dto.program.RequirementSearchCriteria;
 import com.msm.sis.api.dto.program.RequirementSearchResponse;
 import com.msm.sis.api.dto.program.RequirementSearchResultResponse;
+import com.msm.sis.api.dto.program.UpsertRequirementCourseRequest;
+import com.msm.sis.api.dto.program.UpsertRequirementCourseRuleRequest;
 import com.msm.sis.api.entity.ProgramVersion;
+import com.msm.sis.api.entity.Program;
+import com.msm.sis.api.entity.ProgramType;
+import com.msm.sis.api.entity.ProgramVersionCompletionRequirement;
+import com.msm.sis.api.entity.ProgramVersionCompletionRequirementOption;
 import com.msm.sis.api.entity.ProgramVersionRequirement;
 import com.msm.sis.api.entity.Requirement;
+import com.msm.sis.api.entity.RequirementCourse;
+import com.msm.sis.api.entity.RequirementCourseRule;
+import com.msm.sis.api.mapper.ProgramMapper;
 import com.msm.sis.api.mapper.RequirementMapper;
+import com.msm.sis.api.repository.ProgramRepository;
+import com.msm.sis.api.repository.ProgramTypeRepository;
 import com.msm.sis.api.repository.ProgramVersionRepository;
+import com.msm.sis.api.repository.ProgramVersionCompletionRequirementRepository;
 import com.msm.sis.api.repository.ProgramVersionRequirementRepository;
 import com.msm.sis.api.repository.RequirementCourseRepository;
 import com.msm.sis.api.repository.RequirementCourseRuleRepository;
@@ -25,8 +42,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.msm.sis.api.util.TextUtils.containsIgnoreCase;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
@@ -43,11 +62,16 @@ public class RequirementService {
 
     private final RequirementComponentService requirementComponentService;
     private final RequirementMapper requirementMapper;
+    private final ProgramMapper programMapper;
+    private final ProgramRepository programRepository;
+    private final ProgramTypeRepository programTypeRepository;
     private final ProgramVersionRepository programVersionRepository;
+    private final ProgramVersionCompletionRequirementRepository programVersionCompletionRequirementRepository;
     private final ProgramVersionRequirementRepository programVersionRequirementRepository;
     private final RequirementRepository requirementRepository;
     private final RequirementCourseRepository requirementCourseRepository;
     private final RequirementCourseRuleRepository requirementCourseRuleRepository;
+    private final RequirementShapeValidationService requirementShapeValidationService;
     private final RequirementValidationService requirementValidationService;
 
     @Transactional(readOnly = true)
@@ -95,6 +119,15 @@ public class RequirementService {
     @Transactional
     public RequirementSearchResultResponse createRequirement(CreateRequirementRequest request) {
         requirementValidationService.validateCreateRequirementRequest(request);
+        requirementShapeValidationService.validateRequirementShape(
+                request.requirementType(),
+                request.minimumCredits(),
+                request.minimumCourses(),
+                request.courseMatchMode(),
+                request.minimumGrade(),
+                request.requirementCourses(),
+                request.requirementCourseRules()
+        );
         String code = request.code().trim();
         requirementValidationService.validateRequirementCodeAvailable(code);
 
@@ -123,14 +156,14 @@ public class RequirementService {
         Requirement requirement = findRequirement(requirementId);
         applyRequirementPatch(requirement, request);
         normalizeRequirementFieldsForType(requirement);
-        requirementValidationService.validateRequirementShape(
+        requirementShapeValidationService.validateRequirementShape(
                 requirement.getRequirementType(),
                 requirement.getMinimumCredits(),
                 requirement.getMinimumCourses(),
                 requirement.getCourseMatchMode(),
-                request.requirementCourses(),
-                request.requirementCourseRules(),
-                false
+                requirement.getMinimumGrade(),
+                effectiveRequirementCourses(requirement, request),
+                effectiveRequirementCourseRules(requirement, request)
         );
 
         Requirement savedRequirement = requirementRepository.save(requirement);
@@ -164,6 +197,9 @@ public class RequirementService {
         assignment.setRequirement(requirement);
         assignment.setSortOrder(request.sortOrder() == null ? 0 : request.sortOrder());
         assignment.setRequired(true);
+        assignment.setCourseReusePolicy(request.courseReusePolicy() == null
+                ? "CONSUME_AVAILABLE"
+                : request.courseReusePolicy());
         assignment.setNotes(trimToNull(request.notes()));
 
         return mapProgramVersionRequirementResponse(programVersionRequirementRepository.save(assignment));
@@ -190,6 +226,10 @@ public class RequirementService {
             assignment.setNotes(trimToNull(request.notes()));
         }
 
+        if (request.courseReusePolicy() != null) {
+            assignment.setCourseReusePolicy(request.courseReusePolicy());
+        }
+
         return mapProgramVersionRequirementResponse(programVersionRequirementRepository.save(assignment));
     }
 
@@ -202,6 +242,71 @@ public class RequirementService {
                 ));
 
         programVersionRequirementRepository.delete(assignment);
+    }
+
+    @Transactional
+    public ProgramVersionCompletionRequirementResponse createProgramVersionCompletionRequirement(
+            Long programVersionId,
+            CreateProgramVersionCompletionRequirementRequest request
+    ) {
+        requireRequestBody(request);
+        validateCompletionRequirementOptions(request.options());
+
+        ProgramVersion programVersion = programVersionRepository.findById(programVersionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Program version was not found."));
+
+        ProgramVersionCompletionRequirement completionRequirement = new ProgramVersionCompletionRequirement();
+        completionRequirement.setProgramVersion(programVersion);
+        completionRequirement.setMinimumCount(request.minimumCount() == null ? 1 : request.minimumCount());
+        completionRequirement.setSortOrder(request.sortOrder() == null ? 0 : request.sortOrder());
+        completionRequirement.setNotes(trimToNull(request.notes()));
+        request.options().forEach(optionRequest ->
+                completionRequirement.getOptions().add(toCompletionRequirementOption(completionRequirement, optionRequest))
+        );
+
+        return mapProgramVersionCompletionRequirementResponse(
+                programVersionCompletionRequirementRepository.save(completionRequirement)
+        );
+    }
+
+    @Transactional
+    public ProgramVersionCompletionRequirementResponse patchProgramVersionCompletionRequirement(
+            Long programVersionCompletionRequirementId,
+            PatchProgramVersionCompletionRequirementRequest request
+    ) {
+        requireRequestBody(request);
+
+        ProgramVersionCompletionRequirement completionRequirement = findCompletionRequirement(programVersionCompletionRequirementId);
+
+        if (request.minimumCount() != null) {
+            completionRequirement.setMinimumCount(request.minimumCount());
+        }
+
+        if (request.sortOrder() != null) {
+            completionRequirement.setSortOrder(request.sortOrder());
+        }
+
+        if (request.notes() != null) {
+            completionRequirement.setNotes(trimToNull(request.notes()));
+        }
+
+        if (request.options() != null) {
+            validatePatchCompletionRequirementOptions(request.options());
+            completionRequirement.getOptions().clear();
+            request.options().forEach(optionRequest ->
+                    completionRequirement.getOptions().add(toCompletionRequirementOption(completionRequirement, optionRequest))
+            );
+        }
+
+        return mapProgramVersionCompletionRequirementResponse(
+                programVersionCompletionRequirementRepository.save(completionRequirement)
+        );
+    }
+
+    @Transactional
+    public void removeProgramVersionCompletionRequirement(Long programVersionCompletionRequirementId) {
+        ProgramVersionCompletionRequirement completionRequirement = findCompletionRequirement(programVersionCompletionRequirementId);
+        programVersionCompletionRequirementRepository.delete(completionRequirement);
     }
 
     private void applyRequirementPatch(Requirement requirement, PatchRequirementRequest request) {
@@ -271,6 +376,54 @@ public class RequirementService {
         }
     }
 
+    private List<UpsertRequirementCourseRequest> effectiveRequirementCourses(
+            Requirement requirement,
+            PatchRequirementRequest request
+    ) {
+        if (request.requirementCourses() != null) {
+            return request.requirementCourses();
+        }
+
+        return requirementCourseRepository.findCoursesForRequirements(List.of(requirement.getId()))
+                .stream()
+                .map(this::toUpsertRequirementCourseRequest)
+                .toList();
+    }
+
+    private List<UpsertRequirementCourseRuleRequest> effectiveRequirementCourseRules(
+            Requirement requirement,
+            PatchRequirementRequest request
+    ) {
+        if (request.requirementCourseRules() != null) {
+            return request.requirementCourseRules();
+        }
+
+        return requirementCourseRuleRepository.findRulesForRequirements(List.of(requirement.getId()))
+                .stream()
+                .map(this::toUpsertRequirementCourseRuleRequest)
+                .toList();
+    }
+
+    private UpsertRequirementCourseRequest toUpsertRequirementCourseRequest(RequirementCourse requirementCourse) {
+        return new UpsertRequirementCourseRequest(
+                requirementCourse.getCourse() == null ? null : requirementCourse.getCourse().getId(),
+                requirementCourse.getMinimumGrade()
+        );
+    }
+
+    private UpsertRequirementCourseRuleRequest toUpsertRequirementCourseRuleRequest(
+            RequirementCourseRule requirementCourseRule
+    ) {
+        return new UpsertRequirementCourseRuleRequest(
+                requirementCourseRule.getDepartment() == null ? null : requirementCourseRule.getDepartment().getId(),
+                requirementCourseRule.getMinimumCourseNumber(),
+                requirementCourseRule.getMaximumCourseNumber(),
+                requirementCourseRule.getMinimumCredits(),
+                requirementCourseRule.getMinimumCourses(),
+                requirementCourseRule.getMinimumGrade()
+        );
+    }
+
     private ProgramVersionRequirementResponse mapProgramVersionRequirementResponse(
             ProgramVersionRequirement assignment
     ) {
@@ -285,6 +438,169 @@ public class RequirementService {
                 requirementCourseRepository.findCoursesForRequirements(List.of(requirementId)),
                 requirementCourseRuleRepository.findRulesForRequirements(List.of(requirementId))
         );
+    }
+
+    private ProgramVersionCompletionRequirementResponse mapProgramVersionCompletionRequirementResponse(
+            ProgramVersionCompletionRequirement completionRequirement
+    ) {
+        return programMapper.toProgramVersionCompletionRequirementResponse(completionRequirement);
+    }
+
+    private ProgramVersionCompletionRequirement findCompletionRequirement(Long programVersionCompletionRequirementId) {
+        requirePositiveId(programVersionCompletionRequirementId, "Program version completion requirement id");
+
+        return programVersionCompletionRequirementRepository.findCompletionRequirementById(programVersionCompletionRequirementId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Program version completion requirement was not found."
+                ));
+    }
+
+    private void validateCompletionRequirementOptions(
+            List<CreateProgramVersionCompletionRequirementOptionRequest> options
+    ) {
+        if (options == null || options.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Completion requirements need at least one option."
+            );
+        }
+
+        Set<String> optionKeys = new HashSet<>();
+        for (CreateProgramVersionCompletionRequirementOptionRequest option : options) {
+            validateCompletionRequirementOptionTarget(
+                    option.requiredProgramTypeId(),
+                    option.requiredProgramId(),
+                    option.requiredProgramVersionId(),
+                    optionKeys
+            );
+        }
+    }
+
+    private void validatePatchCompletionRequirementOptions(
+            List<PatchProgramVersionCompletionRequirementOptionRequest> options
+    ) {
+        if (options.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Completion requirements need at least one option."
+            );
+        }
+
+        Set<String> optionKeys = new HashSet<>();
+        for (PatchProgramVersionCompletionRequirementOptionRequest option : options) {
+            validateCompletionRequirementOptionTarget(
+                    option.requiredProgramTypeId(),
+                    option.requiredProgramId(),
+                    option.requiredProgramVersionId(),
+                    optionKeys
+            );
+        }
+    }
+
+    private void validateCompletionRequirementOptionTarget(
+            Long requiredProgramTypeId,
+            Long requiredProgramId,
+            Long requiredProgramVersionId,
+            Set<String> optionKeys
+    ) {
+        int targetCount = (requiredProgramTypeId == null ? 0 : 1)
+                + (requiredProgramId == null ? 0 : 1)
+                + (requiredProgramVersionId == null ? 0 : 1);
+
+        if (targetCount != 1) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Each completion requirement option must target exactly one program type, program, or program version."
+            );
+        }
+
+        String optionKey = requiredProgramTypeId != null
+                ? "type:" + requiredProgramTypeId
+                : requiredProgramId != null
+                ? "program:" + requiredProgramId
+                : "version:" + requiredProgramVersionId;
+        if (!optionKeys.add(optionKey)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Completion requirement options cannot include duplicates."
+            );
+        }
+    }
+
+    private ProgramVersionCompletionRequirementOption toCompletionRequirementOption(
+            ProgramVersionCompletionRequirement completionRequirement,
+            CreateProgramVersionCompletionRequirementOptionRequest request
+    ) {
+        ProgramVersionCompletionRequirementOption option = new ProgramVersionCompletionRequirementOption();
+        option.setCompletionRequirement(completionRequirement);
+        option.setRequiredProgramType(resolveProgramType(request.requiredProgramTypeId()));
+        option.setRequiredProgram(resolveRequiredProgram(completionRequirement, request.requiredProgramId()));
+        option.setRequiredProgramVersion(resolveRequiredProgramVersion(completionRequirement, request.requiredProgramVersionId()));
+        return option;
+    }
+
+    private ProgramVersionCompletionRequirementOption toCompletionRequirementOption(
+            ProgramVersionCompletionRequirement completionRequirement,
+            PatchProgramVersionCompletionRequirementOptionRequest request
+    ) {
+        ProgramVersionCompletionRequirementOption option = new ProgramVersionCompletionRequirementOption();
+        option.setCompletionRequirement(completionRequirement);
+        option.setRequiredProgramType(resolveProgramType(request.requiredProgramTypeId()));
+        option.setRequiredProgram(resolveRequiredProgram(completionRequirement, request.requiredProgramId()));
+        option.setRequiredProgramVersion(resolveRequiredProgramVersion(completionRequirement, request.requiredProgramVersionId()));
+        return option;
+    }
+
+    private ProgramType resolveProgramType(Long programTypeId) {
+        if (programTypeId == null) {
+            return null;
+        }
+
+        return programTypeRepository.findById(programTypeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Program type id is invalid."));
+    }
+
+    private Program resolveRequiredProgram(
+            ProgramVersionCompletionRequirement completionRequirement,
+            Long programId
+    ) {
+        if (programId == null) {
+            return null;
+        }
+
+        Program program = programRepository.findById(programId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Program id is invalid."));
+        Program currentProgram = completionRequirement.getProgramVersion() == null
+                ? null
+                : completionRequirement.getProgramVersion().getProgram();
+        if (currentProgram != null && Objects.equals(currentProgram.getId(), program.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A program cannot require itself."
+            );
+        }
+        return program;
+    }
+
+    private ProgramVersion resolveRequiredProgramVersion(
+            ProgramVersionCompletionRequirement completionRequirement,
+            Long programVersionId
+    ) {
+        if (programVersionId == null) {
+            return null;
+        }
+
+        ProgramVersion programVersion = programVersionRepository.findById(programVersionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Program version id is invalid."));
+        if (completionRequirement.getProgramVersion() != null
+                && Objects.equals(completionRequirement.getProgramVersion().getId(), programVersion.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A program version cannot require itself."
+            );
+        }
+        return programVersion;
     }
 
     private RequirementSearchResultResponse mapRequirementSearchResultResponse(Requirement requirement) {

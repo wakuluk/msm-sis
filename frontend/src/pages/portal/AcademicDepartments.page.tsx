@@ -1,64 +1,16 @@
 import { useEffect, useState } from 'react';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Container, Paper, Stack, Text, Title } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
-import { SearchResultsPanel } from '@/components/search/SearchResultsPanel';
+import {
+  AcademicDepartmentsResultsPanel,
+  type AcademicDepartmentsPageState,
+} from '@/components/academic-department/AcademicDepartmentsResultsPanel';
 import { searchAcademicDepartments } from '@/services/academic-department-service';
 import type {
-  AcademicDepartmentResponse,
   AcademicDepartmentSortBy,
   AcademicDepartmentSortDirection,
-  AcademicDepartmentsResponse,
 } from '@/services/schemas/academic-department-schemas';
 import { getErrorMessage } from '@/utils/errors';
-
-type AcademicDepartmentsPageState =
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'empty'; departments: AcademicDepartmentsResponse }
-  | { status: 'success'; departments: AcademicDepartmentsResponse };
-
-const emptyAcademicDepartments: AcademicDepartmentsResponse = [];
-
-const academicDepartmentColumns: ColumnDef<AcademicDepartmentResponse>[] = [
-  {
-    accessorKey: 'code',
-    header: 'Code',
-    size: 180,
-    meta: { sortBy: 'code' satisfies AcademicDepartmentSortBy },
-  },
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    size: 360,
-    meta: { sortBy: 'name' satisfies AcademicDepartmentSortBy },
-  },
-  {
-    accessorKey: 'active',
-    header: 'Active',
-    size: 120,
-    cell: ({ row }) => (row.original.active ? 'Yes' : 'No'),
-    meta: { sortBy: 'active' satisfies AcademicDepartmentSortBy },
-  },
-];
-
-function getResultsSummary(state: AcademicDepartmentsPageState): string {
-  if (state.status === 'loading') {
-    return 'Loading academic departments...';
-  }
-
-  if (state.status === 'error') {
-    return 'Academic department load failed.';
-  }
-
-  const count = state.departments.length;
-
-  if (count === 0) {
-    return 'No academic departments found.';
-  }
-
-  return `Showing ${count} academic departments`;
-}
 
 export function AcademicDepartmentsPage() {
   const navigate = useNavigate();
@@ -118,18 +70,6 @@ export function AcademicDepartmentsPage() {
     });
   }
 
-  const tableData =
-    pageState.status === 'success' || pageState.status === 'empty'
-      ? pageState.departments
-      : emptyAcademicDepartments;
-
-  const academicDepartmentsTable = useReactTable({
-    columns: academicDepartmentColumns,
-    data: tableData,
-    getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => String(row.departmentId),
-  });
-
   return (
     <Container size="xl" py="lg">
       <Stack gap="lg">
@@ -143,35 +83,12 @@ export function AcademicDepartmentsPage() {
           </Stack>
         </Paper>
 
-        <SearchResultsPanel
-          status={pageState.status}
-          summary={getResultsSummary(pageState)}
-          table={academicDepartmentsTable}
+        <AcademicDepartmentsResultsPanel
+          pageState={pageState}
           sortBy={sortBy}
           sortDirection={sortDirection}
           onToggleSort={handleToggleSort}
-          notice={{
-            idleTitle: '',
-            idleMessage: '',
-            loadingMessage: 'Loading academic departments...',
-            errorTitle: 'Unable to load academic departments',
-            errorMessage: pageState.status === 'error' ? pageState.message : null,
-            emptyTitle: 'No academic departments found',
-            emptyMessage: 'Add academic departments before using this page.',
-          }}
-          getRowProps={(row) => ({
-            role: 'button',
-            tabIndex: 0,
-            onClick: () => {
-              handleOpenAcademicDepartmentDetail(row.original.departmentId);
-            },
-            onKeyDown: (event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                handleOpenAcademicDepartmentDetail(row.original.departmentId);
-              }
-            },
-          })}
+          onOpenDepartment={handleOpenAcademicDepartmentDetail}
         />
       </Stack>
     </Container>

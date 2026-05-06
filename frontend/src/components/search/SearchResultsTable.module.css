@@ -33,6 +33,18 @@
   box-shadow: inset 3px 0 0 var(--portal-ui-accent-active-border-color);
 }
 
+.clickableRow[aria-selected='true'] > td {
+  background-color: var(--mantine-color-blue-0);
+}
+
+.clickableRow[aria-selected='true'] > td:first-child {
+  box-shadow: inset 4px 0 0 var(--mantine-color-blue-6);
+}
+
+.clickableRow[aria-selected='true']:hover > td {
+  background-color: var(--mantine-color-blue-1);
+}
+
 .clickableRow:focus-visible > td {
   background-color: var(--portal-ui-accent-active-background);
 }

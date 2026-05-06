@@ -240,6 +240,18 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
+    public CourseVersionDetailResponse getLatestCourseVersionForCourseId(Long courseId) {
+        requirePositiveId(courseId, "Course id");
+
+        CourseVersion courseVersion = courseVersionRepository.findLatestCourseVersionByCourseId(courseId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        List<CourseVersionRequisiteGroupResponse> requisites =
+                courseVersionRequisiteService.getRequisitesForCourseVersion(courseVersion.getId());
+
+        return courseMapper.toCourseVersionDetailResponse(courseVersion, requisites);
+    }
+
+    @Transactional(readOnly = true)
     public CourseVersionSearchResponse getCourseVersionsForCourseId(
             Long courseId,
             int page,

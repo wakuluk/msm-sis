@@ -37,6 +37,11 @@ export type MakeCourseVersionCurrentRequest = {
   signal?: AbortSignal;
 };
 
+export type GetLatestCourseVersionByCourseIdRequest = {
+  courseId: number;
+  signal?: AbortSignal;
+};
+
 export async function getCourseVersionsByCourseId({
   courseId,
   page = 0,
@@ -74,6 +79,27 @@ export async function getCourseVersionsByCourseId({
   }
 
   return CourseVersionSearchResponseSchema.parse(payload);
+}
+
+export async function getLatestCourseVersionByCourseId({
+  courseId,
+  signal,
+}: GetLatestCourseVersionByCourseIdRequest): Promise<CourseVersionDetailResponse> {
+  const response = await getCourseVersionsByCourseId({
+    courseId,
+    page: 0,
+    size: 1,
+    sortBy: 'versionNumber',
+    sortDirection: 'desc',
+    signal,
+  });
+  const latestCourseVersion = response.results[0];
+
+  if (!latestCourseVersion) {
+    throw new Error('No course version was found for this course.');
+  }
+
+  return latestCourseVersion;
 }
 
 export async function createCourseVersion({
