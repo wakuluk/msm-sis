@@ -83,6 +83,16 @@ public class StudentAcademicPlanService {
                 .orElseGet(() -> createDefaultPlan(student));
     }
 
+    @Transactional(readOnly = true)
+    public StudentAcademicPlan getActivePlanOrDefaultProjection(Long studentId) {
+        requirePositiveId(studentId, "Student id");
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student was not found."));
+
+        return studentAcademicPlanRepository.findActivePlanForStudent(studentId)
+                .orElseGet(() -> buildDefaultPlanProjection(student));
+    }
+
     @Transactional
     public StudentAcademicPlanResponse getOrCreateActivePlan(Long studentId) {
         StudentAcademicPlan academicPlan = getOrCreateActivePlanEntity(studentId);
@@ -275,28 +285,46 @@ public class StudentAcademicPlanService {
     }
 
     private StudentAcademicPlan createDefaultPlan(Student student) {
+        StudentAcademicPlan academicPlan = buildDefaultPlan(student, null);
+        return studentAcademicPlanRepository.saveAndFlush(academicPlan);
+    }
+
+    private StudentAcademicPlan buildDefaultPlanProjection(Student student) {
+        return buildDefaultPlan(student, new AtomicLong(-1_000_000));
+    }
+
+    private StudentAcademicPlan buildDefaultPlan(
+            Student student,
+            AtomicLong projectionIdSequence
+    ) {
         StudentAcademicPlan academicPlan = new StudentAcademicPlan();
+        academicPlan.setId(nextProjectionId(projectionIdSequence));
         academicPlan.setStudent(student);
         academicPlan.setName("My Academic Plan");
         academicPlan.setActive(true);
 
         for (int index = 0; index < 4; index++) {
             StudentAcademicPlanYear year = new StudentAcademicPlanYear();
+            year.setId(nextProjectionId(projectionIdSequence));
             year.setStudentAcademicPlan(academicPlan);
             year.setLabel("Year " + (index + 1));
             year.setSortOrder(index);
             year.setCanRemove(false);
-            year.setTerms(buildDefaultTerms(year));
+            year.setTerms(buildDefaultTerms(year, projectionIdSequence));
             academicPlan.getYears().add(year);
         }
 
-        return studentAcademicPlanRepository.saveAndFlush(academicPlan);
+        return academicPlan;
     }
 
-    private List<StudentAcademicPlanTerm> buildDefaultTerms(StudentAcademicPlanYear year) {
+    private List<StudentAcademicPlanTerm> buildDefaultTerms(
+            StudentAcademicPlanYear year,
+            AtomicLong projectionIdSequence
+    ) {
         return DEFAULT_TERM_LABELS.stream()
                 .map(label -> {
                     StudentAcademicPlanTerm term = new StudentAcademicPlanTerm();
+                    term.setId(nextProjectionId(projectionIdSequence));
                     term.setStudentAcademicPlanYear(year);
                     term.setLabel(label);
                     term.setSortOrder(DEFAULT_TERM_LABELS.indexOf(label));
@@ -304,6 +332,10 @@ public class StudentAcademicPlanService {
                     return term;
                 })
                 .toList();
+    }
+
+    private Long nextProjectionId(AtomicLong projectionIdSequence) {
+        return projectionIdSequence == null ? null : projectionIdSequence.getAndDecrement();
     }
 
     private StudentAcademicPlanYear toYear(

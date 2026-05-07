@@ -50,7 +50,7 @@ public class ProgramController {
     }
 
     @GetMapping("/{programId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEPARTMENT_HEAD')")
     @Operation(
             summary = "Get program detail",
             description = "Returns a program, its versions, and version requirements."
@@ -59,7 +59,7 @@ public class ProgramController {
             @AuthenticationPrincipal AuthenticatedJwt jwt,
             @PathVariable Long programId
     ) {
-        return ResponseEntity.ok(programService.getProgramDetail(programId));
+        return ResponseEntity.ok(programService.getProgramDetailForUser(programId, jwt.getUserId(), jwt.getRoles()));
     }
 
     @GetMapping("/search")

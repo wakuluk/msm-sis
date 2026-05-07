@@ -18,6 +18,7 @@ type ProgramTrackerRequirementCardProps = {
   onOpenCourseDetails: (courseId: number, courseCode: string) => void;
   onRemoveCourseFromPlanner: (selection: ProgramTrackerCourseSelection) => void;
   program: ProgramTrackerProgram;
+  readOnly?: boolean;
   requirement: ProgramTrackerRequirement;
 };
 
@@ -26,6 +27,7 @@ export function ProgramTrackerRequirementCard({
   onOpenCourseDetails,
   onRemoveCourseFromPlanner,
   program,
+  readOnly = false,
   requirement,
 }: ProgramTrackerRequirementCardProps) {
   return (
@@ -50,11 +52,12 @@ export function ProgramTrackerRequirementCard({
           <ProgramTrackerRequirementCourseTable
             program={program}
             requirement={requirement}
+            readOnly={readOnly}
             onAddCourseToPlanner={onAddCourseToPlanner}
             onOpenCourseDetails={onOpenCourseDetails}
             onRemoveCourseFromPlanner={onRemoveCourseFromPlanner}
           />
-        ) : canPlanElectivePlaceholder(requirement) ? (
+        ) : !readOnly && canPlanElectivePlaceholder(requirement) ? (
           <ProgramTrackerElectivePlaceholderAction
             selection={buildElectivePlaceholderSelection({
               program,

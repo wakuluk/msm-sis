@@ -44,7 +44,7 @@ export function ProgramVersionDetailSection({
   return (
     <RecordPageSection
       title={`Version ${version.versionNumber}`}
-      description={`${version.published ? 'Published' : 'Draft'} program version for class years ${formatClassYearRange(version)}.`}
+      description={`${version.published ? 'Published' : 'Draft'} program version for ${formatClassYearRange(version)}.`}
       action={
         <Group gap="xs">
           <Badge variant="light" color={version.published ? 'green' : 'gray'}>
@@ -59,7 +59,7 @@ export function ProgramVersionDetailSection({
         </Group>
       }
     >
-      <ReadOnlyField label="Class years" value={formatClassYearRange(version)} />
+      <ReadOnlyField label="Years" value={formatClassYearRange(version)} />
       <ReadOnlyField label="Published" value={displayValue(version.published)} />
       <ReadOnlyField label="Notes" value={displayValue(version.notes)} span={12} />
 

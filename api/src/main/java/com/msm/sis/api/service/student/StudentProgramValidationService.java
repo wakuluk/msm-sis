@@ -4,14 +4,18 @@ import com.msm.sis.api.dto.student.program.ExploreStudentProgramRequest;
 import com.msm.sis.api.entity.Program;
 import com.msm.sis.api.entity.ProgramType;
 import com.msm.sis.api.entity.ProgramVersion;
+import com.msm.sis.api.entity.Student;
 import com.msm.sis.api.entity.StudentProgram;
 import com.msm.sis.api.repository.ProgramRepository;
 import com.msm.sis.api.repository.ProgramVersionRepository;
 import com.msm.sis.api.repository.StudentProgramRepository;
+import com.msm.sis.api.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDate;
 
 import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
 import static com.msm.sis.api.util.ValidationUtils.requireRequestBody;
@@ -25,6 +29,7 @@ public class StudentProgramValidationService {
     private final ProgramRepository programRepository;
     private final ProgramVersionRepository programVersionRepository;
     private final StudentProgramRepository studentProgramRepository;
+    private final StudentRepository studentRepository;
 
     public ProgramVersion validateExploreStudentProgramRequest(
             Long studentId,
@@ -38,7 +43,7 @@ public class StudentProgramValidationService {
 
         validateProgramCanBeExplored(program);
 
-        return resolveCurrentPublishedProgramVersion(programId);
+        return resolvePublishedProgramVersionForStudent(programId, studentId);
     }
 
     public StudentProgram findCurrentStudentProgram(Long studentId, Long programId) {
@@ -74,5 +79,31 @@ public class StudentProgramValidationService {
                         HttpStatus.BAD_REQUEST,
                         "Program does not have a current published version."
                 ));
+    }
+
+    private ProgramVersion resolvePublishedProgramVersionForStudent(Long programId, Long studentId) {
+        Integer classYear = resolveStudentClassYear(studentId);
+
+        if (classYear != null) {
+            ProgramVersion classYearVersion = programVersionRepository
+                    .findPublishedVersionsForProgramAndClassYear(programId, classYear)
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+
+            if (classYearVersion != null) {
+                return classYearVersion;
+            }
+        }
+
+        return resolveCurrentPublishedProgramVersion(programId);
+    }
+
+    private Integer resolveStudentClassYear(Long studentId) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student was not found."));
+        LocalDate estimatedGradDate = student.getEstimatedGradDate();
+
+        return estimatedGradDate == null ? null : estimatedGradDate.getYear();
     }
 }

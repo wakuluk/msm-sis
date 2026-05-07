@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { DndContext, pointerWithin, rectIntersection } from '@dnd-kit/core';
-import { Alert, Group, Loader, Text } from '@mantine/core';
+import { Alert, Button, Group, Loader, Modal, Stack, Text } from '@mantine/core';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import type { CourseVersionDetailResponse } from '@/services/schemas/course-schemas';
@@ -17,6 +17,7 @@ import { ReplacePlannerPlaceholderCourseModal } from './ReplacePlannerPlaceholde
 import { SemesterPlannerSection } from './SemesterPlannerSection';
 import { useProgramPlanner, type ProgramTrackerPlannerActions } from './useProgramPlanner';
 import { useProgramTrackerCourseDetails } from './useProgramTrackerCourseDetails';
+import type { ProgramTrackerProgram } from './program-tracker.types';
 
 type ProgramTrackerPageState =
   | { status: 'loading' }
@@ -67,6 +68,8 @@ export function ProgramTrackerExperience({
   const [programRemoveError, setProgramRemoveError] = useState<string | null>(null);
   const [removingStudentProgramId, setRemovingStudentProgramId] = useState<number | null>(null);
   const [programRequestError, setProgramRequestError] = useState<string | null>(null);
+  const [programRequestToConfirm, setProgramRequestToConfirm] =
+    useState<ProgramTrackerProgram | null>(null);
   const [requestingStudentProgramId, setRequestingStudentProgramId] = useState<number | null>(null);
   const [showPlannerSubterms, setShowPlannerSubterms] = useState(false);
   const {
@@ -185,14 +188,20 @@ export function ProgramTrackerExperience({
       const programs = initializeProgramTracker(response);
       setExpandedProgramCodes(new Set(programs.map((program) => program.code)));
     } catch (error) {
-      setProgramRemoveError(getErrorMessage(error, 'Failed to remove program preview.'));
+      setProgramRemoveError(getErrorMessage(error, 'Failed to remove program.'));
     } finally {
       setRemovingStudentProgramId(null);
     }
   }
 
-  async function requestProgramFromTracker(studentProgramId: number) {
+  async function requestProgramFromTracker(program: ProgramTrackerProgram) {
     if (!actions.requestProgram) {
+      return;
+    }
+
+    const studentProgramId = program.studentProgramId;
+    if (studentProgramId === undefined) {
+      setProgramRequestError('Program preview is missing its student program id.');
       return;
     }
 
@@ -203,6 +212,7 @@ export function ProgramTrackerExperience({
       const response = await actions.requestProgram({ studentProgramId });
       const programs = initializeProgramTracker(response);
       setExpandedProgramCodes(new Set(programs.map((program) => program.code)));
+      setProgramRequestToConfirm(null);
     } catch (error) {
       setProgramRequestError(getErrorMessage(error, 'Failed to request program.'));
     } finally {
@@ -277,6 +287,24 @@ export function ProgramTrackerExperience({
           void replacePlaceholderCourse(course);
         }}
       />
+      <ProgramRequestConfirmationModal
+        program={programRequestToConfirm}
+        requestError={programRequestError}
+        requesting={
+          programRequestToConfirm?.studentProgramId !== undefined
+            && requestingStudentProgramId === programRequestToConfirm.studentProgramId
+        }
+        onClose={() => {
+          if (requestingStudentProgramId === null) {
+            setProgramRequestToConfirm(null);
+          }
+        }}
+        onConfirm={() => {
+          if (programRequestToConfirm) {
+            void requestProgramFromTracker(programRequestToConfirm);
+          }
+        }}
+      />
 
       <DndContext
         collisionDetection={(args) => {
@@ -306,7 +334,14 @@ export function ProgramTrackerExperience({
           onRequestProgram={
             actions.requestProgram
               ? (studentProgramId) => {
-                  void requestProgramFromTracker(studentProgramId);
+                  const program = programPreviews.find(
+                    (programPreview) => programPreview.studentProgramId === studentProgramId
+                  );
+
+                  if (program) {
+                    setProgramRequestError(null);
+                    setProgramRequestToConfirm(program);
+                  }
                 }
               : undefined
           }
@@ -340,5 +375,51 @@ export function ProgramTrackerExperience({
         />
       </DndContext>
     </RecordPageShell>
+  );
+}
+
+function ProgramRequestConfirmationModal({
+  program,
+  requestError,
+  requesting,
+  onClose,
+  onConfirm,
+}: {
+  program: ProgramTrackerProgram | null;
+  requestError: string | null;
+  requesting: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <Modal opened={program !== null} onClose={onClose} title="Request program" centered size="lg">
+      <Stack gap="md">
+        <Text>
+          You are about to submit a request for{' '}
+          <Text component="span" fw={700}>
+            {program?.name ?? 'this program'}
+          </Text>
+          .
+        </Text>
+        <Alert color="yellow" title="Before you submit">
+          This sends your program request to academic review. Your department and the academic
+          administration may review your plan and may assign a different published program version
+          before final approval.
+        </Alert>
+        <Text size="sm" c="dimmed">
+          You can keep exploring requirements before submitting. Once submitted, the request will
+          appear as pending on this program.
+        </Text>
+        {requestError ? <Alert color="red">{requestError}</Alert> : null}
+        <Group justify="flex-end">
+          <Button disabled={requesting} variant="default" onClick={onClose}>
+            Keep exploring
+          </Button>
+          <Button loading={requesting} onClick={onConfirm}>
+            Submit request
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }

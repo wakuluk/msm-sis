@@ -14,6 +14,7 @@ type PlannerYearPanelProps = {
   onRemoveCourse: (termCode: string, course: ProgramTrackerPlannerCourse) => void;
   onRemoveYear: (yearLabel: string) => void;
   onToggleYear: (yearLabel: string) => void;
+  readOnly?: boolean;
   showSubterms: boolean;
   year: ProgramTrackerPlannerYear;
 };
@@ -25,6 +26,7 @@ export function PlannerYearPanel({
   onRemoveCourse,
   onRemoveYear,
   onToggleYear,
+  readOnly = false,
   showSubterms,
   year,
 }: PlannerYearPanelProps) {
@@ -57,7 +59,7 @@ export function PlannerYearPanel({
             </Text>
           </Stack>
           <Group gap="xs">
-            {year.canRemove ? (
+            {!readOnly && year.canRemove ? (
               <Button
                 variant="subtle"
                 color="red"
@@ -88,6 +90,7 @@ export function PlannerYearPanel({
                 onOpenCourseDetails={onOpenCourseDetails}
                 onReplacePlaceholderCourse={onReplacePlaceholderCourse}
                 onRemoveCourse={onRemoveCourse}
+                readOnly={readOnly}
                 showSubterms={showSubterms}
               />
             ))}

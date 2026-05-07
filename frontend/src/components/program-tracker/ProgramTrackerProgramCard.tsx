@@ -1,9 +1,14 @@
 import { Badge, Button, Collapse, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core';
+import { displayDateTime, displayValue } from '@/components/academic-year/academicYearDisplay';
 import { StatusProgress } from './StatusProgress';
 import { ProgramTrackerCompletionRequirementCard } from './ProgramTrackerCompletionRequirementCard';
 import { ProgramTrackerRequirementCard } from './ProgramTrackerRequirementCard';
 import { formatProgramProgress } from './program-tracker.helpers';
-import type { ProgramTrackerCourseSelection, ProgramTrackerProgram } from './program-tracker.types';
+import type {
+  ProgramTrackerCourseSelection,
+  ProgramTrackerProgram,
+  ProgramTrackerRequestReviewNote,
+} from './program-tracker.types';
 
 type ProgramTrackerProgramCardProps = {
   expanded: boolean;
@@ -14,6 +19,7 @@ type ProgramTrackerProgramCardProps = {
   onRequestProgram?: (studentProgramId: number) => void;
   onToggleProgram: (programCode: string) => void;
   program: ProgramTrackerProgram;
+  readOnly?: boolean;
   removing?: boolean;
   requesting?: boolean;
 };
@@ -27,12 +33,20 @@ export function ProgramTrackerProgramCard({
   onRequestProgram,
   onToggleProgram,
   program,
+  readOnly = false,
   removing = false,
   requesting = false,
 }: ProgramTrackerProgramCardProps) {
   const isExploringProgram = program.status.toUpperCase() === 'EXPLORING';
-  const canManageProgramPreview =
-    isExploringProgram && program.studentProgramId !== undefined;
+  const normalizedRequestStatus = program.requestStatus?.toUpperCase();
+  const hasRequest = program.requestStatus !== undefined;
+  const hasRejectedRequest = normalizedRequestStatus === 'REJECTED';
+  const canRequestProgram =
+    isExploringProgram && !hasRequest && program.studentProgramId !== undefined;
+  const canRemoveProgramPreview =
+    isExploringProgram
+      && (!hasRequest || hasRejectedRequest)
+      && program.studentProgramId !== undefined;
 
   return (
     <Paper
@@ -54,6 +68,11 @@ export function ProgramTrackerProgramCard({
               <Badge variant="light" color={isExploringProgram ? 'yellow' : 'green'}>
                 {program.status}
               </Badge>
+              {program.requestStatus ? (
+                <Badge variant="light" color={hasRejectedRequest ? 'red' : 'blue'}>
+                  {formatRequestStatus(program.requestStatus)}
+                </Badge>
+              ) : null}
             </Group>
             <Stack gap={4}>
               <Text size="sm" c="dimmed">
@@ -101,13 +120,20 @@ export function ProgramTrackerProgramCard({
                   onAddCourseToPlanner={onAddCourseToPlanner}
                   onOpenCourseDetails={onOpenCourseDetails}
                   onRemoveCourseFromPlanner={onRemoveCourseFromPlanner}
+                  readOnly={readOnly}
                 />
               ))}
             </SimpleGrid>
 
-            {canManageProgramPreview && (onRequestProgram || onRemoveProgram) ? (
+            {hasRejectedRequest && program.requestReview ? (
+              <RejectedProgramReviewNotes review={program.requestReview} />
+            ) : null}
+
+            {!readOnly && (canRequestProgram || canRemoveProgramPreview) && (
+              onRequestProgram || onRemoveProgram
+            ) ? (
               <Group justify="flex-end" gap="xs" pt="sm">
-                {onRemoveProgram ? (
+                {onRemoveProgram && canRemoveProgramPreview ? (
                   <Button
                     color="red"
                     loading={removing}
@@ -116,10 +142,10 @@ export function ProgramTrackerProgramCard({
                       onRemoveProgram(program.studentProgramId!);
                     }}
                   >
-                    Remove preview
+                    {hasRejectedRequest ? 'Remove program' : 'Remove preview'}
                   </Button>
                 ) : null}
-                {onRequestProgram ? (
+                {onRequestProgram && canRequestProgram ? (
                   <Button
                     loading={requesting}
                     variant="light"
@@ -132,9 +158,83 @@ export function ProgramTrackerProgramCard({
                 ) : null}
               </Group>
             ) : null}
+
+            {!readOnly && isExploringProgram && hasRequest && !hasRejectedRequest ? (
+              <Group justify="flex-end" gap="xs" pt="sm">
+                <Text size="sm" c="dimmed">
+                  Request submitted.
+                </Text>
+              </Group>
+            ) : null}
           </Stack>
         </Collapse>
       </Stack>
     </Paper>
   );
+}
+
+function RejectedProgramReviewNotes({
+  review,
+}: {
+  review: NonNullable<ProgramTrackerProgram['requestReview']>;
+}) {
+  return (
+    <Stack
+      gap="sm"
+      pt="sm"
+      style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}
+    >
+      <Stack gap={2}>
+        <Text fw={700}>Review notes</Text>
+        <Text size="sm" c="dimmed">
+          This request was denied. Review the notes below before removing the program or exploring
+          another option.
+        </Text>
+      </Stack>
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+        <ReviewNoteSummary title="Department review" note={review.departmentReview} />
+        <ReviewNoteSummary title="Admin review" note={review.adminReview} />
+      </SimpleGrid>
+    </Stack>
+  );
+}
+
+function ReviewNoteSummary({
+  note,
+  title,
+}: {
+  note?: ProgramTrackerRequestReviewNote;
+  title: string;
+}) {
+  return (
+    <Stack gap={4}>
+      <Text size="sm" fw={700}>
+        {title}
+      </Text>
+      {note ? (
+        <>
+          <Text size="sm">{displayValue(note.signatureName ?? note.reviewedByEmail)}</Text>
+          <Text size="sm" c="dimmed">
+            {displayDateTime(note.signatureAt ?? note.reviewedAt)}
+          </Text>
+          <Text size="sm" c={note.comment ? undefined : 'dimmed'}>
+            {note.comment ?? 'No note entered.'}
+          </Text>
+        </>
+      ) : (
+        <Text size="sm" c="dimmed">
+          No review recorded.
+        </Text>
+      )}
+    </Stack>
+  );
+}
+
+function formatRequestStatus(status: string) {
+  return status
+    .toLowerCase()
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }

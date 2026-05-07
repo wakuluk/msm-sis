@@ -184,6 +184,47 @@ JOIN program ON program.code = desired_versions.program_code
 WHERE program_version.program_id = program.program_id
   AND program_version.version_number = desired_versions.version_number;
 
+WITH desired_department_staff_roles(
+    department_code,
+    school_code,
+    staff_email,
+    role_code,
+    start_date,
+    end_date,
+    active
+) AS (
+    VALUES
+        ('HIST', 'SHS', 'gandalf@valinor.me', 'DEPARTMENT_HEAD', '2026-01-01'::date, NULL::date, TRUE),
+        ('HUM', 'SLL', 'legolas@mirkwood.me', 'DEPARTMENT_HEAD', '2026-01-01'::date, NULL::date, TRUE)
+)
+INSERT INTO academic_department_staff_role (
+    department_id,
+    staff_id,
+    role_code,
+    start_date,
+    end_date,
+    active,
+    updated_by_user_id
+)
+SELECT department.department_id,
+       staff.id,
+       desired_department_staff_roles.role_code,
+       desired_department_staff_roles.start_date,
+       desired_department_staff_roles.end_date,
+       desired_department_staff_roles.active,
+       actor.id
+FROM desired_department_staff_roles
+JOIN academic_school school ON school.code = desired_department_staff_roles.school_code
+JOIN academic_department department ON department.code = desired_department_staff_roles.department_code
+                                   AND department.school_id = school.school_id
+JOIN staff ON staff.email = desired_department_staff_roles.staff_email
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me'
+ON CONFLICT ON CONSTRAINT uq_academic_department_staff_role DO UPDATE
+    SET start_date = EXCLUDED.start_date,
+        end_date = EXCLUDED.end_date,
+        active = EXCLUDED.active,
+        updated_by_user_id = EXCLUDED.updated_by_user_id;
+
 WITH desired_requirements(
     code,
     name,
@@ -250,6 +291,16 @@ WITH desired_requirements(
             'Complete TOLK101',
             'SPECIFIC_COURSES',
             'Students must complete Tolkien Studies 101.',
+            NULL,
+            NULL,
+            'ALL',
+            NULL
+        ),
+        (
+            'REQ-TOLK-240',
+            'Complete TOLK240',
+            'SPECIFIC_COURSES',
+            'Students must complete Tolkien Studies 240.',
             NULL,
             NULL,
             'ALL',
@@ -338,6 +389,7 @@ WITH desired_requirements(
         ('REQ-FREE-ELECTIVE-30', 'Complete 30 total elective credits', 'TOTAL_ELECTIVE_CREDITS', 'Students must complete at least 30 elective credits.', 30.00, NULL, NULL, NULL),
         ('REQ-HIST-THESIS', 'Complete graduate thesis requirement', 'MANUAL', 'Graduate students must complete an approved thesis or capstone project.', NULL, NULL, NULL, NULL),
         ('REQ-TOLK-101', 'Complete TOLK101', 'SPECIFIC_COURSES', 'Students must complete Tolkien Studies 101.', NULL, NULL, 'ALL', NULL),
+        ('REQ-TOLK-240', 'Complete TOLK240', 'SPECIFIC_COURSES', 'Students must complete Tolkien Studies 240.', NULL, NULL, 'ALL', NULL),
         ('REQ-TOLK-CHOOSE-2', 'Choose two Tolkien studies courses', 'SPECIFIC_COURSES', 'Students must complete two courses from the approved Tolkien studies list.', NULL, 2, 'ANY', NULL),
         ('REQ-TOLK-260-PREREQ', 'Complete TOLK260 prerequisite test', 'SPECIFIC_COURSES', 'Seeded tracker test: TOLK 260 has TOLK 101 as a prerequisite.', NULL, NULL, 'ALL', NULL),
         ('REQ-TOLK-261-COREQ', 'Complete TOLK261 corequisite pair', 'SPECIFIC_COURSES', 'Seeded tracker test: TOLK 261 has TOLK 261L as a corequisite.', NULL, NULL, 'ALL', NULL),
@@ -364,6 +416,7 @@ WITH desired_requirement_courses(
     VALUES
         ('REQ-MEH-310', 'MEH', '310', TRUE, NULL),
         ('REQ-TOLK-101', 'TOLK', '101', TRUE, NULL),
+        ('REQ-TOLK-240', 'TOLK', '240', TRUE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '101', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '240', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '480', FALSE, NULL),
@@ -405,6 +458,7 @@ WITH desired_requirement_courses(
     VALUES
         ('REQ-MEH-310', 'MEH', '310', TRUE, NULL),
         ('REQ-TOLK-101', 'TOLK', '101', TRUE, NULL),
+        ('REQ-TOLK-240', 'TOLK', '240', TRUE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '101', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '240', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '480', FALSE, NULL),
@@ -516,11 +570,12 @@ WITH desired_assignments(
         ('TOLK-BA', 1, 'REQ-TOLK-101', 10, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
         ('TOLK-BA', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
         ('TOLK-BA', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
-        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
-        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 20, TRUE, 'ALLOW_REUSE', NULL),
-        ('CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 30, TRUE, 'CONSUME_AVAILABLE', 'Seeded prerequisite test case for Samwise.'),
-        ('CORE-UG', 1, 'REQ-TOLK-261-COREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded corequisite test case for Samwise.'),
-        ('CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 45, TRUE, 'CONSUME_AVAILABLE', 'Seeded missing prerequisite test case for Samwise.')
+        ('CORE-UG', 1, 'REQ-TOLK-240', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'ALLOW_REUSE', NULL),
+        ('CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded prerequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-261-COREQ', 45, TRUE, 'CONSUME_AVAILABLE', 'Seeded corequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 48, TRUE, 'CONSUME_AVAILABLE', 'Seeded missing prerequisite test case for Samwise.')
 )
 INSERT INTO program_version_requirement (
     program_version_id,
@@ -573,11 +628,12 @@ WITH desired_assignments(
         ('TOLK-BA', 1, 'REQ-TOLK-101', 10, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
         ('TOLK-BA', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
         ('TOLK-BA', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
-        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
-        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 20, TRUE, 'ALLOW_REUSE', NULL),
-        ('CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 30, TRUE, 'CONSUME_AVAILABLE', 'Seeded prerequisite test case for Samwise.'),
-        ('CORE-UG', 1, 'REQ-TOLK-261-COREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded corequisite test case for Samwise.'),
-        ('CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 45, TRUE, 'CONSUME_AVAILABLE', 'Seeded missing prerequisite test case for Samwise.')
+        ('CORE-UG', 1, 'REQ-TOLK-240', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'ALLOW_REUSE', NULL),
+        ('CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded prerequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-261-COREQ', 45, TRUE, 'CONSUME_AVAILABLE', 'Seeded corequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 48, TRUE, 'CONSUME_AVAILABLE', 'Seeded missing prerequisite test case for Samwise.')
 )
 UPDATE program_version_requirement
 SET sort_order = desired_assignments.sort_order,
@@ -726,7 +782,10 @@ WITH desired_student_programs(
     VALUES
         ('STU-1001', 'CORE-UG', 1, 'ACTIVE', '2026-08-20'::date, NULL::date),
         ('STU-1001', 'HIST-BA', 2, 'ACTIVE', '2026-08-20'::date, NULL::date),
+        ('STU-1002', 'HIST-BA', 1, 'EXPLORING', NULL::date, NULL::date),
+        ('STU-1003', 'HUM-MIN', 1, 'EXPLORING', NULL::date, NULL::date),
         ('STU-1004', 'HIST-MA', 1, 'ACTIVE', '2026-08-20'::date, NULL::date),
+        ('STU-1004', 'HUM-MIN', 1, 'EXPLORING', NULL::date, NULL::date),
         ('SEC-2029', 'CORE-UG', 1, 'ACTIVE', '2026-08-20'::date, NULL::date),
         ('SEC-2029', 'HUM-MIN', 1, 'ACTIVE', '2027-01-10'::date, NULL::date)
 )
@@ -755,6 +814,92 @@ ON CONFLICT ON CONSTRAINT uq_student_program_version DO UPDATE
         declared_date = EXCLUDED.declared_date,
         completed_date = EXCLUDED.completed_date,
         updated_by_user_id = EXCLUDED.updated_by_user_id;
+
+DELETE FROM student_program_request
+USING student, program
+WHERE student_program_request.student_id = student.student_id
+  AND student_program_request.program_id = program.program_id
+  AND (
+      (student.alt_id = 'STU-1003' AND program.code = 'HUM-MIN')
+      OR (student.alt_id = 'STU-1004' AND program.code = 'HUM-MIN')
+  );
+
+WITH desired_student_program_requests(
+    alt_id,
+    program_code,
+    requested_version_number,
+    student_program_version_number,
+    department_approved_version_number,
+    status,
+    requested_at,
+    department_reviewed_at,
+    department_reviewed_by_email,
+    department_signature_name,
+    department_signature_email,
+    department_comment,
+    admin_reviewed_at,
+    admin_reviewed_by_email,
+    admin_signature_name,
+    admin_signature_email,
+    admin_comment
+) AS (
+    VALUES
+        ('STU-1003', 'HUM-MIN', 1, 1, NULL::integer, 'REQUESTED', '2026-05-02 10:30:00'::timestamp, NULL::timestamp, NULL, NULL, NULL, NULL, NULL::timestamp, NULL, NULL, NULL, NULL),
+        ('STU-1004', 'HUM-MIN', 1, 1, NULL::integer, 'REJECTED', '2026-04-20 08:45:00'::timestamp, '2026-04-21 09:30:00'::timestamp, 'legolas@mirkwood.me', 'Legolas Greenleaf', 'legolas@mirkwood.me', 'Department cannot approve this minor until the student confirms the revised plan with advising.', '2026-04-22 14:00:00'::timestamp, 'frodo@shire.me', 'Frodo Baggins', 'frodo@shire.me', 'Please meet with advising before resubmitting this program request.')
+)
+INSERT INTO student_program_request (
+    student_id,
+    program_id,
+    student_program_id,
+    requested_program_version_id,
+    department_approved_program_version_id,
+    status,
+    requested_at,
+    department_reviewed_at,
+    department_reviewed_by_user_id,
+    department_signature_name,
+    department_signature_email,
+    department_comment,
+    admin_reviewed_at,
+    admin_reviewed_by_user_id,
+    admin_signature_name,
+    admin_signature_email,
+    admin_comment,
+    updated_by_user_id
+)
+SELECT student.student_id,
+       program.program_id,
+       student_program.student_program_id,
+       requested_version.program_version_id,
+       department_approved_version.program_version_id,
+       desired_student_program_requests.status,
+       desired_student_program_requests.requested_at,
+       desired_student_program_requests.department_reviewed_at,
+       department_reviewer.id,
+       desired_student_program_requests.department_signature_name,
+       desired_student_program_requests.department_signature_email,
+       desired_student_program_requests.department_comment,
+       desired_student_program_requests.admin_reviewed_at,
+       admin_reviewer.id,
+       desired_student_program_requests.admin_signature_name,
+       desired_student_program_requests.admin_signature_email,
+       desired_student_program_requests.admin_comment,
+       actor.id
+FROM desired_student_program_requests
+JOIN student ON student.alt_id = desired_student_program_requests.alt_id
+JOIN program ON program.code = desired_student_program_requests.program_code
+JOIN program_version requested_version ON requested_version.program_id = program.program_id
+                                   AND requested_version.version_number = desired_student_program_requests.requested_version_number
+JOIN program_version student_program_version ON student_program_version.program_id = program.program_id
+                                            AND student_program_version.version_number = desired_student_program_requests.student_program_version_number
+JOIN student_program ON student_program.student_id = student.student_id
+                    AND student_program.program_version_id = student_program_version.program_version_id
+LEFT JOIN program_version department_approved_version
+  ON department_approved_version.program_id = program.program_id
+ AND department_approved_version.version_number = desired_student_program_requests.department_approved_version_number
+LEFT JOIN users department_reviewer ON department_reviewer.email = desired_student_program_requests.department_reviewed_by_email
+LEFT JOIN users admin_reviewer ON admin_reviewer.email = desired_student_program_requests.admin_reviewed_by_email
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me';
 
 WITH target_students AS (
     SELECT student_id
@@ -801,7 +946,6 @@ WITH desired_years(
         ('STU-1001', 'Year 1', 0, FALSE),
         ('STU-1001', 'Year 2', 1, FALSE),
         ('STU-1001', 'Year 3', 2, FALSE),
-        ('STU-1001', 'Year 4', 3, FALSE),
         ('STU-1004', 'Year 1', 0, FALSE),
         ('STU-1004', 'Year 2', 1, FALSE),
         ('STU-1004', 'Year 3', 2, FALSE),
@@ -974,7 +1118,7 @@ WITH desired_placeholder_plan_courses(
         ),
         (
             'STU-1001',
-            'Year 4',
+            'Year 3',
             'Fall',
             'HIST-BA',
             2,
@@ -1050,6 +1194,7 @@ LEFT JOIN academic_department placeholder_department
 LEFT JOIN users actor ON actor.email = 'frodo@shire.me';
 
 SELECT setval(pg_get_serial_sequence('student_program', 'student_program_id'), COALESCE((SELECT MAX(student_program_id) FROM student_program), 1), TRUE);
+SELECT setval(pg_get_serial_sequence('student_program_request', 'student_program_request_id'), COALESCE((SELECT MAX(student_program_request_id) FROM student_program_request), 1), TRUE);
 SELECT setval(pg_get_serial_sequence('program_version_completion_requirement', 'program_version_completion_requirement_id'), COALESCE((SELECT MAX(program_version_completion_requirement_id) FROM program_version_completion_requirement), 1), TRUE);
 SELECT setval(pg_get_serial_sequence('program_version_completion_requirement_option', 'program_version_completion_requirement_option_id'), COALESCE((SELECT MAX(program_version_completion_requirement_option_id) FROM program_version_completion_requirement_option), 1), TRUE);
 SELECT setval(pg_get_serial_sequence('student_academic_plan', 'student_academic_plan_id'), COALESCE((SELECT MAX(student_academic_plan_id) FROM student_academic_plan), 1), TRUE);

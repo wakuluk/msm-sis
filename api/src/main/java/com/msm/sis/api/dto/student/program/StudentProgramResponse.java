@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record StudentProgramResponse(
@@ -20,6 +21,11 @@ public record StudentProgramResponse(
         Integer classYearStart,
         Integer classYearEnd,
         String status,
+        Long studentProgramRequestId,
+        String programRequestStatus,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        LocalDateTime programRequestedAt,
+        StudentProgramRequestReviewResponse programRequestReview,
         @JsonFormat(pattern = "yyyy-MM-dd")
         LocalDate declaredDate,
         @JsonFormat(pattern = "yyyy-MM-dd")

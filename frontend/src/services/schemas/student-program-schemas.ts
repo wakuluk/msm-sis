@@ -119,6 +119,31 @@ export type StudentProgramCompletionRequirementResponse = z.infer<
   typeof StudentProgramCompletionRequirementResponseSchema
 >;
 
+export const StudentProgramRequestReviewNoteResponseSchema = z.object({
+  reviewedAt: z.string().nullable(),
+  reviewedByEmail: z.string().nullable(),
+  signatureAt: z.string().nullable(),
+  signatureName: z.string().nullable(),
+  signatureEmail: z.string().nullable(),
+  comment: z.string().nullable(),
+});
+
+export type StudentProgramRequestReviewNoteResponse = z.infer<
+  typeof StudentProgramRequestReviewNoteResponseSchema
+>;
+
+export const StudentProgramRequestReviewResponseSchema = z.object({
+  studentProgramRequestId: z.number(),
+  status: z.string().nullable(),
+  requestedAt: z.string().nullable(),
+  departmentReview: StudentProgramRequestReviewNoteResponseSchema.nullable(),
+  adminReview: StudentProgramRequestReviewNoteResponseSchema.nullable(),
+});
+
+export type StudentProgramRequestReviewResponse = z.infer<
+  typeof StudentProgramRequestReviewResponseSchema
+>;
+
 export const StudentProgramResponseSchema = z.object({
   studentProgramId: z.number(),
   programId: z.number().nullable(),
@@ -133,6 +158,10 @@ export const StudentProgramResponseSchema = z.object({
   classYearStart: z.number().nullable(),
   classYearEnd: z.number().nullable(),
   status: z.string().nullable(),
+  studentProgramRequestId: z.number().nullable(),
+  programRequestStatus: z.string().nullable(),
+  programRequestedAt: z.string().nullable(),
+  programRequestReview: StudentProgramRequestReviewResponseSchema.nullable(),
   declaredDate: z.string().nullable(),
   completedDate: z.string().nullable(),
   completed: z.number(),
@@ -192,9 +221,7 @@ export const StudentAcademicPlanTermResponseSchema = z.object({
   courses: z.array(StudentAcademicPlanCourseResponseSchema),
 });
 
-export type StudentAcademicPlanTermResponse = z.infer<
-  typeof StudentAcademicPlanTermResponseSchema
->;
+export type StudentAcademicPlanTermResponse = z.infer<typeof StudentAcademicPlanTermResponseSchema>;
 
 export const StudentAcademicPlanYearResponseSchema = z.object({
   studentAcademicPlanYearId: z.number(),
@@ -207,9 +234,7 @@ export const StudentAcademicPlanYearResponseSchema = z.object({
   terms: z.array(StudentAcademicPlanTermResponseSchema),
 });
 
-export type StudentAcademicPlanYearResponse = z.infer<
-  typeof StudentAcademicPlanYearResponseSchema
->;
+export type StudentAcademicPlanYearResponse = z.infer<typeof StudentAcademicPlanYearResponseSchema>;
 
 export const StudentAcademicPlanResponseSchema = z.object({
   studentAcademicPlanId: z.number(),
@@ -229,12 +254,232 @@ export const StudentProgramsResponseSchema = z.object({
 
 export type StudentProgramsResponse = z.infer<typeof StudentProgramsResponseSchema>;
 
+export const StudentProgramAssignmentSearchResultResponseSchema = z.object({
+  studentProgramId: z.number(),
+  studentProgramRequestId: z.number().nullable(),
+  status: z.string().nullable(),
+  declaredDate: z.string().nullable(),
+  completedDate: z.string().nullable(),
+  studentId: z.number().nullable(),
+  studentFirstName: z.string().nullable(),
+  studentLastName: z.string().nullable(),
+  studentPreferredName: z.string().nullable(),
+  studentEmail: z.string().nullable(),
+  classStandingName: z.string().nullable(),
+  estimatedGradDate: z.string().nullable(),
+  programId: z.number().nullable(),
+  programVersionId: z.number().nullable(),
+  programVersionNumber: z.number().nullable(),
+  programVersionClassYearStart: z.number().nullable(),
+  programVersionClassYearEnd: z.number().nullable(),
+  programCode: z.string().nullable(),
+  programName: z.string().nullable(),
+  programTypeCode: z.string().nullable(),
+  programTypeName: z.string().nullable(),
+  degreeTypeCode: z.string().nullable(),
+  degreeTypeName: z.string().nullable(),
+  schoolId: z.number().nullable(),
+  schoolCode: z.string().nullable(),
+  schoolName: z.string().nullable(),
+  departmentId: z.number().nullable(),
+  departmentCode: z.string().nullable(),
+  departmentName: z.string().nullable(),
+});
+
+export type StudentProgramAssignmentSearchResultResponse = z.infer<
+  typeof StudentProgramAssignmentSearchResultResponseSchema
+>;
+
+export const StudentProgramAssignmentSearchPageResponseSchema = z.object({
+  page: z.number(),
+  size: z.number(),
+  totalElements: z.number(),
+  totalPages: z.number(),
+});
+
+export type StudentProgramAssignmentSearchPageResponse = z.infer<
+  typeof StudentProgramAssignmentSearchPageResponseSchema
+>;
+
+export const StudentProgramAssignmentSearchResponseSchema = z.object({
+  page: StudentProgramAssignmentSearchPageResponseSchema,
+  results: z.array(StudentProgramAssignmentSearchResultResponseSchema),
+});
+
+export type StudentProgramAssignmentSearchResponse = z.infer<
+  typeof StudentProgramAssignmentSearchResponseSchema
+>;
+
 export const ExploreStudentProgramRequestSchema = z.object({
   programId: z.number().int().positive(),
 });
 
-export type ExploreStudentProgramRequest = z.infer<
-  typeof ExploreStudentProgramRequestSchema
+export type ExploreStudentProgramRequest = z.infer<typeof ExploreStudentProgramRequestSchema>;
+
+export const StudentProgramRequestSummaryResponseSchema = z.object({
+  studentProgramRequestId: z.number().nullable(),
+  status: z.string(),
+  requestedAt: z.string().nullable(),
+  studentId: z.number().nullable(),
+  studentFirstName: z.string().nullable(),
+  studentLastName: z.string().nullable(),
+  studentPreferredName: z.string().nullable(),
+  studentEmail: z.string().nullable(),
+  classStandingName: z.string().nullable(),
+  estimatedGradDate: z.string().nullable(),
+  programId: z.number().nullable(),
+  programVersionId: z.number().nullable(),
+  programVersionNumber: z.number().nullable(),
+  programVersionClassYearStart: z.number().nullable(),
+  programVersionClassYearEnd: z.number().nullable(),
+  programCode: z.string().nullable(),
+  programName: z.string().nullable(),
+  programTypeCode: z.string().nullable(),
+  programTypeName: z.string().nullable(),
+  degreeTypeCode: z.string().nullable(),
+  degreeTypeName: z.string().nullable(),
+  schoolId: z.number().nullable(),
+  schoolCode: z.string().nullable(),
+  schoolName: z.string().nullable(),
+  departmentId: z.number().nullable(),
+  departmentCode: z.string().nullable(),
+  departmentName: z.string().nullable(),
+  departmentReviewedAt: z.string().nullable(),
+  departmentReviewedByEmail: z.string().nullable(),
+  departmentSignatureAt: z.string().nullable(),
+  departmentSignatureName: z.string().nullable(),
+  departmentSignatureEmail: z.string().nullable(),
+  departmentComment: z.string().nullable(),
+  adminReviewedAt: z.string().nullable(),
+  adminReviewedByEmail: z.string().nullable(),
+  adminSignatureAt: z.string().nullable(),
+  adminSignatureName: z.string().nullable(),
+  adminSignatureEmail: z.string().nullable(),
+  adminComment: z.string().nullable(),
+});
+
+export type StudentProgramRequestSummaryResponse = z.infer<
+  typeof StudentProgramRequestSummaryResponseSchema
+>;
+
+export const StudentProgramReviewSummaryResponseSchema = z.object({
+  studentProgramId: z.number(),
+  status: z.string().nullable(),
+  declaredDate: z.string().nullable(),
+  completedDate: z.string().nullable(),
+  studentId: z.number().nullable(),
+  studentFirstName: z.string().nullable(),
+  studentLastName: z.string().nullable(),
+  studentPreferredName: z.string().nullable(),
+  studentEmail: z.string().nullable(),
+  classStandingName: z.string().nullable(),
+  estimatedGradDate: z.string().nullable(),
+  programId: z.number().nullable(),
+  programVersionId: z.number().nullable(),
+  programVersionNumber: z.number().nullable(),
+  programVersionClassYearStart: z.number().nullable(),
+  programVersionClassYearEnd: z.number().nullable(),
+  programCode: z.string().nullable(),
+  programName: z.string().nullable(),
+  programTypeCode: z.string().nullable(),
+  programTypeName: z.string().nullable(),
+  degreeTypeCode: z.string().nullable(),
+  degreeTypeName: z.string().nullable(),
+  schoolId: z.number().nullable(),
+  schoolCode: z.string().nullable(),
+  schoolName: z.string().nullable(),
+  departmentId: z.number().nullable(),
+  departmentCode: z.string().nullable(),
+  departmentName: z.string().nullable(),
+});
+
+export type StudentProgramReviewSummaryResponse = z.infer<
+  typeof StudentProgramReviewSummaryResponseSchema
+>;
+
+export const ProgramRequestDepartmentScopeResponseSchema = z.object({
+  departmentId: z.number().nullable(),
+  departmentCode: z.string().nullable(),
+  departmentName: z.string().nullable(),
+  schoolId: z.number().nullable(),
+  schoolCode: z.string().nullable(),
+  schoolName: z.string().nullable(),
+});
+
+export type ProgramRequestDepartmentScopeResponse = z.infer<
+  typeof ProgramRequestDepartmentScopeResponseSchema
+>;
+
+export const ProgramRequestQueueSummaryResponseSchema = z.object({
+  totalRequests: z.number(),
+  requestedCount: z.number(),
+  departmentApprovedCount: z.number(),
+});
+
+export type ProgramRequestQueueSummaryResponse = z.infer<
+  typeof ProgramRequestQueueSummaryResponseSchema
+>;
+
+export const ProgramRequestQueuePageResponseSchema = z.object({
+  page: z.number(),
+  size: z.number(),
+  totalElements: z.number(),
+  totalPages: z.number(),
+});
+
+export type ProgramRequestQueuePageResponse = z.infer<typeof ProgramRequestQueuePageResponseSchema>;
+
+export const StudentProgramRequestQueueResponseSchema = z.object({
+  departments: z.array(ProgramRequestDepartmentScopeResponseSchema),
+  summary: ProgramRequestQueueSummaryResponseSchema,
+  page: ProgramRequestQueuePageResponseSchema,
+  requests: z.array(StudentProgramRequestSummaryResponseSchema),
+});
+
+export type StudentProgramRequestQueueResponse = z.infer<
+  typeof StudentProgramRequestQueueResponseSchema
+>;
+
+export const ProgramRequestProgramVersionOptionResponseSchema = z.object({
+  programVersionId: z.number(),
+  versionNumber: z.number().nullable(),
+  classYearStart: z.number().nullable(),
+  classYearEnd: z.number().nullable(),
+  published: z.boolean(),
+});
+
+export type ProgramRequestProgramVersionOptionResponse = z.infer<
+  typeof ProgramRequestProgramVersionOptionResponseSchema
+>;
+
+export const StudentProgramRequestDetailResponseSchema = z.object({
+  request: StudentProgramRequestSummaryResponseSchema,
+  programVersions: z.array(ProgramRequestProgramVersionOptionResponseSchema),
+  plan: StudentProgramsResponseSchema,
+});
+
+export type StudentProgramRequestDetailResponse = z.infer<
+  typeof StudentProgramRequestDetailResponseSchema
+>;
+
+export const StudentProgramReviewDetailResponseSchema = z.object({
+  studentProgram: StudentProgramReviewSummaryResponseSchema,
+  request: StudentProgramRequestSummaryResponseSchema.nullable(),
+  programVersions: z.array(ProgramRequestProgramVersionOptionResponseSchema),
+  plan: StudentProgramsResponseSchema,
+});
+
+export type StudentProgramReviewDetailResponse = z.infer<
+  typeof StudentProgramReviewDetailResponseSchema
+>;
+
+export const ProgramRequestReviewActionRequestSchema = z.object({
+  programVersionId: z.number().int().positive().nullable().optional(),
+  comment: z.string().max(1000).nullable(),
+});
+
+export type ProgramRequestReviewActionRequest = z.infer<
+  typeof ProgramRequestReviewActionRequestSchema
 >;
 
 export const StudentAcademicPlanDraftCourseRequestSchema = z.object({
@@ -289,9 +534,7 @@ export const StudentAcademicPlanDraftRequestSchema = z.object({
   years: z.array(StudentAcademicPlanDraftYearRequestSchema),
 });
 
-export type StudentAcademicPlanDraftRequest = z.infer<
-  typeof StudentAcademicPlanDraftRequestSchema
->;
+export type StudentAcademicPlanDraftRequest = z.infer<typeof StudentAcademicPlanDraftRequestSchema>;
 
 export const ReplaceAcademicPlanPlaceholderCourseRequestSchema = z.object({
   courseId: z.number().int().positive(),

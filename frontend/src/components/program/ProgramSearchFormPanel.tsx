@@ -19,6 +19,7 @@ export type ProgramSearchFilters = {
 };
 
 type ProgramSearchFormPanelProps<TSize extends string> = {
+  canCreateProgram?: boolean;
   form: UseFormReturnType<ProgramSearchFilters>;
   programTypeOptions: ProgramCatalogOption[];
   degreeTypeOptions: ProgramCatalogOption[];
@@ -36,10 +37,11 @@ type ProgramSearchFormPanelProps<TSize extends string> = {
   isSubmitting: boolean;
   onSubmit: (values: ProgramSearchFilters) => void;
   onClear: () => void;
-  onCreateProgram: () => void;
+  onCreateProgram?: () => void;
   onSizeChange: (value: string | null) => void;
   onSortByChange: (value: string | null) => void;
   onSortDirectionChange: (value: string | null) => void;
+  title?: string;
 };
 
 function isNonDegreeProgramType(option: ProgramCatalogOption | undefined) {
@@ -47,6 +49,7 @@ function isNonDegreeProgramType(option: ProgramCatalogOption | undefined) {
 }
 
 export function ProgramSearchFormPanel<TSize extends string>({
+  canCreateProgram = true,
   form,
   programTypeOptions,
   degreeTypeOptions,
@@ -68,13 +71,16 @@ export function ProgramSearchFormPanel<TSize extends string>({
   onSizeChange,
   onSortByChange,
   onSortDirectionChange,
+  title = 'Program Search',
 }: ProgramSearchFormPanelProps<TSize>) {
   return (
     <Paper withBorder radius="md" p="lg">
       <Stack gap="lg">
         <Group justify="space-between" align="center" gap="md">
-          <Title order={1}>Program Search</Title>
-          <Button onClick={onCreateProgram}>Create Program</Button>
+          <Title order={1}>{title}</Title>
+          {canCreateProgram && onCreateProgram ? (
+            <Button onClick={onCreateProgram}>Create Program</Button>
+          ) : null}
         </Group>
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap="lg">

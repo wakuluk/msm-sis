@@ -64,13 +64,34 @@ export type ProgramTrackerCourseRule = {
   requirementCourseRuleId: number;
 };
 
+export type ProgramTrackerRequestReviewNote = {
+  comment?: string;
+  reviewedAt?: string;
+  reviewedByEmail?: string;
+  signatureAt?: string;
+  signatureEmail?: string;
+  signatureName?: string;
+};
+
+export type ProgramTrackerRequestReview = {
+  adminReview?: ProgramTrackerRequestReviewNote;
+  departmentReview?: ProgramTrackerRequestReviewNote;
+  requestedAt?: string;
+  status?: string;
+  studentProgramRequestId: number;
+};
+
 export type ProgramTrackerProgram = {
   code: string;
   completed: number;
   name: string;
   planned: number;
   required: number;
+  requestStatus?: string;
+  requestedAt?: string;
+  requestReview?: ProgramTrackerRequestReview;
   status: string;
+  studentProgramRequestId?: number;
   studentProgramId?: number;
   type: string;
   version: string;

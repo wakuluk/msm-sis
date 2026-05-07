@@ -14,6 +14,7 @@ type ProgramRequirementsSectionProps = {
   programRemoveError?: string | null;
   programRequestError?: string | null;
   programs: ProgramTrackerProgram[];
+  readOnly?: boolean;
   removingStudentProgramId?: number | null;
   requestingStudentProgramId?: number | null;
 };
@@ -29,6 +30,7 @@ export function ProgramRequirementsSection({
   programRemoveError,
   programRequestError,
   programs,
+  readOnly = false,
   removingStudentProgramId,
   requestingStudentProgramId,
 }: ProgramRequirementsSectionProps) {
@@ -57,6 +59,7 @@ export function ProgramRequirementsSection({
               program={program}
               removing={removingStudentProgramId === program.studentProgramId}
               requesting={requestingStudentProgramId === program.studentProgramId}
+              readOnly={readOnly}
               onAddCourseToPlanner={onAddCourseToPlanner}
               onOpenCourseDetails={onOpenCourseDetails}
               onRemoveCourseFromPlanner={onRemoveCourseFromPlanner}

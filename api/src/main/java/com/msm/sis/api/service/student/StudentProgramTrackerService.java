@@ -18,6 +18,7 @@ import com.msm.sis.api.entity.Student;
 import com.msm.sis.api.entity.StudentAcademicPlan;
 import com.msm.sis.api.entity.StudentAcademicPlanCourse;
 import com.msm.sis.api.entity.StudentProgram;
+import com.msm.sis.api.entity.StudentProgramRequest;
 import com.msm.sis.api.mapper.StudentProgramTrackerMapper;
 import com.msm.sis.api.repository.CourseVersionRepository;
 import com.msm.sis.api.repository.ProgramVersionRequirementRepository;
@@ -25,6 +26,7 @@ import com.msm.sis.api.repository.ProgramVersionCompletionRequirementRepository;
 import com.msm.sis.api.repository.RequirementCourseRepository;
 import com.msm.sis.api.repository.RequirementCourseRuleRepository;
 import com.msm.sis.api.repository.StudentProgramRepository;
+import com.msm.sis.api.repository.StudentProgramRequestRepository;
 import com.msm.sis.api.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -52,12 +54,10 @@ public class StudentProgramTrackerService {
     private static final String PROGRAM_REQUIREMENT_STATUS_PLANNED = "planned";
     private static final String PROGRAM_REQUIREMENT_STATUS_NEEDED = "needed";
     private static final String STUDENT_PROGRAM_STATUS_EXPLORING = "EXPLORING";
-    private static final String STUDENT_PROGRAM_STATUS_REQUESTED = "REQUESTED";
     private static final String STUDENT_PROGRAM_STATUS_ACTIVE = "ACTIVE";
     private static final String STUDENT_PROGRAM_STATUS_COMPLETED = "COMPLETED";
     private static final List<String> VISIBLE_STUDENT_PROGRAM_STATUSES = List.of(
             STUDENT_PROGRAM_STATUS_EXPLORING,
-            STUDENT_PROGRAM_STATUS_REQUESTED,
             STUDENT_PROGRAM_STATUS_ACTIVE,
             STUDENT_PROGRAM_STATUS_COMPLETED
     );
@@ -70,6 +70,7 @@ public class StudentProgramTrackerService {
     private final RequirementCourseRepository requirementCourseRepository;
     private final RequirementCourseRuleRepository requirementCourseRuleRepository;
     private final CourseVersionRepository courseVersionRepository;
+    private final StudentProgramRequestRepository studentProgramRequestRepository;
     private final StudentAcademicPlanService studentAcademicPlanService;
     private final StudentCompletedCourseTimelineService studentCompletedCourseTimelineService;
     private final StudentCourseEvidenceService studentCourseEvidenceService;
@@ -83,6 +84,15 @@ public class StudentProgramTrackerService {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student was not found."));
         StudentAcademicPlan activePlan = studentAcademicPlanService.getOrCreateActivePlanEntity(studentId);
+        return buildProgramsForStudent(student, activePlan);
+    }
+
+    @Transactional(readOnly = true)
+    public StudentProgramsResponse getProgramsForStudentReadOnly(Long studentId) {
+        requirePositiveId(studentId, "Student id");
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student was not found."));
+        StudentAcademicPlan activePlan = studentAcademicPlanService.getActivePlanOrDefaultProjection(studentId);
         return buildProgramsForStudent(student, activePlan);
     }
 
@@ -132,6 +142,7 @@ public class StudentProgramTrackerService {
                 groupRequirementCourseRulesByRequirementId(findRequirementCourseRules(requirementIds));
         Map<Long, CourseVersion> currentCourseVersionsByCourseId =
                 buildCurrentCourseVersionsByCourseId(requirementCoursesByRequirementId);
+        ProgramRequestLookup requestLookup = buildRequestLookup(studentPrograms);
 
         List<StudentProgramResponse> programResponses = studentPrograms.stream()
                 .map(studentProgram -> toStudentProgramResponse(
@@ -143,7 +154,8 @@ public class StudentProgramTrackerService {
                         plannedCoursesByRequirementId,
                         completedEvidence,
                         completionRequirementsByProgramVersionId,
-                        studentPrograms
+                        studentPrograms,
+                        requestLookup.findFor(studentProgram)
                 ))
                 .toList();
 
@@ -170,6 +182,37 @@ public class StudentProgramTrackerService {
                 .anyMatch(code -> DEGREE_TYPE_MASTER.equalsIgnoreCase(code));
     }
 
+    private ProgramRequestLookup buildRequestLookup(List<StudentProgram> studentPrograms) {
+        List<Long> studentProgramIds = studentPrograms.stream()
+                .map(StudentProgram::getId)
+                .filter(Objects::nonNull)
+                .toList();
+        if (studentProgramIds.isEmpty()) {
+            return new ProgramRequestLookup(Map.of(), Map.of());
+        }
+
+        List<StudentProgramRequest> requests = studentProgramRequestRepository
+                .findRequestsForStudentPrograms(studentProgramIds);
+        Map<Long, StudentProgramRequest> requestsByStudentProgramId = requests.stream()
+                .filter(request -> request.getStudentProgram() != null && request.getStudentProgram().getId() != null)
+                .collect(Collectors.toMap(
+                        request -> request.getStudentProgram().getId(),
+                        Function.identity(),
+                        (first, ignored) -> first,
+                        LinkedHashMap::new
+                ));
+        Map<Long, StudentProgramRequest> requestsByProgramId = requests.stream()
+                .filter(request -> request.getProgram() != null && request.getProgram().getId() != null)
+                .collect(Collectors.toMap(
+                        request -> request.getProgram().getId(),
+                        Function.identity(),
+                        (first, ignored) -> first,
+                        LinkedHashMap::new
+                ));
+
+        return new ProgramRequestLookup(requestsByStudentProgramId, requestsByProgramId);
+    }
+
     public StudentProgramsResponse getProgramsForAuthenticatedStudent(Long userId) {
         Student student = studentRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student was not found."));
@@ -185,7 +228,8 @@ public class StudentProgramTrackerService {
             Map<Long, List<StudentAcademicPlanCourse>> plannedCoursesByRequirementId,
             List<StudentCourseEvidence> completedEvidence,
             Map<Long, List<ProgramVersionCompletionRequirement>> completionRequirementsByProgramVersionId,
-            List<StudentProgram> activeStudentPrograms
+            List<StudentProgram> activeStudentPrograms,
+            StudentProgramRequest openRequest
     ) {
         Long programVersionId = studentProgram.getProgramVersion() == null
                 ? null
@@ -226,11 +270,31 @@ public class StudentProgramTrackerService {
                         ))
                         .toList();
 
-        return mapper.toStudentProgramResponse(studentProgram, requirementResponses, completionRequirementResponses);
+        return mapper.toStudentProgramResponse(
+                studentProgram,
+                requirementResponses,
+                completionRequirementResponses,
+                openRequest
+        );
     }
 
     private boolean allowsCourseReuse(ProgramVersionRequirement programVersionRequirement) {
         return COURSE_REUSE_POLICY_ALLOW_REUSE.equals(programVersionRequirement.getCourseReusePolicy());
+    }
+
+    private record ProgramRequestLookup(
+            Map<Long, StudentProgramRequest> requestsByStudentProgramId,
+            Map<Long, StudentProgramRequest> requestsByProgramId
+    ) {
+        private StudentProgramRequest findFor(StudentProgram studentProgram) {
+            StudentProgramRequest request = requestsByStudentProgramId.get(studentProgram.getId());
+            if (request != null) {
+                return request;
+            }
+
+            Program program = studentProgram.getProgram();
+            return program == null ? null : requestsByProgramId.get(program.getId());
+        }
     }
 
     private StudentProgramCompletionRequirementResponse toStudentProgramCompletionRequirementResponse(

@@ -1,6 +1,8 @@
 export const PORTAL_ROLES = {
   STUDENT: 'STUDENT',
   ADMIN: 'ADMIN',
+  FACULTY: 'FACULTY',
+  DEPARTMENT_HEAD: 'DEPARTMENT_HEAD',
 } as const;
 
 export type PortalRole = (typeof PORTAL_ROLES)[keyof typeof PORTAL_ROLES];

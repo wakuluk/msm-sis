@@ -1,4 +1,4 @@
-import { ActionIcon, Group, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core';
+import { ActionIcon, Box, Group, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core';
 import { IconAlertTriangle, IconSearch, IconTrash } from '@tabler/icons-react';
 import { DraggablePlannerCourseRow } from './ProgramTrackerDnd';
 import {
@@ -14,6 +14,7 @@ type PlannerCourseRowProps = {
   onOpenCourseDetails: (courseId: number, courseCode: string) => void;
   onReplacePlaceholderCourse: (course: ProgramTrackerPlannerCourse) => void;
   onRemoveCourse: (termCode: string, course: ProgramTrackerPlannerCourse) => void;
+  readOnly?: boolean;
   termCode: string;
 };
 
@@ -23,6 +24,7 @@ export function PlannerCourseRow({
   onOpenCourseDetails,
   onReplacePlaceholderCourse,
   onRemoveCourse,
+  readOnly = false,
   termCode,
 }: PlannerCourseRowProps) {
   const courseRowContent = (
@@ -32,7 +34,7 @@ export function PlannerCourseRow({
         <Text size="xs" c={getCourseStatusColor(course.status)} fw={600}>
           {getCourseStatusLabel(course.status)}
         </Text>
-        {course.status === 'planned' ? (
+        {!readOnly && course.status === 'planned' ? (
           <>
             {course.placeholderType ? (
               <Tooltip label="Choose course">
@@ -78,7 +80,7 @@ export function PlannerCourseRow({
       }
     : {};
 
-  return course.status === 'planned' ? (
+  return !readOnly && course.status === 'planned' ? (
     <DraggablePlannerCourseRow
       key={`${termCode}-${getProgramTrackerCourseKey(course)}`}
       course={course}
@@ -123,16 +125,21 @@ function PlannerCourseWarnings({ course }: { course: ProgramTrackerPlannerCourse
         </Stack>
       }
     >
-      <ActionIcon
-        variant="subtle"
-        color="yellow"
+      <Box
+        component="span"
         aria-label={`${course.code} planner warning`}
+        role="img"
+        style={{
+          alignItems: 'center',
+          color: 'var(--mantine-color-yellow-7)',
+          display: 'inline-flex',
+        }}
         onPointerDown={(event) => {
           event.stopPropagation();
         }}
       >
         <IconAlertTriangle size={16} />
-      </ActionIcon>
+      </Box>
     </Tooltip>
   );
 }

@@ -29,7 +29,10 @@ import { AcademicYearCoursesPage } from './pages/portal/AcademicYearCourses.page
 import { AcademicTermGroupDetailPage } from './pages/portal/AcademicTermGroupDetail.page';
 import { CourseSectionDetailPage } from './pages/portal/CourseSectionDetail.page';
 import { ProgramDetailPage } from './pages/portal/ProgramDetail.page';
+import { AdminStudentProgramsPage } from './pages/portal/AdminStudentPrograms.page';
+import { DepartmentMajorStudentsPage } from './pages/portal/DepartmentMajorStudents.page';
 import { ProgramSearchPage } from './pages/portal/ProgramSearch.page';
+import { ProgramRequestDetailPage } from './pages/portal/ProgramRequestDetail.page';
 import { RequirementDetailPage } from './pages/portal/RequirementDetail.page';
 import { RequirementLibraryPage } from './pages/portal/RequirementLibrary.page';
 import {
@@ -48,11 +51,15 @@ const portalRouteComponents = {
   catalog: CatalogSearchPage,
   'catalog-advanced': CatalogAdvancedPage,
   'academic-programs': ProgramSearchPage,
+  'academic-student-program-assignments': AdminStudentProgramsPage,
+  'academic-department-programs': DepartmentMajorStudentsPage,
   'academic-program-create': AcademicProgramCreatePage,
   'academic-program-detail': ProgramDetailPage,
   'academic-requirements': RequirementLibraryPage,
   'academic-requirement-detail': RequirementDetailPage,
   'academic-degree-requests': AcademicDegreeRequestsPage,
+  'academic-degree-request-detail': ProgramRequestDetailPage,
+  'academic-student-program-review-detail': ProgramRequestDetailPage,
   'student-transcript': StudentTranscriptPage,
   'student-course-history': StudentCourseHistoryPage,
   'student-programs': StudentProgramsPage,

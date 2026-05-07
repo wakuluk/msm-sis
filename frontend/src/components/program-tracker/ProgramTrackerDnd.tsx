@@ -187,12 +187,14 @@ export function DroppablePlannerTerm({
 type DroppablePlannerBucketProps = {
   bucket: ProgramTrackerPlannerBucket;
   children: ReactNode;
+  disabled?: boolean;
   term: ProgramTrackerPlannerTerm;
 };
 
 export function DroppablePlannerBucket({
   bucket,
   children,
+  disabled = false,
   term,
 }: DroppablePlannerBucketProps) {
   const dropTarget: ProgramTrackerPlannerDropTarget = {
@@ -201,7 +203,7 @@ export function DroppablePlannerBucket({
   };
   const { isOver, setNodeRef } = useDroppable({
     id: `${term.code}-${bucket.code}`,
-    disabled: term.isComplete,
+    disabled: disabled || term.isComplete,
     data: { plannerDropTarget: dropTarget },
   });
 

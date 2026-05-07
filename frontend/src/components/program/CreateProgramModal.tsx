@@ -147,12 +147,12 @@ export function CreateProgramModal({
     }
 
     if (classYearStart === null) {
-      setValidationMessage('Start class year is required.');
+      setValidationMessage('Start year is required.');
       return null;
     }
 
     if (classYearEnd !== null && classYearEnd < classYearStart) {
-      setValidationMessage('End class year must be greater than or equal to start class year.');
+      setValidationMessage('End year must be greater than or equal to start year.');
       return null;
     }
 
@@ -347,7 +347,7 @@ export function CreateProgramModal({
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 4 }}>
           <NumberInput
-            label="Start Class Year"
+            label="Start Year"
             placeholder="2026"
             min={1900}
             value={form.values.classYearStart}
@@ -358,7 +358,7 @@ export function CreateProgramModal({
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 4 }}>
           <NumberInput
-            label="End Class Year"
+            label="End Year"
             placeholder="Optional"
             min={1900}
             value={form.values.classYearEnd}

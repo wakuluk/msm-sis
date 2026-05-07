@@ -1,6 +1,8 @@
 import type {
   StudentAcademicPlanDraftRequest,
   StudentAcademicPlanResponse,
+  StudentProgramRequestReviewNoteResponse,
+  StudentProgramRequestReviewResponse,
   StudentProgramResponse,
   StudentProgramsResponse,
 } from '@/services/schemas/student-program-schemas';
@@ -8,6 +10,7 @@ import type {
   ProgramTrackerPlannerCourse,
   ProgramTrackerPlannerTerm,
   ProgramTrackerPlannerYear,
+  ProgramTrackerRequestReviewNote,
   RequirementCourseStatus,
   ProgramTrackerProgram,
 } from './program-tracker.types';
@@ -116,7 +119,11 @@ function mapProgramTrackerResponseToProgram(
     name: program.programName ?? 'Program',
     planned: program.planned,
     required: program.required,
+    requestStatus: program.programRequestStatus ?? undefined,
+    requestedAt: program.programRequestedAt ?? undefined,
+    requestReview: mapProgramRequestReview(program.programRequestReview),
     status: program.status ?? 'Active',
+    studentProgramRequestId: program.studentProgramRequestId ?? undefined,
     type: program.programTypeName ?? program.programTypeCode ?? 'Program',
     version: '',
     requirements: program.requirements.map((requirement) => ({
@@ -183,6 +190,39 @@ function mapProgramTrackerResponseToProgram(
       };
     }),
     studentProgramId: program.studentProgramId,
+  };
+}
+
+function mapProgramRequestReview(
+  review: StudentProgramRequestReviewResponse | null
+): ProgramTrackerProgram['requestReview'] {
+  if (review === null) {
+    return undefined;
+  }
+
+  return {
+    adminReview: mapProgramRequestReviewNote(review.adminReview),
+    departmentReview: mapProgramRequestReviewNote(review.departmentReview),
+    requestedAt: review.requestedAt ?? undefined,
+    status: review.status ?? undefined,
+    studentProgramRequestId: review.studentProgramRequestId,
+  };
+}
+
+function mapProgramRequestReviewNote(
+  reviewNote: StudentProgramRequestReviewNoteResponse | null
+): ProgramTrackerRequestReviewNote | undefined {
+  if (reviewNote === null) {
+    return undefined;
+  }
+
+  return {
+    comment: reviewNote.comment ?? undefined,
+    reviewedAt: reviewNote.reviewedAt ?? undefined,
+    reviewedByEmail: reviewNote.reviewedByEmail ?? undefined,
+    signatureAt: reviewNote.signatureAt ?? undefined,
+    signatureEmail: reviewNote.signatureEmail ?? undefined,
+    signatureName: reviewNote.signatureName ?? undefined,
   };
 }
 

@@ -53,3 +53,11 @@ CREATE TABLE user_roles (
         FOREIGN KEY (role_id) REFERENCES roles(id)
         ON DELETE CASCADE
 );
+
+INSERT INTO roles (name)
+VALUES
+    ('ADMIN'),
+    ('STUDENT'),
+    ('FACULTY'),
+    ('DEPARTMENT_HEAD')
+ON CONFLICT (name) DO NOTHING;

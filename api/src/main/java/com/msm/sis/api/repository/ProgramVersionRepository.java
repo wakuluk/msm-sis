@@ -62,6 +62,44 @@ public interface ProgramVersionRepository extends JpaRepository<ProgramVersion, 
     @Query("""
             select programVersion
             from ProgramVersion programVersion
+            where programVersion.program.id = :programId
+              and programVersion.published = true
+              and (programVersion.classYearStart is null or programVersion.classYearStart <= :classYear)
+              and (programVersion.classYearEnd is null or programVersion.classYearEnd >= :classYear)
+            order by programVersion.classYearStart desc,
+                     programVersion.versionNumber desc
+            """)
+    List<ProgramVersion> findPublishedVersionsForProgramAndClassYear(
+            @Param("programId") Long programId,
+            @Param("classYear") Integer classYear
+    );
+
+    @EntityGraph(attributePaths = {
+            "program",
+            "program.school",
+            "program.department",
+            "program.programType",
+            "program.degreeType"
+    })
+    @Query("""
+            select programVersion
+            from ProgramVersion programVersion
+            where programVersion.program.id = :programId
+              and programVersion.published = true
+            order by programVersion.versionNumber desc
+            """)
+    List<ProgramVersion> findPublishedVersionsForProgram(@Param("programId") Long programId);
+
+    @EntityGraph(attributePaths = {
+            "program",
+            "program.school",
+            "program.department",
+            "program.programType",
+            "program.degreeType"
+    })
+    @Query("""
+            select programVersion
+            from ProgramVersion programVersion
             where programVersion.program.id in :programIds
               and programVersion.published = true
               and programVersion.classYearEnd is null

@@ -21,6 +21,7 @@ type SemesterPlannerSectionProps = {
   plannerSaveStatus: 'saved' | 'saving' | 'unsaved';
   plannerYears: ProgramTrackerPlannerYear[];
   plannerYearsReversed: boolean;
+  readOnly?: boolean;
   saveError: string | null;
   showSubtermToggle: boolean;
   showSubterms: boolean;
@@ -40,6 +41,7 @@ export function SemesterPlannerSection({
   plannerSaveStatus,
   plannerYears,
   plannerYearsReversed,
+  readOnly = false,
   saveError,
   showSubtermToggle,
   showSubterms,
@@ -52,9 +54,11 @@ export function SemesterPlannerSection({
       description={
         <Stack gap="xs">
           <Text size="sm" c="dimmed">
-            Plan when requirement courses will fit across academic years.
+            {readOnly
+              ? 'Review completed and planned courses across academic years.'
+              : 'Plan when requirement courses will fit across academic years.'}
           </Text>
-          {plannerSaveStatus === 'unsaved' ? (
+          {!readOnly && plannerSaveStatus === 'unsaved' ? (
             <Badge variant="light" color="yellow" size="lg">
               Unsaved changes will be lost if you leave this page.
             </Badge>
@@ -68,13 +72,15 @@ export function SemesterPlannerSection({
       }
       action={
         <Group gap="sm">
-          <Button
-            onClick={onSave}
-            disabled={plannerSaveStatus === 'saved' || plannerSaveStatus === 'saving'}
-            loading={plannerSaveStatus === 'saving'}
-          >
-            Save Plan
-          </Button>
+          {!readOnly ? (
+            <Button
+              onClick={onSave}
+              disabled={plannerSaveStatus === 'saved' || plannerSaveStatus === 'saving'}
+              loading={plannerSaveStatus === 'saving'}
+            >
+              Save Plan
+            </Button>
+          ) : null}
           <Button variant="subtle" onClick={onToggleReverseYears}>
             {plannerYearsReversed ? 'Show earliest first' : 'Show latest first'}
           </Button>
@@ -83,9 +89,11 @@ export function SemesterPlannerSection({
               {showSubterms ? 'Hide subterms' : 'Show subterms'}
             </Button>
           ) : null}
-          <Button variant="light" onClick={onAddYear}>
-            Add Year
-          </Button>
+          {!readOnly ? (
+            <Button variant="light" onClick={onAddYear}>
+              Add Year
+            </Button>
+          ) : null}
         </Group>
       }
     >
@@ -101,11 +109,12 @@ export function SemesterPlannerSection({
               onRemoveCourse={onRemoveCourse}
               onRemoveYear={onRemoveYear}
               onToggleYear={onToggleYear}
+              readOnly={readOnly}
               showSubterms={showSubterms}
             />
           ))}
 
-          <PlannerSaveFooter onSave={onSave} plannerSaveStatus={plannerSaveStatus} />
+          {!readOnly ? <PlannerSaveFooter onSave={onSave} plannerSaveStatus={plannerSaveStatus} /> : null}
         </Stack>
       </Grid.Col>
     </RecordPageSection>

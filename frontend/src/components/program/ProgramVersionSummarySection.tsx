@@ -17,14 +17,14 @@ export function ProgramVersionSummarySection({
   return (
     <RecordPageSection
       title="Version Summary"
-      description="The current published version is based on the open-ended class-year range."
+      description="The current published version is based on the open-ended year range."
     >
       <ReadOnlyField
         label="Current published version"
         value={currentVersion ? `Version ${currentVersion.versionNumber}` : '—'}
       />
       <ReadOnlyField
-        label="Current class years"
+        label="Current years"
         value={currentVersion ? formatClassYearRange(currentVersion) : '—'}
       />
       <ReadOnlyField label="Total versions" value={displayValue(program.versions.length)} />

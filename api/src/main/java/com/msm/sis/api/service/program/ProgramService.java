@@ -19,6 +19,7 @@ import com.msm.sis.api.entity.RequirementCourse;
 import com.msm.sis.api.entity.RequirementCourseRule;
 import com.msm.sis.api.mapper.ProgramMapper;
 import com.msm.sis.api.repository.AcademicDepartmentRepository;
+import com.msm.sis.api.repository.AcademicDepartmentStaffRoleRepository;
 import com.msm.sis.api.repository.AcademicSchoolRepository;
 import com.msm.sis.api.repository.DegreeTypeRepository;
 import com.msm.sis.api.repository.ProgramRepository;
@@ -34,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +53,11 @@ import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
 @Service
 @RequiredArgsConstructor
 public class ProgramService {
+    private static final String DEPARTMENT_HEAD_ROLE_CODE = "DEPARTMENT_HEAD";
+
     private final AcademicSchoolRepository academicSchoolRepository;
     private final AcademicDepartmentRepository academicDepartmentRepository;
+    private final AcademicDepartmentStaffRoleRepository academicDepartmentStaffRoleRepository;
     private final DegreeTypeRepository degreeTypeRepository;
     private final ProgramRepository programRepository;
     private final ProgramTypeRepository programTypeRepository;
@@ -99,6 +104,23 @@ public class ProgramService {
 
         Program program = programRepository.findById(programId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Program was not found."));
+
+        return buildProgramDetailResponse(program, programId);
+    }
+
+    @Transactional(readOnly = true)
+    public ProgramDetailResponse getProgramDetailForUser(Long programId, Long userId, List<String> roles) {
+        Program program = programRepository.findById(requirePositiveId(programId, "Program id"))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Program was not found."));
+
+        if (roles == null || !roles.contains("ADMIN")) {
+            validateDepartmentHeadCanAccessProgram(userId, program);
+        }
+
+        return buildProgramDetailResponse(program, programId);
+    }
+
+    private ProgramDetailResponse buildProgramDetailResponse(Program program, Long programId) {
         List<ProgramVersion> versions = programVersionRepository.findVersionsForProgram(programId);
         Map<Long, List<ProgramVersionRequirement>> requirementsByVersionId = buildRequirementsByVersionId(versions);
         Map<Long, List<ProgramVersionCompletionRequirement>> completionRequirementsByVersionId =
@@ -117,6 +139,26 @@ public class ProgramService {
                 requirementCoursesByRequirementId,
                 requirementCourseRulesByRequirementId
         );
+    }
+
+    private void validateDepartmentHeadCanAccessProgram(Long userId, Program program) {
+        requirePositiveId(userId, "User id");
+
+        Long departmentId = program.getDepartment() == null ? null : program.getDepartment().getId();
+        if (departmentId == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Program is not assigned to a department.");
+        }
+
+        boolean canAccess = academicDepartmentStaffRoleRepository.existsActiveRoleForUserAndDepartment(
+                userId,
+                departmentId,
+                DEPARTMENT_HEAD_ROLE_CODE,
+                LocalDate.now()
+        );
+
+        if (!canAccess) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User cannot access this program.");
+        }
     }
 
     @Transactional(readOnly = true)

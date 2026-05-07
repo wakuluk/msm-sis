@@ -11,11 +11,15 @@ export type PortalRouteItemKey =
   | 'catalog-advanced'
   | 'academic-years-search'
   | 'academic-programs'
+  | 'academic-student-program-assignments'
+  | 'academic-department-programs'
   | 'academic-program-create'
   | 'academic-program-detail'
   | 'academic-requirements'
   | 'academic-requirement-detail'
   | 'academic-degree-requests'
+  | 'academic-degree-request-detail'
+  | 'academic-student-program-review-detail'
   | 'student-transcript'
   | 'student-course-history'
   | 'student-programs'
@@ -43,11 +47,15 @@ export type PortalRoutePath =
   | '/catalog/search-advanced'
   | '/academics/academic-years/search'
   | '/academics/programs'
+  | '/academics/student-program-assignments'
+  | '/academics/department-programs'
   | '/academics/programs/new'
   | '/academics/programs/:programId'
   | '/academics/requirements'
   | '/academics/requirements/:requirementId'
   | '/academics/degree-requests'
+  | '/academics/degree-requests/:studentProgramRequestId'
+  | '/academics/student-programs/:studentProgramId/review'
   | '/academics/transcript'
   | '/academics/course-history'
   | '/academics/student-programs'
@@ -299,7 +307,7 @@ export const portalRoutes: PortalRouteNode[] = [
     kind: 'group',
     key: 'programs',
     label: 'Programs',
-    requiredRoles: [PORTAL_ROLES.ADMIN],
+    requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
     showInNav: true,
     children: [
       {
@@ -308,6 +316,22 @@ export const portalRoutes: PortalRouteNode[] = [
         label: 'Program Search',
         path: '/academics/programs',
         requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-student-program-assignments',
+        label: 'Student Programs',
+        path: '/academics/student-program-assignments',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-department-programs',
+        label: 'Department Students',
+        path: '/academics/department-programs',
+        requiredRoles: [PORTAL_ROLES.DEPARTMENT_HEAD],
         showInNav: true,
       },
       {
@@ -323,7 +347,7 @@ export const portalRoutes: PortalRouteNode[] = [
         key: 'academic-program-detail',
         label: 'Program Detail',
         path: '/academics/programs/:programId',
-        requiredRoles: [PORTAL_ROLES.ADMIN],
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
         showInNav: false,
       },
       {
@@ -347,8 +371,24 @@ export const portalRoutes: PortalRouteNode[] = [
         key: 'academic-degree-requests',
         label: 'Degree Requests',
         path: '/academics/degree-requests',
-        requiredRoles: [PORTAL_ROLES.ADMIN],
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
         showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-degree-request-detail',
+        label: 'Degree Request Detail',
+        path: '/academics/degree-requests/:studentProgramRequestId',
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-student-program-review-detail',
+        label: 'Student Program Review Detail',
+        path: '/academics/student-programs/:studentProgramId/review',
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
+        showInNav: false,
       },
     ],
   },

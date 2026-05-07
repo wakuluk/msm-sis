@@ -17,6 +17,7 @@ type PlannerTermPanelProps = {
   onOpenCourseDetails: (courseId: number, courseCode: string) => void;
   onReplacePlaceholderCourse: (course: ProgramTrackerPlannerCourse) => void;
   onRemoveCourse: (termCode: string, course: ProgramTrackerPlannerCourse) => void;
+  readOnly?: boolean;
   showSubterms: boolean;
   term: ProgramTrackerPlannerTerm;
 };
@@ -25,6 +26,7 @@ export function PlannerTermPanel({
   onOpenCourseDetails,
   onReplacePlaceholderCourse,
   onRemoveCourse,
+  readOnly = false,
   showSubterms,
   term,
 }: PlannerTermPanelProps) {
@@ -33,7 +35,7 @@ export function PlannerTermPanel({
   const buckets = getProgramTrackerTermBuckets(term, { includeEmpty: true });
 
   return (
-    <DroppablePlannerTerm term={term} disabled={showSubterms}>
+    <DroppablePlannerTerm term={term} disabled={readOnly || showSubterms}>
       <Stack gap="xs">
         <Group justify="space-between" align="center">
           <Group gap="xs">
@@ -66,6 +68,7 @@ export function PlannerTermPanel({
                 onOpenCourseDetails={onOpenCourseDetails}
                 onReplacePlaceholderCourse={onReplacePlaceholderCourse}
                 onRemoveCourse={onRemoveCourse}
+                readOnly={readOnly}
               />
             ))}
           </Stack>
@@ -76,6 +79,7 @@ export function PlannerTermPanel({
             onOpenCourseDetails={onOpenCourseDetails}
             onReplacePlaceholderCourse={onReplacePlaceholderCourse}
             onRemoveCourse={onRemoveCourse}
+            readOnly={readOnly}
           />
         )}
       </Stack>
@@ -88,6 +92,7 @@ function PlannerTermBucketPanel({
   onOpenCourseDetails,
   onReplacePlaceholderCourse,
   onRemoveCourse,
+  readOnly,
   term,
   termCode,
 }: {
@@ -95,6 +100,7 @@ function PlannerTermBucketPanel({
   onOpenCourseDetails: (courseId: number, courseCode: string) => void;
   onReplacePlaceholderCourse: (course: ProgramTrackerPlannerCourse) => void;
   onRemoveCourse: (termCode: string, course: ProgramTrackerPlannerCourse) => void;
+  readOnly: boolean;
   term: ProgramTrackerPlannerTerm;
   termCode: string;
 }) {
@@ -106,7 +112,7 @@ function PlannerTermBucketPanel({
     .reduce((total, course) => total + course.credits, 0);
 
   return (
-    <DroppablePlannerBucket bucket={bucket} term={term}>
+    <DroppablePlannerBucket bucket={bucket} disabled={readOnly} term={term}>
       <Stack gap={4}>
         <Stack gap={4} pb={4} style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
           <Group justify="space-between" align="center">
@@ -125,6 +131,7 @@ function PlannerTermBucketPanel({
           onOpenCourseDetails={onOpenCourseDetails}
           onReplacePlaceholderCourse={onReplacePlaceholderCourse}
           onRemoveCourse={onRemoveCourse}
+          readOnly={readOnly}
         />
       </Stack>
     </DroppablePlannerBucket>
@@ -137,6 +144,7 @@ function PlannerTermCourseList({
   onOpenCourseDetails,
   onReplacePlaceholderCourse,
   onRemoveCourse,
+  readOnly,
   termCode,
 }: {
   courses: ProgramTrackerPlannerCourse[];
@@ -144,6 +152,7 @@ function PlannerTermCourseList({
   onOpenCourseDetails: (courseId: number, courseCode: string) => void;
   onReplacePlaceholderCourse: (course: ProgramTrackerPlannerCourse) => void;
   onRemoveCourse: (termCode: string, course: ProgramTrackerPlannerCourse) => void;
+  readOnly: boolean;
   termCode: string;
 }) {
   if (courses.length === 0) {
@@ -165,6 +174,7 @@ function PlannerTermCourseList({
           onOpenCourseDetails={onOpenCourseDetails}
           onReplacePlaceholderCourse={onReplacePlaceholderCourse}
           onRemoveCourse={onRemoveCourse}
+          readOnly={readOnly}
         />
       ))}
     </Stack>

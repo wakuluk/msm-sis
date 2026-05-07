@@ -29,7 +29,7 @@ public class ReferenceController {
     }
 
     @GetMapping("/student-options")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEPARTMENT_HEAD')")
     @Operation(summary = "Get student reference options", description = "Returns reference options used by student detail forms")
     public ResponseEntity<StudentReferenceOptionsResponse> getStudentReferenceOptions() {
         return ResponseEntity.ok(referenceDataService.getStudentReferenceOptions());
@@ -57,7 +57,7 @@ public class ReferenceController {
     }
 
     @GetMapping("/program-options")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT', 'DEPARTMENT_HEAD')")
     @Operation(
             summary = "Get program reference options",
             description = "Returns active program types, degree types, schools, and departments used by program workflows."

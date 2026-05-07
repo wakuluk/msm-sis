@@ -23,6 +23,7 @@ type ProgramTrackerRequirementCourseTableProps = {
   onOpenCourseDetails: (courseId: number, courseCode: string) => void;
   onRemoveCourseFromPlanner: (selection: ProgramTrackerCourseSelection) => void;
   program: ProgramTrackerProgram;
+  readOnly?: boolean;
   requirement: ProgramTrackerRequirement;
 };
 
@@ -31,6 +32,7 @@ export function ProgramTrackerRequirementCourseTable({
   onOpenCourseDetails,
   onRemoveCourseFromPlanner,
   program,
+  readOnly = false,
   requirement,
 }: ProgramTrackerRequirementCourseTableProps) {
   return (
@@ -66,7 +68,11 @@ export function ProgramTrackerRequirementCourseTable({
                 </Badge>
               </Table.Td>
               <Table.Td>
-                {displayStatus === 'needed' ? (
+                {readOnly ? (
+                  <Text size="sm" c="dimmed">
+                    -
+                  </Text>
+                ) : displayStatus === 'needed' ? (
                   <AddCourseToPlannerAction
                     selection={plannerSelection}
                     onClick={() => {
@@ -95,7 +101,7 @@ export function ProgramTrackerRequirementCourseTable({
             </>
           );
 
-          return displayStatus === 'needed' ? (
+          return !readOnly && displayStatus === 'needed' ? (
             <DraggableRequirementCourseRow key={course.code} selection={plannerSelection}>
               {courseCells}
             </DraggableRequirementCourseRow>

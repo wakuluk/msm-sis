@@ -7,6 +7,8 @@ import type {
   RequirementCourseStatus,
 } from './program-tracker.types';
 
+const ELECTIVE_PLACEHOLDER_CREDITS = 3;
+
 export function buildElectivePlaceholderSelection({
   program,
   requirement,
@@ -21,14 +23,10 @@ export function buildElectivePlaceholderSelection({
   const courseCode = hasDepartmentRule
     ? `${rule?.departmentCode ?? 'Department'} ${minimumCourseNumber}+ elective`
     : 'ELEC 100+';
-  const remainingRequired = Math.max(0, requirement.required - requirement.completed - requirement.planned);
-  const plannedCredits = requirement.unit === 'credits' && remainingRequired > 0
-    ? remainingRequired
-    : 3;
 
   return {
     courseCode,
-    credits: plannedCredits,
+    credits: ELECTIVE_PLACEHOLDER_CREDITS,
     placeholderDepartmentCode: rule?.departmentCode,
     placeholderDepartmentId: rule?.departmentId,
     placeholderLabel: hasDepartmentRule ? courseCode : `${requirement.label} elective`,

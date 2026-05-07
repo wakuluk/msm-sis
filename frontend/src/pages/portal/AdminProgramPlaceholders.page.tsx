@@ -1,7 +1,10 @@
 import { Badge, Button, List, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
+import { useAccessTokenData } from '@/auth/auth-store';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { DepartmentProgramRequestsView } from '@/components/program-requests/DepartmentProgramRequestsView';
+import { hasPortalRole, PORTAL_ROLES } from '@/portal/PortalRoles';
 
 type AdminProgramPlaceholderPageProps = {
   description: string;
@@ -106,16 +109,16 @@ export function AcademicRequirementsPage() {
 }
 
 export function AcademicDegreeRequestsPage() {
+  const tokenData = useAccessTokenData();
+  const isAdmin = hasPortalRole(tokenData?.roles, PORTAL_ROLES.ADMIN);
+
   return (
-    <AdminProgramPlaceholderPage
+    <RecordPageShell
+      eyebrow="Academic Administration"
       title="Degree Requests"
       description="Review and approve student requests to declare or change academic programs."
-      sectionTitle="Declaration Queue"
-      items={[
-        'Review pending program declaration requests submitted by students.',
-        'Approve, deny, or route requests back for follow-up.',
-        'Jump from a request into the student-specific program and degree tracking workflow.',
-      ]}
-    />
+    >
+      <DepartmentProgramRequestsView scope={isAdmin ? 'admin' : 'department'} />
+    </RecordPageShell>
   );
 }

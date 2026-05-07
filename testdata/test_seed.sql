@@ -1,5 +1,6 @@
 TRUNCATE TABLE
     pdf_documents,
+    academic_department_staff_role,
     staff,
     student,
     address,
@@ -191,7 +192,7 @@ VALUES
         2,
         'Merry',
         '1988-10-14',
-        '2007-06-01',
+        '2026-06-01',
         'STU-1002',
         'merry@shire.me',
         '555-0102',
@@ -209,7 +210,7 @@ VALUES
         3,
         'Pippin',
         '1989-03-25',
-        '2008-06-01',
+        '2026-06-01',
         'STU-1003',
         'pippin@shire.me',
         '555-0103',
@@ -238,7 +239,10 @@ VALUES
 INSERT INTO roles (name)
 VALUES
     ('ADMIN'),
-    ('STUDENT');
+    ('STUDENT'),
+    ('FACULTY'),
+    ('DEPARTMENT_HEAD')
+ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id
@@ -262,10 +266,17 @@ SELECT u.id, r.id
 FROM users u
 JOIN roles r ON r.name = 'ADMIN'
 WHERE u.email IN (
-    'gandalf@valinor.me',
     'aragorn@gondor.me',
-    'legolas@mirkwood.me',
     'boromir@gondor.me'
+);
+
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u
+JOIN roles r ON r.name IN ('FACULTY', 'DEPARTMENT_HEAD')
+WHERE u.email IN (
+    'gandalf@valinor.me',
+    'legolas@mirkwood.me'
 );
 
 UPDATE student s

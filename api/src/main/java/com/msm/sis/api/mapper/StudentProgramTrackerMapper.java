@@ -3,6 +3,8 @@ package com.msm.sis.api.mapper;
 import com.msm.sis.api.dto.student.program.StudentCompletionRequirementResponse;
 import com.msm.sis.api.dto.student.program.StudentProgramCompletionRequirementOptionResponse;
 import com.msm.sis.api.dto.student.program.StudentProgramCompletionRequirementResponse;
+import com.msm.sis.api.dto.student.program.StudentProgramRequestReviewNoteResponse;
+import com.msm.sis.api.dto.student.program.StudentProgramRequestReviewResponse;
 import com.msm.sis.api.dto.student.program.StudentProgramResponse;
 import com.msm.sis.api.dto.student.program.StudentProgramsResponse;
 import com.msm.sis.api.dto.student.program.StudentRequirementCourseRuleResponse;
@@ -31,6 +33,7 @@ import com.msm.sis.api.entity.StudentAcademicPlanCourse;
 import com.msm.sis.api.entity.StudentAcademicPlanTerm;
 import com.msm.sis.api.entity.StudentAcademicPlanYear;
 import com.msm.sis.api.entity.StudentProgram;
+import com.msm.sis.api.entity.StudentProgramRequest;
 import com.msm.sis.api.service.student.StudentRequirementCourseEvaluation;
 import com.msm.sis.api.service.student.StudentCompletedCourseTimelineCourse;
 import com.msm.sis.api.service.student.StudentCompletedCourseTimelineTerm;
@@ -65,6 +68,15 @@ public class StudentProgramTrackerMapper {
             List<StudentCompletionRequirementResponse> requirements,
             List<StudentProgramCompletionRequirementResponse> completionRequirements
     ) {
+        return toStudentProgramResponse(studentProgram, requirements, completionRequirements, null);
+    }
+
+    public StudentProgramResponse toStudentProgramResponse(
+            StudentProgram studentProgram,
+            List<StudentCompletionRequirementResponse> requirements,
+            List<StudentProgramCompletionRequirementResponse> completionRequirements,
+            StudentProgramRequest openRequest
+    ) {
         Program program = studentProgram.getProgram();
         ProgramVersion programVersion = studentProgram.getProgramVersion();
         ProgramType programType = program == null ? null : program.getProgramType();
@@ -93,6 +105,10 @@ public class StudentProgramTrackerMapper {
                 programVersion == null ? null : programVersion.getClassYearStart(),
                 programVersion == null ? null : programVersion.getClassYearEnd(),
                 studentProgram.getStatus(),
+                openRequest == null ? null : openRequest.getId(),
+                openRequest == null ? null : openRequest.getStatus(),
+                openRequest == null ? null : openRequest.getRequestedAt(),
+                toStudentProgramRequestReviewResponse(openRequest),
                 studentProgram.getDeclaredDate(),
                 studentProgram.getCompletedDate(),
                 completed,
@@ -101,6 +117,62 @@ public class StudentProgramTrackerMapper {
                 "total",
                 requirements,
                 completionRequirements
+        );
+    }
+
+    private StudentProgramRequestReviewResponse toStudentProgramRequestReviewResponse(
+            StudentProgramRequest studentProgramRequest
+    ) {
+        if (studentProgramRequest == null) {
+            return null;
+        }
+
+        return new StudentProgramRequestReviewResponse(
+                studentProgramRequest.getId(),
+                studentProgramRequest.getStatus(),
+                studentProgramRequest.getRequestedAt(),
+                toStudentProgramRequestReviewNoteResponse(
+                        studentProgramRequest.getDepartmentReviewedAt(),
+                        studentProgramRequest.getDepartmentReviewedByUser() == null
+                                ? null
+                                : studentProgramRequest.getDepartmentReviewedByUser().getEmail(),
+                        studentProgramRequest.getDepartmentReviewedAt(),
+                        studentProgramRequest.getDepartmentSignatureName(),
+                        studentProgramRequest.getDepartmentSignatureEmail(),
+                        studentProgramRequest.getDepartmentComment()
+                ),
+                toStudentProgramRequestReviewNoteResponse(
+                        studentProgramRequest.getAdminReviewedAt(),
+                        studentProgramRequest.getAdminReviewedByUser() == null
+                                ? null
+                                : studentProgramRequest.getAdminReviewedByUser().getEmail(),
+                        studentProgramRequest.getAdminReviewedAt(),
+                        studentProgramRequest.getAdminSignatureName(),
+                        studentProgramRequest.getAdminSignatureEmail(),
+                        studentProgramRequest.getAdminComment()
+                )
+        );
+    }
+
+    private StudentProgramRequestReviewNoteResponse toStudentProgramRequestReviewNoteResponse(
+            java.time.LocalDateTime reviewedAt,
+            String reviewedByEmail,
+            java.time.LocalDateTime signatureAt,
+            String signatureName,
+            String signatureEmail,
+            String comment
+    ) {
+        if (reviewedAt == null && signatureName == null && signatureEmail == null && comment == null) {
+            return null;
+        }
+
+        return new StudentProgramRequestReviewNoteResponse(
+                reviewedAt,
+                reviewedByEmail,
+                signatureAt,
+                signatureName,
+                signatureEmail,
+                comment
         );
     }
 

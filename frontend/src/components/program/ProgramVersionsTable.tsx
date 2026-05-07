@@ -31,7 +31,7 @@ export function ProgramVersionsTable({
                 <Table.Tr>
                   <Table.Th>Version</Table.Th>
                   <Table.Th>Status</Table.Th>
-                  <Table.Th>Class Years</Table.Th>
+                  <Table.Th>Years</Table.Th>
                   <Table.Th>Requirements</Table.Th>
                   <Table.Th>Current</Table.Th>
                 </Table.Tr>
