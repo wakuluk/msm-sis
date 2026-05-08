@@ -89,7 +89,7 @@ export function CourseSectionAcademicFields({
             onChange={(value) => {
               setDraft((current) => ({
                 ...current,
-                academicDivision: value,
+                academicDivision: value ?? null,
               }));
             }}
           />
@@ -105,7 +105,7 @@ export function CourseSectionAcademicFields({
             onChange={(value) => {
               setDraft((current) => ({
                 ...current,
-                gradingBasis: value,
+                gradingBasis: value ?? null,
               }));
             }}
           />
@@ -121,7 +121,7 @@ export function CourseSectionAcademicFields({
             onChange={(value) => {
               setDraft((current) => ({
                 ...current,
-                credits: value,
+                credits: value ?? null,
               }));
             }}
           />

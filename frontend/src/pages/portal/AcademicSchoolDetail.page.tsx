@@ -1,62 +1,26 @@
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Grid, Stack, Table, TextInput } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router-dom';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { ReadOnlyField } from '@/components/fields/ReadOnlyField';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import { getAcademicSchoolById } from '@/services/academic-school-service';
 import type { AcademicSchoolResponse } from '@/services/schemas/academic-school-schemas';
+import { getErrorMessage } from '@/utils/errors';
+import { displayValue } from '@/utils/form-values';
 
 type AcademicSchoolDetailPageState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
   | { status: 'success'; school: AcademicSchoolResponse };
 
-function displayValue(value: boolean | number | string | null | undefined): string {
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-
-  if (value === null || value === undefined || value === '') {
-    return '—';
-  }
-
-  return String(value);
-}
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
-
 function compareDepartments(
   left: AcademicSchoolResponse['departments'][number],
   right: AcademicSchoolResponse['departments'][number]
 ): number {
   return left.name.localeCompare(right.name) || left.code.localeCompare(right.code);
-}
-
-function ReadOnlyField({
-  label,
-  value,
-  span = { base: 12, md: 6 },
-}: {
-  label: string;
-  value: string;
-  span?: ComponentProps<typeof Grid.Col>['span'];
-}) {
-  const isEmptyValue = value === '—';
-
-  return (
-    <Grid.Col span={span}>
-      <TextInput
-        label={label}
-        value={isEmptyValue ? '' : value}
-        placeholder={isEmptyValue ? '—' : undefined}
-        readOnly
-      />
-    </Grid.Col>
-  );
 }
 
 export function AcademicSchoolDetailPage() {

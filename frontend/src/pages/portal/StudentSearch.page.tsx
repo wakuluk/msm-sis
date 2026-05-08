@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Container, Paper, Stack, Title } from '@mantine/core';
+import { Container, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { StudentSearchForm } from '@/components/student/StudentSearchForm';
-import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
-import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
-import { SearchResultsStateNotice } from '@/components/search/SearchResultsStateNotice';
-import { SearchResultsTable } from '@/components/search/SearchResultsTable';
+import {
+  StudentSearchResultsPanel,
+  type StudentResultsView,
+  type StudentSearchResultsState,
+} from '@/components/student/StudentSearchResultsPanel';
 import {
   getStudentReferenceOptions,
   mapReferenceOptionsToSelectOptions,
@@ -26,11 +26,10 @@ import {
   initialStudentSearchFilters,
   studentSearchFilterKeys,
   type StudentSearchFilters,
-  type StudentSearchResultResponse,
-  type StudentSearchResponse,
   type StudentSortBy,
   type StudentSortDirection,
 } from '@/services/schemas/student-schemas';
+import { getErrorMessage } from '@/utils/errors';
 
 const advancedSearchKeys: (keyof StudentSearchFilters)[] = [
   'genderId',
@@ -52,22 +51,6 @@ type StudentSearchPageState = {
   size: StudentSearchSize;
   sortBy: StudentSortBy;
   sortDirection: StudentSortDirection;
-};
-
-type StudentSearchResultsState =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'empty'; response: StudentSearchResponse }
-  | { status: 'success'; response: StudentSearchResponse };
-
-type StudentResultsView = 'standard' | 'system';
-
-const emptyStudentResults: StudentSearchResultResponse[] = [];
-const standardResultsColumnVisibility = {
-  updatedBy: false,
-  lastUpdated: false,
-  disabled: false,
 };
 
 function parseStudentSearchParams(searchParams: URLSearchParams): StudentSearchPageState {
@@ -138,94 +121,6 @@ function parseStudentSearchPage(value: string | null | undefined): number {
   return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : 0;
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Failed to search students.';
-}
-
-function formatResultValue(value: string | number | null | undefined): string {
-  if (value === null || value === undefined || value === '') {
-    return '-';
-  }
-
-  return String(value);
-}
-
-function getResultsSummary(response: StudentSearchResponse): string {
-  if (response.totalElements === 0 || response.results.length === 0) {
-    return 'No students matched the current search criteria.';
-  }
-
-  const start = response.page * response.size + 1;
-  const end = response.page * response.size + response.results.length;
-
-  return `Showing ${start}-${end} of ${response.totalElements} students`;
-}
-
-const studentResultsColumns: ColumnDef<StudentSearchResultResponse>[] = [
-  {
-    accessorKey: 'studentId',
-    header: 'Student ID',
-    size: 116,
-    meta: { sortBy: 'studentId' satisfies StudentSortBy },
-  },
-  {
-    accessorKey: 'lastName',
-    header: 'Last name',
-    size: 140,
-    cell: ({ getValue }) => formatResultValue(getValue<string | null>()),
-    meta: { sortBy: 'lastName' satisfies StudentSortBy },
-  },
-  {
-    accessorKey: 'firstName',
-    header: 'First name',
-    size: 140,
-    cell: ({ getValue }) => formatResultValue(getValue<string | null>()),
-    meta: { sortBy: 'firstName' satisfies StudentSortBy },
-  },
-  {
-    accessorKey: 'classOf',
-    header: 'Class of',
-    size: 112,
-    cell: ({ getValue }) => formatResultValue(getValue<number | null>()),
-    meta: { sortBy: 'classOf' satisfies StudentSortBy },
-  },
-  {
-    accessorKey: 'city',
-    header: 'City',
-    size: 124,
-    cell: ({ getValue }) => formatResultValue(getValue<string | null>()),
-    meta: { sortBy: 'city' satisfies StudentSortBy },
-  },
-  {
-    accessorKey: 'stateRegion',
-    header: 'State / region',
-    size: 152,
-    cell: ({ getValue }) => formatResultValue(getValue<string | null>()),
-    meta: { sortBy: 'stateRegion' satisfies StudentSortBy },
-  },
-  {
-    accessorKey: 'updatedBy',
-    header: 'Updated by',
-    size: 148,
-    cell: ({ getValue }) => formatResultValue(getValue<string | null>()),
-    meta: { sortBy: 'updatedBy' satisfies StudentSortBy },
-  },
-  {
-    accessorKey: 'lastUpdated',
-    header: 'Last updated',
-    size: 168,
-    cell: ({ getValue }) => formatResultValue(getValue<string | null>()),
-    meta: { sortBy: 'lastUpdated' satisfies StudentSortBy },
-  },
-  {
-    id: 'disabled',
-    accessorFn: (student) => student.disabled,
-    header: 'Disabled',
-    size: 96,
-    cell: ({ getValue }) => (getValue<boolean>() ? 'Yes' : 'No'),
-  },
-];
-
 export function StudentSearchPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -274,7 +169,7 @@ export function StudentSearchPage() {
         setReferenceOptionsError(null);
       } catch (error) {
         if (!cancelled) {
-          setReferenceOptionsError(getErrorMessage(error));
+          setReferenceOptionsError(getErrorMessage(error, 'Failed to load student reference options.'));
         }
       }
     })();
@@ -329,7 +224,7 @@ export function StudentSearchPage() {
           return;
         }
 
-        setSearchResultsState({ status: 'error', message: getErrorMessage(error) });
+        setSearchResultsState({ status: 'error', message: getErrorMessage(error, 'Failed to search students.') });
       }
     })();
 
@@ -339,22 +234,6 @@ export function StudentSearchPage() {
   }, [searchParamsSnapshot]);
 
   const isSearching = searchResultsState.status === 'loading';
-  const tableData =
-    searchResultsState.status === 'success'
-      ? searchResultsState.response.results
-      : emptyStudentResults;
-  const tableColumnVisibility = resultsView === 'standard' ? standardResultsColumnVisibility : {};
-  const studentResultsTable = useReactTable({
-    columns: studentResultsColumns,
-    data: tableData,
-    getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => String(row.studentId),
-    manualPagination: true,
-    state: {
-      columnVisibility: tableColumnVisibility,
-    },
-  });
-
   function applySearchParams(nextState: StudentSearchPageState) {
     setSearchParams(buildStudentSearchParams(nextState));
   }
@@ -421,71 +300,21 @@ export function StudentSearchPage() {
           onSubmit={handleSubmit}
         />
 
-        <Paper p="lg">
-          <Stack gap="md">
-            <Title order={3}>Results</Title>
-
-            {searchResultsState.status === 'empty' || searchResultsState.status === 'success' ? (
-              <SearchResultsHeader
-                data={[
-                  { label: 'Standard', value: 'standard' },
-                  { label: 'System', value: 'system' },
-                ]}
-                value={resultsView}
-                onChange={(value) => {
-                  setResultsView(value as StudentResultsView);
-                }}
-                summary={getResultsSummary(searchResultsState.response)}
-              />
-            ) : null}
-
-            <SearchResultsStateNotice
-              status={searchResultsState.status}
-              idleTitle="Search students"
-              idleMessage="Enter filters if needed, then click `Search Students` to load results."
-              loadingMessage="Loading students..."
-              errorMessage={
-                searchResultsState.status === 'error' ? searchResultsState.message : null
-              }
-              emptyTitle="No students found"
-              emptyMessage="No students matched the current search criteria."
-            />
-
-            {searchResultsState.status === 'success' ? (
-              <Stack gap="lg">
-                <SearchResultsTable
-                  table={studentResultsTable}
-                  sortBy={sortBy}
-                  sortDirection={sortDirection}
-                  onToggleSort={toggleColumnSort}
-                  getRowProps={(row) => ({
-                    role: 'link',
-                    tabIndex: 0,
-                    onClick: () => {
-                      openStudentDetail(row.original.studentId);
-                    },
-                    onKeyDown: (event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        openStudentDetail(row.original.studentId);
-                      }
-                    },
-                  })}
-                />
-                <SearchPaginationFooter
-                  page={searchResultsState.response.page}
-                  totalPages={searchResultsState.response.totalPages}
-                  onPageChange={(nextPage) => {
-                    applySearchParams({
-                      ...searchParamValues,
-                      page: nextPage,
-                    });
-                  }}
-                />
-              </Stack>
-            ) : null}
-          </Stack>
-        </Paper>
+        <StudentSearchResultsPanel
+          resultsState={searchResultsState}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          resultsView={resultsView}
+          onToggleSort={toggleColumnSort}
+          onViewChange={setResultsView}
+          onOpenStudent={openStudentDetail}
+          onPageChange={(nextPage) => {
+            applySearchParams({
+              ...searchParamValues,
+              page: nextPage,
+            });
+          }}
+        />
       </Stack>
     </Container>
   );

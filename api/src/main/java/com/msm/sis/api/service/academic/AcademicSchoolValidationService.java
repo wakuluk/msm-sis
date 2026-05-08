@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import static com.msm.sis.api.util.ValidationUtils.requireGreaterThanZero;
+
 @Service
 public class AcademicSchoolValidationService {
 
@@ -14,12 +16,12 @@ public class AcademicSchoolValidationService {
             return;
         }
 
-        if (criteria.getSchoolId() != null && criteria.getSchoolId() < 1) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "School ID must be greater than zero.");
+        if (criteria.getSchoolId() != null) {
+            requireGreaterThanZero(criteria.getSchoolId(), "School ID");
         }
 
-        if (criteria.getDepartmentId() != null && criteria.getDepartmentId() < 1) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Department ID must be greater than zero.");
+        if (criteria.getDepartmentId() != null) {
+            requireGreaterThanZero(criteria.getDepartmentId(), "Department ID");
         }
 
         normalizeSearchSortBy(criteria.getSortBy());

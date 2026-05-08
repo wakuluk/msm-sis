@@ -91,6 +91,7 @@ export function CourseSectionStudentsPanel({
   const registeredCount = students.filter((student) => student.statusCode === 'REGISTERED').length;
   const waitlistCount = students.filter((student) => student.statusCode === 'WAITLISTED').length;
   const capacity = selectedSection.capacity || 0;
+  const hardCapacity = selectedSection.hardCapacity;
   const openSeats = Math.max(capacity - registeredCount, 0);
   const addStudentError =
     studentMutationState.status === 'error' ? studentMutationState.message : null;
@@ -237,6 +238,7 @@ export function CourseSectionStudentsPanel({
         sectionId: selectedSection.sectionId,
         request: {
           studentId: values.studentId,
+          statusCode: values.statusCode,
           gradingBasisCode: values.gradingBasisCode,
           creditsAttempted: values.creditsAttempted,
           capacityOverride: values.capacityOverride,
@@ -391,7 +393,9 @@ export function CourseSectionStudentsPanel({
       <CourseSectionAddStudentModal
         opened={addStudentModalOpened}
         capacity={capacity}
+        hardCapacity={hardCapacity}
         registeredCount={registeredCount}
+        waitlistAllowed={selectedSection.waitlistAllowed}
         gradingBasisOptions={gradingBasisOptions}
         defaultCredits={selectedSection.credits}
         defaultGradingBasisCode={selectedSection.gradingBasisCode}

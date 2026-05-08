@@ -17,9 +17,9 @@ public interface StudentTransferCreditRepository extends JpaRepository<StudentTr
                 stc.external_term_label as termLabel,
                 stc.transcript_sort_date as termSortDate,
                 'TRANSFER' as source,
-                coalesce(stc.local_subject_code, stc.external_subject_code) as subjectCode,
-                coalesce(stc.local_course_number, stc.external_course_number) as courseNumber,
-                coalesce(stc.local_course_title, stc.external_course_title) as title,
+                coalesce(local_mapping.subject_code, stc.external_subject_code) as subjectCode,
+                coalesce(local_mapping.course_number, stc.external_course_number) as courseNumber,
+                coalesce(local_mapping.title, stc.external_course_title) as title,
                 'TRANSFERRED' as statusCode,
                 'Transferred' as statusName,
                 null as repeatCode,
@@ -33,6 +33,25 @@ public interface StudentTransferCreditRepository extends JpaRepository<StudentTr
                 false as countsInGpa,
                 0 as qualityPointsPerCredit
             from student_transfer_credit stc
+            left join lateral (
+                select
+                    string_agg(subject.code, ', ' order by subject.code, catalog_course.course_number) as subject_code,
+                    string_agg(catalog_course.course_number, ', ' order by subject.code, catalog_course.course_number) as course_number,
+                    string_agg(
+                        coalesce(current_version.title, catalog_course.course_number),
+                        '; '
+                        order by subject.code, catalog_course.course_number
+                    ) as title
+                from student_transfer_credit_course stcc
+                join course catalog_course
+                  on catalog_course.course_id = stcc.course_id
+                join academic_subject subject
+                  on subject.subject_id = catalog_course.subject_id
+                left join course_version current_version
+                  on current_version.course_id = catalog_course.course_id
+                 and current_version.is_current = true
+                where stcc.student_transfer_credit_id = stc.student_transfer_credit_id
+            ) local_mapping on true
             where stc.student_id = :studentId
             order by
                 stc.transcript_sort_date,
@@ -41,6 +60,39 @@ public interface StudentTransferCreditRepository extends JpaRepository<StudentTr
                 stc.external_course_number
             """, nativeQuery = true)
     List<StudentTranscriptCourseProjection> findTranscriptTransferCourses(@Param("studentId") Long studentId);
+
+    @Query(value = """
+            select
+                stc.student_transfer_credit_id as transferCreditId,
+                stcc.course_id as courseId,
+                department.department_id as departmentId,
+                subject.code as subjectCode,
+                catalog_course.course_number as courseNumber,
+                coalesce(current_version.title, stc.external_course_title) as title,
+                stc.credits_earned as creditsEarned,
+                stc.transcript_sort_date as completedDate
+            from student_transfer_credit stc
+            join student_transfer_credit_course stcc
+              on stcc.student_transfer_credit_id = stc.student_transfer_credit_id
+            join course catalog_course
+              on catalog_course.course_id = stcc.course_id
+            join academic_subject subject
+              on subject.subject_id = catalog_course.subject_id
+            join academic_department department
+              on department.department_id = subject.department_id
+            left join course_version current_version
+              on current_version.course_id = catalog_course.course_id
+             and current_version.is_current = true
+            where stc.student_id = :studentId
+              and stc.transfer_grade_mark = 'P'
+              and stc.credits_earned > 0
+            order by
+                stc.transcript_sort_date,
+                stc.external_term_label,
+                subject.code,
+                catalog_course.course_number
+            """, nativeQuery = true)
+    List<StudentCompletedTransferCourseProjection> findCompletedLocalTransferCourses(@Param("studentId") Long studentId);
 
     interface StudentTranscriptCourseProjection {
         Long getRecordId();
@@ -80,5 +132,23 @@ public interface StudentTransferCreditRepository extends JpaRepository<StudentTr
         Boolean getCountsInGpa();
 
         BigDecimal getQualityPointsPerCredit();
+    }
+
+    interface StudentCompletedTransferCourseProjection {
+        Long getTransferCreditId();
+
+        Long getCourseId();
+
+        Long getDepartmentId();
+
+        String getSubjectCode();
+
+        String getCourseNumber();
+
+        String getTitle();
+
+        BigDecimal getCreditsEarned();
+
+        LocalDate getCompletedDate();
     }
 }

@@ -24,8 +24,19 @@ public class CourseController {
         this.courseService = courseService;
     }
 
-    @GetMapping("/{courseId}/versions")
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create course", description = "Creates a catalog course and its initial current version.")
+    public ResponseEntity<CourseVersionDetailResponse> createCourse(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @Valid @NotNull @RequestBody CreateCourseRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(courseService.createCourse(request));
+    }
+
+    @GetMapping("/{courseId}/versions")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
     @Operation(summary = "Search course versions by course id", description = "Returns paged version details for a course.")
     public ResponseEntity<CourseVersionSearchResponse> getCourseVersionsForCourseId(
             @AuthenticationPrincipal AuthenticatedJwt jwt,

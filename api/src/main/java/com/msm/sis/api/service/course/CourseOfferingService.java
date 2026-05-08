@@ -12,7 +12,6 @@ import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.repository.CourseOfferingRepository;
 import com.msm.sis.api.repository.CourseOfferingSubTermRepository;
 import com.msm.sis.api.repository.CourseRepository;
-import com.msm.sis.api.repository.CourseVersionRepository;
 import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,14 +22,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.LinkedHashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
+import static com.msm.sis.api.util.PagingUtils.validatePageRequest;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
+import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
 
 @Service
 public class CourseOfferingService {
@@ -46,7 +43,8 @@ public class CourseOfferingService {
     private final AcademicYearCourseOfferingSearchService academicYearCourseOfferingSearchService;
     private final AcademicYearRepository academicYearRepository;
     private final CourseRepository courseRepository;
-    private final CourseVersionRepository courseVersionRepository;
+    private final CourseOfferingCatalogMaintenanceService courseOfferingCatalogMaintenanceService;
+    private final CourseOfferingPatchService courseOfferingPatchService;
     private final CourseMapper courseMapper;
     private final CourseOfferingAdvancedSearchCriteriaMapper courseOfferingSearchCriteriaMapper;
     private final CourseOfferingSubTermService courseOfferingSubTermService;
@@ -58,7 +56,8 @@ public class CourseOfferingService {
             AcademicYearCourseOfferingSearchService academicYearCourseOfferingSearchService,
             AcademicYearRepository academicYearRepository,
             CourseRepository courseRepository,
-            CourseVersionRepository courseVersionRepository,
+            CourseOfferingCatalogMaintenanceService courseOfferingCatalogMaintenanceService,
+            CourseOfferingPatchService courseOfferingPatchService,
             CourseMapper courseMapper,
             CourseOfferingAdvancedSearchCriteriaMapper courseOfferingSearchCriteriaMapper,
             CourseOfferingSubTermService courseOfferingSubTermService,
@@ -69,7 +68,8 @@ public class CourseOfferingService {
         this.academicYearCourseOfferingSearchService = academicYearCourseOfferingSearchService;
         this.academicYearRepository = academicYearRepository;
         this.courseRepository = courseRepository;
-        this.courseVersionRepository = courseVersionRepository;
+        this.courseOfferingCatalogMaintenanceService = courseOfferingCatalogMaintenanceService;
+        this.courseOfferingPatchService = courseOfferingPatchService;
         this.courseMapper = courseMapper;
         this.courseOfferingSearchCriteriaMapper = courseOfferingSearchCriteriaMapper;
         this.courseOfferingSubTermService = courseOfferingSubTermService;
@@ -81,12 +81,7 @@ public class CourseOfferingService {
             Long academicYearId,
             CreateCourseOfferingRequest request
     ) {
-        if (academicYearId == null || academicYearId <= 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic year id must be a positive number."
-            );
-        }
+        requirePositiveId(academicYearId, "Academic year id");
 
         if (request == null) {
             throw new ResponseStatusException(
@@ -96,12 +91,7 @@ public class CourseOfferingService {
         }
 
         Long courseId = request.courseId();
-        if (courseId == null || courseId <= 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Course id must be a positive number."
-            );
-        }
+        requirePositiveId(courseId, "Course id");
 
         List<Long> requestedSubTermIds = courseOfferingSubTermService.normalizeSubTermIds(request.subTermIds());
         if (requestedSubTermIds.isEmpty()) {
@@ -121,7 +111,7 @@ public class CourseOfferingService {
                 academicYearId,
                 requestedSubTermIds
         );
-        CourseVersion currentCourseVersion = getCurrentCourseVersion(courseId);
+        CourseVersion currentCourseVersion = courseOfferingCatalogMaintenanceService.getCurrentCourseVersion(courseId);
 
         CourseOffering existingCourseOffering = courseOfferingRepository
                 .findByCourseIdAndAcademicYearId(courseId, academicYearId)
@@ -178,153 +168,14 @@ public class CourseOfferingService {
     public ImportAcademicYearCourseOfferingsResponse importCurrentCourseVersionsIntoAcademicYear(
             Long academicYearId
     ) {
-        if (academicYearId == null || academicYearId <= 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic year id must be a positive number."
-            );
-        }
-
-        AcademicYear academicYear = academicYearRepository.findById(academicYearId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        List<CourseVersion> eligibleCurrentCourseVersions = courseVersionRepository.findCurrentCourseVersions().stream()
-                .filter(courseVersion -> courseVersion.getCourse() != null && courseVersion.getCourse().isActive())
-                .toList();
-
-        List<CourseOffering> courseOfferingsToCreate = eligibleCurrentCourseVersions.stream()
-                .filter(courseVersion -> !courseOfferingRepository.existsByCourseIdAndAcademicYearId(
-                        courseVersion.getCourse().getId(),
-                        academicYearId
-                ))
-                .map(courseVersion -> buildCourseOffering(academicYear, courseVersion))
-                .toList();
-
-        courseOfferingRepository.saveAll(courseOfferingsToCreate);
-        courseOfferingRepository.flush();
-
-        return new ImportAcademicYearCourseOfferingsResponse(
-                academicYearId,
-                eligibleCurrentCourseVersions.size(),
-                courseOfferingsToCreate.size(),
-                eligibleCurrentCourseVersions.size() - courseOfferingsToCreate.size()
-        );
+        return courseOfferingCatalogMaintenanceService.importCurrentCourseVersionsIntoAcademicYear(academicYearId);
     }
 
     @Transactional
     public SyncAcademicYearCourseOfferingsResponse syncAcademicYearCourseOfferingsToCurrentCourseVersions(
             Long academicYearId
     ) {
-        if (academicYearId == null || academicYearId <= 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic year id must be a positive number."
-            );
-        }
-
-        academicYearRepository.findById(academicYearId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        List<CourseOffering> courseOfferings = courseOfferingRepository.findAllByAcademicYear_Id(
-                academicYearId,
-                Sort.by(Sort.Direction.ASC, "id")
-        );
-        List<Long> courseIds = courseOfferings.stream()
-                .map(CourseOffering::getCourseVersion)
-                .filter(Objects::nonNull)
-                .map(CourseVersion::getCourse)
-                .filter(Objects::nonNull)
-                .map(com.msm.sis.api.entity.Course::getId)
-                .distinct()
-                .toList();
-
-        Map<Long, CourseVersion> currentCourseVersionsByCourseId = courseIds.isEmpty()
-                ? Map.of()
-                : courseVersionRepository.findCurrentCourseVersionsByCourseIds(courseIds)
-                        .stream()
-                        .filter(courseVersion -> courseVersion.getCourse() != null)
-                        .collect(java.util.stream.Collectors.toMap(
-                                courseVersion -> courseVersion.getCourse().getId(),
-                                courseVersion -> courseVersion,
-                                (left, right) -> left,
-                                LinkedHashMap::new
-                        ));
-
-        Set<Long> courseIdsWithCurrentOffering = courseOfferings.stream()
-                .map(courseOffering -> {
-                    CourseVersion courseVersion = courseOffering.getCourseVersion();
-                    if (courseVersion == null || courseVersion.getCourse() == null) {
-                        return null;
-                    }
-
-                    CourseVersion currentCourseVersion = currentCourseVersionsByCourseId.get(
-                            courseVersion.getCourse().getId()
-                    );
-
-                    if (currentCourseVersion == null) {
-                        return null;
-                    }
-
-                    return Objects.equals(courseVersion.getId(), currentCourseVersion.getId())
-                            ? courseVersion.getCourse().getId()
-                            : null;
-                })
-                .filter(Objects::nonNull)
-                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-
-        int updatedCourseOfferingCount = 0;
-        int alreadyCurrentCourseOfferingCount = 0;
-        int skippedMissingCurrentCourseVersionCount = 0;
-        int skippedDuplicateCurrentOfferingCount = 0;
-        List<CourseOffering> courseOfferingsToUpdate = new java.util.ArrayList<>();
-
-        for (CourseOffering courseOffering : courseOfferings) {
-            CourseVersion existingCourseVersion = courseOffering.getCourseVersion();
-            Long courseId = existingCourseVersion == null || existingCourseVersion.getCourse() == null
-                    ? null
-                    : existingCourseVersion.getCourse().getId();
-
-            if (courseId == null) {
-                skippedMissingCurrentCourseVersionCount++;
-                continue;
-            }
-
-            CourseVersion currentCourseVersion = currentCourseVersionsByCourseId.get(courseId);
-            if (currentCourseVersion == null) {
-                skippedMissingCurrentCourseVersionCount++;
-                continue;
-            }
-
-            if (Objects.equals(existingCourseVersion.getId(), currentCourseVersion.getId())) {
-                alreadyCurrentCourseOfferingCount++;
-                continue;
-            }
-
-            if (courseIdsWithCurrentOffering.contains(courseId)) {
-                skippedDuplicateCurrentOfferingCount++;
-                continue;
-            }
-
-            courseOffering.setCourseVersion(currentCourseVersion);
-            courseIdsWithCurrentOffering.add(courseId);
-            courseOfferingsToUpdate.add(courseOffering);
-            updatedCourseOfferingCount++;
-        }
-
-        if (updatedCourseOfferingCount > 0) {
-            courseOfferingRepository.saveAll(courseOfferingsToUpdate);
-            courseOfferingRepository.flush();
-            entityManager.clear();
-        }
-
-        return new SyncAcademicYearCourseOfferingsResponse(
-                academicYearId,
-                courseOfferings.size(),
-                updatedCourseOfferingCount,
-                alreadyCurrentCourseOfferingCount,
-                skippedMissingCurrentCourseVersionCount,
-                skippedDuplicateCurrentOfferingCount
-        );
+        return courseOfferingCatalogMaintenanceService.syncAcademicYearCourseOfferingsToCurrentCourseVersions(academicYearId);
     }
 
     @Transactional
@@ -332,96 +183,7 @@ public class CourseOfferingService {
             Long courseOfferingId,
             PatchCourseOfferingRequest request
     ) {
-        if (courseOfferingId == null || courseOfferingId <= 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Course offering id must be a positive number."
-            );
-        }
-
-        if (request == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Patch course offering request is required."
-            );
-        }
-
-        if (request.getCourseOfferingId() != null
-                && !Objects.equals(request.getCourseOfferingId(), courseOfferingId)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Course offering id in the request does not match the target course offering."
-            );
-        }
-
-        CourseOffering courseOffering = courseOfferingRepository.findById(courseOfferingId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        Long academicYearId = courseOffering.getAcademicYear() == null
-                ? null
-                : courseOffering.getAcademicYear().getId();
-        if (academicYearId == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        boolean subTermsChanged = false;
-        if (request.getSubTermIds().isPresent()) {
-            List<Long> requestedSubTermIds = courseOfferingSubTermService.normalizeSubTermIds(request.getSubTermIds().getValue());
-            if (requestedSubTermIds.isEmpty()) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "At least one academic sub term is required."
-                );
-            }
-
-            List<AcademicSubTerm> academicSubTerms = courseOfferingSubTermService.getAcademicSubTermsForAcademicYear(
-                    academicYearId,
-                    requestedSubTermIds
-            );
-            List<Long> existingSubTermIds = courseOffering.getCourseOfferingSubTerms().stream()
-                    .map(CourseOfferingSubTerm::getSubTerm)
-                    .filter(Objects::nonNull)
-                    .map(AcademicSubTerm::getId)
-                    .sorted()
-                    .toList();
-            List<Long> normalizedRequestedSubTermIds = academicSubTerms.stream()
-                    .map(AcademicSubTerm::getId)
-                    .sorted()
-                    .toList();
-
-            if (!Objects.equals(existingSubTermIds, normalizedRequestedSubTermIds)) {
-                courseOfferingSubTermRepository.deleteAllByCourseOffering_Id(courseOfferingId);
-                entityManager.flush();
-
-                List<CourseOfferingSubTerm> courseOfferingSubTerms = academicSubTerms.stream()
-                        .map(academicSubTerm -> courseOfferingSubTermService.buildCourseOfferingSubTerm(
-                                courseOffering,
-                                courseOffering.getAcademicYear(),
-                                academicSubTerm
-                        ))
-                        .toList();
-                courseOfferingSubTermRepository.saveAll(courseOfferingSubTerms);
-                subTermsChanged = true;
-            }
-        }
-
-        boolean changed = subTermsChanged;
-
-        if (request.getNotes().isPresent()) {
-            String notes = trimToNull(request.getNotes().getValue());
-            if (!Objects.equals(courseOffering.getNotes(), notes)) {
-                courseOffering.setNotes(notes);
-                changed = true;
-            }
-        }
-
-        if (!changed) {
-            return getCourseOfferingById(courseOfferingId);
-        }
-
-        courseOfferingRepository.save(courseOffering);
-        entityManager.flush();
-        entityManager.clear();
+        courseOfferingPatchService.patchCourseOffering(courseOfferingId, request);
         return getCourseOfferingById(courseOfferingId);
     }
 
@@ -454,13 +216,7 @@ public class CourseOfferingService {
             CourseOfferingSearchSortField sortField,
             Sort.Direction sortDirection
     ) {
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
-        }
-
-        if (size < 1 || size > 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size must be between 1 and 100.");
-        }
+        validatePageRequest(page, size, 100);
 
         boolean includeInactive = Boolean.TRUE.equals(criteria.getIncludeInactive());
 
@@ -502,12 +258,7 @@ public class CourseOfferingService {
             Long academicYearId,
             AcademicYearCourseOfferingSearchCriteria criteria
     ) {
-        if (academicYearId == null || academicYearId <= 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Academic year id must be a positive number."
-            );
-        }
+        requirePositiveId(academicYearId, "Academic year id");
 
         academicYearRepository.findById(academicYearId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -523,27 +274,6 @@ public class CourseOfferingService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         return courseMapper.toCourseOfferingDetailResponse(offering);
-    }
-
-    //TODO private methods may not be necessary. Do they belong in a nother service?
-    private CourseVersion getCurrentCourseVersion(Long courseId) {
-        return courseVersionRepository.findCurrentCourseVersionsByCourseId(courseId).stream()
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Course must have a current version before it can be added to the catalog."
-                ));
-    }
-
-    private CourseOffering buildCourseOffering(
-            AcademicYear academicYear,
-            CourseVersion courseVersion
-    ) {
-        CourseOffering courseOffering = new CourseOffering();
-        courseOffering.setAcademicYear(academicYear);
-        courseOffering.setCourseVersion(courseVersion);
-        courseOffering.setNotes(null);
-        return courseOffering;
     }
 
     private List<String> normalizeStatusCodes(List<String> statusCodes) {

@@ -8,11 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
+import static com.msm.sis.api.util.PagingUtils.validatePageRequest;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 @Service
@@ -22,7 +21,7 @@ public class StaffService {
 
     @Transactional(readOnly = true)
     public StaffSearchResponse searchStaff(String search, int page, int size) {
-        validatePageRequest(page, size);
+        validatePageRequest(page, size, 25);
 
         Page<Staff> staffPage = staffRepository.searchStaff(
                 trimToNull(search),
@@ -62,15 +61,5 @@ public class StaffService {
         String displayName = (firstName + " " + lastName).trim();
 
         return displayName.isBlank() ? staff.getEmail() : displayName;
-    }
-
-    private void validatePageRequest(int page, int size) {
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
-        }
-
-        if (size < 1 || size > 25) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size must be between 1 and 25.");
-        }
     }
 }

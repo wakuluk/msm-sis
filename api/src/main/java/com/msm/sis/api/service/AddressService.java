@@ -3,7 +3,6 @@ package com.msm.sis.api.service;
 import com.msm.sis.api.dto.student.CreateStudentRequest;
 import com.msm.sis.api.dto.student.PatchStudentRequest;
 import com.msm.sis.api.entity.Address;
-import com.msm.sis.api.patch.PatchValue;
 import com.msm.sis.api.repository.AddressRepository;
 import com.msm.sis.api.validation.AddressValidator;
 import org.springframework.stereotype.Service;
@@ -13,8 +12,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Locale;
-import java.util.function.Consumer;
 
+import static com.msm.sis.api.patch.PatchUtils.applyTrimmed;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 /**
@@ -168,14 +167,4 @@ public class AddressService {
                 .toLowerCase(Locale.ROOT);
     }
 
-    private <T> void applyDirect(PatchValue<T> value, Consumer<T> consumer) {
-        if (value.isPresent()) {
-            consumer.accept(value.orElse(null));
-        }
-    }
-
-    // String PATCH values are normalized before assignment so explicit blanks clear the field.
-    private void applyTrimmed(PatchValue<String> value, Consumer<String> consumer) {
-        applyDirect(value, currentValue -> consumer.accept(trimToNull(currentValue)));
-    }
 }

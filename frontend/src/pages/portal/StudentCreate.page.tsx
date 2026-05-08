@@ -20,15 +20,12 @@ import {
   type StudentCreateFormValues,
 } from '@/services/schemas/student-schemas';
 import { createStudent } from '@/services/student-service';
+import { getErrorMessage } from '@/utils/errors';
 
 type StudentCreateSubmitState =
   | { status: 'idle' }
   | { status: 'submitting' }
   | { status: 'error'; message: string };
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
 
 export function StudentCreatePage() {
   const navigate = useNavigate();

@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
+import static com.msm.sis.api.util.ValidationUtils.requireGreaterThanZero;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +40,14 @@ public class StudentSectionEnrollmentReferenceResolver {
     }
 
     public GradingBasis resolveGradingBasis(String code) {
-        return resolveRequiredReference(code, gradingBasisRepository::findByCode, "Grading basis");
+        GradingBasis gradingBasis = resolveRequiredReference(code, gradingBasisRepository::findByCode, "Grading basis");
+        if (!gradingBasis.isAllowedForStudentEnrollments()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Selected grading basis cannot be used for a student enrollment."
+            );
+        }
+        return gradingBasis;
     }
 
     public StudentSectionGradeType resolveGradeType(String code) {
@@ -54,9 +62,7 @@ public class StudentSectionEnrollmentReferenceResolver {
         if (userId == null) {
             return null;
         }
-        if (userId <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User id must be greater than zero.");
-        }
+        requireGreaterThanZero(userId, "User id");
         return sisUserRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User id is invalid."));
     }

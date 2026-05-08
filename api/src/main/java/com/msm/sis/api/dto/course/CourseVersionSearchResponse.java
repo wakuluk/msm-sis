@@ -8,6 +8,7 @@ public record CourseVersionSearchResponse(
         String subjectCode,
         String courseNumber,
         String courseCode,
+        boolean lab,
         List<CourseVersionDetailResponse> results,
         int page,
         int size,

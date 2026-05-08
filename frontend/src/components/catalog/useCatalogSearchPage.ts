@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from '@mantine/form';
 import type {
   CatalogResultsView,
@@ -19,6 +19,7 @@ import {
   getPublicCatalogSearchReferenceOptions,
 } from '@/services/catalog-reference-service';
 import {
+  type CourseOfferingDetailRequest,
   getAdvancedCourseOfferingById,
   getPublicCourseOfferingById,
   searchAdvancedCourseOfferings,
@@ -38,6 +39,7 @@ import {
   type CourseOfferingSortDirection,
 } from '@/services/schemas/catalog-schemas';
 import type { CatalogSearchReferenceOptionsResponse } from '@/services/schemas/reference-schemas';
+import { getErrorMessage } from '@/utils/errors';
 
 export type CatalogSearchVariant = 'public' | 'advanced';
 
@@ -55,10 +57,6 @@ const emptyCourseOfferingResults: CourseOfferingSearchResultResponse[] = [];
 const standardResultsColumnVisibility = {
   subjectCode: false,
 };
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Failed to load catalog search options.';
-}
 
 type UseCatalogSearchPageOptions = {
   variant: CatalogSearchVariant;
@@ -79,6 +77,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     variant === 'advanced' ? searchAdvancedCourseOfferings : searchPublicCourseOfferings;
   const loadCourseOfferingDetail =
     variant === 'advanced' ? getAdvancedCourseOfferingById : getPublicCourseOfferingById;
+  const detailAbortControllerRef = useRef<AbortController | null>(null);
 
   const form = useForm<CourseOfferingSearchFilters>({
     initialValues: initialCourseOfferingSearchFilters,
@@ -128,7 +127,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
 
         setReferenceOptionsState({
           status: 'error',
-          message: getErrorMessage(error),
+          message: getErrorMessage(error, 'Failed to load catalog search options.'),
         });
       });
 
@@ -178,7 +177,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
 
         setSearchResultsState({
           status: 'error',
-          message: getErrorMessage(error),
+          message: getErrorMessage(error, 'Failed to search course offerings.'),
         });
       }
     })();
@@ -274,9 +273,16 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
       ? searchResultsState.response.results
       : emptyCourseOfferingResults;
 
+  function clearExpandedCourseOffering() {
+    detailAbortControllerRef.current?.abort();
+    detailAbortControllerRef.current = null;
+    setExpandedCourseOfferingId(null);
+    setDetailStateByCourseOfferingId({});
+  }
+
   async function toggleExpandedCourseOffering(courseOfferingId: number) {
     if (expandedCourseOfferingId === courseOfferingId) {
-      setExpandedCourseOfferingId(null);
+      clearExpandedCourseOffering();
       return;
     }
 
@@ -293,19 +299,37 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
       [courseOfferingId]: { status: 'loading' },
     }));
 
-    try {
-      const detail = await loadCourseOfferingDetail(courseOfferingId);
+    detailAbortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    detailAbortControllerRef.current = abortController;
 
-      setDetailStateByCourseOfferingId((currentState) => ({
-        ...currentState,
-        [courseOfferingId]: { status: 'success', detail },
+    try {
+      const detail = await loadCourseOfferingDetail({
+        courseOfferingId,
+        signal: abortController.signal,
+      } satisfies CourseOfferingDetailRequest);
+
+      if (abortController.signal.aborted) {
+        return;
+      }
+
+      detailAbortControllerRef.current = null;
+      setDetailStateByCourseOfferingId(() => ({
+        [courseOfferingId]: {
+          status: 'success',
+          detail,
+        },
       }));
     } catch (error: unknown) {
-      setDetailStateByCourseOfferingId((currentState) => ({
-        ...currentState,
+      if (abortController.signal.aborted) {
+        return;
+      }
+
+      detailAbortControllerRef.current = null;
+      setDetailStateByCourseOfferingId(() => ({
         [courseOfferingId]: {
           status: 'error',
-          message: getErrorMessage(error),
+          message: getErrorMessage(error, 'Failed to load course offering detail.'),
         },
       }));
     }
@@ -314,16 +338,19 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
   function handlePageSizeChange(nextSize: CourseOfferingSearchSize) {
     setPage(0);
     setSize(nextSize);
+    clearExpandedCourseOffering();
   }
 
   function handleSortByChange(nextSortBy: CourseOfferingSearchSortBy) {
     setPage(0);
     setSortBy(nextSortBy);
+    clearExpandedCourseOffering();
   }
 
   function handleSortDirectionChange(nextSortDirection: CourseOfferingSortDirection) {
     setPage(0);
     setSortDirection(nextSortDirection);
+    clearExpandedCourseOffering();
   }
 
   function handleClear() {
@@ -337,10 +364,12 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     setPublishedOnly(variant === 'advanced');
     setAppliedFilters(null);
     setAppliedAdvancedFilters(null);
+    clearExpandedCourseOffering();
   }
 
   function handleSubmit(values: CourseOfferingSearchFilters) {
     setPage(0);
+    clearExpandedCourseOffering();
     setAppliedFilters({ ...values });
     setAppliedAdvancedFilters(
       variant === 'advanced'
@@ -355,6 +384,7 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
 
   function toggleColumnSort(nextSortBy: CourseOfferingSearchSortBy) {
     setPage(0);
+    clearExpandedCourseOffering();
     setSortDirection((currentDirection) =>
       sortBy === nextSortBy && currentDirection === 'asc' ? 'desc' : 'asc'
     );
@@ -398,6 +428,9 @@ export function useCatalogSearchPage({ variant }: UseCatalogSearchPageOptions) {
     handleClear,
     handleSubmit,
     toggleColumnSort,
-    handlePageChange: setPage,
+    handlePageChange: (nextPage: number) => {
+      setPage(nextPage);
+      clearExpandedCourseOffering();
+    },
   };
 }

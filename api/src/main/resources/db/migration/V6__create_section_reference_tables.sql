@@ -20,7 +20,9 @@ CREATE TABLE grading_basis (
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    sort_order INT NOT NULL
+    sort_order INT NOT NULL,
+    allowed_for_course_sections BOOLEAN NOT NULL DEFAULT TRUE,
+    allowed_for_student_enrollments BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE section_meeting_type (

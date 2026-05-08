@@ -15,6 +15,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
+import static com.msm.sis.api.util.PagingUtils.validatePageRequest;
+import static com.msm.sis.api.util.TextUtils.containsIgnoreCase;
+
 @Service
 @RequiredArgsConstructor
 public class AcademicYearCourseOfferingSearchService {
@@ -28,13 +31,7 @@ public class AcademicYearCourseOfferingSearchService {
         int page = criteria == null || criteria.getPage() == null ? 0 : criteria.getPage();
         int size = criteria == null || criteria.getSize() == null ? 25 : criteria.getSize();
 
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be zero or greater.");
-        }
-
-        if (size < 1 || size > 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size must be between 1 and 100.");
-        }
+        validatePageRequest(page, size, 100);
 
         List<AcademicYearCourseOfferingSearchResultResponse> filteredResults = courseOfferingRepository
                 .findAllByAcademicYear_Id(academicYearId, Sort.unsorted())
@@ -79,19 +76,6 @@ public class AcademicYearCourseOfferingSearchService {
                 || result.subTerms().stream().anyMatch(
                         subTerm -> Objects.equals(subTerm.subTermId(), expectedSubTermId)
                 );
-    }
-
-    private boolean containsIgnoreCase(String value, String filter) {
-        if (filter == null || filter.isBlank()) {
-            return true;
-        }
-
-        if (value == null) {
-            return false;
-        }
-
-        return value.toLowerCase(java.util.Locale.ROOT)
-                .contains(filter.trim().toLowerCase(java.util.Locale.ROOT));
     }
 
     private Comparator<AcademicYearCourseOfferingSearchResultResponse> buildComparator(

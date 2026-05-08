@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface StaffRepository extends JpaRepository<Staff, Long> {
 
     @Query("""
@@ -22,4 +24,6 @@ public interface StaffRepository extends JpaRepository<Staff, Long> {
             @Param("search") String search,
             Pageable pageable
     );
+
+    Optional<Staff> findByUserId(Long userId);
 }

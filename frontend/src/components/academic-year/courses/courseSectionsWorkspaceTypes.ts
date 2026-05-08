@@ -10,7 +10,6 @@ export type CourseSectionPreview = {
   sectionCode: string;
   sectionLetter: string;
   honors: boolean;
-  lab: boolean;
   statusCode: string;
   statusName: string;
   academicDivisionCode: string | null;
@@ -22,6 +21,7 @@ export type CourseSectionPreview = {
   room: string;
   credits: number | null;
   capacity: number;
+  hardCapacity: number | null;
   enrolled: number;
   waitlistAllowed: boolean;
   meetings: ReadonlyArray<{
@@ -49,7 +49,6 @@ export type MeetingDaySchedule = {
 export type CourseSectionDraft = {
   sectionCode: string;
   honors: boolean;
-  lab: boolean;
   teacherAssignment: string;
   teacherStaffId: number | null;
   academicDivision: string | null;
@@ -59,6 +58,7 @@ export type CourseSectionDraft = {
   meetingSchedule: Record<string, MeetingDaySchedule>;
   room: string;
   capacity: string;
+  hardCapacity: string;
   credits: string | null;
   status: string | null;
   waitlistAllowed: boolean;
@@ -111,7 +111,6 @@ export const initialMeetingSchedule = Object.fromEntries(
 export const initialCourseSectionDraft: CourseSectionDraft = {
   sectionCode: '',
   honors: false,
-  lab: false,
   teacherAssignment: '',
   teacherStaffId: null,
   academicDivision: null,
@@ -121,6 +120,7 @@ export const initialCourseSectionDraft: CourseSectionDraft = {
   meetingSchedule: initialMeetingSchedule,
   room: '',
   capacity: '',
+  hardCapacity: '',
   credits: null,
   status: 'DRAFT',
   waitlistAllowed: false,

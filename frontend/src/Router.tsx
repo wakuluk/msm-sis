@@ -20,6 +20,7 @@ import { AcademicSchoolDetailPage } from './pages/portal/AcademicSchoolDetail.pa
 import { AcademicDepartmentsPage } from './pages/portal/AcademicDepartments.page';
 import { AcademicDepartmentDetailPage } from './pages/portal/AcademicDepartmentDetail.page';
 import { CourseSearchPage } from './pages/portal/CourseSearch.page';
+import { CourseCreatePlaceholderPage } from './pages/portal/CourseCreatePlaceholder.page';
 import { CourseDetailPage } from './pages/portal/CourseDetail.page';
 import { AcademicYearsSearchPage } from './pages/portal/AcademicYearsSearch.page';
 import { AcademicYearCreatePage } from './pages/portal/AcademicYearCreate.page';
@@ -27,10 +28,21 @@ import { AcademicYearDetailPage } from './pages/portal/AcademicYearDetail.page';
 import { AcademicYearCoursesPage } from './pages/portal/AcademicYearCourses.page';
 import { AcademicTermGroupDetailPage } from './pages/portal/AcademicTermGroupDetail.page';
 import { CourseSectionDetailPage } from './pages/portal/CourseSectionDetail.page';
+import { ProgramDetailPage } from './pages/portal/ProgramDetail.page';
+import { AdminStudentProgramsPage } from './pages/portal/AdminStudentPrograms.page';
+import { DepartmentMajorStudentsPage } from './pages/portal/DepartmentMajorStudents.page';
+import { ProgramSearchPage } from './pages/portal/ProgramSearch.page';
+import { ProgramRequestDetailPage } from './pages/portal/ProgramRequestDetail.page';
+import { RequirementDetailPage } from './pages/portal/RequirementDetail.page';
+import { RequirementLibraryPage } from './pages/portal/RequirementLibrary.page';
+import {
+  AcademicDegreeRequestsPage,
+  AcademicProgramCreatePage,
+} from './pages/portal/AdminProgramPlaceholders.page';
 import {
   StudentCourseHistoryPage,
   StudentAdminTranscriptPage,
-  StudentDegreeTrackerPage,
+  StudentProgramsPage,
   StudentTranscriptPage,
 } from './pages/portal/StudentAcademicsPlaceholders.page';
 
@@ -38,14 +50,25 @@ const portalRouteComponents = {
   dashboard: PortalPage,
   catalog: CatalogSearchPage,
   'catalog-advanced': CatalogAdvancedPage,
+  'academic-programs': ProgramSearchPage,
+  'academic-student-program-assignments': AdminStudentProgramsPage,
+  'academic-department-programs': DepartmentMajorStudentsPage,
+  'academic-program-create': AcademicProgramCreatePage,
+  'academic-program-detail': ProgramDetailPage,
+  'academic-requirements': RequirementLibraryPage,
+  'academic-requirement-detail': RequirementDetailPage,
+  'academic-degree-requests': AcademicDegreeRequestsPage,
+  'academic-degree-request-detail': ProgramRequestDetailPage,
+  'academic-student-program-review-detail': ProgramRequestDetailPage,
   'student-transcript': StudentTranscriptPage,
   'student-course-history': StudentCourseHistoryPage,
-  'student-degree-tracker': StudentDegreeTrackerPage,
+  'student-programs': StudentProgramsPage,
   'academic-schools': AcademicSchoolsPage,
   'academic-school-detail': AcademicSchoolDetailPage,
   'academic-departments': AcademicDepartmentsPage,
   'academic-department-detail': AcademicDepartmentDetailPage,
   'course-search': CourseSearchPage,
+  'course-create': CourseCreatePlaceholderPage,
   'course-detail': CourseDetailPage,
   'academic-years-create': AcademicYearCreatePage,
   'academic-years-detail': AcademicYearDetailPage,

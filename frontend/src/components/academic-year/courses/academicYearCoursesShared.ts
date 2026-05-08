@@ -2,6 +2,7 @@
 // Defines term option shape plus common error handling, term option building, and term sorting utilities.
 import type { AcademicYearCoursesSummaryResponse } from '@/services/schemas/admin-courses-schemas';
 import type { AcademicTermResponse } from '@/services/schemas/academic-years-schemas';
+export { getErrorMessage } from '@/utils/errors';
 
 export type CourseTermOption = {
   value: string;
@@ -66,8 +67,4 @@ export function sortAcademicYearTermGroups(
 export function normalizeNotes(notes: string): string | null {
   const trimmedNotes = notes.trim();
   return trimmedNotes ? trimmedNotes : null;
-}
-
-export function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
 }

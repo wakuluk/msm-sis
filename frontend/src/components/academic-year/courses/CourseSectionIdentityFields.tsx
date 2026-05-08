@@ -68,21 +68,6 @@ export function CourseSectionIdentityFields({
           />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 2 }}>
-          <Switch
-            label="Lab"
-            checked={draft.lab}
-            disabled={fieldsDisabled}
-            styles={readOnlySwitchStyles}
-            mt="lg"
-            onChange={(event) => {
-              setDraft((current) => ({
-                ...current,
-                lab: event.currentTarget.checked,
-              }));
-            }}
-          />
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 3 }}>
           <Select
             label="Status"
             placeholder="Status"
@@ -90,15 +75,16 @@ export function CourseSectionIdentityFields({
             value={draft.status}
             disabled={fieldsDisabled || referencesAreLoading}
             styles={readOnlyInputStyles as SelectProps['styles']}
+            allowDeselect={false}
             onChange={(value) => {
               setDraft((current) => ({
                 ...current,
-                status: value,
+                status: value ?? current.status,
               }));
             }}
           />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 3 }}>
+        <Grid.Col span={{ base: 12, md: 2 }}>
           <TextInput
             label="Capacity"
             placeholder="24"
@@ -110,6 +96,22 @@ export function CourseSectionIdentityFields({
               setDraft((current) => ({
                 ...current,
                 capacity: event.currentTarget.value,
+              }));
+            }}
+          />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 2 }}>
+          <TextInput
+            label="Hard capacity"
+            placeholder="30"
+            inputMode="numeric"
+            value={draft.hardCapacity}
+            readOnly={fieldsDisabled}
+            styles={readOnlyInputStyles}
+            onChange={(event) => {
+              setDraft((current) => ({
+                ...current,
+                hardCapacity: event.currentTarget.value,
               }));
             }}
           />

@@ -10,14 +10,25 @@ export type PortalRouteItemKey =
   | 'catalog'
   | 'catalog-advanced'
   | 'academic-years-search'
+  | 'academic-programs'
+  | 'academic-student-program-assignments'
+  | 'academic-department-programs'
+  | 'academic-program-create'
+  | 'academic-program-detail'
+  | 'academic-requirements'
+  | 'academic-requirement-detail'
+  | 'academic-degree-requests'
+  | 'academic-degree-request-detail'
+  | 'academic-student-program-review-detail'
   | 'student-transcript'
   | 'student-course-history'
-  | 'student-degree-tracker'
+  | 'student-programs'
   | 'academic-schools'
   | 'academic-school-detail'
   | 'academic-departments'
   | 'academic-department-detail'
   | 'course-search'
+  | 'course-create'
   | 'course-detail'
   | 'academic-years-create'
   | 'academic-years-detail'
@@ -35,14 +46,25 @@ export type PortalRoutePath =
   | '/catalog/search'
   | '/catalog/search-advanced'
   | '/academics/academic-years/search'
+  | '/academics/programs'
+  | '/academics/student-program-assignments'
+  | '/academics/department-programs'
+  | '/academics/programs/new'
+  | '/academics/programs/:programId'
+  | '/academics/requirements'
+  | '/academics/requirements/:requirementId'
+  | '/academics/degree-requests'
+  | '/academics/degree-requests/:studentProgramRequestId'
+  | '/academics/student-programs/:studentProgramId/review'
   | '/academics/transcript'
   | '/academics/course-history'
-  | '/academics/degree-tracker'
+  | '/academics/student-programs'
   | '/academics/schools'
   | '/academics/schools/:schoolId'
   | '/academics/departments'
   | '/academics/departments/:departmentId'
   | '/academics/courses/search'
+  | '/academics/courses/new'
   | '/academics/courses/:courseId'
   | '/academics/academic-years/create'
   | '/academics/academic-years/:academicYearId'
@@ -51,7 +73,7 @@ export type PortalRoutePath =
   | '/academics/academic-sub-term/:subTermId'
   | '/academics/academic-terms/:termId';
 
-export type PortalRouteGroupKey = 'people' | 'catalog' | 'academics' | 'calendar';
+export type PortalRouteGroupKey = 'people' | 'catalog' | 'academics' | 'programs' | 'calendar';
 
 export type PortalRouteItem = {
   kind: 'item';
@@ -177,9 +199,9 @@ export const portalRoutes: PortalRouteNode[] = [
       },
       {
         kind: 'item',
-        key: 'student-degree-tracker',
-        label: 'Degree Tracker',
-        path: '/academics/degree-tracker',
+        key: 'student-programs',
+        label: 'My Programs',
+        path: '/academics/student-programs',
         requiredRoles: [PORTAL_ROLES.STUDENT],
         showInNav: true,
       },
@@ -222,6 +244,14 @@ export const portalRoutes: PortalRouteNode[] = [
         path: '/academics/courses/search',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'course-create',
+        label: 'Create Course',
+        path: '/academics/courses/new',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
       },
       {
         kind: 'item',
@@ -269,6 +299,95 @@ export const portalRoutes: PortalRouteNode[] = [
         label: 'Term Detail',
         path: '/academics/academic-terms/:termId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+    ],
+  },
+  {
+    kind: 'group',
+    key: 'programs',
+    label: 'Programs',
+    requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
+    showInNav: true,
+    children: [
+      {
+        kind: 'item',
+        key: 'academic-programs',
+        label: 'Program Search',
+        path: '/academics/programs',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-student-program-assignments',
+        label: 'Student Programs',
+        path: '/academics/student-program-assignments',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-department-programs',
+        label: 'Department Students',
+        path: '/academics/department-programs',
+        requiredRoles: [PORTAL_ROLES.DEPARTMENT_HEAD],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-program-create',
+        label: 'Create Program',
+        path: '/academics/programs/new',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-program-detail',
+        label: 'Program Detail',
+        path: '/academics/programs/:programId',
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-requirements',
+        label: 'Requirement Library',
+        path: '/academics/requirements',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-requirement-detail',
+        label: 'Requirement Detail',
+        path: '/academics/requirements/:requirementId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-degree-requests',
+        label: 'Degree Requests',
+        path: '/academics/degree-requests',
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-degree-request-detail',
+        label: 'Degree Request Detail',
+        path: '/academics/degree-requests/:studentProgramRequestId',
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'academic-student-program-review-detail',
+        label: 'Student Program Review Detail',
+        path: '/academics/student-programs/:studentProgramId/review',
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
         showInNav: false,
       },
     ],

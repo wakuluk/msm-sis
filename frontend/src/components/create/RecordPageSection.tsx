@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Grid, Group, Stack, Text, Title } from '@mantine/core';
+import { Box, Grid, Group, Stack, Text, Title } from '@mantine/core';
 import classes from './RecordPageLayout.module.css';
 
 type RecordPageSectionProps = {
@@ -23,10 +23,12 @@ export function RecordPageSection({
             <Title order={3} className={classes.sectionTitle}>
               {title}
             </Title>
-            {description ? (
+            {typeof description === 'string' ? (
               <Text size="sm" c="dimmed">
                 {description}
               </Text>
+            ) : description ? (
+              <Box>{description}</Box>
             ) : null}
           </Stack>
           {action}

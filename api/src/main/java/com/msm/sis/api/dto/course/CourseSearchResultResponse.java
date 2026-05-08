@@ -15,6 +15,7 @@ public record CourseSearchResultResponse(
         String subjectName,
         String courseNumber,
         String courseCode,
+        boolean lab,
         Long currentCourseVersionId,
         String currentVersionTitle,
         BigDecimal minCredits,

@@ -1,16 +1,5 @@
 import type { AcademicYearCreateResponse } from '@/services/schemas/academic-years-schemas';
-
-export function displayValue(value: boolean | number | string | null | undefined): string {
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-
-  if (value === null || value === undefined || value === '') {
-    return '—';
-  }
-
-  return String(value);
-}
+export { displayValue } from '@/utils/form-values';
 
 export function displayDate(value: string | null | undefined): string {
   if (!value) {
@@ -25,6 +14,26 @@ export function displayDate(value: string | null | undefined): string {
 
   return new Intl.DateTimeFormat('en-US', {
     day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(parsedDate);
+}
+
+export function displayDateTime(value: string | null | undefined): string {
+  if (!value) {
+    return '—';
+  }
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
     month: 'long',
     year: 'numeric',
   }).format(parsedDate);

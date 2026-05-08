@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,13 +21,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+
 @RestController
 @RequestMapping("/api/course-offerings")
 @Tag(name = "Course Offerings", description = "Catalog course offering endpoints")
 public class CourseOfferingController {
 
-    private static final String CATALOG_UNAVAILABLE_MESSAGE =
-            "Catalog search is temporarily unavailable while academic year and term status are being redesigned.";
     private final CourseOfferingService courseOfferingService;
 
     public CourseOfferingController(CourseOfferingService courseOfferingService) {
@@ -48,7 +48,13 @@ public class CourseOfferingController {
             @RequestParam(defaultValue = "subTermCode") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection
     ) {
-        throw catalogUnavailableException();
+        return ResponseEntity.ok(courseOfferingService.searchPublicCourseOfferings(
+                criteria,
+                page,
+                size,
+                parseCourseOfferingSearchSortField(sortBy),
+                parseSortDirection(sortDirection)
+        ));
     }
 
     @GetMapping("/advanced-search")
@@ -65,7 +71,13 @@ public class CourseOfferingController {
             @RequestParam(defaultValue = "subTermCode") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection
     ) {
-        throw catalogUnavailableException();
+        return ResponseEntity.ok(courseOfferingService.searchCourseOfferings(
+                criteria,
+                page,
+                size,
+                parseCourseOfferingSearchSortField(sortBy),
+                parseSortDirection(sortDirection)
+        ));
     }
 
     @GetMapping("/details/{courseOfferingId}")
@@ -75,7 +87,7 @@ public class CourseOfferingController {
             @AuthenticationPrincipal AuthenticatedJwt jwt,
             @PathVariable Long courseOfferingId
     ) {
-        throw catalogUnavailableException();
+        return ResponseEntity.ok(courseOfferingService.getPublicCourseOfferingById(courseOfferingId));
     }
 
     @GetMapping("/details-advanced/{courseOfferingId}")
@@ -101,7 +113,19 @@ public class CourseOfferingController {
         return ResponseEntity.ok(courseOfferingService.patchCourseOffering(courseOfferingId, request));
     }
 
-    private ResponseStatusException catalogUnavailableException() {
-        return new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, CATALOG_UNAVAILABLE_MESSAGE);
+    private CourseOfferingSearchSortField parseCourseOfferingSearchSortField(String sortBy) {
+        try {
+            return CourseOfferingSearchSortField.fromRequestValue(sortBy);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(BAD_REQUEST, exception.getMessage());
+        }
+    }
+
+    private Sort.Direction parseSortDirection(String sortDirection) {
+        try {
+            return Sort.Direction.fromString(sortDirection);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(BAD_REQUEST, "Sort direction must be 'asc' or 'desc'.");
+        }
     }
 }

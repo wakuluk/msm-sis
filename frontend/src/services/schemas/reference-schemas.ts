@@ -75,6 +75,17 @@ export type CourseSearchReferenceOptionsResponse = z.infer<
   typeof CourseSearchReferenceOptionsResponseSchema
 >;
 
+export const ProgramReferenceOptionsResponseSchema = z.object({
+  programTypes: z.array(CatalogReferenceOptionSchema),
+  degreeTypes: z.array(CatalogReferenceOptionSchema),
+  schools: z.array(CatalogReferenceOptionSchema),
+  departments: z.array(AcademicDepartmentReferenceOptionSchema),
+});
+
+export type ProgramReferenceOptionsResponse = z.infer<
+  typeof ProgramReferenceOptionsResponseSchema
+>;
+
 export const CourseReferenceOptionSchema = z.object({
   courseId: z.number(),
   schoolId: z.number(),
@@ -88,6 +99,7 @@ export const CourseReferenceOptionSchema = z.object({
   subjectName: z.string(),
   courseNumber: z.string(),
   courseCode: z.string(),
+  lab: z.boolean(),
   currentCourseVersionId: z.number().nullable(),
   currentVersionTitle: z.string().nullable(),
   minCredits: z.number().nullable(),
@@ -119,11 +131,18 @@ export const GradeMarkReferenceOptionSchema = z.object({
 
 export type GradeMarkReferenceOption = z.infer<typeof GradeMarkReferenceOptionSchema>;
 
+export const GradingBasisReferenceOptionSchema = CatalogReferenceOptionSchema.extend({
+  allowedForCourseSections: z.boolean(),
+  allowedForStudentEnrollments: z.boolean(),
+});
+
+export type GradingBasisReferenceOption = z.infer<typeof GradingBasisReferenceOptionSchema>;
+
 export const CourseSectionReferenceOptionsResponseSchema = z.object({
   courseSectionStatuses: z.array(CatalogReferenceOptionSchema),
   academicDivisions: z.array(CatalogReferenceOptionSchema),
   deliveryModes: z.array(CatalogReferenceOptionSchema),
-  gradingBases: z.array(CatalogReferenceOptionSchema),
+  gradingBases: z.array(GradingBasisReferenceOptionSchema),
   sectionMeetingTypes: z.array(CatalogReferenceOptionSchema),
   sectionInstructorRoles: z.array(CatalogReferenceOptionSchema),
   studentSectionEnrollmentStatuses: z.array(CatalogReferenceOptionSchema),

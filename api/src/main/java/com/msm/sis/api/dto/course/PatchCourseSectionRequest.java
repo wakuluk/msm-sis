@@ -15,13 +15,13 @@ public class PatchCourseSectionRequest {
     private PatchValue<String> sectionLetter = PatchValue.absent();
     private PatchValue<String> title = PatchValue.absent();
     private PatchValue<Boolean> honors = PatchValue.absent();
-    private PatchValue<Boolean> lab = PatchValue.absent();
     private PatchValue<String> statusCode = PatchValue.absent();
     private PatchValue<String> academicDivisionCode = PatchValue.absent();
     private PatchValue<String> deliveryModeCode = PatchValue.absent();
     private PatchValue<String> gradingBasisCode = PatchValue.absent();
     private PatchValue<BigDecimal> credits = PatchValue.absent();
     private PatchValue<Integer> capacity = PatchValue.absent();
+    private PatchValue<Integer> hardCapacity = PatchValue.absent();
     private PatchValue<Boolean> waitlistAllowed = PatchValue.absent();
     private PatchValue<LocalDate> startDate = PatchValue.absent();
     private PatchValue<LocalDate> endDate = PatchValue.absent();

@@ -1,9 +1,6 @@
 import type { Table as TanStackTable } from '@tanstack/react-table';
-import { Alert, Collapse, Group, Loader, Paper, Stack, Table, Text } from '@mantine/core';
-import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
-import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
-import { SearchResultsStateNotice } from '@/components/search/SearchResultsStateNotice';
-import { SearchResultsTable } from '@/components/search/SearchResultsTable';
+import { Alert, Collapse, Group, Loader, Stack, Table, Text } from '@mantine/core';
+import { SearchResultsPanel } from '@/components/search/SearchResultsPanel';
 import type {
   CourseOfferingDetailResponse,
   CourseOfferingSearchResponse,
@@ -74,131 +71,128 @@ export function CatalogSearchResultsSection({
   onPageChange,
 }: CatalogSearchResultsSectionProps) {
   return (
-    <Paper withBorder radius="lg" p="lg">
-      <Stack gap="md">
+    <SearchResultsPanel
+      withBorder
+      status={searchResultsState.status}
+      summary={
+        searchResultsState.status === 'empty' || searchResultsState.status === 'success'
+          ? getResultsSummary(searchResultsState.response)
+          : ''
+      }
+      table={table}
+      sortBy={sortBy}
+      sortDirection={sortDirection}
+      onToggleSort={onToggleColumnSort}
+      showHeader={searchResultsState.status === 'empty' || searchResultsState.status === 'success'}
+      viewOptions={[
+        { label: 'Standard', value: 'standard' },
+        { label: 'Full', value: 'full' },
+      ]}
+      view={resultsView}
+      onViewChange={(value) => {
+        onResultsViewChange(value as CatalogResultsView);
+      }}
+      headerContent={
         <div>
           <Text className="portal-ui-eyebrow-text">Search Results</Text>
           <Text fw={600}>Course offerings</Text>
         </div>
+      }
+      notice={{
+        idleTitle: 'Search course offerings',
+        idleMessage: 'Choose filters if needed, then click `Search offerings` to load results.',
+        loadingMessage: 'Loading course offerings...',
+        errorMessage: searchResultsState.status === 'error' ? searchResultsState.message : null,
+        emptyTitle: 'No course offerings found',
+        emptyMessage: 'No course offerings matched the current search criteria.',
+      }}
+      getRowProps={(row) => {
+        const isExpanded = expandedCourseOfferingId === row.original.courseOfferingId;
 
-        {searchResultsState.status === 'empty' || searchResultsState.status === 'success' ? (
-          <SearchResultsHeader
-            data={[
-              { label: 'Standard', value: 'standard' },
-              { label: 'Full', value: 'full' },
-            ]}
-            value={resultsView}
-            onChange={(value) => {
-              onResultsViewChange(value as CatalogResultsView);
-            }}
-            summary={getResultsSummary(searchResultsState.response)}
-          />
-        ) : null}
+        return {
+          role: 'button',
+          tabIndex: 0,
+          'aria-expanded': isExpanded,
+          onClick: () => {
+            void onToggleExpandedCourseOffering(row.original.courseOfferingId);
+          },
+          onKeyDown: (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              void onToggleExpandedCourseOffering(row.original.courseOfferingId);
+            }
+          },
+        };
+      }}
+      renderExpandedRow={(row) => {
+        const detailState = detailStateByCourseOfferingId[row.original.courseOfferingId];
+        const isExpanded = expandedCourseOfferingId === row.original.courseOfferingId;
 
-        <SearchResultsStateNotice
-          status={searchResultsState.status}
-          idleTitle="Search course offerings"
-          idleMessage="Choose filters if needed, then click `Search offerings` to load results."
-          loadingMessage="Loading course offerings..."
-          errorMessage={searchResultsState.status === 'error' ? searchResultsState.message : null}
-          emptyTitle="No course offerings found"
-          emptyMessage="No course offerings matched the current search criteria."
-        />
+        if (!isExpanded) {
+          return null;
+        }
 
-        {searchResultsState.status === 'success' ? (
-          <Stack gap="lg">
-            <SearchResultsTable
-              table={table}
-              sortBy={sortBy}
-              sortDirection={sortDirection}
-              onToggleSort={onToggleColumnSort}
-              getRowProps={(row) => {
-                const isExpanded = expandedCourseOfferingId === row.original.courseOfferingId;
+        return (
+          <Table.Tr className={classes.expandedRow}>
+            <Table.Td colSpan={row.getVisibleCells().length} className={classes.expandedCell}>
+              <Collapse expanded={isExpanded} transitionDuration={380} transitionTimingFunction="ease">
+                <div className={classes.expandedPanel}>
+                  {detailState?.status === 'loading' ? (
+                    <Group gap="sm" align="center">
+                      <Loader size="sm" />
+                      <Text size="sm">Loading course offering details...</Text>
+                    </Group>
+                  ) : null}
 
-                return {
-                  role: 'button',
-                  tabIndex: 0,
-                  'aria-expanded': isExpanded,
-                  onClick: () => {
-                    void onToggleExpandedCourseOffering(row.original.courseOfferingId);
-                  },
-                  onKeyDown: (event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      void onToggleExpandedCourseOffering(row.original.courseOfferingId);
-                    }
-                  },
-                };
-              }}
-              renderExpandedRow={(row) => {
-                const detailState = detailStateByCourseOfferingId[row.original.courseOfferingId];
-                const isExpanded = expandedCourseOfferingId === row.original.courseOfferingId;
+                  {detailState?.status === 'error' ? (
+                    <Alert color="red" title="Unable to load details">
+                      {detailState.message}
+                    </Alert>
+                  ) : null}
 
-                return (
-                  <Table.Tr
-                    className={isExpanded ? classes.expandedRow : classes.expandedRowCollapsed}
-                    aria-hidden={!isExpanded}
-                  >
-                    <Table.Td colSpan={row.getVisibleCells().length} className={classes.expandedCell}>
-                      <Collapse expanded={isExpanded} transitionDuration={380} transitionTimingFunction="ease">
-                        <div className={classes.expandedPanel}>
-                          {detailState?.status === 'loading' ? (
-                            <Group gap="sm" align="center">
-                              <Loader size="sm" />
-                              <Text size="sm">Loading course offering details...</Text>
-                            </Group>
-                          ) : null}
-
-                          {detailState?.status === 'error' ? (
-                            <Alert color="red" title="Unable to load details">
-                              {detailState.message}
-                            </Alert>
-                          ) : null}
-
-                          {detailState?.status === 'success' ? (
-                            <Stack gap="sm">
-                              <Group justify="space-between" align="flex-start" gap="md">
-                                <div>
-                                  <Group gap="sm" wrap="wrap">
-                                    <Text fw={700}>{detailState.detail.courseCode}</Text>
-                                  </Group>
-                                  <Text fw={600} mt={4}>
-                                    {detailState.detail.title}
-                                  </Text>
-                                  <Text c="dimmed" size="sm" mt={4}>
-                                    {detailState.detail.subTerms.map((subTerm) => subTerm.name).join(', ')} ·{' '}
-                                    {formatCredits(detailState.detail)} credits
-                                  </Text>
-                                </div>
-                              </Group>
-
-                              <Text size="sm" className={classes.expandedDescription}>
-                                {detailState.detail.catalogDescription ?? 'No catalog description available.'}
-                              </Text>
-
-                              {detailState.detail.notes ? (
-                                <Text size="sm" c="dimmed">
-                                  Notes: {detailState.detail.notes}
-                                </Text>
-                              ) : null}
-                            </Stack>
-                          ) : null}
+                  {detailState?.status === 'success' ? (
+                    <Stack gap="sm">
+                      <Group justify="space-between" align="flex-start" gap="md">
+                        <div>
+                          <Group gap="sm" wrap="wrap">
+                            <Text fw={700}>{detailState.detail.courseCode}</Text>
+                          </Group>
+                          <Text fw={600} mt={4}>
+                            {detailState.detail.title}
+                          </Text>
+                          <Text c="dimmed" size="sm" mt={4}>
+                            {detailState.detail.subTerms.map((subTerm) => subTerm.name).join(', ')} ·{' '}
+                            {formatCredits(detailState.detail)} credits
+                          </Text>
                         </div>
-                      </Collapse>
-                    </Table.Td>
-                  </Table.Tr>
-                );
-              }}
-            />
+                      </Group>
 
-            <SearchPaginationFooter
-              page={searchResultsState.response.page}
-              totalPages={searchResultsState.response.totalPages}
-              onPageChange={onPageChange}
-            />
-          </Stack>
-        ) : null}
-      </Stack>
-    </Paper>
+                      <Text size="sm" className={classes.expandedDescription}>
+                        {detailState.detail.catalogDescription ?? 'No catalog description available.'}
+                      </Text>
+
+                      {detailState.detail.notes ? (
+                        <Text size="sm" c="dimmed">
+                          Notes: {detailState.detail.notes}
+                        </Text>
+                      ) : null}
+                    </Stack>
+                  ) : null}
+                </div>
+              </Collapse>
+            </Table.Td>
+          </Table.Tr>
+        );
+      }}
+      pagination={
+        searchResultsState.status === 'success'
+          ? {
+              page: searchResultsState.response.page,
+              totalPages: searchResultsState.response.totalPages,
+              onPageChange,
+            }
+          : null
+      }
+    />
   );
 }

@@ -3,6 +3,8 @@ package com.msm.sis.api.repository;
 import com.msm.sis.api.entity.Course;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +25,14 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     @EntityGraph(attributePaths = {"subject", "subject.department", "subject.department.school"})
     List<Course> findAllByActiveTrue();
+
+    @EntityGraph(attributePaths = {"subject", "subject.department", "subject.department.school"})
+    @Query("""
+            SELECT course
+            FROM Course course
+            WHERE course.id IN :courseIds
+            """)
+    List<Course> findCoursesByIds(@Param("courseIds") List<Long> courseIds);
 
     @EntityGraph(attributePaths = {"subject", "subject.department", "subject.department.school"})
     List<Course> findAllBySubject_Department_Id(Long departmentId, org.springframework.data.domain.Sort sort);

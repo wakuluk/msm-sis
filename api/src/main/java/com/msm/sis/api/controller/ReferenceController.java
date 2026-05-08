@@ -5,6 +5,7 @@ import com.msm.sis.api.dto.catalog.CatalogAdvancedSearchReferenceOptionsResponse
 import com.msm.sis.api.dto.catalog.CatalogSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CoursePickerReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CourseSearchReferenceOptionsResponse;
+import com.msm.sis.api.dto.program.ProgramReferenceOptionsResponse;
 import com.msm.sis.api.dto.reference.CourseSectionReferenceOptionsResponse;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
 import com.msm.sis.api.service.ReferenceDataService;
@@ -15,17 +16,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
-
-import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 
 @RestController
 @RequestMapping("/api/reference")
 @Tag(name = "Reference Data", description = "Reference data endpoints")
 public class ReferenceController {
-
-    private static final String CATALOG_UNAVAILABLE_MESSAGE =
-            "Catalog search is temporarily unavailable while academic year and term status are being redesigned.";
 
     private final ReferenceDataService referenceDataService;
 
@@ -34,7 +29,7 @@ public class ReferenceController {
     }
 
     @GetMapping("/student-options")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEPARTMENT_HEAD')")
     @Operation(summary = "Get student reference options", description = "Returns reference options used by student detail forms")
     public ResponseEntity<StudentReferenceOptionsResponse> getStudentReferenceOptions() {
         return ResponseEntity.ok(referenceDataService.getStudentReferenceOptions());
@@ -61,6 +56,16 @@ public class ReferenceController {
         return ResponseEntity.ok(referenceDataService.getCourseSearchReferenceOptions());
     }
 
+    @GetMapping("/program-options")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT', 'DEPARTMENT_HEAD')")
+    @Operation(
+            summary = "Get program reference options",
+            description = "Returns active program types, degree types, schools, and departments used by program workflows."
+    )
+    public ResponseEntity<ProgramReferenceOptionsResponse> getProgramReferenceOptions() {
+        return ResponseEntity.ok(referenceDataService.getProgramReferenceOptions());
+    }
+
     @GetMapping("/course-picker-options")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
@@ -85,17 +90,13 @@ public class ReferenceController {
     @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Get catalog search reference options", description = "Returns academic years, sub terms, departments, subjects, and status options used by catalog search filters")
     public ResponseEntity<CatalogSearchReferenceOptionsResponse> getCatalogSearchReferenceOptions() {
-        throw catalogUnavailableException();
+        return ResponseEntity.ok(referenceDataService.getCatalogSearchReferenceOptions());
     }
 
     @GetMapping("/catalog-advanced-search-options")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get catalog search reference options", description = "Returns academic years, sub terms, departments, subjects, and status options used by catalog search filters")
     public ResponseEntity<CatalogAdvancedSearchReferenceOptionsResponse> getCatalogAdvancedSearchReferenceOptions() {
-        throw catalogUnavailableException();
-    }
-
-    private ResponseStatusException catalogUnavailableException() {
-        return new ResponseStatusException(SERVICE_UNAVAILABLE, CATALOG_UNAVAILABLE_MESSAGE);
+        return ResponseEntity.ok(referenceDataService.getCatalogAdvanceSearchReferenceOptions());
     }
 }

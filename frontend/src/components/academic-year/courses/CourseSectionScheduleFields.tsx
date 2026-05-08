@@ -66,7 +66,7 @@ export function CourseSectionScheduleFields({
             onChange={(value) => {
               setDraft((current) => ({
                 ...current,
-                deliveryMode: value,
+                deliveryMode: value ?? null,
                 room: value === 'ONLINE' ? '' : current.room,
               }));
             }}

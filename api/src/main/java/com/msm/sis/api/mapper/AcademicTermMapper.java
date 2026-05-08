@@ -7,14 +7,14 @@ import com.msm.sis.api.dto.academic.term.PatchAcademicTermRequest;
 import com.msm.sis.api.entity.AcademicSubTerm;
 import com.msm.sis.api.entity.AcademicTerm;
 import com.msm.sis.api.entity.AcademicYear;
-import com.msm.sis.api.patch.PatchValue;
 import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
+import static com.msm.sis.api.patch.PatchUtils.apply;
+import static com.msm.sis.api.patch.PatchUtils.applyTrimmed;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 @Component
@@ -84,8 +84,8 @@ public class AcademicTermMapper {
     public void applyPatch(AcademicTerm academicTerm, PatchAcademicTermRequest request) {
         applyTrimmed(request.getCode(), academicTerm::setCode);
         applyTrimmed(request.getName(), academicTerm::setName);
-        applyDirect(request.getStartDate(), academicTerm::setStartDate);
-        applyDirect(request.getEndDate(), academicTerm::setEndDate);
+        apply(request.getStartDate(), academicTerm::setStartDate);
+        apply(request.getEndDate(), academicTerm::setEndDate);
     }
 
     private List<AcademicSubTermResponse> toAcademicSubTermResponses(
@@ -105,15 +105,4 @@ public class AcademicTermMapper {
                 .toList();
     }
 
-    private <T> void applyDirect(PatchValue<T> value, Consumer<T> consumer) {
-        if (value.isPresent()) {
-            consumer.accept(value.orElse(null));
-        }
-    }
-
-    private void applyTrimmed(PatchValue<String> value, Consumer<String> consumer) {
-        if (value.isPresent()) {
-            consumer.accept(trimToNull(value.orElse(null)));
-        }
-    }
 }

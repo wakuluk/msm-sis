@@ -15,6 +15,7 @@ import {
   type MeetingDaySchedule,
   type SelectOption,
 } from './courseSectionsWorkspaceTypes';
+export { getErrorMessage } from '@/utils/errors';
 
 const meetingDayKeysByNumber = new Map<number, string>([
   [1, 'MONDAY'],
@@ -70,10 +71,6 @@ export function filterSections(
 
     return !searchValues.status || section.statusCode === searchValues.status;
   });
-}
-
-export function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
 }
 
 export function mapReferenceOptionsToCodeSelectOptions(
@@ -226,7 +223,6 @@ export function buildDraftFromSection(section: CourseSectionPreview): CourseSect
     ...initialCourseSectionDraft,
     sectionCode: section.sectionLetter,
     honors: section.honors,
-    lab: section.lab,
     teacherAssignment: section.instructor === 'Unassigned' ? '' : section.instructor,
     teacherStaffId: section.primaryStaffId,
     academicDivision: section.academicDivisionCode,
@@ -235,6 +231,7 @@ export function buildDraftFromSection(section: CourseSectionPreview): CourseSect
     meetingSchedule: buildMeetingScheduleFromSection(section),
     room: section.room === 'TBD' ? '' : section.room,
     capacity: String(section.capacity),
+    hardCapacity: section.hardCapacity === null ? '' : String(section.hardCapacity),
     credits: section.credits === null ? null : String(section.credits),
     status: section.statusCode,
     waitlistAllowed: section.waitlistAllowed,
@@ -253,7 +250,6 @@ export function mapCourseSectionResultToPreview(
     sectionCode: section.displaySectionCode || section.sectionLetter || 'Section',
     sectionLetter: section.sectionLetter ?? '',
     honors: section.honors,
-    lab: section.lab,
     statusCode: section.statusCode ?? 'DRAFT',
     statusName: section.statusName ?? section.statusCode ?? 'Draft',
     academicDivisionCode: section.academicDivisionCode,
@@ -265,6 +261,7 @@ export function mapCourseSectionResultToPreview(
     room: section.roomSummary ?? 'TBD',
     credits: section.credits,
     capacity: section.capacity ?? 0,
+    hardCapacity: section.hardCapacity,
     enrolled: section.enrollmentSummary.enrolledCount,
     waitlistAllowed: section.waitlistAllowed,
     meetings: section.meetings.map((meeting) => ({
@@ -286,7 +283,6 @@ export function mapCourseSectionDetailToPreview(
     sectionCode: section.displaySectionCode || section.sectionLetter || 'Section',
     sectionLetter: section.sectionLetter ?? '',
     honors: section.honors,
-    lab: section.lab,
     statusCode: section.statusCode ?? 'DRAFT',
     statusName: section.statusName ?? section.statusCode ?? 'Draft',
     academicDivisionCode: section.academicDivisionCode,
@@ -298,6 +294,7 @@ export function mapCourseSectionDetailToPreview(
     room: buildRoomSummary(section),
     credits: section.credits,
     capacity: section.capacity ?? 0,
+    hardCapacity: section.hardCapacity,
     enrolled: section.enrollmentSummary.enrolledCount,
     waitlistAllowed: section.waitlistAllowed,
     meetings: section.meetings.map((meeting) => ({

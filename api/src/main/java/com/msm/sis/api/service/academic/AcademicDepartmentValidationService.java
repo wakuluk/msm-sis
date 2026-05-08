@@ -3,7 +3,6 @@ package com.msm.sis.api.service.academic;
 import com.msm.sis.api.entity.AcademicDepartment;
 import com.msm.sis.api.repository.AcademicDepartmentRepository;
 import com.msm.sis.api.repository.AcademicSubjectRepository;
-import com.msm.sis.api.validation.ValidationUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -11,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Objects;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
+import static com.msm.sis.api.util.ValidationUtils.validateMaxLength;
 
 @Service
 public class AcademicDepartmentValidationService {
@@ -40,8 +40,8 @@ public class AcademicDepartmentValidationService {
             );
         }
 
-        ValidationUtils.validateMaxLength(candidateCode, 20, "Academic department code");
-        ValidationUtils.validateMaxLength(candidateName, 255, "Academic department name");
+        validateMaxLength(candidateCode, 20, "Academic department code");
+        validateMaxLength(candidateName, 255, "Academic department name");
 
         String existingCode = trimToNull(existingAcademicDepartment.getCode());
         if (!Objects.equals(existingCode, candidateCode)
@@ -64,8 +64,8 @@ public class AcademicDepartmentValidationService {
             );
         }
 
-        ValidationUtils.validateMaxLength(candidateCode, 20, "Academic subject code");
-        ValidationUtils.validateMaxLength(candidateName, 255, "Academic subject name");
+        validateMaxLength(candidateCode, 20, "Academic subject code");
+        validateMaxLength(candidateName, 255, "Academic subject name");
 
         if (academicSubjectRepository.existsByCode(candidateCode)) {
             throw new ResponseStatusException(

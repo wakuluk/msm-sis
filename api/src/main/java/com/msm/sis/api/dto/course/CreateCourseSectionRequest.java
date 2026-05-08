@@ -24,8 +24,6 @@ public record CreateCourseSectionRequest(
 
         boolean honors,
 
-        boolean lab,
-
         @Size(max = 50)
         String statusCode,
 
@@ -47,6 +45,9 @@ public record CreateCourseSectionRequest(
         @NotNull
         @Min(0)
         Integer capacity,
+
+        @Min(0)
+        Integer hardCapacity,
 
         boolean waitlistAllowed,
 

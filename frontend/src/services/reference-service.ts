@@ -4,12 +4,14 @@ import {
   CourseSectionReferenceOptionsResponseSchema,
   CoursePickerReferenceOptionsResponseSchema,
   CourseSearchReferenceOptionsResponseSchema,
+  ProgramReferenceOptionsResponseSchema,
   StudentReferenceOptionsResponseSchema,
   type AcademicSchoolDepartmentSearchReferenceOptionsResponse,
   type CatalogReferenceOption,
   type CourseSectionReferenceOptionsResponse,
   type CoursePickerReferenceOptionsResponse,
   type CourseSearchReferenceOptionsResponse,
+  type ProgramReferenceOptionsResponse,
   type ReferenceOption,
   type StudentReferenceOptionsResponse,
 } from './schemas/reference-schemas';
@@ -98,6 +100,13 @@ export const getCourseSearchReferenceOptions =
     path: '/api/reference/course-search-options',
     parser: CourseSearchReferenceOptionsResponseSchema,
     fallbackMessage: 'Failed to load course search reference options.',
+  });
+
+export const getProgramReferenceOptions =
+  createCachedReferenceLoader<ProgramReferenceOptionsResponse>({
+    path: '/api/reference/program-options',
+    parser: ProgramReferenceOptionsResponseSchema,
+    fallbackMessage: 'Failed to load program reference options.',
   });
 
 export const getCoursePickerReferenceOptions =

@@ -5,6 +5,7 @@ public record CourseResponse(
         Long subjectId,
         String courseNumber,
         String currentVersionTitle,
+        Boolean lab,
         Boolean active
 ){
 }

@@ -5,10 +5,17 @@ DB_SERVICE="${DB_SERVICE:-msm-sis-db}"
 DB_NAME="${DB_NAME:-msmsisdb}"
 DB_USER="${DB_USER:-root}"
 DB_PASSWORD="${DB_PASSWORD:-msmsisdb}"
+RESET_SEED_FILE="${RESET_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_reset.sql}"
 SEED_FILE="${SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed.sql}"
 COURSE_SEED_FILE="${COURSE_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_courses.sql}"
 ENROLLMENT_SEED_FILE="${ENROLLMENT_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_enrollments.sql}"
 TRANSFER_CREDIT_SEED_FILE="${TRANSFER_CREDIT_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_transfer_credits.sql}"
+PROGRAM_SEED_FILE="${PROGRAM_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_programs.sql}"
+
+if [[ -n "$RESET_SEED_FILE" && ! -f "$RESET_SEED_FILE" ]]; then
+  echo "Reset seed file not found: $RESET_SEED_FILE"
+  exit 1
+fi
 
 if [[ ! -f "$SEED_FILE" ]]; then
   echo "Seed file not found: $SEED_FILE"
@@ -30,8 +37,19 @@ if [[ -n "$TRANSFER_CREDIT_SEED_FILE" && ! -f "$TRANSFER_CREDIT_SEED_FILE" ]]; t
   exit 1
 fi
 
+if [[ -n "$PROGRAM_SEED_FILE" && ! -f "$PROGRAM_SEED_FILE" ]]; then
+  echo "Program seed file not found: $PROGRAM_SEED_FILE"
+  exit 1
+fi
+
 echo "Loading base seed data from: $SEED_FILE"
 echo "Target database: $DB_NAME on docker service $DB_SERVICE"
+
+if [[ -n "$RESET_SEED_FILE" ]]; then
+  echo "Resetting seed data from: $RESET_SEED_FILE"
+  docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
+    psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$RESET_SEED_FILE"
+fi
 
 docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
   psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$SEED_FILE"
@@ -52,6 +70,12 @@ if [[ -n "$TRANSFER_CREDIT_SEED_FILE" ]]; then
   echo "Loading transfer credit seed data from: $TRANSFER_CREDIT_SEED_FILE"
   docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
     psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$TRANSFER_CREDIT_SEED_FILE"
+fi
+
+if [[ -n "$PROGRAM_SEED_FILE" ]]; then
+  echo "Loading program seed data from: $PROGRAM_SEED_FILE"
+  docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
+    psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$PROGRAM_SEED_FILE"
 fi
 
 echo "Seed load complete."

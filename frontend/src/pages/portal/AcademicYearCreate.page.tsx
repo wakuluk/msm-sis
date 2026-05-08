@@ -13,6 +13,10 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useNavigate } from 'react-router-dom';
+import {
+  normalizeDateInputValue,
+  parseDateInputValue,
+} from '@/components/academic-year/academicYearDisplay';
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
@@ -27,66 +31,12 @@ import {
   initialAcademicYearTermFormValues,
   type AcademicYearCreateFormValues,
 } from '@/services/schemas/academic-years-schemas';
+import { getErrorMessage } from '@/utils/errors';
 
 type AcademicYearCreateSubmitState =
   | { status: 'idle' }
   | { status: 'submitting' }
   | { status: 'error'; message: string };
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
-
-function formatDateForFormValue(value: Date): string {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, '0');
-  const day = String(value.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
-
-function normalizeDateInputValue(value: string | Date | null): string {
-  if (!value) {
-    return '';
-  }
-
-  if (typeof value === 'string') {
-    return value.trim();
-  }
-
-  return formatDateForFormValue(value);
-}
-
-function parseDateInputValue(value: string): Date | null {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return null;
-  }
-
-  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmedValue);
-
-  if (!dateMatch) {
-    return null;
-  }
-
-  const [, yearPart, monthPart, dayPart] = dateMatch;
-  const year = Number(yearPart);
-  const month = Number(monthPart);
-  const day = Number(dayPart);
-  const parsedDate = new Date(year, month - 1, day);
-
-  if (
-    Number.isNaN(parsedDate.getTime()) ||
-    parsedDate.getFullYear() !== year ||
-    parsedDate.getMonth() + 1 !== month ||
-    parsedDate.getDate() !== day
-  ) {
-    return null;
-  }
-
-  return parsedDate;
-}
 
 export function AcademicYearCreatePage() {
   const navigate = useNavigate();
