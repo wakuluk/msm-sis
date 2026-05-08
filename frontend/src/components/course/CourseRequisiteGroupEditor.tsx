@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Alert,
+  Autocomplete,
   Badge,
   Button,
   Checkbox,
@@ -11,29 +12,31 @@ import {
   Table,
   Text,
 } from '@mantine/core';
+import { useDebouncedValue } from '@mantine/hooks';
 import { IconTrash } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+import { searchCourses } from '@/services/course-service';
+import type { CourseSearchResultResponse } from '@/services/schemas/course-search-schemas';
 import type {
   CourseVersionRequisiteConditionType,
   CourseVersionRequisiteType,
 } from '@/services/schemas/course-schemas';
-import type { CourseReferenceOption } from '@/services/schemas/reference-schemas';
+import { getErrorMessage } from '@/utils/errors';
 import type { CourseRequisiteGroupDraft } from './courseRequisiteDrafts';
 
 type CourseRequisiteGroupEditorProps = {
-  courseOptionsForRow: (
-    group: CourseRequisiteGroupDraft,
-    courseDraft: { departmentId: number | string }
-  ) => Array<{ value: string; label: string }>;
-  courses: CourseReferenceOption[];
-  departmentOptions: Array<{ value: string; label: string }>;
+  departmentOptions: ReadonlyArray<{ value: string; label: string }>;
   disabled: boolean;
   error: string | null;
   group: CourseRequisiteGroupDraft;
   groupIndex: number;
   labOnly: boolean;
-  loading: boolean;
   onAddCourse: (groupId: number) => void;
-  onChangeCourse: (groupId: number, courseDraftId: number, courseId: string | null) => void;
+  onChangeCourse: (
+    groupId: number,
+    courseDraftId: number,
+    course: CourseSearchResultResponse | null
+  ) => void;
   onChangeDepartment: (
     groupId: number,
     courseDraftId: number,
@@ -62,15 +65,12 @@ const conditionTypeOptions: Array<{
 ];
 
 export function CourseRequisiteGroupEditor({
-  courseOptionsForRow,
-  courses,
   departmentOptions,
   disabled,
   error,
   group,
   groupIndex,
   labOnly,
-  loading,
   onAddCourse,
   onChangeCourse,
   onChangeDepartment,
@@ -193,16 +193,14 @@ export function CourseRequisiteGroupEditor({
                     {course.pendingAssociatedLab ? (
                       <Text size="sm">{course.courseCode}</Text>
                     ) : (
-                      <Select
-                        searchable
-                        clearable
-                        placeholder="Select course"
-                        data={courseOptionsForRow(group, course)}
-                        value={course.courseId ? String(course.courseId) : null}
-                        loading={loading}
-                        error={error ?? undefined}
-                        nothingFoundMessage="No courses found."
+                      <RequisiteCourseAutocomplete
+                        courseCode={course.courseCode}
+                        courseId={course.courseId}
+                        departmentId={course.departmentId}
                         disabled={disabled}
+                        error={error}
+                        labOnly={group.requisiteType === 'COREQUISITE' && labOnly}
+                        placeholder="Select course"
                         onChange={(value) => onChangeCourse(group.id, course.id, value)}
                       />
                     )}
@@ -215,7 +213,7 @@ export function CourseRequisiteGroupEditor({
                           {course.courseTitle}
                         </Text>
                       ) : null}
-                      {courses.find((option) => String(option.courseId) === String(course.courseId))?.lab ? (
+                      {course.lab ? (
                         <Badge size="xs" variant="light" color="indigo">
                           Lab
                         </Badge>
@@ -246,4 +244,130 @@ export function CourseRequisiteGroupEditor({
       )}
     </Stack>
   );
+}
+
+function RequisiteCourseAutocomplete({
+  courseCode,
+  courseId,
+  departmentId,
+  disabled,
+  error,
+  labOnly,
+  onChange,
+  placeholder,
+}: {
+  courseCode: string;
+  courseId: number | string;
+  departmentId: number | string;
+  disabled: boolean;
+  error: string | null;
+  labOnly: boolean;
+  onChange: (course: CourseSearchResultResponse | null) => void;
+  placeholder: string;
+}) {
+  const [inputValue, setInputValue] = useState(courseCode);
+  const [debouncedInputValue] = useDebouncedValue(inputValue, 250);
+  const [searchState, setSearchState] = useState<
+    | { status: 'idle'; results: CourseSearchResultResponse[] }
+    | { status: 'loading'; results: CourseSearchResultResponse[] }
+    | { status: 'success'; results: CourseSearchResultResponse[] }
+    | { status: 'error'; message: string; results: CourseSearchResultResponse[] }
+  >({ status: 'idle', results: [] });
+
+  useEffect(() => {
+    if (courseId || courseCode) {
+      setInputValue(courseCode);
+    }
+  }, [courseCode, courseId]);
+
+  useEffect(() => {
+    const query = debouncedInputValue.trim();
+    if (disabled || query.length < 2) {
+      setSearchState({ status: 'idle', results: [] });
+      return;
+    }
+
+    const controller = new AbortController();
+    setSearchState((current) => ({ status: 'loading', results: current.results }));
+
+    searchCourses({
+      courseCode: query,
+      currentVersionOnly: true,
+      departmentId: departmentId ? Number(departmentId) : undefined,
+      includeInactive: false,
+      page: 0,
+      size: 20,
+      sortBy: 'courseCode',
+      sortDirection: 'asc',
+      signal: controller.signal,
+    })
+      .then((response) => {
+        const results = labOnly
+          ? response.results.filter((course) => course.lab)
+          : response.results;
+
+        setSearchState({ status: 'success', results });
+      })
+      .catch((searchError) => {
+        if (!controller.signal.aborted) {
+          setSearchState({
+            status: 'error',
+            message: getErrorMessage(searchError, 'Failed to search courses.'),
+            results: [],
+          });
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [debouncedInputValue, departmentId, disabled, labOnly]);
+
+  const autocompleteOptions = searchState.results.map((course) => ({
+    value: String(course.courseId),
+    label: formatRequisiteCourseOptionLabel(course),
+  }));
+
+  return (
+    <Autocomplete
+      clearable
+      data={autocompleteOptions}
+      disabled={disabled}
+      error={(searchState.status === 'error' ? searchState.message : error) ?? undefined}
+      limit={20}
+      loading={searchState.status === 'loading'}
+      placeholder={placeholder}
+      value={inputValue}
+      onChange={(value) => {
+        setInputValue(value);
+
+        if (!value) {
+          onChange(null);
+        }
+      }}
+      onClear={() => {
+        setInputValue('');
+        onChange(null);
+      }}
+      onOptionSubmit={(value) => {
+        const selectedCourse = searchState.results.find(
+          (course) => String(course.courseId) === value
+        );
+
+        if (!selectedCourse) {
+          return;
+        }
+
+        setInputValue(selectedCourse.courseCode ?? '');
+        onChange(selectedCourse);
+      }}
+    />
+  );
+}
+
+function formatRequisiteCourseOptionLabel(course: CourseSearchResultResponse) {
+  const courseCode = course.courseCode ?? 'Course';
+  const departmentLabel = course.departmentCode ? ` · ${course.departmentCode}` : '';
+  const labLabel = course.lab ? ' · Lab' : '';
+  return `${courseCode}${departmentLabel}${labLabel}`;
 }

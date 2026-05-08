@@ -8,7 +8,7 @@ import {
   emptyCourseRequisites,
   type CourseRequisiteGroupDraft,
 } from './courseRequisiteDrafts';
-import { useCoursePickerOptions } from './useCoursePickerOptions';
+import { useCourseCreateReferenceOptions } from './useCourseCreateReferenceOptions';
 
 type CreateCourseVersionState =
   | { status: 'idle' }
@@ -64,7 +64,7 @@ export function CreateCourseVersionModal({
   );
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const isSaving = createState.status === 'saving';
-  const coursePickerOptions = useCoursePickerOptions(opened);
+  const referenceOptions = useCourseCreateReferenceOptions({ enabled: opened });
 
   useEffect(() => {
     if (!opened) {
@@ -224,10 +224,8 @@ export function CreateCourseVersionModal({
         <Grid.Col span={12}>
           <CourseRequisitesEditor
             groups={formValues.requisites}
-            courses={coursePickerOptions.courses}
-            departmentOptions={coursePickerOptions.departmentOptions}
-            loading={coursePickerOptions.loading}
-            error={coursePickerOptions.error}
+            departmentOptions={referenceOptions.departmentOptions}
+            error={referenceOptions.referenceOptionsError}
             disabled={isSaving}
             onChange={(requisites) => {
               setFormValues((current) => ({

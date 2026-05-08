@@ -4,6 +4,7 @@ import type {
   CourseVersionRequisiteType,
   CreateCourseVersionRequisiteGroupRequest,
 } from '@/services/schemas/course-schemas';
+import type { CourseSearchResultResponse } from '@/services/schemas/course-search-schemas';
 import type { CourseReferenceOption } from '@/services/schemas/reference-schemas';
 
 export type CourseRequisiteCourseDraft = {
@@ -12,6 +13,7 @@ export type CourseRequisiteCourseDraft = {
   courseId: number | string;
   courseCode: string;
   courseTitle: string;
+  lab?: boolean;
   pendingAssociatedLab?: boolean;
 };
 
@@ -102,6 +104,19 @@ export function courseReferenceToDraft(
     courseId: course.courseId,
     courseCode: course.courseCode,
     courseTitle: course.currentVersionTitle ?? '',
+    lab: course.lab,
+  };
+}
+
+export function courseSearchResultToDraft(
+  course: CourseSearchResultResponse
+): Omit<CourseRequisiteCourseDraft, 'id'> {
+  return {
+    departmentId: course.departmentId ?? '',
+    courseId: course.courseId,
+    courseCode: course.courseCode ?? '',
+    courseTitle: course.currentVersionTitle ?? '',
+    lab: course.lab,
   };
 }
 
@@ -201,6 +216,7 @@ export function courseVersionToRequisiteDrafts(
       courseId: course.courseId ?? '',
       courseCode: course.courseCode ?? '',
       courseTitle: '',
+      lab: false,
     })),
   }));
 }

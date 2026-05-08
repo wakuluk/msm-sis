@@ -297,16 +297,6 @@ WITH desired_requirements(
             NULL
         ),
         (
-            'REQ-TOLK-240',
-            'Complete TOLK240',
-            'SPECIFIC_COURSES',
-            'Students must complete Tolkien Studies 240.',
-            NULL,
-            NULL,
-            'ALL',
-            NULL
-        ),
-        (
             'REQ-TOLK-CHOOSE-2',
             'Choose two Tolkien studies courses',
             'SPECIFIC_COURSES',
@@ -389,7 +379,6 @@ WITH desired_requirements(
         ('REQ-FREE-ELECTIVE-30', 'Complete 30 total elective credits', 'TOTAL_ELECTIVE_CREDITS', 'Students must complete at least 30 elective credits.', 30.00, NULL, NULL, NULL),
         ('REQ-HIST-THESIS', 'Complete graduate thesis requirement', 'MANUAL', 'Graduate students must complete an approved thesis or capstone project.', NULL, NULL, NULL, NULL),
         ('REQ-TOLK-101', 'Complete TOLK101', 'SPECIFIC_COURSES', 'Students must complete Tolkien Studies 101.', NULL, NULL, 'ALL', NULL),
-        ('REQ-TOLK-240', 'Complete TOLK240', 'SPECIFIC_COURSES', 'Students must complete Tolkien Studies 240.', NULL, NULL, 'ALL', NULL),
         ('REQ-TOLK-CHOOSE-2', 'Choose two Tolkien studies courses', 'SPECIFIC_COURSES', 'Students must complete two courses from the approved Tolkien studies list.', NULL, 2, 'ANY', NULL),
         ('REQ-TOLK-260-PREREQ', 'Complete TOLK260 prerequisite test', 'SPECIFIC_COURSES', 'Seeded tracker test: TOLK 260 has TOLK 101 as a prerequisite.', NULL, NULL, 'ALL', NULL),
         ('REQ-TOLK-261-COREQ', 'Complete TOLK261 corequisite pair', 'SPECIFIC_COURSES', 'Seeded tracker test: TOLK 261 has TOLK 261L as a corequisite.', NULL, NULL, 'ALL', NULL),
@@ -416,7 +405,6 @@ WITH desired_requirement_courses(
     VALUES
         ('REQ-MEH-310', 'MEH', '310', TRUE, NULL),
         ('REQ-TOLK-101', 'TOLK', '101', TRUE, NULL),
-        ('REQ-TOLK-240', 'TOLK', '240', TRUE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '101', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '240', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '480', FALSE, NULL),
@@ -458,7 +446,6 @@ WITH desired_requirement_courses(
     VALUES
         ('REQ-MEH-310', 'MEH', '310', TRUE, NULL),
         ('REQ-TOLK-101', 'TOLK', '101', TRUE, NULL),
-        ('REQ-TOLK-240', 'TOLK', '240', TRUE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '101', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '240', FALSE, NULL),
         ('REQ-TOLK-CHOOSE-2', 'TOLK', '480', FALSE, NULL),
@@ -570,12 +557,11 @@ WITH desired_assignments(
         ('TOLK-BA', 1, 'REQ-TOLK-101', 10, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
         ('TOLK-BA', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
         ('TOLK-BA', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
-        ('CORE-UG', 1, 'REQ-TOLK-240', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
-        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'CONSUME_AVAILABLE', NULL),
-        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'ALLOW_REUSE', NULL),
-        ('CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded prerequisite test case for Samwise.'),
-        ('CORE-UG', 1, 'REQ-TOLK-261-COREQ', 45, TRUE, 'CONSUME_AVAILABLE', 'Seeded corequisite test case for Samwise.'),
-        ('CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 48, TRUE, 'CONSUME_AVAILABLE', 'Seeded missing prerequisite test case for Samwise.')
+        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 20, TRUE, 'ALLOW_REUSE', NULL),
+        ('CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 30, TRUE, 'CONSUME_AVAILABLE', 'Seeded prerequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-261-COREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded corequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 45, TRUE, 'CONSUME_AVAILABLE', 'Seeded missing prerequisite test case for Samwise.')
 )
 INSERT INTO program_version_requirement (
     program_version_id,
@@ -628,12 +614,11 @@ WITH desired_assignments(
         ('TOLK-BA', 1, 'REQ-TOLK-101', 10, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
         ('TOLK-BA', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
         ('TOLK-BA', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'CONSUME_AVAILABLE', 'Draft assignment for review.'),
-        ('CORE-UG', 1, 'REQ-TOLK-240', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
-        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 20, TRUE, 'CONSUME_AVAILABLE', NULL),
-        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 30, TRUE, 'ALLOW_REUSE', NULL),
-        ('CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded prerequisite test case for Samwise.'),
-        ('CORE-UG', 1, 'REQ-TOLK-261-COREQ', 45, TRUE, 'CONSUME_AVAILABLE', 'Seeded corequisite test case for Samwise.'),
-        ('CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 48, TRUE, 'CONSUME_AVAILABLE', 'Seeded missing prerequisite test case for Samwise.')
+        ('CORE-UG', 1, 'REQ-TOLK-CHOOSE-2', 10, TRUE, 'CONSUME_AVAILABLE', NULL),
+        ('CORE-UG', 1, 'REQ-HUM-ELECTIVE-9', 20, TRUE, 'ALLOW_REUSE', NULL),
+        ('CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 30, TRUE, 'CONSUME_AVAILABLE', 'Seeded prerequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-261-COREQ', 40, TRUE, 'CONSUME_AVAILABLE', 'Seeded corequisite test case for Samwise.'),
+        ('CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 45, TRUE, 'CONSUME_AVAILABLE', 'Seeded missing prerequisite test case for Samwise.')
 )
 UPDATE program_version_requirement
 SET sort_order = desired_assignments.sort_order,
@@ -670,20 +655,20 @@ WHERE program_version_requirement.program_version_id = program_version.program_v
   AND program_version.program_id = program.program_id
   AND program.code = 'CORE-UG'
   AND program_version_requirement.requirement_id = requirement.requirement_id
-  AND requirement.code IN ('REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
+  AND requirement.code IN ('REQ-TOLK-240', 'REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
 
 DELETE FROM student_academic_plan_course
 USING requirement
 WHERE student_academic_plan_course.requirement_id = requirement.requirement_id
-  AND requirement.code IN ('REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
+  AND requirement.code IN ('REQ-TOLK-240', 'REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
 
 DELETE FROM requirement_course
 USING requirement
 WHERE requirement_course.requirement_id = requirement.requirement_id
-  AND requirement.code IN ('REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
+  AND requirement.code IN ('REQ-TOLK-240', 'REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
 
 DELETE FROM requirement
-WHERE code IN ('REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
+WHERE code IN ('REQ-TOLK-240', 'REQ-TOLK-240-PREREQ', 'REQ-TOLK-480-COREQ');
 
 WITH desired_completion_requirements(
     program_code,
@@ -945,7 +930,6 @@ WITH desired_years(
     VALUES
         ('STU-1001', 'Year 1', 0, FALSE),
         ('STU-1001', 'Year 2', 1, FALSE),
-        ('STU-1001', 'Year 3', 2, FALSE),
         ('STU-1004', 'Year 1', 0, FALSE),
         ('STU-1004', 'Year 2', 1, FALSE),
         ('STU-1004', 'Year 3', 2, FALSE),
@@ -994,7 +978,7 @@ INSERT INTO student_academic_plan_term (
 SELECT plan_year.student_academic_plan_year_id,
        desired_terms.label,
        desired_terms.sort_order,
-       (plan_year.sort_order = 0 AND desired_terms.label IN ('Fall', 'Spring')),
+       FALSE,
        actor.id
 FROM student_academic_plan_year plan_year
 JOIN student_academic_plan plan
@@ -1019,10 +1003,10 @@ WITH desired_plan_courses(
     notes
 ) AS (
     VALUES
-        ('STU-1001', 'Year 2', 'Fall', 'TOLK', '260', 'CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 3.00::numeric, 'FULL_TERM', NULL::varchar, 0, 'Prerequisite test: Sam has transfer credit for TOLK 101 before taking TOLK 260.'),
-        ('STU-1001', 'Year 2', 'Fall', 'TOLK', '261', 'CORE-UG', 1, 'REQ-TOLK-261-COREQ', 3.00::numeric, 'FULL_TERM', NULL::varchar, 1, 'Corequisite test: TOLK 261 should be planned with TOLK 261L.'),
-        ('STU-1001', 'Year 2', 'Fall', 'TOLK', '261L', 'CORE-UG', 1, 'REQ-TOLK-261-COREQ', 0.00::numeric, 'FULL_TERM', NULL::varchar, 2, 'Corequisite test: TOLK 261L is the paired lab for TOLK 261.'),
-        ('STU-1001', 'Year 2', 'Fall', 'TOLK', '262', 'CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 3.00::numeric, 'FULL_TERM', NULL::varchar, 3, 'Missing prerequisite test: Sam does not have TOLK 240 before taking TOLK 262.'),
+        ('STU-1001', 'Year 1', 'Fall', 'TOLK', '260', 'CORE-UG', 1, 'REQ-TOLK-260-PREREQ', 3.00::numeric, 'FULL_TERM', NULL::varchar, 0, 'Prerequisite test: Sam has transfer credit for TOLK 101 before taking TOLK 260.'),
+        ('STU-1001', 'Year 1', 'Fall', 'TOLK', '261', 'CORE-UG', 1, 'REQ-TOLK-261-COREQ', 3.00::numeric, 'FULL_TERM', NULL::varchar, 1, 'Corequisite test: TOLK 261 should be planned with TOLK 261L.'),
+        ('STU-1001', 'Year 1', 'Fall', 'TOLK', '261L', 'CORE-UG', 1, 'REQ-TOLK-261-COREQ', 0.00::numeric, 'FULL_TERM', NULL::varchar, 2, 'Corequisite test: TOLK 261L is the paired lab for TOLK 261.'),
+        ('STU-1001', 'Year 1', 'Fall', 'TOLK', '262', 'CORE-UG', 1, 'REQ-TOLK-262-MISSING-PREREQ', 3.00::numeric, 'FULL_TERM', NULL::varchar, 3, 'Missing prerequisite test: Sam does not have TOLK 240 before taking TOLK 262.'),
         ('STU-1004', 'Year 1', 'Fall', 'TOLK', '240', 'HIST-MA', 1, 'REQ-FREE-ELECTIVE-30', 3.00::numeric, 'SESSION_A', 'Session A', 0, 'Graduate subterm test: TOLK 240 is planned in Session A.'),
         ('STU-1004', 'Year 1', 'Fall', 'TOLK', '262', 'HIST-MA', 1, 'REQ-TOLK-262-MISSING-PREREQ', 3.00::numeric, 'SESSION_B', 'Session B', 1, 'Graduate subterm test: TOLK 262 should see TOLK 240 as planned earlier in Session A.'),
         ('STU-1004', 'Year 1', 'Spring', 'TOLK', '261', 'HIST-MA', 1, 'REQ-TOLK-261-COREQ', 3.00::numeric, 'SESSION_A', 'Session A', 0, 'Graduate subterm corequisite test: lecture is in Session A.'),
@@ -1099,7 +1083,7 @@ WITH desired_placeholder_plan_courses(
     VALUES
         (
             'STU-1001',
-            'Year 3',
+            'Year 2',
             'Spring',
             'HIST-BA',
             2,
@@ -1118,7 +1102,7 @@ WITH desired_placeholder_plan_courses(
         ),
         (
             'STU-1001',
-            'Year 3',
+            'Year 2',
             'Fall',
             'HIST-BA',
             2,

@@ -47,6 +47,8 @@ export function ProgramTrackerRequirementCourseTable({
       <Table.Tbody>
         {requirement.courses.map((course) => {
           const displayStatus = getRequirementCourseDisplayStatus(course.status, requirement);
+          const canAddCourseToPlanner =
+            !readOnly && (displayStatus === 'needed' || displayStatus === 'not_required');
           const plannerSelection = buildRequirementCourseSelection({
             course,
             program,
@@ -72,7 +74,7 @@ export function ProgramTrackerRequirementCourseTable({
                   <Text size="sm" c="dimmed">
                     -
                   </Text>
-                ) : displayStatus === 'needed' ? (
+                ) : canAddCourseToPlanner ? (
                   <AddCourseToPlannerAction
                     selection={plannerSelection}
                     onClick={() => {
@@ -101,7 +103,7 @@ export function ProgramTrackerRequirementCourseTable({
             </>
           );
 
-          return !readOnly && displayStatus === 'needed' ? (
+          return canAddCourseToPlanner ? (
             <DraggableRequirementCourseRow key={course.code} selection={plannerSelection}>
               {courseCells}
             </DraggableRequirementCourseRow>

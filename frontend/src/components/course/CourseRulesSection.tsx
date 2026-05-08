@@ -2,7 +2,7 @@ import { Grid } from '@mantine/core';
 import { CourseCreateSectionFrame } from './CourseCreateSectionFrame';
 import { CourseRequisitesEditor } from './CourseRequisitesEditor';
 import type { CourseRequisiteGroupDraft } from './courseRequisiteDrafts';
-import { useCoursePickerOptions } from './useCoursePickerOptions';
+import { useCourseCreateReferenceOptions } from './useCourseCreateReferenceOptions';
 
 type CourseRulesSectionProps = {
   isSubmitting: boolean;
@@ -15,7 +15,7 @@ export function CourseRulesSection({
   requisites,
   onRequisitesChange,
 }: CourseRulesSectionProps) {
-  const coursePickerOptions = useCoursePickerOptions(true);
+  const referenceOptions = useCourseCreateReferenceOptions();
 
   return (
     <CourseCreateSectionFrame
@@ -25,10 +25,8 @@ export function CourseRulesSection({
       <Grid.Col span={12}>
         <CourseRequisitesEditor
           groups={requisites}
-          courses={coursePickerOptions.courses}
-          departmentOptions={coursePickerOptions.departmentOptions}
-          loading={coursePickerOptions.loading}
-          error={coursePickerOptions.error}
+          departmentOptions={referenceOptions.departmentOptions}
+          error={referenceOptions.referenceOptionsError}
           disabled={isSubmitting}
           onChange={onRequisitesChange}
         />

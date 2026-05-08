@@ -1,9 +1,9 @@
 import { Alert, Button, Group, Stack } from '@mantine/core';
 import { useState } from 'react';
+import type { CourseSearchResultResponse } from '@/services/schemas/course-search-schemas';
 import type { CourseVersionRequisiteType } from '@/services/schemas/course-schemas';
-import type { CourseReferenceOption } from '@/services/schemas/reference-schemas';
 import {
-  courseReferenceToDraft,
+  courseSearchResultToDraft,
   createEmptyRequisiteCourse,
   createEmptyRequisiteGroup,
   type CourseRequisiteGroupDraft,
@@ -12,9 +12,7 @@ import { CourseRequisiteGroupEditor } from './CourseRequisiteGroupEditor';
 
 type CourseRequisitesEditorProps = {
   groups: CourseRequisiteGroupDraft[];
-  departmentOptions: Array<{ value: string; label: string }>;
-  courses: CourseReferenceOption[];
-  loading: boolean;
+  departmentOptions: ReadonlyArray<{ value: string; label: string }>;
   error: string | null;
   disabled?: boolean;
   onChange: React.Dispatch<React.SetStateAction<CourseRequisiteGroupDraft[]>>;
@@ -23,8 +21,6 @@ type CourseRequisitesEditorProps = {
 export function CourseRequisitesEditor({
   groups,
   departmentOptions,
-  courses,
-  loading,
   error,
   disabled = false,
   onChange,
@@ -92,21 +88,6 @@ export function CourseRequisitesEditor({
     );
   }
 
-  function getCourseOptionsForRow(
-    group: CourseRequisiteGroupDraft,
-    courseDraft: { departmentId: number | string }
-  ) {
-    const departmentId = Number(courseDraft.departmentId);
-
-    return courses
-      .filter((course) => !courseDraft.departmentId || course.departmentId === departmentId)
-      .filter((course) => group.requisiteType !== 'COREQUISITE' || !labOnlyGroupIds.has(group.id) || course.lab)
-      .map((course) => ({
-        value: String(course.courseId),
-        label: course.lab ? `${course.courseCode} (Lab)` : course.courseCode,
-      }));
-  }
-
   function addCourse(groupId: number) {
     if (groupId < 0) {
       return;
@@ -135,14 +116,14 @@ export function CourseRequisitesEditor({
     );
   }
 
-  function changeCourse(groupId: number, courseDraftId: number, courseId: string | null) {
+  function changeCourse(
+    groupId: number,
+    courseDraftId: number,
+    selectedCourse: CourseSearchResultResponse | null
+  ) {
     if (groupId < 0 || courseDraftId < 0) {
       return;
     }
-
-    const selectedCourse = courseId
-      ? courses.find((course) => String(course.courseId) === courseId)
-      : null;
 
     onChange((current) =>
       current.map((group) =>
@@ -154,8 +135,8 @@ export function CourseRequisitesEditor({
                   ? {
                       ...course,
                       ...(selectedCourse
-                        ? courseReferenceToDraft(selectedCourse)
-                        : { courseId: '', courseCode: '', courseTitle: '' }),
+                        ? courseSearchResultToDraft(selectedCourse)
+                        : { courseId: '', courseCode: '', courseTitle: '', lab: false }),
                     }
                   : course
               ),
@@ -209,15 +190,12 @@ export function CourseRequisitesEditor({
           {groups.map((group, groupIndex) => (
             <CourseRequisiteGroupEditor
               key={group.id}
-              courseOptionsForRow={getCourseOptionsForRow}
-              courses={courses}
               departmentOptions={departmentOptions}
               disabled={disabled}
               error={error}
               group={group}
               groupIndex={groupIndex}
               labOnly={labOnlyGroupIds.has(group.id)}
-              loading={loading}
               onAddCourse={addCourse}
               onChangeCourse={changeCourse}
               onChangeDepartment={changeDepartment}
