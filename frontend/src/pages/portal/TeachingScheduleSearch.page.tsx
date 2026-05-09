@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  Autocomplete,
+  Alert,
   Badge,
   Container,
   Grid,
+  MultiSelect,
   Paper,
   Select,
   Stack,
@@ -19,174 +20,127 @@ import { SearchResultsPanel, type SearchResultsStatus } from '@/components/searc
 import type { SearchResultsTableRowProps } from '@/components/search/SearchResultsTable';
 import type { StringOption } from '@/components/search/SearchQueryControls';
 import {
-  teachingScheduleMock,
-  teachingScheduleSearchResultsMock,
-  type TeachingScheduleSearchResult,
-} from '@/components/teaching-schedule/teachingSchedule.mock';
+  instructorScheduleSearchSizeOptions,
+  searchInstructorSchedules,
+  type InstructorScheduleSearchSize,
+  type InstructorScheduleSearchSortBy,
+  type InstructorScheduleSearchSortDirection,
+} from '@/services/instructor-schedule-service';
+import { getInstructorScheduleReferenceOptions } from '@/services/reference-service';
+import type {
+  InstructorScheduleReferenceOptionsResponse,
+  InstructorScheduleSearchResponse,
+  InstructorScheduleSearchResultResponse,
+} from '@/services/schemas/instructor-schedule-schemas';
+import { getErrorMessage } from '@/utils/errors';
 
 type TeachingScheduleSearchFilters = {
-  academicYearName: string;
-  departmentName: string;
+  academicYearId: string;
+  courseQuery: string;
+  deliveryModeCode: string;
+  departmentId: string;
   instructorQuery: string;
-  meetingType: string;
-  schoolName: string;
-  subTermName: string;
-  termName: string;
+  roleCode: string;
+  schoolId: string;
+  statusCode: string;
+  subTermIds: string[];
+  termId: string;
 };
 
-type TeachingScheduleSearchSortBy =
-  | 'academicYear'
-  | 'department'
-  | 'instructor'
-  | 'meetingType'
-  | 'sections'
-  | 'subTerm'
-  | 'term'
-  | 'weeklyMeetings';
-
-type TeachingScheduleSearchSortDirection = 'asc' | 'desc';
 type TeachingScheduleSearchPageSize = '25' | '50' | '100';
 type TeachingScheduleSearchState =
   | { status: 'idle' }
-  | { status: 'success'; results: TeachingScheduleSearchResult[] };
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'empty'; response: InstructorScheduleSearchResponse }
+  | { status: 'success'; response: InstructorScheduleSearchResponse };
+type ReferenceOptionsState =
+  | { status: 'idle' | 'loading' }
+  | { status: 'success'; response: InstructorScheduleReferenceOptionsResponse }
+  | { status: 'error'; message: string };
 
 const initialFilters: TeachingScheduleSearchFilters = {
-  academicYearName: teachingScheduleMock.selectedAcademicYearName,
-  departmentName: '',
+  academicYearId: '',
+  courseQuery: '',
+  deliveryModeCode: '',
+  departmentId: '',
   instructorQuery: '',
-  meetingType: '',
-  schoolName: '',
-  subTermName: '',
-  termName: '',
+  roleCode: '',
+  schoolId: '',
+  statusCode: '',
+  subTermIds: [],
+  termId: '',
 };
 
-const pageSizeOptions = [
-  { value: '25', label: '25' },
-  { value: '50', label: '50' },
-  { value: '100', label: '100' },
-] satisfies ReadonlyArray<StringOption<TeachingScheduleSearchPageSize>>;
+const pageSizeOptions = instructorScheduleSearchSizeOptions.map((size) => ({
+  value: String(size) as TeachingScheduleSearchPageSize,
+  label: String(size),
+})) satisfies ReadonlyArray<StringOption<TeachingScheduleSearchPageSize>>;
 
 const sortByOptions = [
   { value: 'instructor', label: 'Instructor' },
   { value: 'academicYear', label: 'Year' },
-  { value: 'term', label: 'Term' },
   { value: 'subTerm', label: 'Subterm' },
+  { value: 'course', label: 'Course' },
+  { value: 'section', label: 'Section' },
   { value: 'department', label: 'Department' },
-  { value: 'meetingType', label: 'Type' },
-  { value: 'sections', label: 'Sections' },
-  { value: 'weeklyMeetings', label: 'Meetings' },
-] satisfies ReadonlyArray<StringOption<TeachingScheduleSearchSortBy>>;
+  { value: 'deliveryMode', label: 'Delivery' },
+  { value: 'role', label: 'Role' },
+  { value: 'status', label: 'Status' },
+] satisfies ReadonlyArray<StringOption<InstructorScheduleSearchSortBy>>;
 
 const sortDirectionOptions = [
   { value: 'asc', label: 'Ascending' },
   { value: 'desc', label: 'Descending' },
-] satisfies ReadonlyArray<StringOption<TeachingScheduleSearchSortDirection>>;
+] satisfies ReadonlyArray<StringOption<InstructorScheduleSearchSortDirection>>;
 
-function uniqueOptions(values: string[]) {
-  return Array.from(new Set(values)).sort((first, second) =>
-    first.localeCompare(second, undefined, { sensitivity: 'base' })
-  );
+function mapCodeNameOption(option: { code: string; id: number; name: string }) {
+  return {
+    value: option.code,
+    label: `${option.name} (${option.code})`,
+  };
 }
 
-function matchesText(value: string, query: string) {
-  return value.toLowerCase().includes(query.trim().toLowerCase());
+function mapIdCodeNameOption(option: { code: string; id: number; name: string }) {
+  return {
+    value: String(option.id),
+    label: `${option.name} (${option.code})`,
+  };
 }
 
-function filterTeachingSchedules(
-  schedules: TeachingScheduleSearchResult[],
-  filters: TeachingScheduleSearchFilters
-) {
-  return schedules.filter((schedule) => {
-    if (filters.academicYearName && schedule.academicYearName !== filters.academicYearName) {
-      return false;
-    }
-
-    if (filters.termName && schedule.termName !== filters.termName) {
-      return false;
-    }
-
-    if (filters.subTermName && schedule.subTermName !== filters.subTermName) {
-      return false;
-    }
-
-    if (filters.schoolName && schedule.schoolName !== filters.schoolName) {
-      return false;
-    }
-
-    if (filters.departmentName && schedule.departmentName !== filters.departmentName) {
-      return false;
-    }
-
-    if (filters.meetingType && schedule.meetingType !== filters.meetingType) {
-      return false;
-    }
-
-    if (filters.instructorQuery.trim()) {
-      return matchesText(
-        `${schedule.instructorName} ${schedule.instructorEmail}`,
-        filters.instructorQuery
-      );
-    }
-
-    return true;
-  });
+function parseOptionalId(value: string): number | undefined {
+  return value.trim() === '' ? undefined : Number(value);
 }
 
-function compareText(firstValue: string, secondValue: string) {
-  return firstValue.localeCompare(secondValue, undefined, { sensitivity: 'base' });
+function parseOptionalIds(values: string[]): number[] {
+  return values.map(Number).filter((value) => Number.isFinite(value));
 }
 
-function sortTeachingSchedules(
-  schedules: TeachingScheduleSearchResult[],
-  sortBy: TeachingScheduleSearchSortBy,
-  sortDirection: TeachingScheduleSearchSortDirection
-) {
-  const sortedSchedules = [...schedules].sort((firstSchedule, secondSchedule) => {
-    if (sortBy === 'sections') {
-      return firstSchedule.sectionCount - secondSchedule.sectionCount;
-    }
-
-    if (sortBy === 'weeklyMeetings') {
-      return firstSchedule.weeklyMeetingCount - secondSchedule.weeklyMeetingCount;
-    }
-
-    if (sortBy === 'academicYear') {
-      return compareText(firstSchedule.academicYearName, secondSchedule.academicYearName);
-    }
-
-    if (sortBy === 'term') {
-      return compareText(firstSchedule.termName, secondSchedule.termName);
-    }
-
-    if (sortBy === 'subTerm') {
-      return compareText(firstSchedule.subTermName, secondSchedule.subTermName);
-    }
-
-    if (sortBy === 'department') {
-      return compareText(firstSchedule.departmentName, secondSchedule.departmentName);
-    }
-
-    if (sortBy === 'meetingType') {
-      return compareText(firstSchedule.meetingType, secondSchedule.meetingType);
-    }
-
-    return compareText(firstSchedule.instructorName, secondSchedule.instructorName);
-  });
-
-  return sortDirection === 'asc' ? sortedSchedules : sortedSchedules.reverse();
-}
-
-const columns: ColumnDef<TeachingScheduleSearchResult>[] = [
+const columns: ColumnDef<InstructorScheduleSearchResultResponse>[] = [
   {
     id: 'instructor',
     header: 'Instructor',
     size: 260,
-    meta: { sortBy: 'instructor' satisfies TeachingScheduleSearchSortBy },
+    meta: { sortBy: 'instructor' satisfies InstructorScheduleSearchSortBy },
     cell: ({ row }) => (
       <Stack gap={2}>
-        <Text fw={700}>{row.original.instructorName}</Text>
+        <Text fw={700}>{row.original.instructorName ?? 'Unassigned'}</Text>
         <Text size="sm" c="dimmed">
-          {row.original.instructorEmail}
+          {row.original.instructorEmail ?? '-'}
+        </Text>
+      </Stack>
+    ),
+  },
+  {
+    id: 'section',
+    header: 'Section',
+    size: 260,
+    meta: { sortBy: 'section' satisfies InstructorScheduleSearchSortBy },
+    cell: ({ row }) => (
+      <Stack gap={2}>
+        <Text fw={700}>{row.original.displaySectionCode ?? '-'}</Text>
+        <Text size="sm" c="dimmed">
+          {row.original.sectionTitle ?? row.original.courseTitle ?? '-'}
         </Text>
       </Stack>
     ),
@@ -194,65 +148,75 @@ const columns: ColumnDef<TeachingScheduleSearchResult>[] = [
   {
     id: 'term',
     header: 'Term',
-    size: 220,
-    meta: { sortBy: 'term' satisfies TeachingScheduleSearchSortBy },
+    size: 230,
+    meta: { sortBy: 'academicYear' satisfies InstructorScheduleSearchSortBy },
     cell: ({ row }) => (
       <Stack gap={4}>
-        <Text fw={700}>{row.original.termName}</Text>
-        <Badge variant="light">{row.original.academicYearName}</Badge>
+        <Text fw={700}>{row.original.termName ?? '-'}</Text>
+        <GroupBadge label={row.original.academicYearName} />
+        <GroupBadge label={row.original.subTermName} />
       </Stack>
     ),
-  },
-  {
-    id: 'subTerm',
-    header: 'Subterm',
-    size: 150,
-    meta: { sortBy: 'subTerm' satisfies TeachingScheduleSearchSortBy },
-    cell: ({ row }) => <Badge variant="light">{row.original.subTermName}</Badge>,
   },
   {
     id: 'department',
     header: 'Department',
     size: 260,
-    meta: { sortBy: 'department' satisfies TeachingScheduleSearchSortBy },
+    meta: { sortBy: 'department' satisfies InstructorScheduleSearchSortBy },
     cell: ({ row }) => (
       <Stack gap={2}>
-        <Text>{row.original.departmentName}</Text>
+        <Text>{row.original.departmentName ?? '-'}</Text>
         <Text size="sm" c="dimmed">
-          {row.original.schoolName}
+          {row.original.schoolName ?? '-'}
         </Text>
       </Stack>
     ),
   },
   {
-    id: 'meetingType',
-    header: 'Type',
+    id: 'deliveryMode',
+    header: 'Delivery',
     size: 160,
-    meta: { sortBy: 'meetingType' satisfies TeachingScheduleSearchSortBy },
-    cell: ({ row }) => <Badge variant="outline">{row.original.meetingType}</Badge>,
+    meta: { sortBy: 'deliveryMode' satisfies InstructorScheduleSearchSortBy },
+    cell: ({ row }) => <GroupBadge label={row.original.deliveryModeName} variant="outline" />,
   },
   {
-    id: 'sections',
-    header: 'Sections',
-    size: 130,
-    meta: { sortBy: 'sections' satisfies TeachingScheduleSearchSortBy },
-    cell: ({ row }) => row.original.sectionCount,
+    id: 'role',
+    header: 'Role',
+    size: 180,
+    meta: { sortBy: 'role' satisfies InstructorScheduleSearchSortBy },
+    cell: ({ row }) => <GroupBadge label={row.original.roleName} />,
   },
   {
-    id: 'weeklyMeetings',
-    header: 'Meetings',
-    size: 130,
-    meta: { sortBy: 'weeklyMeetings' satisfies TeachingScheduleSearchSortBy },
-    cell: ({ row }) => row.original.weeklyMeetingCount,
+    id: 'status',
+    header: 'Status',
+    size: 140,
+    meta: { sortBy: 'status' satisfies InstructorScheduleSearchSortBy },
+    cell: ({ row }) => <GroupBadge label={row.original.statusName} color="yellow" />,
   },
 ];
 
-function getResultsStatus(state: TeachingScheduleSearchState): SearchResultsStatus {
-  if (state.status === 'idle') {
-    return 'idle';
-  }
+function GroupBadge({
+  color,
+  label,
+  variant = 'light',
+}: {
+  color?: string;
+  label: string | null;
+  variant?: 'light' | 'outline';
+}) {
+  return label ? (
+    <Badge color={color} variant={variant}>
+      {label}
+    </Badge>
+  ) : (
+    <Text size="sm" c="dimmed">
+      -
+    </Text>
+  );
+}
 
-  return state.results.length === 0 ? 'empty' : 'success';
+function getResultsStatus(state: TeachingScheduleSearchState): SearchResultsStatus {
+  return state.status;
 }
 
 function getResultsSummary(state: TeachingScheduleSearchState) {
@@ -260,99 +224,221 @@ function getResultsSummary(state: TeachingScheduleSearchState) {
     return 'Search instructor teaching schedules.';
   }
 
-  if (state.results.length === 0) {
-    return 'No teaching schedules matched the current filters.';
+  if (state.status === 'loading') {
+    return 'Searching instructor teaching schedules.';
   }
 
-  return `Showing ${state.results.length} teaching schedules`;
+  if (state.status === 'error') {
+    return 'Unable to search instructor schedules.';
+  }
+
+  if (state.status === 'empty') {
+    return 'No instructor schedules matched the current filters.';
+  }
+
+  const start = state.response.page.page * state.response.page.size + 1;
+  const end = start + state.response.results.length - 1;
+
+  return `Showing ${start}-${end} of ${state.response.page.totalElements} instructor assignments`;
 }
 
 export function TeachingScheduleSearchPage() {
   const navigate = useNavigate();
   const form = useForm<TeachingScheduleSearchFilters>({ initialValues: initialFilters });
+  const [referenceOptionsState, setReferenceOptionsState] = useState<ReferenceOptionsState>({
+    status: 'idle',
+  });
   const [resultsState, setResultsState] = useState<TeachingScheduleSearchState>({ status: 'idle' });
+  const [submittedFilters, setSubmittedFilters] =
+    useState<TeachingScheduleSearchFilters>(initialFilters);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<TeachingScheduleSearchPageSize>('25');
-  const [sortBy, setSortBy] = useState<TeachingScheduleSearchSortBy>('instructor');
-  const [sortDirection, setSortDirection] = useState<TeachingScheduleSearchSortDirection>('asc');
+  const [sortBy, setSortBy] = useState<InstructorScheduleSearchSortBy>('instructor');
+  const [sortDirection, setSortDirection] =
+    useState<InstructorScheduleSearchSortDirection>('asc');
 
-  const academicYearOptions = teachingScheduleMock.academicYears;
+  useEffect(() => {
+    let isMounted = true;
+    setReferenceOptionsState({ status: 'loading' });
+
+    getInstructorScheduleReferenceOptions()
+      .then((response) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setReferenceOptionsState({ status: 'success', response });
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setReferenceOptionsState({
+          status: 'error',
+          message: getErrorMessage(error, 'Failed to load instructor schedule reference options.'),
+        });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasSearched) {
+      return;
+    }
+
+    const abortController = new AbortController();
+    setResultsState({ status: 'loading' });
+
+    searchInstructorSchedules({
+      academicYearId: parseOptionalId(submittedFilters.academicYearId),
+      termId: parseOptionalId(submittedFilters.termId),
+      subTermIds: parseOptionalIds(submittedFilters.subTermIds),
+      schoolId: parseOptionalId(submittedFilters.schoolId),
+      departmentId: parseOptionalId(submittedFilters.departmentId),
+      instructorSearch: submittedFilters.instructorQuery,
+      courseSearch: submittedFilters.courseQuery,
+      statusCode: submittedFilters.statusCode,
+      roleCode: submittedFilters.roleCode,
+      deliveryModeCode: submittedFilters.deliveryModeCode,
+      page,
+      size: Number(pageSize) as InstructorScheduleSearchSize,
+      sortBy,
+      sortDirection,
+      signal: abortController.signal,
+    })
+      .then((response) => {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        setResultsState(
+          response.results.length === 0
+            ? { status: 'empty', response }
+            : { status: 'success', response }
+        );
+      })
+      .catch((error) => {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        setResultsState({
+          status: 'error',
+          message: getErrorMessage(error, 'Failed to search instructor schedules.'),
+        });
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [hasSearched, page, pageSize, sortBy, sortDirection, submittedFilters]);
+
+  const referenceOptions =
+    referenceOptionsState.status === 'success' ? referenceOptionsState.response : null;
+  const referenceOptionsLoading =
+    referenceOptionsState.status === 'idle' || referenceOptionsState.status === 'loading';
+  const referenceOptionsError =
+    referenceOptionsState.status === 'error' ? referenceOptionsState.message : null;
+  const academicYearOptions = referenceOptions?.academicYears.map(mapIdCodeNameOption) ?? [];
   const termOptions = useMemo(() => {
-    return uniqueOptions(
-      teachingScheduleSearchResultsMock
-        .filter(
-          (schedule) =>
-            !form.values.academicYearName ||
-            schedule.academicYearName === form.values.academicYearName
-        )
-        .map((schedule) => schedule.termName)
+    const selectedAcademicYear = referenceOptions?.academicYears.find(
+      (academicYear) => String(academicYear.id) === form.values.academicYearId
     );
-  }, [form.values.academicYearName]);
+    const terms = selectedAcademicYear
+      ? selectedAcademicYear.terms
+      : referenceOptions?.academicYears.flatMap((academicYear) => academicYear.terms) ?? [];
+
+    return terms.map(mapIdCodeNameOption);
+  }, [form.values.academicYearId, referenceOptions]);
   const subTermOptions = useMemo(() => {
-    return uniqueOptions(
-      teachingScheduleSearchResultsMock
-        .filter(
-          (schedule) =>
-            (!form.values.academicYearName ||
-              schedule.academicYearName === form.values.academicYearName) &&
-            (!form.values.termName || schedule.termName === form.values.termName)
-        )
-        .map((schedule) => schedule.subTermName)
+    const terms =
+      referenceOptions?.academicYears.flatMap((academicYear) => academicYear.terms) ?? [];
+    const selectedTerm = terms.find((term) => String(term.id) === form.values.termId);
+
+    if (selectedTerm) {
+      return selectedTerm.subTerms.map(mapIdCodeNameOption);
+    }
+
+    const selectedAcademicYear = referenceOptions?.academicYears.find(
+      (academicYear) => String(academicYear.id) === form.values.academicYearId
     );
-  }, [form.values.academicYearName, form.values.termName]);
-  const schoolOptions = uniqueOptions(
-    teachingScheduleSearchResultsMock.map((schedule) => schedule.schoolName)
-  );
+    const visibleTerms = selectedAcademicYear ? selectedAcademicYear.terms : terms;
+
+    return visibleTerms
+      .flatMap((term) => term.subTerms)
+      .map(mapIdCodeNameOption);
+  }, [form.values.academicYearId, form.values.termId, referenceOptions]);
+  const schoolOptions = referenceOptions?.schools.map(mapIdCodeNameOption) ?? [];
   const departmentOptions = useMemo(() => {
-    return uniqueOptions(
-      teachingScheduleSearchResultsMock
-        .filter(
-          (schedule) => !form.values.schoolName || schedule.schoolName === form.values.schoolName
-        )
-        .map((schedule) => schedule.departmentName)
-    );
-  }, [form.values.schoolName]);
-  const meetingTypeOptions = uniqueOptions(
-    teachingScheduleSearchResultsMock.map((schedule) => schedule.meetingType)
-  );
-  const sortedResults = useMemo(() => {
-    return resultsState.status === 'success'
-      ? sortTeachingSchedules(resultsState.results, sortBy, sortDirection)
+    const departments = referenceOptions?.departments ?? [];
+
+    if (form.values.schoolId.trim() === '') {
+      return departments.map(mapIdCodeNameOption);
+    }
+
+    return departments
+      .filter((department) => String(department.schoolId) === form.values.schoolId)
+      .map(mapIdCodeNameOption);
+  }, [form.values.schoolId, referenceOptions]);
+  const statusOptions = referenceOptions?.sectionStatuses.map(mapCodeNameOption) ?? [];
+  const roleOptions = referenceOptions?.instructorAssignmentRoles.map(mapCodeNameOption) ?? [];
+  const deliveryModeOptions = referenceOptions?.deliveryModes.map(mapCodeNameOption) ?? [];
+  const searchResults =
+    resultsState.status === 'success' || resultsState.status === 'empty'
+      ? resultsState.response.results
       : [];
-  }, [resultsState, sortBy, sortDirection]);
   const table = useReactTable({
     columns,
-    data: sortedResults.slice(0, Number(pageSize)),
+    data: searchResults,
     getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => String(row.scheduleId),
+    getRowId: (row) => String(row.sectionInstructorId),
   });
 
-  function handleToggleSort(nextSortBy: TeachingScheduleSearchSortBy) {
+  function handleToggleSort(nextSortBy: InstructorScheduleSearchSortBy) {
     if (nextSortBy === sortBy) {
       setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
+      setPage(0);
       return;
     }
 
     setSortBy(nextSortBy);
     setSortDirection('asc');
+    setPage(0);
   }
 
   function handleClear() {
     form.setValues(initialFilters);
+    setSubmittedFilters(initialFilters);
+    setHasSearched(false);
     setResultsState({ status: 'idle' });
+    setPage(0);
     setPageSize('25');
     setSortBy('instructor');
     setSortDirection('asc');
   }
 
-  function getRowProps(row: Row<TeachingScheduleSearchResult>): SearchResultsTableRowProps {
+  function getRowProps(
+    row: Row<InstructorScheduleSearchResultResponse>
+  ): SearchResultsTableRowProps | undefined {
+    if (row.original.instructorUserId === null) {
+      return undefined;
+    }
+
+    const detailPath = `/calendar/instructor-schedules/${row.original.instructorUserId}`;
+
     return {
       role: 'button',
       tabIndex: 0,
-      onClick: () => navigate(`/calendar/instructor-schedules/${row.original.scheduleId}`),
+      onClick: () => navigate(detailPath),
       onKeyDown: (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          navigate(`/calendar/instructor-schedules/${row.original.scheduleId}`);
+          navigate(detailPath);
         }
       },
     };
@@ -364,23 +450,35 @@ export function TeachingScheduleSearchPage() {
         <Paper withBorder radius="md" p="lg">
           <form
             onSubmit={form.onSubmit((values) => {
-              setResultsState({
-                status: 'success',
-                results: filterTeachingSchedules(teachingScheduleSearchResultsMock, values),
-              });
+              setSubmittedFilters({ ...values });
+              setHasSearched(true);
+              setPage(0);
             })}
           >
             <Stack gap="lg">
               <Text fw={700} fz="xl">
                 Instructor Schedule Search
               </Text>
+              {referenceOptionsError ? (
+                <Alert color="red" title="Unable to load schedule filters">
+                  {referenceOptionsError}
+                </Alert>
+              ) : null}
 
               <SearchFormSection legend="Schedule Filters">
                 <Grid.Col span={{ base: 12, md: 4 }}>
-                  <Autocomplete
+                  <Select
                     label="Academic Year"
+                    placeholder="All years"
                     data={academicYearOptions}
-                    {...form.getInputProps('academicYearName')}
+                    clearable
+                    disabled={referenceOptionsLoading}
+                    {...form.getInputProps('academicYearId')}
+                    onChange={(value) => {
+                      form.setFieldValue('academicYearId', value ?? '');
+                      form.setFieldValue('termId', '');
+                      form.setFieldValue('subTermIds', []);
+                    }}
                   />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, md: 4 }}>
@@ -389,16 +487,22 @@ export function TeachingScheduleSearchPage() {
                     data={termOptions}
                     placeholder="All terms"
                     clearable
-                    {...form.getInputProps('termName')}
+                    disabled={referenceOptionsLoading}
+                    {...form.getInputProps('termId')}
+                    onChange={(value) => {
+                      form.setFieldValue('termId', value ?? '');
+                      form.setFieldValue('subTermIds', []);
+                    }}
                   />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, md: 4 }}>
-                  <Select
+                  <MultiSelect
                     label="Subterm"
                     data={subTermOptions}
                     placeholder="All subterms"
                     clearable
-                    {...form.getInputProps('subTermName')}
+                    disabled={referenceOptionsLoading}
+                    {...form.getInputProps('subTermIds')}
                   />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, md: 4 }}>
@@ -409,15 +513,23 @@ export function TeachingScheduleSearchPage() {
                   />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, md: 4 }}>
+                  <TextInput
+                    label="Course"
+                    placeholder="Course code or title"
+                    {...form.getInputProps('courseQuery')}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 4 }}>
                   <Select
                     label="School"
                     data={schoolOptions}
                     placeholder="All schools"
                     clearable
-                    {...form.getInputProps('schoolName')}
+                    disabled={referenceOptionsLoading}
+                    {...form.getInputProps('schoolId')}
                     onChange={(value) => {
-                      form.setFieldValue('schoolName', value ?? '');
-                      form.setFieldValue('departmentName', '');
+                      form.setFieldValue('schoolId', value ?? '');
+                      form.setFieldValue('departmentId', '');
                     }}
                   />
                 </Grid.Col>
@@ -427,16 +539,38 @@ export function TeachingScheduleSearchPage() {
                     data={departmentOptions}
                     placeholder="All departments"
                     clearable
-                    {...form.getInputProps('departmentName')}
+                    disabled={referenceOptionsLoading}
+                    {...form.getInputProps('departmentId')}
                   />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, md: 4 }}>
                   <Select
-                    label="Meeting Type"
-                    data={meetingTypeOptions}
-                    placeholder="All types"
+                    label="Status"
+                    data={statusOptions}
+                    placeholder="All statuses"
                     clearable
-                    {...form.getInputProps('meetingType')}
+                    disabled={referenceOptionsLoading}
+                    {...form.getInputProps('statusCode')}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 4 }}>
+                  <Select
+                    label="Instructor Role"
+                    data={roleOptions}
+                    placeholder="All roles"
+                    clearable
+                    disabled={referenceOptionsLoading}
+                    {...form.getInputProps('roleCode')}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 4 }}>
+                  <Select
+                    label="Delivery Mode"
+                    data={deliveryModeOptions}
+                    placeholder="All delivery modes"
+                    clearable
+                    disabled={referenceOptionsLoading}
+                    {...form.getInputProps('deliveryModeCode')}
                   />
                 </Grid.Col>
               </SearchFormSection>
@@ -449,20 +583,24 @@ export function TeachingScheduleSearchPage() {
                 sortByOptions={sortByOptions}
                 sortDirectionOptions={sortDirectionOptions}
                 submitLabel="Search Schedules"
+                isSubmitting={resultsState.status === 'loading'}
                 onClear={handleClear}
                 onSizeChange={(value) => {
                   if (value) {
                     setPageSize(value as TeachingScheduleSearchPageSize);
+                    setPage(0);
                   }
                 }}
                 onSortByChange={(value) => {
                   if (value) {
-                    setSortBy(value as TeachingScheduleSearchSortBy);
+                    setSortBy(value as InstructorScheduleSearchSortBy);
+                    setPage(0);
                   }
                 }}
                 onSortDirectionChange={(value) => {
                   if (value) {
-                    setSortDirection(value as TeachingScheduleSearchSortDirection);
+                    setSortDirection(value as InstructorScheduleSearchSortDirection);
+                    setPage(0);
                   }
                 }}
               />
@@ -481,9 +619,20 @@ export function TeachingScheduleSearchPage() {
             idleTitle: 'Search teaching schedules',
             idleMessage: 'Use the filters above to find an instructor schedule.',
             loadingMessage: 'Searching teaching schedules...',
+            errorTitle: 'Unable to search instructor schedules',
+            errorMessage: resultsState.status === 'error' ? resultsState.message : null,
             emptyTitle: 'No teaching schedules found',
             emptyMessage: 'No schedules matched the current filters.',
           }}
+          pagination={
+            resultsState.status === 'success' && resultsState.response.page.totalPages > 0
+              ? {
+                  page: resultsState.response.page.page,
+                  totalPages: resultsState.response.page.totalPages,
+                  onPageChange: setPage,
+                }
+              : null
+          }
           getRowProps={getRowProps}
           withBorder
         />

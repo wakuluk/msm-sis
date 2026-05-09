@@ -1352,20 +1352,20 @@ WITH desired_sections(
     notes
 ) AS (
     VALUES
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 28, 32, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Lecture section for general registration.'),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'OPEN', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 3.00, 18, 22, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Honors section with additional seminar discussion.'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 28, 32, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Lecture section for general registration.'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'PLANNED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 3.00, 18, 22, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Honors section with additional seminar discussion.'),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 3.00, 24, 28, TRUE, '2027-05-24'::date, '2027-06-25'::date, 'Condensed online summer section.'),
-        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 16, 18, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Discussion-heavy seminar section.'),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 16, 18, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Discussion-heavy seminar section.'),
         ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'COMPLETED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Seeded completed first-semester lecture section for planner history testing.'),
-        ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'B', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Instructor conflict test target: overlaps TOLK 240 A if Maria Chen is assigned.'),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Language lab attached to weekly class meeting.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'B', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Instructor conflict test target: overlaps TOLK 240 A if Maria Chen is assigned.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Language lab attached to weekly class meeting.'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 4.00, 18, 22, TRUE, '2027-06-28'::date, '2027-07-30'::date, 'Online summer language intensive.'),
         ('ELV', '201L', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'COMPLETED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 0.00, 20, 20, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Seeded completed first-semester lab section for planner history testing.'),
-        ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 0.00, 20, 20, FALSE, '2027-01-19'::date, '2027-05-07'::date, 'Required pronunciation lab.'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 0.00, 20, 20, FALSE, '2027-01-19'::date, '2027-05-07'::date, 'Required pronunciation lab.'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, 6, FALSE, '2027-05-24'::date, '2027-06-25'::date, 'Registrar-managed independent study placements.'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, 6, FALSE, '2027-06-28'::date, '2027-07-30'::date, 'Registrar-managed independent study placements.'),
         ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'PLANNED', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, 28, TRUE, '2027-08-23'::date, '2027-12-10'::date, 'Graduate lecture section.'),
-        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'DRAFT', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, 28, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'Draft spring lecture section.'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'IN_PROGRESS', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, 28, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'In-progress spring lecture section for grading workflow testing.'),
         ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, 'DRAFT', 'GRADUATE', 'HYBRID', 'PASS_FAIL', 3.00, 18, 22, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'Draft seminar section for manual registration testing.')
 )
 INSERT INTO course_section (

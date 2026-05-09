@@ -80,6 +80,8 @@ public class StudentSectionEnrollmentMapper {
     public CourseSectionStudentGradeResponse toGradeResponse(StudentSectionGrade grade) {
         StudentSectionGradeType gradeType = grade.getGradeType();
         GradeMark gradeMark = grade.getGradeMark();
+        GradeMark previousGradeMark = grade.getPreviousGradeMark();
+        StudentSectionGrade changedFromGrade = grade.getChangedFromGrade();
         SisUser postedBy = grade.getPostedByUser();
 
         return new CourseSectionStudentGradeResponse(
@@ -90,6 +92,11 @@ public class StudentSectionEnrollmentMapper {
                 gradeMark == null ? null : gradeMark.getId(),
                 gradeMark == null ? null : gradeMark.getCode(),
                 gradeMark == null ? null : gradeMark.getName(),
+                previousGradeMark == null ? null : previousGradeMark.getId(),
+                previousGradeMark == null ? null : previousGradeMark.getCode(),
+                previousGradeMark == null ? null : previousGradeMark.getName(),
+                changedFromGrade == null ? null : changedFromGrade.getId(),
+                grade.getChangeReason(),
                 grade.isCurrent(),
                 postedBy == null ? null : postedBy.getId(),
                 postedBy == null ? null : postedBy.getEmail(),

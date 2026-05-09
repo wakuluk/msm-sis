@@ -14,8 +14,11 @@ export type CourseSectionPreview = {
   statusCode: string;
   statusName: string;
   academicDivisionCode: string | null;
+  academicDivisionName: string | null;
   deliveryModeCode: string | null;
+  deliveryModeName: string | null;
   gradingBasisCode: string | null;
+  gradingBasisName: string | null;
   primaryStaffId: number | null;
   instructor: string;
   instructors: ReadonlyArray<CourseSectionInstructorDraft>;

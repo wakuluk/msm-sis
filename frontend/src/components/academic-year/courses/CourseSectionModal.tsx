@@ -36,6 +36,8 @@ type CourseSectionModalProps = {
   academicDivisionOptions: SelectOption[];
   sectionGradingBasisOptions: SelectOption[];
   enrollmentGradingBasisOptions: SelectOption[];
+  gradeMarkOptions: SelectOption[];
+  gradeTypeOptions: SelectOption[];
   deliveryModeOptions: SelectOption[];
   creditOptions: SelectOption[];
   staffOptions: StaffSelectOption[];
@@ -70,6 +72,8 @@ export function CourseSectionModal({
   academicDivisionOptions,
   sectionGradingBasisOptions,
   enrollmentGradingBasisOptions,
+  gradeMarkOptions,
+  gradeTypeOptions,
   deliveryModeOptions,
   creditOptions,
   staffOptions,
@@ -116,6 +120,8 @@ export function CourseSectionModal({
             draft={draft}
             enrollmentGradingBasisOptions={enrollmentGradingBasisOptions}
             fieldsDisabled={fieldsDisabled}
+            gradeMarkOptions={gradeMarkOptions}
+            gradeTypeOptions={gradeTypeOptions}
             mutationState={mutationState}
             mode={mode}
             readOnlyCheckboxStyles={readOnlyCheckboxStyles}

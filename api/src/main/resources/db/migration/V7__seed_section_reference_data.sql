@@ -1,8 +1,8 @@
 INSERT INTO course_section_status (code, name, sort_order, allow_linear_shift) VALUES
     ('DRAFT', 'Draft', 1, TRUE),
     ('PLANNED', 'Planned', 2, TRUE),
-    ('OPEN', 'Open', 3, TRUE),
-    ('CLOSED', 'Closed', 4, TRUE),
+    ('CLOSED', 'Closed', 3, TRUE),
+    ('IN_PROGRESS', 'In progress', 4, TRUE),
     ('CANCELLED', 'Cancelled', 5, FALSE),
     ('COMPLETED', 'Completed', 6, FALSE);
 

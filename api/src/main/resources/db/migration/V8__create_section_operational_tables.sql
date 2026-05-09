@@ -222,6 +222,9 @@ CREATE TABLE student_section_grade (
     student_section_enrollment_id BIGINT NOT NULL,
     student_section_grade_type_id BIGINT NOT NULL,
     grade_mark_id BIGINT NOT NULL,
+    previous_grade_mark_id BIGINT NULL,
+    changed_from_grade_id BIGINT NULL,
+    change_reason VARCHAR(1000) NULL,
     posted_by_user_id BIGINT NULL,
     is_current BOOLEAN NOT NULL DEFAULT TRUE,
     posted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -238,6 +241,12 @@ CREATE TABLE student_section_grade (
 
     CONSTRAINT fk_student_section_grade_mark
         FOREIGN KEY (grade_mark_id) REFERENCES grade_mark(grade_mark_id),
+
+    CONSTRAINT fk_student_section_grade_previous_mark
+        FOREIGN KEY (previous_grade_mark_id) REFERENCES grade_mark(grade_mark_id),
+
+    CONSTRAINT fk_student_section_grade_changed_from
+        FOREIGN KEY (changed_from_grade_id) REFERENCES student_section_grade(student_section_grade_id),
 
     CONSTRAINT fk_student_section_grade_posted_by
         FOREIGN KEY (posted_by_user_id) REFERENCES users(id)
@@ -314,6 +323,12 @@ CREATE INDEX idx_student_section_grade_type
 
 CREATE INDEX idx_student_section_grade_mark
     ON student_section_grade (grade_mark_id);
+
+CREATE INDEX idx_student_section_grade_previous_mark
+    ON student_section_grade (previous_grade_mark_id);
+
+CREATE INDEX idx_student_section_grade_changed_from
+    ON student_section_grade (changed_from_grade_id);
 
 CREATE INDEX idx_student_section_grade_posted_by
     ON student_section_grade (posted_by_user_id);

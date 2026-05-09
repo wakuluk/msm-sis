@@ -23,6 +23,7 @@ import { CourseSectionInstructorConflictAlert } from './CourseSectionInstructorC
 
 type CourseSectionDetailSetupSectionProps = {
   academicDivisionOptions: SelectOption[];
+  canManage: boolean;
   creditOptions: SelectOption[];
   deliveryModeOptions: SelectOption[];
   detailEditing: boolean;
@@ -47,6 +48,7 @@ type CourseSectionDetailSetupSectionProps = {
 
 export function CourseSectionDetailSetupSection({
   academicDivisionOptions,
+  canManage,
   creditOptions,
   deliveryModeOptions,
   detailEditing,
@@ -78,38 +80,42 @@ export function CourseSectionDetailSetupSection({
   return (
     <RecordPageSection
       title="Section Details"
-      description="Review and update the section setup."
+      description={
+        canManage ? 'Review and update the section setup.' : 'Review the section setup.'
+      }
       action={
-        <Group gap="sm" wrap="wrap" justify="flex-end">
-          {detailEditing ? (
-            <>
-              <Button variant="default" onClick={onCancelEdit}>
-                Cancel edit
-              </Button>
-              <Button
-                color={hasMutationError ? 'red' : undefined}
-                loading={mutating}
-                onClick={onSaveSection}
-              >
-                Save changes
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="default" onClick={onStartEdit}>
-                Edit
-              </Button>
-              <Button
-                variant="default"
-                loading={mutating}
-                disabled={section.statusCode === 'CANCELLED'}
-                onClick={onCancelSection}
-              >
-                Cancel section
-              </Button>
-            </>
-          )}
-        </Group>
+        canManage ? (
+          <Group gap="sm" wrap="wrap" justify="flex-end">
+            {detailEditing ? (
+              <>
+                <Button variant="default" onClick={onCancelEdit}>
+                  Cancel edit
+                </Button>
+                <Button
+                  color={hasMutationError ? 'red' : undefined}
+                  loading={mutating}
+                  onClick={onSaveSection}
+                >
+                  Save changes
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="default" onClick={onStartEdit}>
+                  Edit
+                </Button>
+                <Button
+                  variant="default"
+                  loading={mutating}
+                  disabled={section.statusCode === 'CANCELLED'}
+                  onClick={onCancelSection}
+                >
+                  Cancel section
+                </Button>
+              </>
+            )}
+          </Group>
+        ) : null
       }
     >
       <Grid.Col span={12}>

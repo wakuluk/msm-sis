@@ -15,6 +15,10 @@ import {
   type ReferenceOption,
   type StudentReferenceOptionsResponse,
 } from './schemas/reference-schemas';
+import {
+  InstructorScheduleReferenceOptionsResponseSchema,
+  type InstructorScheduleReferenceOptionsResponse,
+} from './schemas/instructor-schedule-schemas';
 
 type ReferenceLoaderOptions = {
   forceRefresh?: boolean;
@@ -121,4 +125,11 @@ export const getCourseSectionReferenceOptions =
     path: '/api/reference/course-section-options',
     parser: CourseSectionReferenceOptionsResponseSchema,
     fallbackMessage: 'Failed to load course section reference options.',
+  });
+
+export const getInstructorScheduleReferenceOptions =
+  createCachedReferenceLoader<InstructorScheduleReferenceOptionsResponse>({
+    path: '/api/reference/instructor-schedule-options',
+    parser: InstructorScheduleReferenceOptionsResponseSchema,
+    fallbackMessage: 'Failed to load instructor schedule reference options.',
   });

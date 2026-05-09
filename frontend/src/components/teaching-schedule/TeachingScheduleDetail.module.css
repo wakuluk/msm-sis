@@ -38,12 +38,16 @@
 }
 
 .calendarShell {
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--portal-ui-surface-border-color);
   border-radius: var(--mantine-radius-sm);
 }
 
 .calendar {
+  width: 100%;
+  min-width: 0;
   padding: var(--mantine-spacing-sm);
 }
 
@@ -54,6 +58,25 @@
   --fc-today-bg-color: light-dark(rgb(228 244 255 / 0.62), rgb(28 126 214 / 0.16));
 
   font-family: var(--portal-ui-font-family);
+  width: 100%;
+  max-width: 100%;
+}
+
+.calendar :global(.fc-scroller) {
+  scrollbar-gutter: stable;
+}
+
+.subTermDateSummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--mantine-spacing-sm);
+}
+
+.subTermDateItem {
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  padding: var(--mantine-spacing-sm);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
 }
 
 .calendar :global(.fc-toolbar-title) {
@@ -89,9 +112,18 @@
   white-space: nowrap;
 }
 
-.eventMeta {
+.eventTime {
   overflow: hidden;
   font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0.95;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventMeta {
+  overflow: hidden;
+  font-size: 0.64rem;
   opacity: 0.9;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import type { EventContentArg, EventInput } from '@fullcalendar/core';
 import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { useNavigate } from 'react-router-dom';
 import {
   Autocomplete,
   Badge,
@@ -17,16 +18,15 @@ import {
 } from '@mantine/core';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { SearchResultsTable } from '@/components/search/SearchResultsTable';
-import {
-  teachingScheduleMock,
-  type TeachingScheduleDetail,
-  type TeachingScheduleMeeting,
-  type TeachingScheduleSubTerm,
-} from './teachingSchedule.mock';
+import type {
+  TeachingScheduleDetail,
+  TeachingScheduleMeeting,
+  TeachingScheduleSubTerm,
+} from './teachingSchedule.types';
 import classes from './TeachingScheduleDetail.module.css';
 
 type TeachingScheduleDetailProps = {
-  detail?: TeachingScheduleDetail;
+  detail: TeachingScheduleDetail;
   mode?: 'admin' | 'staff';
 };
 
@@ -36,6 +36,7 @@ type TeachingSectionTableSortBy =
   | 'location'
   | 'meetingDays'
   | 'modality'
+  | 'status'
   | 'subTerm';
 
 type TeachingSectionSummary = {
@@ -46,17 +47,26 @@ type TeachingSectionSummary = {
   meetings: TeachingScheduleMeeting[];
   modality: string;
   sectionCode: string;
+  sectionId?: number;
   softCapacity: number;
+  statusCode: string;
+  statusName: string;
   subTermName: string;
 };
 
-function formatTimeRange(startDateTime: string, endDateTime: string) {
+function formatTimeRange(startDateTime: string | Date | null | undefined, endDateTime: string | Date | null | undefined) {
   const formatter = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
     minute: '2-digit',
   });
+  const startTime = startDateTime ? formatter.format(new Date(startDateTime)) : '';
+  const endTime = endDateTime ? formatter.format(new Date(endDateTime)) : '';
 
-  return `${formatter.format(new Date(startDateTime))} - ${formatter.format(new Date(endDateTime))}`;
+  if (!startTime || !endTime) {
+    return startTime || endTime;
+  }
+
+  return `${startTime} - ${endTime}`;
 }
 
 function overlapsDateRange(
@@ -74,6 +84,14 @@ function getVisibleSubTerms(term: TeachingScheduleDetail['terms'][number]): Teac
   );
 }
 
+function getSubTermSelectionValue(subTerm: TeachingScheduleSubTerm) {
+  return String(subTerm.id);
+}
+
+function getMeetingSubTermSelectionValue(meeting: TeachingScheduleMeeting) {
+  return meeting.subTermId === undefined ? meeting.subTermCode : String(meeting.subTermId);
+}
+
 function subTermsOverlap(firstSubTerm: TeachingScheduleSubTerm, secondSubTerm: TeachingScheduleSubTerm) {
   return overlapsDateRange(
     firstSubTerm.startDate,
@@ -88,10 +106,12 @@ function getCompatibleSubTermCodes(
   selectedSubTermCodes: string[]
 ) {
   if (selectedSubTermCodes.length === 0) {
-    return new Set(subTerms.map((subTerm) => subTerm.code));
+    return new Set(subTerms.map(getSubTermSelectionValue));
   }
 
-  const selectedSubTerms = subTerms.filter((subTerm) => selectedSubTermCodes.includes(subTerm.code));
+  const selectedSubTerms = subTerms.filter((subTerm) =>
+    selectedSubTermCodes.includes(getSubTermSelectionValue(subTerm))
+  );
 
   return new Set(
     subTerms
@@ -100,7 +120,7 @@ function getCompatibleSubTermCodes(
           subTermsOverlap(candidateSubTerm, selectedSubTerm)
         )
       )
-      .map((subTerm) => subTerm.code)
+      .map(getSubTermSelectionValue)
   );
 }
 
@@ -109,14 +129,18 @@ function filterCompatibleSubTermSelection(
   selectedSubTermCodes: string[]
 ) {
   return selectedSubTermCodes.reduce<string[]>((nextSelection, subTermCode) => {
-    const candidateSubTerm = subTerms.find((subTerm) => subTerm.code === subTermCode);
+    const candidateSubTerm = subTerms.find(
+      (subTerm) => getSubTermSelectionValue(subTerm) === subTermCode
+    );
 
     if (!candidateSubTerm) {
       return nextSelection;
     }
 
     const canAddCandidate = nextSelection
-      .map((selectedSubTermCode) => subTerms.find((subTerm) => subTerm.code === selectedSubTermCode))
+      .map((selectedSubTermCode) =>
+        subTerms.find((subTerm) => getSubTermSelectionValue(subTerm) === selectedSubTermCode)
+      )
       .filter((subTerm): subTerm is TeachingScheduleSubTerm => Boolean(subTerm))
       .every((selectedSubTerm) => subTermsOverlap(candidateSubTerm, selectedSubTerm));
 
@@ -128,12 +152,80 @@ function getMeetingDayLabel(startDateTime: string) {
   return new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(startDateTime));
 }
 
-function mapMeetingsToEvents(meetings: TeachingScheduleMeeting[]): EventInput[] {
+function getSectionStatusColor(statusCode: string) {
+  if (statusCode === 'DRAFT') {
+    return 'gray';
+  }
+
+  if (statusCode === 'PLANNED') {
+    return 'yellow';
+  }
+
+  if (statusCode === 'IN_PROGRESS') {
+    return 'blue';
+  }
+
+  if (statusCode === 'CANCELLED' || statusCode === 'CANCELED') {
+    return 'red';
+  }
+
+  return 'green';
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(`${value}T00:00:00`));
+}
+
+function formatDateRange(startDate: string, endDate: string) {
+  return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+}
+
+function addDays(dateValue: string, days: number) {
+  const date = new Date(`${dateValue}T00:00:00`);
+  date.setDate(date.getDate() + days);
+
+  return date.toISOString().slice(0, 10);
+}
+
+function getWeekStartForDate(dateValue: string) {
+  const date = new Date(`${dateValue}T00:00:00`);
+  const dayOfWeek = date.getDay();
+  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  date.setDate(date.getDate() - daysSinceMonday);
+
+  return date.toISOString().slice(0, 10);
+}
+
+function getWeekStartForTerm(term: TeachingScheduleDetail['terms'][number] | undefined, fallback: string) {
+  return term ? getWeekStartForDate(term.startDate) : fallback;
+}
+
+function toPatternDateTime(weekStart: string, dayOfWeek: number, time: string) {
+  return `${addDays(weekStart, dayOfWeek - 1)}T${time}`;
+}
+
+function getMeetingStart(meeting: TeachingScheduleMeeting, weekStart: string) {
+  return meeting.dayOfWeek !== undefined && meeting.startTime
+    ? toPatternDateTime(weekStart, meeting.dayOfWeek, meeting.startTime)
+    : meeting.start;
+}
+
+function getMeetingEnd(meeting: TeachingScheduleMeeting, weekStart: string) {
+  return meeting.dayOfWeek !== undefined && meeting.endTime
+    ? toPatternDateTime(weekStart, meeting.dayOfWeek, meeting.endTime)
+    : meeting.end;
+}
+
+function mapMeetingsToEvents(meetings: TeachingScheduleMeeting[], weekStart: string): EventInput[] {
   return meetings.map((meeting) => ({
     id: meeting.id,
     title: `${meeting.courseCode}-${meeting.sectionCode}`,
-    start: meeting.start,
-    end: meeting.end,
+    start: getMeetingStart(meeting, weekStart),
+    end: getMeetingEnd(meeting, weekStart),
     backgroundColor: meeting.color,
     borderColor: meeting.color,
     extendedProps: { meeting },
@@ -142,11 +234,14 @@ function mapMeetingsToEvents(meetings: TeachingScheduleMeeting[]): EventInput[] 
 
 function renderEventContent(eventInfo: EventContentArg) {
   const meeting = eventInfo.event.extendedProps.meeting as TeachingScheduleMeeting | undefined;
+  const timeRange =
+    formatTimeRange(eventInfo.event.start, eventInfo.event.end) || eventInfo.timeText;
 
   return (
     <div className={classes.eventContent}>
       <span className={classes.eventTitle}>{eventInfo.event.title}</span>
-      <span className={classes.eventMeta}>{meeting?.location ?? eventInfo.timeText}</span>
+      <span className={classes.eventTime}>{timeRange}</span>
+      {meeting?.location ? <span className={classes.eventMeta}>{meeting.location}</span> : null}
     </div>
   );
 }
@@ -180,27 +275,35 @@ function SummaryMetric({ label, value }: { label: string; value: string }) {
 }
 
 function getSectionCount(meetings: TeachingScheduleMeeting[]) {
-  return new Set(meetings.map((meeting) => `${meeting.courseCode}-${meeting.sectionCode}`)).size;
+  return new Set(meetings.map(getSectionSummaryKey)).size;
+}
+
+function getSectionSummaryKey(meeting: TeachingScheduleMeeting) {
+  return meeting.sectionId === undefined
+    ? `${meeting.courseCode}-${meeting.sectionCode}`
+    : String(meeting.sectionId);
 }
 
 function getTeachingSections(meetings: TeachingScheduleMeeting[]) {
   return Array.from(
     new Map(
       meetings.map((meeting) => [
-        `${meeting.courseCode}-${meeting.sectionCode}`,
+        getSectionSummaryKey(meeting),
         {
           courseCode: meeting.courseCode,
           courseTitle: meeting.courseTitle,
           sectionCode: meeting.sectionCode,
+          sectionId: meeting.sectionId,
           subTermName: meeting.subTermName,
           modality: meeting.modality,
           location: meeting.location,
           enrolled: meeting.enrolled,
           softCapacity: meeting.softCapacity,
+          statusCode: meeting.statusCode,
+          statusName: meeting.statusName,
           meetings: meetings.filter(
             (sectionMeeting) =>
-              sectionMeeting.courseCode === meeting.courseCode &&
-              sectionMeeting.sectionCode === meeting.sectionCode
+              getSectionSummaryKey(sectionMeeting) === getSectionSummaryKey(meeting)
           ),
         },
       ])
@@ -208,22 +311,26 @@ function getTeachingSections(meetings: TeachingScheduleMeeting[]) {
   );
 }
 
-function getSectionSearchText(section: TeachingSectionSummary) {
+function getSectionSearchText(section: TeachingSectionSummary, weekStart: string) {
   return [
     section.courseCode,
     section.courseTitle,
     section.sectionCode,
     section.subTermName,
     section.modality,
+    section.statusName,
+    section.statusCode,
     section.location,
-    ...section.meetings.map((meeting) => getMeetingDayLabel(meeting.start)),
+    ...section.meetings.map((meeting) => getMeetingDayLabel(getMeetingStart(meeting, weekStart))),
   ]
     .join(' ')
     .toLowerCase();
 }
 
-function getMeetingDays(section: TeachingSectionSummary) {
-  return section.meetings.map((meeting) => getMeetingDayLabel(meeting.start)).join(', ');
+function getMeetingDays(section: TeachingSectionSummary, weekStart: string) {
+  return section.meetings
+    .map((meeting) => getMeetingDayLabel(getMeetingStart(meeting, weekStart)))
+    .join(', ');
 }
 
 function compareText(firstValue: string, secondValue: string) {
@@ -233,7 +340,8 @@ function compareText(firstValue: string, secondValue: string) {
 function sortTeachingSections(
   sections: TeachingSectionSummary[],
   sortBy: TeachingSectionTableSortBy,
-  sortDirection: 'asc' | 'desc'
+  sortDirection: 'asc' | 'desc',
+  weekStart: string
 ) {
   const sortedSections = [...sections].sort((firstSection, secondSection) => {
     if (sortBy === 'enrolled') {
@@ -245,11 +353,18 @@ function sortTeachingSections(
     }
 
     if (sortBy === 'meetingDays') {
-      return compareText(getMeetingDays(firstSection), getMeetingDays(secondSection));
+      return compareText(
+        getMeetingDays(firstSection, weekStart),
+        getMeetingDays(secondSection, weekStart)
+      );
     }
 
     if (sortBy === 'modality') {
       return compareText(firstSection.modality, secondSection.modality);
+    }
+
+    if (sortBy === 'status') {
+      return compareText(firstSection.statusName, secondSection.statusName);
     }
 
     if (sortBy === 'subTerm') {
@@ -265,7 +380,7 @@ function sortTeachingSections(
   return sortDirection === 'asc' ? sortedSections : sortedSections.reverse();
 }
 
-function buildTeachingSectionColumns(): ColumnDef<TeachingSectionSummary>[] {
+function buildTeachingSectionColumns(weekStart: string): ColumnDef<TeachingSectionSummary>[] {
   return [
     {
       id: 'courseCode',
@@ -283,6 +398,17 @@ function buildTeachingSectionColumns(): ColumnDef<TeachingSectionSummary>[] {
         </Stack>
       ),
       meta: { sortBy: 'courseCode' satisfies TeachingSectionTableSortBy },
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      size: 130,
+      cell: ({ row }) => (
+        <Badge color={getSectionStatusColor(row.original.statusCode)} variant="light">
+          {row.original.statusName}
+        </Badge>
+      ),
+      meta: { sortBy: 'status' satisfies TeachingSectionTableSortBy },
     },
     {
       id: 'subTerm',
@@ -310,7 +436,8 @@ function buildTeachingSectionColumns(): ColumnDef<TeachingSectionSummary>[] {
         <Stack gap={2}>
           {row.original.meetings.map((meeting) => (
             <Text key={meeting.id} size="sm">
-              {getMeetingDayLabel(meeting.start)} {formatTimeRange(meeting.start, meeting.end)}
+              {getMeetingDayLabel(getMeetingStart(meeting, weekStart))}{' '}
+              {formatTimeRange(getMeetingStart(meeting, weekStart), getMeetingEnd(meeting, weekStart))}
             </Text>
           ))}
         </Stack>
@@ -338,7 +465,14 @@ function buildTeachingSectionColumns(): ColumnDef<TeachingSectionSummary>[] {
   ];
 }
 
-function TeachingSectionTable({ meetings }: { meetings: TeachingScheduleMeeting[] }) {
+function TeachingSectionTable({
+  meetings,
+  weekStart,
+}: {
+  meetings: TeachingScheduleMeeting[];
+  weekStart: string;
+}) {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<TeachingSectionTableSortBy>('courseCode');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -348,15 +482,17 @@ function TeachingSectionTable({ meetings }: { meetings: TeachingScheduleMeeting[
     const visibleSections =
       normalizedSearch.length === 0
         ? sections
-        : sections.filter((section) => getSectionSearchText(section).includes(normalizedSearch));
+        : sections.filter((section) =>
+            getSectionSearchText(section, weekStart).includes(normalizedSearch)
+          );
 
-    return sortTeachingSections(visibleSections, sortBy, sortDirection);
-  }, [search, sections, sortBy, sortDirection]);
+    return sortTeachingSections(visibleSections, sortBy, sortDirection, weekStart);
+  }, [search, sections, sortBy, sortDirection, weekStart]);
   const table = useReactTable({
-    columns: buildTeachingSectionColumns(),
+    columns: buildTeachingSectionColumns(weekStart),
     data: filteredSections,
     getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => `${row.courseCode}-${row.sectionCode}`,
+    getRowId: (row) => row.sectionId?.toString() ?? `${row.courseCode}-${row.sectionCode}`,
   });
 
   function handleToggleSort(nextSortBy: TeachingSectionTableSortBy) {
@@ -388,21 +524,44 @@ function TeachingSectionTable({ meetings }: { meetings: TeachingScheduleMeeting[
         sortBy={sortBy}
         sortDirection={sortDirection}
         onToggleSort={handleToggleSort}
-        getRowProps={(row) => ({
-          onClick: () => {},
-          role: 'button',
-          tabIndex: 0,
-          'aria-label': `Open ${row.original.courseCode} section ${row.original.sectionCode}`,
-        })}
+        getRowProps={(row) => {
+          const detailPath =
+            row.original.sectionId === undefined
+              ? null
+              : `/academics/course-sections/${row.original.sectionId}`;
+
+          return {
+            onClick: () => {
+              if (detailPath) {
+                navigate(detailPath);
+              }
+            },
+            onKeyDown: (event) => {
+              if (!detailPath || (event.key !== 'Enter' && event.key !== ' ')) {
+                return;
+              }
+
+              event.preventDefault();
+              navigate(detailPath);
+            },
+            role: detailPath ? 'button' : undefined,
+            tabIndex: detailPath ? 0 : undefined,
+            'aria-label': detailPath
+              ? `Open ${row.original.courseCode} section ${row.original.sectionCode}`
+              : undefined,
+          };
+        }}
       />
     </Stack>
   );
 }
 
 export function TeachingScheduleDetail({
-  detail = teachingScheduleMock,
+  detail,
   mode = 'staff',
 }: TeachingScheduleDetailProps) {
+  const calendarRef = useRef<FullCalendar | null>(null);
+  const calendarShellRef = useRef<HTMLDivElement | null>(null);
   const [selectedAcademicYearName, setSelectedAcademicYearName] = useState(
     detail.selectedAcademicYearName
   );
@@ -413,7 +572,7 @@ export function TeachingScheduleDetail({
     availableTerms.find((term) => term.id === detail.selectedTermId) ?? availableTerms[0];
   const [selectedTermId, setSelectedTermId] = useState(initialTerm ? String(initialTerm.id) : '');
   const [selectedSubTermCodes, setSelectedSubTermCodes] = useState<string[]>(() => {
-    return initialTerm ? getVisibleSubTerms(initialTerm).map((subTerm) => subTerm.code) : [];
+    return initialTerm ? getVisibleSubTerms(initialTerm).map(getSubTermSelectionValue) : [];
   });
 
   useEffect(() => {
@@ -424,13 +583,14 @@ export function TeachingScheduleDetail({
       detail.terms.find((term) => term.academicYearName === selectedAcademicYearName);
 
     setSelectedTermId(nextTerm ? String(nextTerm.id) : '');
-    setSelectedSubTermCodes(nextTerm ? getVisibleSubTerms(nextTerm).map((subTerm) => subTerm.code) : []);
+    setSelectedSubTermCodes(nextTerm ? getVisibleSubTerms(nextTerm).map(getSubTermSelectionValue) : []);
   }, [detail.terms, detail.selectedTermId, selectedAcademicYearName]);
 
   const selectedTerm =
     availableTerms.find((term) => term.id === Number(selectedTermId)) ?? availableTerms[0];
+  const calendarWeekStart = getWeekStartForTerm(selectedTerm, detail.weekStart);
   const overlappingSubTerms = selectedTerm ? getVisibleSubTerms(selectedTerm) : [];
-  const overlappingSubTermCodes = new Set(overlappingSubTerms.map((subTerm) => subTerm.code));
+  const overlappingSubTermCodes = new Set(overlappingSubTerms.map(getSubTermSelectionValue));
   const compatibleSubTermCodes = getCompatibleSubTermCodes(
     overlappingSubTerms,
     selectedSubTermCodes.filter((subTermCode) => overlappingSubTermCodes.has(subTermCode))
@@ -440,24 +600,63 @@ export function TeachingScheduleDetail({
     selectedSubTermCodes
   );
   const visibleSubTermCodes = new Set(effectiveSelectedSubTermCodes);
-  const visibleMeetings = detail.meetings.filter((meeting) =>
-    visibleSubTermCodes.has(meeting.subTermCode)
-  );
+  const visibleMeetings = detail.meetings.filter((meeting) => {
+    if (meeting.termId !== undefined && selectedTerm && meeting.termId !== selectedTerm.id) {
+      return false;
+    }
+
+    return visibleSubTermCodes.has(getMeetingSubTermSelectionValue(meeting));
+  });
   const visibleSectionCount = getSectionCount(visibleMeetings);
-  const calendarEvents = useMemo(() => mapMeetingsToEvents(visibleMeetings), [visibleMeetings]);
+  const calendarEvents = useMemo(
+    () => mapMeetingsToEvents(visibleMeetings, calendarWeekStart),
+    [calendarWeekStart, visibleMeetings]
+  );
+
+  useEffect(() => {
+    const calendarShell = calendarShellRef.current;
+    const calendar = calendarRef.current;
+
+    if (!calendarShell || !calendar) {
+      return undefined;
+    }
+
+    const updateCalendarSize = () => {
+      window.requestAnimationFrame(() => {
+        calendar.getApi().updateSize();
+      });
+    };
+
+    updateCalendarSize();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateCalendarSize);
+
+      return () => window.removeEventListener('resize', updateCalendarSize);
+    }
+
+    const resizeObserver = new ResizeObserver(updateCalendarSize);
+    resizeObserver.observe(calendarShell);
+
+    return () => resizeObserver.disconnect();
+  }, [calendarEvents, calendarWeekStart]);
   const termOptions = availableTerms.map((term) => ({
     value: String(term.id),
     label: term.name,
   }));
   const subTermOptions = overlappingSubTerms.map((subTerm) => {
-    const selected = effectiveSelectedSubTermCodes.includes(subTerm.code);
+    const value = getSubTermSelectionValue(subTerm);
+    const selected = effectiveSelectedSubTermCodes.includes(value);
 
     return {
-      value: subTerm.code,
+      value,
       label: `${subTerm.name} (${subTerm.code})`,
-      disabled: !selected && !compatibleSubTermCodes.has(subTerm.code),
+      disabled: !selected && !compatibleSubTermCodes.has(value),
     };
   });
+  const selectedSubTerms = overlappingSubTerms.filter((subTerm) =>
+    effectiveSelectedSubTermCodes.includes(getSubTermSelectionValue(subTerm))
+  );
 
   return (
     <Stack gap="lg">
@@ -517,7 +716,7 @@ export function TeachingScheduleDetail({
 
                   const nextTerm = availableTerms.find((term) => term.id === Number(value));
                   setSelectedSubTermCodes(
-                    nextTerm ? getVisibleSubTerms(nextTerm).map((subTerm) => subTerm.code) : []
+                    nextTerm ? getVisibleSubTerms(nextTerm).map(getSubTermSelectionValue) : []
                   );
                 }}
               />
@@ -534,15 +733,31 @@ export function TeachingScheduleDetail({
                 clearable
               />
             </Grid.Col>
+            {selectedSubTerms.length > 0 ? (
+              <Grid.Col span={12}>
+                <div className={classes.subTermDateSummary}>
+                  {selectedSubTerms.map((subTerm) => (
+                    <div key={subTerm.id} className={classes.subTermDateItem}>
+                      <Text fw={700}>{subTerm.name}</Text>
+                      <Text size="sm" c="dimmed">
+                        {formatDateRange(subTerm.startDate, subTerm.endDate)}
+                      </Text>
+                    </div>
+                  ))}
+                </div>
+              </Grid.Col>
+            ) : null}
           </Grid>
         </Grid.Col>
         <Grid.Col span={12}>
-          <Box className={classes.calendarShell}>
+          <Box ref={calendarShellRef} className={classes.calendarShell}>
             <Box className={classes.calendar}>
               <FullCalendar
+                ref={calendarRef}
+                key={calendarWeekStart}
                 plugins={[timeGridPlugin]}
                 initialView="timeGridWeek"
-                initialDate={detail.weekStart}
+                initialDate={calendarWeekStart}
                 events={calendarEvents}
                 eventContent={renderEventContent}
                 dayHeaderContent={renderDayHeader}
@@ -550,9 +765,11 @@ export function TeachingScheduleDetail({
                 selectable={false}
                 allDaySlot={false}
                 weekends={false}
-                height="auto"
-                slotMinTime="07:00:00"
-                slotMaxTime="18:00:00"
+                height="46rem"
+                slotMinTime="00:00:00"
+                slotMaxTime="24:00:00"
+                scrollTime="08:00:00"
+                scrollTimeReset={false}
                 nowIndicator={false}
                 headerToolbar={false}
               />
@@ -566,7 +783,7 @@ export function TeachingScheduleDetail({
         description="Sections included in the selected term and overlapping subterms."
       >
         <Grid.Col span={12}>
-          <TeachingSectionTable meetings={visibleMeetings} />
+          <TeachingSectionTable meetings={visibleMeetings} weekStart={calendarWeekStart} />
         </Grid.Col>
       </RecordPageSection>
     </Stack>

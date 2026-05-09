@@ -10,6 +10,9 @@ import com.msm.sis.api.dto.course.CourseSectionStudentResponse;
 import com.msm.sis.api.dto.course.CreateCourseSectionRequest;
 import com.msm.sis.api.dto.course.PatchCourseSectionRequest;
 import com.msm.sis.api.dto.course.PatchCourseSectionStudentEnrollmentRequest;
+import com.msm.sis.api.dto.course.PostCourseSectionStudentGradeRequest;
+import com.msm.sis.api.service.course.CourseSectionAccessService;
+import com.msm.sis.api.service.course.CourseSectionGradePermissionService;
 import com.msm.sis.api.service.course.CourseSectionPatchService;
 import com.msm.sis.api.service.course.CourseSectionService;
 import com.msm.sis.api.service.course.StudentSectionEnrollmentService;
@@ -34,15 +37,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 @Tag(name = "Course Sections", description = "Manage course sections")
 public class CourseSectionController {
+    private final CourseSectionAccessService courseSectionAccessService;
+    private final CourseSectionGradePermissionService courseSectionGradePermissionService;
     private final CourseSectionPatchService courseSectionPatchService;
     private final CourseSectionService courseSectionService;
     private final StudentSectionEnrollmentService studentSectionEnrollmentService;
 
     public CourseSectionController(
+            CourseSectionAccessService courseSectionAccessService,
+            CourseSectionGradePermissionService courseSectionGradePermissionService,
             CourseSectionPatchService courseSectionPatchService,
             CourseSectionService courseSectionService,
             StudentSectionEnrollmentService studentSectionEnrollmentService
     ) {
+        this.courseSectionAccessService = courseSectionAccessService;
+        this.courseSectionGradePermissionService = courseSectionGradePermissionService;
         this.courseSectionPatchService = courseSectionPatchService;
         this.courseSectionService = courseSectionService;
         this.studentSectionEnrollmentService = studentSectionEnrollmentService;
@@ -89,7 +98,7 @@ public class CourseSectionController {
     }
 
     @GetMapping("/course-sections/{sectionId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'ADJUNCT', 'TEACHING_ASSISTANT', 'DEPARTMENT_HEAD')")
     @Operation(
             summary = "Get course section detail",
             description = "Returns the detail view for a single course section."
@@ -98,7 +107,11 @@ public class CourseSectionController {
             @AuthenticationPrincipal AuthenticatedJwt jwt,
             @PathVariable Long sectionId
     ) {
-        return ResponseEntity.ok(courseSectionService.getCourseSectionDetail(sectionId));
+        return ResponseEntity.ok(courseSectionService.getCourseSectionDetail(
+                sectionId,
+                jwt.getUserId(),
+                jwt.getRoles()
+        ));
     }
 
     @PatchMapping("/course-sections/{sectionId}")
@@ -116,7 +129,7 @@ public class CourseSectionController {
     }
 
     @GetMapping("/course-sections/{sectionId}/students")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'ADJUNCT', 'TEACHING_ASSISTANT', 'DEPARTMENT_HEAD')")
     @Operation(
             summary = "List course section students",
             description = "Returns paged student enrollments for a course section."
@@ -129,6 +142,8 @@ public class CourseSectionController {
             @RequestParam(defaultValue = "student") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection
     ) {
+        courseSectionAccessService.assertCanViewSection(sectionId, jwt.getUserId(), jwt.getRoles());
+
         return ResponseEntity.ok(studentSectionEnrollmentService.getSectionStudents(
                 sectionId,
                 page,
@@ -158,7 +173,7 @@ public class CourseSectionController {
     }
 
     @GetMapping("/course-sections/{sectionId}/students/{enrollmentId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'ADJUNCT', 'TEACHING_ASSISTANT', 'DEPARTMENT_HEAD')")
     @Operation(
             summary = "Get course section student enrollment",
             description = "Returns the detail view for one student enrollment in a course section."
@@ -168,6 +183,12 @@ public class CourseSectionController {
             @PathVariable Long sectionId,
             @PathVariable Long enrollmentId
     ) {
+        courseSectionGradePermissionService.assertCanViewGrades(
+                sectionId,
+                jwt.getUserId(),
+                jwt.getRoles()
+        );
+
         return ResponseEntity.ok(studentSectionEnrollmentService.getSectionStudentEnrollment(
                 sectionId,
                 enrollmentId
@@ -187,6 +208,32 @@ public class CourseSectionController {
             @Valid @NotNull @RequestBody PatchCourseSectionStudentEnrollmentRequest request
     ) {
         return ResponseEntity.ok(studentSectionEnrollmentService.patchEnrollment(
+                sectionId,
+                enrollmentId,
+                request,
+                jwt.getUserId()
+        ));
+    }
+
+    @PostMapping("/course-sections/{sectionId}/students/{enrollmentId}/grades")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'ADJUNCT', 'TEACHING_ASSISTANT', 'DEPARTMENT_HEAD')")
+    @Operation(
+            summary = "Post course section student grade",
+            description = "Posts a midterm or final grade. Admins can post any grade; assigned instructors must have grade management permission for the section."
+    )
+    public ResponseEntity<CourseSectionStudentResponse> postCourseSectionStudentGrade(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @PathVariable Long sectionId,
+            @PathVariable Long enrollmentId,
+            @Valid @NotNull @RequestBody PostCourseSectionStudentGradeRequest request
+    ) {
+        courseSectionGradePermissionService.assertCanManageGrades(
+                sectionId,
+                jwt.getUserId(),
+                jwt.getRoles()
+        );
+
+        return ResponseEntity.ok(studentSectionEnrollmentService.postGrade(
                 sectionId,
                 enrollmentId,
                 request,

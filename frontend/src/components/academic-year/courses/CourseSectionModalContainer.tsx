@@ -29,6 +29,8 @@ export function CourseSectionModalContainer({
       academicDivisionOptions={workspace.academicDivisionOptions}
       sectionGradingBasisOptions={workspace.sectionGradingBasisOptions}
       enrollmentGradingBasisOptions={workspace.enrollmentGradingBasisOptions}
+      gradeMarkOptions={workspace.gradeMarkOptions}
+      gradeTypeOptions={workspace.gradeTypeOptions}
       deliveryModeOptions={workspace.deliveryModeOptions}
       creditOptions={workspace.creditOptions}
       referencesAreLoading={workspace.referencesAreLoading}

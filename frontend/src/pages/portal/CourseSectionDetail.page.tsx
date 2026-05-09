@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Grid, Group, Stack } from '@mantine/core';
 import { Link, useParams } from 'react-router-dom';
+import { useAccessTokenData } from '@/auth/auth-store';
 import { CourseSectionDetailOverviewSection } from '@/components/academic-year/courses/CourseSectionDetailOverviewSection';
 import { CourseSectionDetailSetupSection } from '@/components/academic-year/courses/CourseSectionDetailSetupSection';
 import { CourseSectionDetailStudentsSection } from '@/components/academic-year/courses/CourseSectionDetailStudentsSection';
@@ -26,6 +27,7 @@ import {
 import { RecordPageFooter } from '@/components/create/RecordPageFooter';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
+import { PORTAL_ROLES, hasPortalRole } from '@/portal/PortalRoles';
 import { usePortalBackNavigation } from '@/portal/usePortalBackNavigation';
 import { getCourseSectionDetail, patchCourseSection } from '@/services/course-service';
 import { getCourseSectionReferenceOptions } from '@/services/reference-service';
@@ -39,6 +41,7 @@ type CourseSectionDetailPageState =
   | { status: 'success'; section: CourseSectionPreview };
 
 type ReferenceState =
+  | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error'; message: string }
   | { status: 'success'; response: CourseSectionReferenceOptionsResponse };
@@ -57,15 +60,54 @@ function buildSingleCreditOption(section: CourseSectionPreview | null): SelectOp
   return [{ value: String(section.credits), label: String(section.credits) }];
 }
 
+function buildReadOnlyOption(value: string | null, label: string | null): SelectOption[] {
+  if (!value) {
+    return [];
+  }
+
+  return [{ value, label: label ?? value }];
+}
+
+function buildReadOnlyInstructorRoleOptions(section: CourseSectionPreview | null): SelectOption[] {
+  if (!section) {
+    return [];
+  }
+
+  return Array.from(
+    new Map(
+      section.instructors
+        .filter((instructor) => instructor.roleCode)
+        .map((instructor) => [
+          instructor.roleCode as string,
+          {
+            value: instructor.roleCode as string,
+            label: instructor.roleName ?? instructor.roleCode ?? 'Role',
+          },
+        ])
+    ).values()
+  );
+}
+
+function mapGradeMarksToSelectOptions(
+  gradeMarks: CourseSectionReferenceOptionsResponse['gradeMarks']
+): SelectOption[] {
+  return gradeMarks.map((gradeMark) => ({
+    value: gradeMark.code,
+    label: gradeMark.code === gradeMark.name ? gradeMark.code : `${gradeMark.code} - ${gradeMark.name}`,
+  }));
+}
+
 export function CourseSectionDetailPage() {
   const { sectionId } = useParams<{ sectionId: string }>();
+  const tokenData = useAccessTokenData();
+  const canManageCourseSection = hasPortalRole(tokenData?.roles, PORTAL_ROLES.ADMIN);
   const parsedSectionId = Number(sectionId);
   const hasValidSectionId = Number.isInteger(parsedSectionId) && parsedSectionId > 0;
   const { handleBack } = usePortalBackNavigation({
     fallbackPath: '/academics/academic-years/search',
   });
   const [pageState, setPageState] = useState<CourseSectionDetailPageState>({ status: 'loading' });
-  const [referenceState, setReferenceState] = useState<ReferenceState>({ status: 'loading' });
+  const [referenceState, setReferenceState] = useState<ReferenceState>({ status: 'idle' });
   const [sectionSubTermId, setSectionSubTermId] = useState<number | null>(null);
   const [draft, setDraft] = useState<CourseSectionDraft>(initialCourseSectionDraft);
   const [detailEditing, setDetailEditing] = useState(false);
@@ -80,26 +122,53 @@ export function CourseSectionDetailPage() {
 
   const section = pageState.status === 'success' ? pageState.section : null;
   const referenceOptions = referenceState.status === 'success' ? referenceState.response : null;
-  const sectionStatusOptions = useMemo(
-    () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.courseSectionStatuses ?? []),
-    [referenceOptions]
-  );
+  const sectionStatusOptions = useMemo(() => {
+    const options = mapReferenceOptionsToCodeSelectOptions(
+      referenceOptions?.courseSectionStatuses ?? []
+    );
+
+    return options.length > 0
+      ? options
+      : buildReadOnlyOption(section?.statusCode ?? null, section?.statusName ?? null);
+  }, [referenceOptions, section]);
   const academicDivisionOptions = useMemo(
-    () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.academicDivisions ?? []),
-    [referenceOptions]
+    () => {
+      const options = mapReferenceOptionsToCodeSelectOptions(
+        referenceOptions?.academicDivisions ?? []
+      );
+
+      return options.length > 0
+        ? options
+        : buildReadOnlyOption(
+            section?.academicDivisionCode ?? null,
+            section?.academicDivisionName ?? null
+          );
+    },
+    [referenceOptions, section]
   );
   const deliveryModeOptions = useMemo(
-    () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.deliveryModes ?? []),
-    [referenceOptions]
+    () => {
+      const options = mapReferenceOptionsToCodeSelectOptions(referenceOptions?.deliveryModes ?? []);
+
+      return options.length > 0
+        ? options
+        : buildReadOnlyOption(section?.deliveryModeCode ?? null, section?.deliveryModeName ?? null);
+    },
+    [referenceOptions, section]
   );
   const sectionGradingBasisOptions = useMemo(
-    () =>
-      mapReferenceOptionsToCodeSelectOptions(
+    () => {
+      const options = mapReferenceOptionsToCodeSelectOptions(
         (referenceOptions?.gradingBases ?? []).filter(
           (gradingBasis) => gradingBasis.allowedForCourseSections
         )
-      ),
-    [referenceOptions]
+      );
+
+      return options.length > 0
+        ? options
+        : buildReadOnlyOption(section?.gradingBasisCode ?? null, section?.gradingBasisName ?? null);
+    },
+    [referenceOptions, section]
   );
   const enrollmentGradingBasisOptions = useMemo(
     () =>
@@ -110,9 +179,24 @@ export function CourseSectionDetailPage() {
       ),
     [referenceOptions]
   );
-  const sectionInstructorRoleOptions = useMemo(
-    () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.sectionInstructorRoles ?? []),
+  const gradeMarkOptions = useMemo(
+    () => mapGradeMarksToSelectOptions(referenceOptions?.gradeMarks ?? []),
     [referenceOptions]
+  );
+  const gradeTypeOptions = useMemo(
+    () =>
+      mapReferenceOptionsToCodeSelectOptions(referenceOptions?.studentSectionGradeTypes ?? []),
+    [referenceOptions]
+  );
+  const sectionInstructorRoleOptions = useMemo(
+    () => {
+      const options = mapReferenceOptionsToCodeSelectOptions(
+        referenceOptions?.sectionInstructorRoles ?? []
+      );
+
+      return options.length > 0 ? options : buildReadOnlyInstructorRoleOptions(section);
+    },
+    [referenceOptions, section]
   );
   const enrollmentStatusOptions = useMemo(
     () =>
@@ -126,7 +210,7 @@ export function CourseSectionDetailPage() {
     () => buildStaffSelectOptions(staffSearchState.results, draft),
     [draft, staffSearchState.results]
   );
-  const referencesAreLoading = referenceState.status === 'loading';
+  const referencesAreLoading = canManageCourseSection && referenceState.status === 'loading';
   const mutating = sectionMutationState.status === 'saving';
   const pageTitle = section
     ? `${section.courseCode} Section ${section.sectionCode}`
@@ -198,7 +282,7 @@ export function CourseSectionDetailPage() {
   }, []);
 
   useEffect(() => {
-    if (!detailEditing || staffSearchValue.trim().length < 2) {
+    if (!canManageCourseSection || !detailEditing || staffSearchValue.trim().length < 2) {
       setStaffSearchState({ status: 'idle', results: [] });
       return;
     }
@@ -235,7 +319,7 @@ export function CourseSectionDetailPage() {
       window.clearTimeout(timeoutId);
       abortController.abort();
     };
-  }, [detailEditing, staffSearchValue]);
+  }, [canManageCourseSection, detailEditing, staffSearchValue]);
 
   function handleCancelEdit() {
     if (section) {
@@ -316,11 +400,15 @@ export function CourseSectionDetailPage() {
       size="xl"
       eyebrow="Course Section"
       title={pageTitle}
-      description="Manage section details, roster, registration state, and student enrollment work."
+      description={
+        canManageCourseSection
+          ? 'Manage section details, roster, registration state, and student enrollment work.'
+          : 'Review read-only section details, schedule, and instructor assignments.'
+      }
       badge={
         <Group gap="sm" wrap="wrap">
-          <Badge variant="light" size="lg" color="gray">
-            Admin only
+          <Badge variant="light" size="lg" color={canManageCourseSection ? 'gray' : 'blue'}>
+            {canManageCourseSection ? 'Admin' : 'Read only'}
           </Badge>
           {section ? (
             <Badge variant="light" size="lg" color={section.statusCode === 'DRAFT' ? 'gray' : 'green'}>
@@ -339,7 +427,7 @@ export function CourseSectionDetailPage() {
           </RecordPageSection>
         ) : null}
 
-        {referenceState.status === 'error' ? (
+        {canManageCourseSection && referenceState.status === 'error' ? (
           <RecordPageSection title="Reference Data" description="Some course section options could not be loaded.">
             <Alert color="red" title="Unable to load reference data">
               {referenceState.message}
@@ -353,9 +441,10 @@ export function CourseSectionDetailPage() {
 
             <CourseSectionDetailSetupSection
               academicDivisionOptions={academicDivisionOptions}
+              canManage={canManageCourseSection}
               creditOptions={creditOptions}
               deliveryModeOptions={deliveryModeOptions}
-              detailEditing={detailEditing}
+              detailEditing={canManageCourseSection && detailEditing}
               draft={draft}
               mutationState={sectionMutationState}
               mutating={mutating}
@@ -379,20 +468,25 @@ export function CourseSectionDetailPage() {
             />
 
             <CourseSectionDetailStudentsSection
+              canManage={canManageCourseSection}
               enrollmentGradingBasisOptions={enrollmentGradingBasisOptions}
               enrollmentStatusOptions={enrollmentStatusOptions}
+              gradeMarkOptions={gradeMarkOptions}
+              gradeTypeOptions={gradeTypeOptions}
               section={section}
             />
           </>
         ) : null}
 
-        <RecordPageFooter description="Return to the previous course or term workspace.">
+        <RecordPageFooter description="Return to the previous schedule or course workspace.">
           <Button variant="default" onClick={handleBack}>
             Back
           </Button>
-          <Button component={Link} to="/academics/academic-years/search" variant="light">
-            Academic years
-          </Button>
+          {canManageCourseSection ? (
+            <Button component={Link} to="/academics/academic-years/search" variant="light">
+              Academic years
+            </Button>
+          ) : null}
         </RecordPageFooter>
       </Stack>
     </RecordPageShell>

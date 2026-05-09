@@ -23,6 +23,8 @@ type CourseSectionModalBodyProps = {
   draft: CourseSectionDraft;
   enrollmentGradingBasisOptions: SelectOption[];
   fieldsDisabled: boolean;
+  gradeMarkOptions: SelectOption[];
+  gradeTypeOptions: SelectOption[];
   mutationState: CourseSectionMutationState;
   mode: 'create' | 'detail';
   readOnlyCheckboxStyles: object | undefined;
@@ -47,6 +49,8 @@ export function CourseSectionModalBody({
   draft,
   enrollmentGradingBasisOptions,
   fieldsDisabled,
+  gradeMarkOptions,
+  gradeTypeOptions,
   mutationState,
   mode,
   readOnlyCheckboxStyles,
@@ -140,6 +144,8 @@ export function CourseSectionModalBody({
       {mode === 'detail' && selectedSection ? (
         <CourseSectionStudentsPanel
           selectedSection={selectedSection}
+          gradeMarkOptions={gradeMarkOptions}
+          gradeTypeOptions={gradeTypeOptions}
           gradingBasisOptions={enrollmentGradingBasisOptions}
         />
       ) : null}

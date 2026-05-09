@@ -55,7 +55,7 @@ public class StudentSectionEnrollmentReferenceResolver {
     }
 
     public GradeMark resolveGradeMark(String code) {
-        return resolveRequiredReference(code, gradeMarkRepository::findByCode, "Grade mark");
+        return resolveRequiredReference(code, gradeMarkRepository::findByCodeAndActiveTrue, "Grade mark");
     }
 
     public SisUser resolveOptionalUser(Long userId) {

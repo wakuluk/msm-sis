@@ -63,6 +63,7 @@ public class CourseSectionService {
     private final DeliveryModeRepository deliveryModeRepository;
     private final GradingBasisRepository gradingBasisRepository;
     private final CourseSectionMapper courseSectionMapper;
+    private final CourseSectionAccessService courseSectionAccessService;
     private final CourseSectionInstructorConflictService courseSectionInstructorConflictService;
     private final CourseSectionValidationService courseSectionValidationService;
 
@@ -181,11 +182,16 @@ public class CourseSectionService {
     }
 
     @Transactional(readOnly = true)
-    public CourseSectionDetailResponse getCourseSectionDetail(Long sectionId) {
+    public CourseSectionDetailResponse getCourseSectionDetail(
+            Long sectionId,
+            Long userId,
+            List<String> roles
+    ) {
         courseSectionValidationService.validatePositiveId(sectionId, "Course section id");
 
         CourseSection courseSection = courseSectionRepository.findById(sectionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        courseSectionAccessService.assertCanViewSection(sectionId, userId, roles);
 
         return courseSectionMapper.toCourseSectionDetailResponse(courseSection);
     }

@@ -123,6 +123,9 @@ export const CourseSectionInstructorConflictResponseSchema = z.object({
   subTermId: z.number(),
   subTermCode: z.string(),
   subTermName: z.string(),
+  conflictingSubTermId: z.number().nullable().optional(),
+  conflictingSubTermCode: z.string().nullable().optional(),
+  conflictingSubTermName: z.string().nullable().optional(),
   meetings: z.array(CourseSectionInstructorConflictMeetingResponseSchema),
 });
 
@@ -268,6 +271,11 @@ export const CourseSectionStudentGradeResponseSchema = z.object({
   gradeMarkId: z.number().nullable(),
   gradeMarkCode: z.string().nullable(),
   gradeMarkName: z.string().nullable(),
+  previousGradeMarkId: z.number().nullable(),
+  previousGradeMarkCode: z.string().nullable(),
+  previousGradeMarkName: z.string().nullable(),
+  changedFromGradeId: z.number().nullable(),
+  changeReason: z.string().nullable(),
   current: z.boolean(),
   postedByUserId: z.number().nullable(),
   postedByEmail: z.string().nullable(),
@@ -314,6 +322,16 @@ export const CourseSectionStudentResponseSchema = z.object({
 });
 
 export type CourseSectionStudentResponse = z.infer<typeof CourseSectionStudentResponseSchema>;
+
+export const PostCourseSectionStudentGradeRequestSchema = z.object({
+  gradeTypeCode: z.string().trim().min(1).max(50),
+  gradeMarkCode: z.string().trim().min(1).max(50),
+  reason: z.string().trim().max(1000).nullable().optional(),
+});
+
+export type PostCourseSectionStudentGradeRequest = z.infer<
+  typeof PostCourseSectionStudentGradeRequestSchema
+>;
 
 export const CourseSectionStudentListResponseSchema = z.object({
   sectionId: z.number().nullable(),

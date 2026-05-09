@@ -23,6 +23,11 @@ export type StudentMutationState =
   | { status: 'saving' }
   | { status: 'error'; message: string };
 
+export type GradePostState =
+  | { status: 'idle' }
+  | { status: 'saving' }
+  | { status: 'error'; message: string };
+
 export type EnrollmentEventListState =
   | { status: 'idle'; events: CourseSectionStudentEnrollmentEventResponse[] }
   | { status: 'loading'; events: CourseSectionStudentEnrollmentEventResponse[] }
@@ -35,6 +40,7 @@ export type StudentSortBy =
   | 'status'
   | 'credits'
   | 'grading'
+  | 'finalGrade'
   | 'registered';
 
 export type StudentSortDirection = 'asc' | 'desc';

@@ -8,12 +8,18 @@ import type {
 } from './courseSectionsWorkspaceTypes';
 
 type CourseSectionDetailStudentsSectionProps = {
+  canManage?: boolean;
+  gradeMarkOptions: SelectOption[];
+  gradeTypeOptions: SelectOption[];
   enrollmentGradingBasisOptions: SelectOption[];
   enrollmentStatusOptions: SelectOption[];
   section: CourseSectionPreview;
 };
 
 export function CourseSectionDetailStudentsSection({
+  canManage = true,
+  gradeMarkOptions,
+  gradeTypeOptions,
   enrollmentGradingBasisOptions,
   enrollmentStatusOptions,
   section,
@@ -21,11 +27,18 @@ export function CourseSectionDetailStudentsSection({
   return (
     <RecordPageSection
       title="Students"
-      description="Manage students enrolled or waitlisted in this course section."
+      description={
+        canManage
+          ? 'Manage students enrolled or waitlisted in this course section.'
+          : 'Review students enrolled or waitlisted in this course section.'
+      }
     >
       <Grid.Col span={12}>
         <CourseSectionStudentsPanel
           selectedSection={section}
+          canManage={canManage}
+          gradeMarkOptions={gradeMarkOptions}
+          gradeTypeOptions={gradeTypeOptions}
           gradingBasisOptions={enrollmentGradingBasisOptions}
           enrollmentStatusOptions={enrollmentStatusOptions}
         />

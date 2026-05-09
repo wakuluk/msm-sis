@@ -8,8 +8,12 @@ import {
   getCourseSectionStudentEnrollmentEvents,
   getCourseSectionStudents,
   patchCourseSectionStudentEnrollment,
+  postCourseSectionStudentGrade,
 } from '@/services/course-service';
-import type { CourseSectionStudentResponse } from '@/services/schemas/course-schemas';
+import type {
+  CourseSectionStudentResponse,
+  PostCourseSectionStudentGradeRequest,
+} from '@/services/schemas/course-schemas';
 import {
   CourseSectionAddStudentModal,
   type AddStudentFormValues,
@@ -20,6 +24,7 @@ import { CourseSectionStudentTable } from './CourseSectionStudentTable';
 import type {
   EditEnrollmentValues,
   EnrollmentEventListState,
+  GradePostState,
   SelectedEnrollmentDetailState,
   StudentListState,
   StudentMutationState,
@@ -32,12 +37,18 @@ import { getErrorMessage } from './courseSectionsWorkspaceUtils';
 
 type CourseSectionStudentsPanelProps = {
   selectedSection: CourseSectionPreview;
+  canManage?: boolean;
+  gradeMarkOptions: SelectOption[];
+  gradeTypeOptions: SelectOption[];
   gradingBasisOptions: SelectOption[];
   enrollmentStatusOptions?: SelectOption[];
 };
 
 export function CourseSectionStudentsPanel({
   selectedSection,
+  canManage = true,
+  gradeMarkOptions,
+  gradeTypeOptions,
   gradingBasisOptions,
   enrollmentStatusOptions = [
     { value: 'REGISTERED', label: 'Registered' },
@@ -71,6 +82,7 @@ export function CourseSectionStudentsPanel({
     status: 'idle',
     events: [],
   });
+  const [gradePostState, setGradePostState] = useState<GradePostState>({ status: 'idle' });
 
   const students = studentListState.students;
   const filteredStudents = useMemo(
@@ -189,7 +201,11 @@ export function CourseSectionStudentsPanel({
   ]);
 
   useEffect(() => {
-    if (selectedEnrollmentId === null) {
+    setGradePostState({ status: 'idle' });
+  }, [selectedEnrollmentId]);
+
+  useEffect(() => {
+    if (selectedEnrollmentId === null || !canManage) {
       setEventListState({ status: 'idle', events: [] });
       return;
     }
@@ -225,7 +241,7 @@ export function CourseSectionStudentsPanel({
     return () => {
       abortController.abort();
     };
-  }, [eventListReloadKey, selectedEnrollmentId, selectedSection.sectionId]);
+  }, [canManage, eventListReloadKey, selectedEnrollmentId, selectedSection.sectionId]);
 
   async function handleAddStudent(values: AddStudentFormValues) {
     if (studentMutationState.status === 'adding') {
@@ -292,6 +308,34 @@ export function CourseSectionStudentsPanel({
     }
   }
 
+  async function handlePostGrade(values: PostCourseSectionStudentGradeRequest) {
+    if (!selectedStudent || gradePostState.status === 'saving') {
+      return false;
+    }
+
+    try {
+      setGradePostState({ status: 'saving' });
+      const updatedStudent = await postCourseSectionStudentGrade({
+        sectionId: selectedSection.sectionId,
+        enrollmentId: selectedStudent.enrollmentId,
+        request: values,
+      });
+
+      updateEnrollmentInList(updatedStudent);
+      setSelectedEnrollmentId(updatedStudent.enrollmentId);
+      setSelectedEnrollmentDetailState({ status: 'success', student: updatedStudent });
+      setGradePostState({ status: 'idle' });
+      setEventListReloadKey((current) => current + 1);
+      return true;
+    } catch (error: unknown) {
+      setGradePostState({
+        status: 'error',
+        message: getErrorMessage(error, 'Failed to post student grade.'),
+      });
+      return false;
+    }
+  }
+
   function handleToggleSort(nextSortBy: StudentSortBy) {
     setSortDirection((currentDirection) =>
       sortBy === nextSortBy && currentDirection === 'asc' ? 'desc' : 'asc'
@@ -334,16 +378,18 @@ export function CourseSectionStudentsPanel({
               setSearchValue(event.currentTarget.value);
             }}
           />
-          <Button
-            size="xs"
-            variant="light"
-            onClick={() => {
-              setStudentMutationState({ status: 'idle' });
-              setAddStudentModalOpened(true);
-            }}
-          >
-            Add student
-          </Button>
+          {canManage ? (
+            <Button
+              size="xs"
+              variant="light"
+              onClick={() => {
+                setStudentMutationState({ status: 'idle' });
+                setAddStudentModalOpened(true);
+              }}
+            >
+              Add student
+            </Button>
+          ) : null}
         </Group>
       </Group>
 
@@ -379,10 +425,16 @@ export function CourseSectionStudentsPanel({
         <CourseSectionStudentDetailsPanel
           student={selectedStudent}
           eventState={eventListState}
+          canManage={canManage}
+          gradePostState={gradePostState}
+          gradeMarkOptions={gradeMarkOptions}
+          gradeTypeOptions={gradeTypeOptions}
+          sectionStatusCode={selectedSection.statusCode ?? null}
           onEditEnrollment={() => {
             setStudentMutationState({ status: 'idle' });
             setEditEnrollmentModalOpened(true);
           }}
+          onPostGrade={handlePostGrade}
         />
       ) : (
         <Text size="sm" c="dimmed">
@@ -390,44 +442,48 @@ export function CourseSectionStudentsPanel({
         </Text>
       )}
 
-      <CourseSectionAddStudentModal
-        opened={addStudentModalOpened}
-        capacity={capacity}
-        hardCapacity={hardCapacity}
-        registeredCount={registeredCount}
-        waitlistAllowed={selectedSection.waitlistAllowed}
-        gradingBasisOptions={gradingBasisOptions}
-        defaultCredits={selectedSection.credits}
-        defaultGradingBasisCode={selectedSection.gradingBasisCode}
-        adding={studentMutationState.status === 'adding'}
-        error={addStudentError}
-        onClose={() => {
-          setAddStudentModalOpened(false);
-          if (studentMutationState.status === 'error') {
-            setStudentMutationState({ status: 'idle' });
-          }
-        }}
-        onAdd={(values) => {
-          void handleAddStudent(values);
-        }}
-      />
-      <CourseSectionEditEnrollmentModal
-        opened={editEnrollmentModalOpened}
-        student={selectedStudent}
-        gradingBasisOptions={gradingBasisOptions}
-        enrollmentStatusOptions={enrollmentStatusOptions}
-        saving={studentMutationState.status === 'saving'}
-        error={studentMutationState.status === 'error' ? studentMutationState.message : null}
-        onClose={() => {
-          setEditEnrollmentModalOpened(false);
-          if (studentMutationState.status === 'error') {
-            setStudentMutationState({ status: 'idle' });
-          }
-        }}
-        onSave={(values) => {
-          void handleSaveEnrollment(values);
-        }}
-      />
+      {canManage ? (
+        <>
+          <CourseSectionAddStudentModal
+            opened={addStudentModalOpened}
+            capacity={capacity}
+            hardCapacity={hardCapacity}
+            registeredCount={registeredCount}
+            waitlistAllowed={selectedSection.waitlistAllowed}
+            gradingBasisOptions={gradingBasisOptions}
+            defaultCredits={selectedSection.credits}
+            defaultGradingBasisCode={selectedSection.gradingBasisCode}
+            adding={studentMutationState.status === 'adding'}
+            error={addStudentError}
+            onClose={() => {
+              setAddStudentModalOpened(false);
+              if (studentMutationState.status === 'error') {
+                setStudentMutationState({ status: 'idle' });
+              }
+            }}
+            onAdd={(values) => {
+              void handleAddStudent(values);
+            }}
+          />
+          <CourseSectionEditEnrollmentModal
+            opened={editEnrollmentModalOpened}
+            student={selectedStudent}
+            gradingBasisOptions={gradingBasisOptions}
+            enrollmentStatusOptions={enrollmentStatusOptions}
+            saving={studentMutationState.status === 'saving'}
+            error={studentMutationState.status === 'error' ? studentMutationState.message : null}
+            onClose={() => {
+              setEditEnrollmentModalOpened(false);
+              if (studentMutationState.status === 'error') {
+                setStudentMutationState({ status: 'idle' });
+              }
+            }}
+            onSave={(values) => {
+              void handleSaveEnrollment(values);
+            }}
+          />
+        </>
+      ) : null}
     </Stack>
   );
 }

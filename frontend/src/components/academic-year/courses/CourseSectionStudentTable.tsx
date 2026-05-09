@@ -11,6 +11,7 @@ import type {
 import {
   formatCredits,
   formatStudentDate,
+  getCurrentFinalGradeLabel,
   sortableStudentColumns,
   studentStatusColor,
 } from './courseSectionStudentUtils';
@@ -50,6 +51,24 @@ function SortableStudentHeader({
   );
 }
 
+function FinalGradeCell({ student }: { student: CourseSectionStudentResponse }) {
+  const finalGradeLabel = getCurrentFinalGradeLabel(student);
+
+  if (!student.currentFinalGrade) {
+    return (
+      <Text size="sm" c="dimmed">
+        {finalGradeLabel}
+      </Text>
+    );
+  }
+
+  return (
+    <Badge variant="light" color="gray">
+      {finalGradeLabel}
+    </Badge>
+  );
+}
+
 type CourseSectionStudentTableProps = {
   students: CourseSectionStudentResponse[];
   loading: boolean;
@@ -70,7 +89,7 @@ export function CourseSectionStudentTable({
   onSelectEnrollment,
 }: CourseSectionStudentTableProps) {
   return (
-    <Table.ScrollContainer minWidth={960} w="100%">
+    <Table.ScrollContainer minWidth={1080} w="100%">
       <ScrollArea.Autosize mah={320} type="auto" offsetScrollbars>
         <Table
           withTableBorder
@@ -97,7 +116,7 @@ export function CourseSectionStudentTable({
           <Table.Tbody>
             {students.length === 0 ? (
               <Table.Tr>
-                <Table.Td colSpan={6}>
+                <Table.Td colSpan={sortableStudentColumns.length}>
                   <Text size="sm" c="dimmed" ta="center" py="md">
                     {loading ? 'Loading students...' : 'No students found.'}
                   </Text>
@@ -140,6 +159,9 @@ export function CourseSectionStudentTable({
                 </Table.Td>
                 <Table.Td>{formatCredits(student.creditsAttempted)}</Table.Td>
                 <Table.Td>{student.gradingBasisName ?? 'Not set'}</Table.Td>
+                <Table.Td>
+                  <FinalGradeCell student={student} />
+                </Table.Td>
                 <Table.Td>
                   {formatStudentDate(student.registeredAt ?? student.enrollmentDate)}
                 </Table.Td>

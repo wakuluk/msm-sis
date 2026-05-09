@@ -3,7 +3,6 @@ package com.msm.sis.api.service.course;
 import com.msm.sis.api.dto.course.AddCourseSectionStudentRequest;
 import com.msm.sis.api.dto.course.CourseSectionStudentEnrollmentEventResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentEnrollmentEventListResponse;
-import com.msm.sis.api.dto.course.CourseSectionStudentGradeResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentListResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentResponse;
 import com.msm.sis.api.dto.course.PatchCourseSectionStudentEnrollmentRequest;
@@ -36,6 +35,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.msm.sis.api.util.PagingUtils.validatePageRequest;
@@ -49,6 +49,19 @@ public class StudentSectionEnrollmentService {
     private static final String DEFAULT_EVENT_TYPE_ADDED = "ADDED";
     private static final String EVENT_TYPE_GRADE_POSTED = "GRADE_POSTED";
     private static final String EVENT_TYPE_GRADE_CHANGED = "GRADE_CHANGED";
+    private static final Set<String> GRADEABLE_ENROLLMENT_STATUS_CODES = Set.of(
+            "REGISTERED",
+            "IN_PROGRESS",
+            "COMPLETED"
+    );
+    private static final Set<String> GRADEABLE_SECTION_STATUS_CODES = Set.of(
+            "IN_PROGRESS",
+            "COMPLETED"
+    );
+    private static final Set<String> POSTABLE_GRADE_TYPE_CODES = Set.of(
+            "MIDTERM",
+            "FINAL"
+    );
 
     private static final Map<String, String> SORT_FIELDS = Map.of(
             "student", "student.lastName",
@@ -113,7 +126,7 @@ public class StudentSectionEnrollmentService {
                 .findBySectionIdAndEnrollmentId(sectionId, enrollmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        return studentSectionEnrollmentMapper.toStudentResponse(enrollment, enrollment.getGrades());
+        return mapEnrollmentWithFreshGrades(enrollment);
     }
 
     @Transactional
@@ -203,7 +216,7 @@ public class StudentSectionEnrollmentService {
     }
 
     @Transactional
-    public CourseSectionStudentGradeResponse postGrade(
+    public CourseSectionStudentResponse postGrade(
             Long sectionId,
             Long enrollmentId,
             PostCourseSectionStudentGradeRequest request,
@@ -219,19 +232,38 @@ public class StudentSectionEnrollmentService {
         StudentSectionGradeType gradeType = referenceResolver.resolveGradeType(request.gradeTypeCode());
         GradeMark gradeMark = referenceResolver.resolveGradeMark(request.gradeMarkCode());
         SisUser actorUser = referenceResolver.resolveOptionalUser(actorUserId);
-
-        boolean changedExistingGrade = gradeRepository.expireCurrentGradesByEnrollmentIdAndGradeTypeCode(
+        Optional<StudentSectionGrade> currentGrade = gradeRepository.findCurrentGradeByEnrollmentIdAndGradeTypeCode(
                 enrollmentId,
                 gradeType.getCode()
-        ) > 0;
+        );
+
+        validateGradePost(enrollment, gradeType);
+
+        if (currentGrade.isPresent() && currentGrade.get().getGradeMark() != null
+                && currentGrade.get().getGradeMark().getId().equals(gradeMark.getId())) {
+            return mapEnrollmentWithFreshGrades(enrollment);
+        }
+
+        requireReasonForGradeChange(currentGrade, request);
+
+        boolean changedExistingGrade = currentGrade.isPresent();
+        currentGrade.ifPresent(previousGrade -> {
+            previousGrade.setCurrent(false);
+            gradeRepository.saveAndFlush(previousGrade);
+        });
 
         StudentSectionGrade grade = new StudentSectionGrade();
         grade.setStudentSectionEnrollment(enrollment);
         grade.setGradeType(gradeType);
         grade.setGradeMark(gradeMark);
+        currentGrade.ifPresent(previousGrade -> {
+            grade.setPreviousGradeMark(previousGrade.getGradeMark());
+            grade.setChangedFromGrade(previousGrade);
+            grade.setChangeReason(trimToNull(request.reason()));
+        });
         grade.setPostedByUser(actorUser);
 
-        StudentSectionGrade savedGrade = gradeRepository.saveAndFlush(grade);
+        gradeRepository.saveAndFlush(grade);
         enrollmentEventService.createEvent(
                 enrollment,
                 changedExistingGrade ? EVENT_TYPE_GRADE_CHANGED : EVENT_TYPE_GRADE_POSTED,
@@ -241,7 +273,72 @@ public class StudentSectionEnrollmentService {
                 null
         );
 
-        return studentSectionEnrollmentMapper.toGradeResponse(savedGrade);
+        return mapEnrollmentWithFreshGrades(enrollment);
+    }
+
+    private void validateGradePost(
+            StudentSectionEnrollment enrollment,
+            StudentSectionGradeType gradeType
+    ) {
+        validateGradeableSectionStatus(enrollment);
+        validateGradeableEnrollmentStatus(enrollment);
+        validatePostableGradeType(gradeType);
+    }
+
+    private void requireReasonForGradeChange(
+            Optional<StudentSectionGrade> currentGrade,
+            PostCourseSectionStudentGradeRequest request
+    ) {
+        if (currentGrade.isPresent() && trimToNull(request.reason()) == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A reason is required when changing an existing grade."
+            );
+        }
+    }
+
+    private CourseSectionStudentResponse mapEnrollmentWithFreshGrades(StudentSectionEnrollment enrollment) {
+        return studentSectionEnrollmentMapper.toStudentResponse(
+                enrollment,
+                gradeRepository.findAllByEnrollmentId(enrollment.getId())
+        );
+    }
+
+    private void validateGradeableSectionStatus(StudentSectionEnrollment enrollment) {
+        CourseSection section = enrollment.getCourseSection();
+        String statusCode = section == null || section.getStatus() == null
+                ? null
+                : section.getStatus().getCode();
+
+        if (statusCode == null || !GRADEABLE_SECTION_STATUS_CODES.contains(statusCode.toUpperCase())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Grades can only be posted when the course section is in progress or completed."
+            );
+        }
+    }
+
+    private void validateGradeableEnrollmentStatus(StudentSectionEnrollment enrollment) {
+        StudentSectionEnrollmentStatus status = enrollment.getStatus();
+        String statusCode = status == null ? null : status.getCode();
+
+        if (statusCode == null || !GRADEABLE_ENROLLMENT_STATUS_CODES.contains(statusCode.toUpperCase())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Grades can only be posted for registered or completed enrollments."
+            );
+        }
+    }
+
+    private void validatePostableGradeType(StudentSectionGradeType gradeType) {
+        String gradeTypeCode = gradeType == null ? null : gradeType.getCode();
+
+        if (gradeTypeCode == null || !POSTABLE_GRADE_TYPE_CODES.contains(gradeTypeCode.toUpperCase())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Only midterm and final grades can be posted."
+            );
+        }
     }
 
     @Transactional(readOnly = true)

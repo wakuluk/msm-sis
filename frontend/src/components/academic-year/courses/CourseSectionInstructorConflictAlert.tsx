@@ -59,9 +59,8 @@ export function CourseSectionInstructorConflictAlert({
                   </Table.Td>
                   <Table.Td>
                     <Stack gap={2}>
-                      <Text>{conflict.subTermName}</Text>
-                      <Text size="sm" c="dimmed">
-                        {conflict.subTermCode}
+                      <Text fw={700}>
+                        {formatSubTerm(getConflictingSubTermName(conflict), getConflictingSubTermCode(conflict))}
                       </Text>
                     </Stack>
                   </Table.Td>
@@ -87,6 +86,18 @@ export function CourseSectionInstructorConflictAlert({
 
 function formatDay(dayOfWeek: number): string {
   return dayNames.get(dayOfWeek) ?? `Day ${dayOfWeek}`;
+}
+
+function getConflictingSubTermName(conflict: CourseSectionInstructorConflictResponse): string {
+  return conflict.conflictingSubTermName ?? conflict.subTermName;
+}
+
+function getConflictingSubTermCode(conflict: CourseSectionInstructorConflictResponse): string | null {
+  return conflict.conflictingSubTermCode ?? conflict.subTermCode;
+}
+
+function formatSubTerm(name: string, code: string | null): string {
+  return code ? `${name} (${code})` : name;
 }
 
 function formatTimeRange(startTime: string, endTime: string): string {

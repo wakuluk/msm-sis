@@ -52,6 +52,21 @@ export function useCourseSectionReferences({
       ),
     [referenceOptions]
   );
+  const gradeMarkOptions = useMemo(
+    () =>
+      (referenceOptions?.gradeMarks ?? []).map((gradeMark) => ({
+        value: gradeMark.code,
+        label:
+          gradeMark.code === gradeMark.name
+            ? gradeMark.code
+            : `${gradeMark.code} - ${gradeMark.name}`,
+      })),
+    [referenceOptions]
+  );
+  const gradeTypeOptions = useMemo(
+    () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.studentSectionGradeTypes ?? []),
+    [referenceOptions]
+  );
   const sectionInstructorRoleOptions = useMemo(
     () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.sectionInstructorRoles ?? []),
     [referenceOptions]
@@ -89,6 +104,8 @@ export function useCourseSectionReferences({
     academicDivisionOptions,
     deliveryModeOptions,
     enrollmentGradingBasisOptions,
+    gradeMarkOptions,
+    gradeTypeOptions,
     referenceState,
     referencesAreLoading,
     sectionGradingBasisOptions,

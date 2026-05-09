@@ -12,6 +12,9 @@ public record CourseSectionInstructorConflictResponse(
         Long subTermId,
         String subTermCode,
         String subTermName,
+        Long conflictingSubTermId,
+        String conflictingSubTermCode,
+        String conflictingSubTermName,
         List<CourseSectionInstructorConflictMeetingResponse> meetings
 ) {
 }

@@ -12,6 +12,8 @@ import {
   type CourseSectionSortDirection,
   PatchCourseSectionStudentEnrollmentRequestSchema,
   type PatchCourseSectionStudentEnrollmentRequest,
+  PostCourseSectionStudentGradeRequestSchema,
+  type PostCourseSectionStudentGradeRequest,
 } from './schemas/course-schemas';
 
 export type GetCourseSectionStudentsRequest = {
@@ -47,6 +49,13 @@ export type GetCourseSectionStudentEnrollmentEventsRequest = {
   enrollmentId: number;
   page?: number;
   size?: number;
+  signal?: AbortSignal;
+};
+
+export type PostCourseSectionStudentGradeRequestArgs = {
+  sectionId: number;
+  enrollmentId: number;
+  request: PostCourseSectionStudentGradeRequest;
   signal?: AbortSignal;
 };
 
@@ -186,6 +195,42 @@ export async function patchCourseSectionStudentEnrollment({
       typeof payload?.message === 'string'
         ? payload.message
         : 'Failed to update student enrollment.'
+    );
+  }
+
+  return CourseSectionStudentResponseSchema.parse(payload);
+}
+
+export async function postCourseSectionStudentGrade({
+  sectionId,
+  enrollmentId,
+  request,
+  signal,
+}: PostCourseSectionStudentGradeRequestArgs): Promise<CourseSectionStudentResponse> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error('Not authenticated.');
+  }
+
+  const response = await fetch(
+    `/api/course-sections/${sectionId}/students/${enrollmentId}/grades`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(PostCourseSectionStudentGradeRequestSchema.parse(request)),
+      signal,
+    }
+  );
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.message === 'string' ? payload.message : 'Failed to post student grade.'
     );
   }
 

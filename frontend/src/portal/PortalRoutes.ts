@@ -288,7 +288,13 @@ export const portalRoutes: PortalRouteNode[] = [
         key: 'course-section-detail',
         label: 'Course Section Detail',
         path: '/academics/course-sections/:sectionId',
-        requiredRoles: [PORTAL_ROLES.ADMIN],
+        requiredRoles: [
+          PORTAL_ROLES.ADMIN,
+          PORTAL_ROLES.FACULTY,
+          PORTAL_ROLES.ADJUNCT,
+          PORTAL_ROLES.TEACHING_ASSISTANT,
+          PORTAL_ROLES.DEPARTMENT_HEAD,
+        ],
         showInNav: false,
       },
       {

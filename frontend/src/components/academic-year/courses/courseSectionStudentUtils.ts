@@ -12,6 +12,7 @@ export const sortableStudentColumns: SortableStudentColumn[] = [
   { label: 'Status', sortBy: 'status' },
   { label: 'Credits', sortBy: 'credits' },
   { label: 'Grading', sortBy: 'grading' },
+  { label: 'Final grade', sortBy: 'finalGrade' },
   { label: 'Registered', sortBy: 'registered' },
 ];
 
@@ -42,8 +43,33 @@ export function formatStudentDate(value: string | null) {
   }).format(new Date(value));
 }
 
+export function formatStudentDateTime(value: string | null) {
+  if (!value) {
+    return 'Not set';
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(new Date(value));
+}
+
 export function formatCredits(value: number | null) {
   return value === null ? 'Not set' : value.toFixed(1);
+}
+
+export function getCurrentFinalGradeLabel(student: CourseSectionStudentResponse) {
+  if (!student.currentFinalGrade) {
+    return 'Not posted';
+  }
+
+  return (
+    student.currentFinalGrade.gradeMarkCode ?? student.currentFinalGrade.gradeMarkName ?? 'Not set'
+  );
 }
 
 export function formatBoolean(value: boolean) {
@@ -91,6 +117,7 @@ export function studentMatchesSearch(student: CourseSectionStudentResponse, sear
     student.studentId === null ? null : String(student.studentId),
     student.statusName,
     student.gradingBasisName,
+    getCurrentFinalGradeLabel(student),
   ]
     .filter(Boolean)
     .some((value) => value!.toLowerCase().includes(normalizedSearch));
@@ -140,6 +167,11 @@ export function compareStudentsByColumn(
       return compareNullableString(
         left.gradingBasisName ?? left.gradingBasisCode,
         right.gradingBasisName ?? right.gradingBasisCode
+      );
+    case 'finalGrade':
+      return compareNullableString(
+        getCurrentFinalGradeLabel(left),
+        getCurrentFinalGradeLabel(right)
       );
     case 'registered':
       return compareNullableString(getRegisteredSortValue(left), getRegisteredSortValue(right));

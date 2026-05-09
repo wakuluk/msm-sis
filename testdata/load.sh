@@ -8,6 +8,7 @@ DB_PASSWORD="${DB_PASSWORD:-msmsisdb}"
 RESET_SEED_FILE="${RESET_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_reset.sql}"
 SEED_FILE="${SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed.sql}"
 COURSE_SEED_FILE="${COURSE_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_courses.sql}"
+INSTRUCTOR_SCHEDULE_SEED_FILE="${INSTRUCTOR_SCHEDULE_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_instructor_schedules.sql}"
 ENROLLMENT_SEED_FILE="${ENROLLMENT_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_enrollments.sql}"
 TRANSFER_CREDIT_SEED_FILE="${TRANSFER_CREDIT_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_transfer_credits.sql}"
 PROGRAM_SEED_FILE="${PROGRAM_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_programs.sql}"
@@ -24,6 +25,11 @@ fi
 
 if [[ -n "$COURSE_SEED_FILE" && ! -f "$COURSE_SEED_FILE" ]]; then
   echo "Course seed file not found: $COURSE_SEED_FILE"
+  exit 1
+fi
+
+if [[ -n "$INSTRUCTOR_SCHEDULE_SEED_FILE" && ! -f "$INSTRUCTOR_SCHEDULE_SEED_FILE" ]]; then
+  echo "Instructor schedule seed file not found: $INSTRUCTOR_SCHEDULE_SEED_FILE"
   exit 1
 fi
 
@@ -58,6 +64,12 @@ if [[ -n "$COURSE_SEED_FILE" ]]; then
   echo "Loading course seed data from: $COURSE_SEED_FILE"
   docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
     psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$COURSE_SEED_FILE"
+fi
+
+if [[ -n "$INSTRUCTOR_SCHEDULE_SEED_FILE" ]]; then
+  echo "Loading instructor schedule seed data from: $INSTRUCTOR_SCHEDULE_SEED_FILE"
+  docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
+    psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$INSTRUCTOR_SCHEDULE_SEED_FILE"
 fi
 
 if [[ -n "$ENROLLMENT_SEED_FILE" ]]; then

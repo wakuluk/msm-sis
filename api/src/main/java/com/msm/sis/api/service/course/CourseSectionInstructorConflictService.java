@@ -271,7 +271,7 @@ public class CourseSectionInstructorConflictService {
 
     private CourseSectionInstructorConflictResponse toConflictResponse(ConflictAccumulator accumulator) {
         CourseSection section = accumulator.conflictingSection();
-        AcademicSubTerm subTerm = accumulator.subTerm();
+        AcademicSubTerm conflictingSubTerm = accumulator.conflictingSubTerm();
         ProposedInstructor instructor = accumulator.proposedInstructor();
         String sectionCode = buildSectionCode(section);
 
@@ -282,9 +282,12 @@ public class CourseSectionInstructorConflictService {
                 section.getId(),
                 sectionCode,
                 buildSectionDisplay(sectionCode, section),
-                subTerm.getId(),
-                subTerm.getCode(),
-                subTerm.getName(),
+                conflictingSubTerm.getId(),
+                conflictingSubTerm.getCode(),
+                conflictingSubTerm.getName(),
+                conflictingSubTerm.getId(),
+                conflictingSubTerm.getCode(),
+                conflictingSubTerm.getName(),
                 List.copyOf(accumulator.meetings())
         );
     }
@@ -298,7 +301,7 @@ public class CourseSectionInstructorConflictService {
                 + " conflicts with "
                 + firstConflict.conflictingSectionCode()
                 + ", "
-                + firstConflict.subTermName()
+                + firstConflict.conflictingSubTermName()
                 + ", "
                 + dayName(firstMeeting.dayOfWeek())
                 + " "
@@ -399,15 +402,15 @@ public class CourseSectionInstructorConflictService {
     private record ConflictAccumulator(
             ProposedInstructor proposedInstructor,
             CourseSection conflictingSection,
-            AcademicSubTerm subTerm,
+            AcademicSubTerm conflictingSubTerm,
             List<CourseSectionInstructorConflictMeetingResponse> meetings
     ) {
         private ConflictAccumulator(
                 ProposedInstructor proposedInstructor,
                 CourseSection conflictingSection,
-                AcademicSubTerm subTerm
+                AcademicSubTerm conflictingSubTerm
         ) {
-            this(proposedInstructor, conflictingSection, subTerm, new ArrayList<>());
+            this(proposedInstructor, conflictingSection, conflictingSubTerm, new ArrayList<>());
         }
     }
 }
