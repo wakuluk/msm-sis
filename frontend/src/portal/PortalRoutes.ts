@@ -34,6 +34,9 @@ export type PortalRouteItemKey =
   | 'academic-years-detail'
   | 'academic-year-courses'
   | 'course-section-detail'
+  | 'teaching-schedule-search'
+  | 'teaching-schedule'
+  | 'teaching-schedule-detail'
   | 'academic-term-detail'
   | 'academic-term-group-detail';
 export type PortalRoutePath =
@@ -70,6 +73,9 @@ export type PortalRoutePath =
   | '/academics/academic-years/:academicYearId'
   | '/academics/academic-years/:academicYearId/courses'
   | '/academics/course-sections/:sectionId'
+  | '/calendar/instructor-schedules'
+  | '/calendar/instructor-schedules/:instructorId'
+  | '/calendar/my-schedule'
   | '/academics/academic-sub-term/:subTermId'
   | '/academics/academic-terms/:termId';
 
@@ -413,6 +419,30 @@ export const portalRoutes: PortalRouteNode[] = [
         path: '/academics/academic-years/create',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'teaching-schedule-search',
+        label: 'Instructor Schedule Search',
+        path: '/calendar/instructor-schedules',
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'teaching-schedule',
+        label: 'My Schedule',
+        path: '/calendar/my-schedule',
+        requiredRoles: [PORTAL_ROLES.FACULTY],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'teaching-schedule-detail',
+        label: 'Instructor Schedule Detail',
+        path: '/calendar/instructor-schedules/:instructorId',
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
+        showInNav: false,
       },
     ],
   },

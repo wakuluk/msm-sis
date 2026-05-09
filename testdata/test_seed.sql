@@ -241,7 +241,9 @@ VALUES
     ('ADMIN'),
     ('STUDENT'),
     ('FACULTY'),
-    ('DEPARTMENT_HEAD')
+    ('DEPARTMENT_HEAD'),
+    ('ADJUNCT'),
+    ('TEACHING_ASSISTANT')
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role_id)

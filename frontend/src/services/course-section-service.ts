@@ -2,6 +2,8 @@ import { getAccessToken } from '@/auth/auth-store';
 import {
   CreateCourseSectionRequestSchema,
   type CreateCourseSectionRequest,
+  CourseSectionInstructorConflictErrorResponseSchema,
+  type CourseSectionInstructorConflictResponse,
   CourseSectionDetailResponseSchema,
   type CourseSectionDetailResponse,
   CourseSectionListResponseSchema,
@@ -38,6 +40,42 @@ export type GetCourseSectionDetailRequest = {
   sectionId: number;
   signal?: AbortSignal;
 };
+
+export class CourseSectionInstructorConflictError extends Error {
+  readonly conflicts: CourseSectionInstructorConflictResponse[];
+
+  constructor(message: string, conflicts: CourseSectionInstructorConflictResponse[]) {
+    super(message);
+    this.name = 'CourseSectionInstructorConflictError';
+    this.conflicts = conflicts;
+  }
+}
+
+function getResponseMessage(payload: unknown, fallbackMessage: string): string {
+  if (
+    payload !== null &&
+    typeof payload === 'object' &&
+    'message' in payload &&
+    typeof payload.message === 'string'
+  ) {
+    return payload.message;
+  }
+
+  return fallbackMessage;
+}
+
+function throwCourseSectionError(payload: unknown, fallbackMessage: string): never {
+  const conflictResponse = CourseSectionInstructorConflictErrorResponseSchema.safeParse(payload);
+
+  if (conflictResponse.success) {
+    throw new CourseSectionInstructorConflictError(
+      conflictResponse.data.message,
+      conflictResponse.data.conflicts
+    );
+  }
+
+  throw new Error(getResponseMessage(payload, fallbackMessage));
+}
 
 export async function getCourseSectionsForOffering({
   courseOfferingId,
@@ -138,9 +176,7 @@ export async function createCourseSection({
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(
-      typeof payload?.message === 'string' ? payload.message : 'Failed to create course section.'
-    );
+    throwCourseSectionError(payload, 'Failed to create course section.');
   }
 
   return CourseSectionDetailResponseSchema.parse(payload);
@@ -170,9 +206,7 @@ export async function patchCourseSection({
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(
-      typeof payload?.message === 'string' ? payload.message : 'Failed to update course section.'
-    );
+    throwCourseSectionError(payload, 'Failed to update course section.');
   }
 
   return CourseSectionDetailResponseSchema.parse(payload);

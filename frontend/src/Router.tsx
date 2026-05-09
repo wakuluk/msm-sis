@@ -35,6 +35,8 @@ import { ProgramSearchPage } from './pages/portal/ProgramSearch.page';
 import { ProgramRequestDetailPage } from './pages/portal/ProgramRequestDetail.page';
 import { RequirementDetailPage } from './pages/portal/RequirementDetail.page';
 import { RequirementLibraryPage } from './pages/portal/RequirementLibrary.page';
+import { TeachingSchedulePage } from './pages/portal/TeachingSchedule.page';
+import { TeachingScheduleSearchPage } from './pages/portal/TeachingScheduleSearch.page';
 import {
   AcademicDegreeRequestsPage,
   AcademicProgramCreatePage,
@@ -74,6 +76,9 @@ const portalRouteComponents = {
   'academic-years-detail': AcademicYearDetailPage,
   'academic-year-courses': AcademicYearCoursesPage,
   'course-section-detail': CourseSectionDetailPage,
+  'teaching-schedule-search': TeachingScheduleSearchPage,
+  'teaching-schedule': TeachingSchedulePage,
+  'teaching-schedule-detail': TeachingSchedulePage,
   'academic-term-detail': AcademicTermDetailPage,
   'academic-term-group-detail': AcademicTermGroupDetailPage,
   'academic-years-search': AcademicYearsSearchPage,

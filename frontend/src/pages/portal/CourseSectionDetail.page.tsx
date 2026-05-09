@@ -7,8 +7,10 @@ import { CourseSectionDetailStudentsSection } from '@/components/academic-year/c
 import {
   buildDraftFromSection,
   getErrorMessage,
+  getPrimaryInstructorSearchValue,
   mapCourseSectionDetailToPreview,
   mapReferenceOptionsToCodeSelectOptions,
+  toCourseSectionMutationErrorState,
 } from '@/components/academic-year/courses/courseSectionsWorkspaceUtils';
 import {
   buildPatchSectionRequest,
@@ -17,6 +19,7 @@ import {
 import {
   initialCourseSectionDraft,
   type CourseSectionDraft,
+  type CourseSectionMutationState,
   type CourseSectionPreview,
   type SelectOption,
 } from '@/components/academic-year/courses/courseSectionsWorkspaceTypes';
@@ -46,11 +49,6 @@ type StaffSearchState =
   | { status: 'success'; results: StaffReferenceOptionResponse[] }
   | { status: 'error'; results: StaffReferenceOptionResponse[]; message: string };
 
-type SectionMutationState =
-  | { status: 'idle' }
-  | { status: 'saving' }
-  | { status: 'error'; message: string };
-
 function buildSingleCreditOption(section: CourseSectionPreview | null): SelectOption[] {
   if (!section || section.credits === null) {
     return [];
@@ -71,7 +69,7 @@ export function CourseSectionDetailPage() {
   const [sectionSubTermId, setSectionSubTermId] = useState<number | null>(null);
   const [draft, setDraft] = useState<CourseSectionDraft>(initialCourseSectionDraft);
   const [detailEditing, setDetailEditing] = useState(false);
-  const [sectionMutationState, setSectionMutationState] = useState<SectionMutationState>({
+  const [sectionMutationState, setSectionMutationState] = useState<CourseSectionMutationState>({
     status: 'idle',
   });
   const [staffSearchState, setStaffSearchState] = useState<StaffSearchState>({
@@ -112,6 +110,10 @@ export function CourseSectionDetailPage() {
       ),
     [referenceOptions]
   );
+  const sectionInstructorRoleOptions = useMemo(
+    () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.sectionInstructorRoles ?? []),
+    [referenceOptions]
+  );
   const enrollmentStatusOptions = useMemo(
     () =>
       mapReferenceOptionsToCodeSelectOptions(
@@ -126,8 +128,6 @@ export function CourseSectionDetailPage() {
   );
   const referencesAreLoading = referenceState.status === 'loading';
   const mutating = sectionMutationState.status === 'saving';
-  const mutationError =
-    sectionMutationState.status === 'error' ? sectionMutationState.message : null;
   const pageTitle = section
     ? `${section.courseCode} Section ${section.sectionCode}`
     : 'Course Section';
@@ -153,8 +153,9 @@ export function CourseSectionDetailPage() {
         const preview = mapCourseSectionDetailToPreview(response);
         setPageState({ status: 'success', section: preview });
         setSectionSubTermId(response.subTermId);
-        setDraft(buildDraftFromSection(preview));
-        setStaffSearchValue(preview.instructor === 'Unassigned' ? '' : preview.instructor);
+        const nextDraft = buildDraftFromSection(preview);
+        setDraft(nextDraft);
+        setStaffSearchValue(getPrimaryInstructorSearchValue(nextDraft));
         setDetailEditing(false);
         setSectionMutationState({ status: 'idle' });
       })
@@ -238,8 +239,9 @@ export function CourseSectionDetailPage() {
 
   function handleCancelEdit() {
     if (section) {
-      setDraft(buildDraftFromSection(section));
-      setStaffSearchValue(section.instructor === 'Unassigned' ? '' : section.instructor);
+      const nextDraft = buildDraftFromSection(section);
+      setDraft(nextDraft);
+      setStaffSearchValue(getPrimaryInstructorSearchValue(nextDraft));
     }
 
     setDetailEditing(false);
@@ -268,17 +270,15 @@ export function CourseSectionDetailPage() {
 
       setPageState({ status: 'success', section: updatedSection });
       setSectionSubTermId(response.subTermId);
-      setDraft(buildDraftFromSection(updatedSection));
-      setStaffSearchValue(
-        updatedSection.instructor === 'Unassigned' ? '' : updatedSection.instructor
-      );
+      const nextDraft = buildDraftFromSection(updatedSection);
+      setDraft(nextDraft);
+      setStaffSearchValue(getPrimaryInstructorSearchValue(nextDraft));
       setDetailEditing(false);
       setSectionMutationState({ status: 'idle' });
     } catch (error: unknown) {
-      setSectionMutationState({
-        status: 'error',
-        message: getErrorMessage(error, 'Failed to update course section.'),
-      });
+      setSectionMutationState(
+        toCourseSectionMutationErrorState(error, 'Failed to update course section.')
+      );
     }
   }
 
@@ -299,17 +299,15 @@ export function CourseSectionDetailPage() {
 
       setPageState({ status: 'success', section: updatedSection });
       setSectionSubTermId(response.subTermId);
-      setDraft(buildDraftFromSection(updatedSection));
-      setStaffSearchValue(
-        updatedSection.instructor === 'Unassigned' ? '' : updatedSection.instructor
-      );
+      const nextDraft = buildDraftFromSection(updatedSection);
+      setDraft(nextDraft);
+      setStaffSearchValue(getPrimaryInstructorSearchValue(nextDraft));
       setDetailEditing(false);
       setSectionMutationState({ status: 'idle' });
     } catch (error: unknown) {
-      setSectionMutationState({
-        status: 'error',
-        message: getErrorMessage(error, 'Failed to cancel course section.'),
-      });
+      setSectionMutationState(
+        toCourseSectionMutationErrorState(error, 'Failed to cancel course section.')
+      );
     }
   }
 
@@ -359,11 +357,12 @@ export function CourseSectionDetailPage() {
               deliveryModeOptions={deliveryModeOptions}
               detailEditing={detailEditing}
               draft={draft}
-              mutationError={mutationError}
+              mutationState={sectionMutationState}
               mutating={mutating}
               referencesAreLoading={referencesAreLoading}
               section={section}
               sectionGradingBasisOptions={sectionGradingBasisOptions}
+              sectionInstructorRoleOptions={sectionInstructorRoleOptions}
               sectionStatusOptions={sectionStatusOptions}
               setDraft={setDraft}
               staffLoading={staffSearchState.status === 'loading'}

@@ -14,7 +14,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -24,7 +23,7 @@ import java.time.LocalDateTime;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uq_course_section_instructor_unique",
-                        columnNames = {"section_id", "staff_id", "section_instructor_role_id"}
+                        columnNames = {"section_id", "instructor_user_id"}
                 )
         }
 )
@@ -32,7 +31,7 @@ public class CourseSectionInstructor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "section_instructor_id")
+    @Column(name = "course_section_instructor_id")
     private Long id;
 
     @JsonIgnore
@@ -42,24 +41,24 @@ public class CourseSectionInstructor {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staff_id", nullable = false)
-    private Staff staff;
+    @JoinColumn(name = "instructor_user_id", nullable = false)
+    private SisUser instructorUser;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "section_instructor_role_id", nullable = false)
-    private SectionInstructorRole role;
+    @JoinColumn(name = "instructor_user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
+    private Staff instructorStaff;
 
-    @Column(name = "is_primary", nullable = false)
-    private boolean primary = false;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instructional_assignment_role_id", nullable = false)
+    private InstructionalAssignmentRole role;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Column(name = "assignment_start_date")
-    private LocalDate assignmentStartDate;
+    @Column(name = "can_view_grades", nullable = false)
+    private boolean canViewGrades = false;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Column(name = "assignment_end_date")
-    private LocalDate assignmentEndDate;
+    @Column(name = "can_manage_grades", nullable = false)
+    private boolean canManageGrades = false;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "created_at", insertable = false, updatable = false)
@@ -68,4 +67,8 @@ public class CourseSectionInstructor {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
+
+    public boolean isPrimary() {
+        return role != null && "PRIMARY_INSTRUCTOR".equals(role.getCode());
+    }
 }

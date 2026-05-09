@@ -52,6 +52,10 @@ export function useCourseSectionReferences({
       ),
     [referenceOptions]
   );
+  const sectionInstructorRoleOptions = useMemo(
+    () => mapReferenceOptionsToCodeSelectOptions(referenceOptions?.sectionInstructorRoles ?? []),
+    [referenceOptions]
+  );
   const resolvedSelectedStatusName =
     selectedStatusName ??
     getOptionName(referenceOptions?.courseSectionStatuses ?? [], selectedStatusCode);
@@ -88,6 +92,7 @@ export function useCourseSectionReferences({
     referenceState,
     referencesAreLoading,
     sectionGradingBasisOptions,
+    sectionInstructorRoleOptions,
     sectionStatusOptions,
     selectedStatusName: resolvedSelectedStatusName,
   };

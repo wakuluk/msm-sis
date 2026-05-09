@@ -31,6 +31,61 @@ INSERT INTO section_instructor_role (code, name, sort_order) VALUES
     ('SECONDARY', 'Secondary', 2),
     ('TA', 'Teaching Assistant', 3);
 
+INSERT INTO instructional_assignment_role (
+    code,
+    name,
+    description,
+    counts_for_conflict_check,
+    default_can_view_grades,
+    default_can_manage_grades,
+    sort_order
+) VALUES
+    (
+        'PRIMARY_INSTRUCTOR',
+        'Primary Instructor',
+        'Instructor of record for the section.',
+        TRUE,
+        TRUE,
+        TRUE,
+        1
+    ),
+    (
+        'CO_INSTRUCTOR',
+        'Co-Instructor',
+        'Additional instructor assigned to teach the section.',
+        TRUE,
+        TRUE,
+        TRUE,
+        2
+    ),
+    (
+        'TEACHING_ASSISTANT',
+        'Teaching Assistant',
+        'Teaching assistant supporting the section.',
+        TRUE,
+        TRUE,
+        FALSE,
+        3
+    ),
+    (
+        'GRADER',
+        'Grader',
+        'Grade-entry support without a scheduled teaching assignment.',
+        FALSE,
+        TRUE,
+        TRUE,
+        4
+    ),
+    (
+        'OBSERVER',
+        'Observer',
+        'Read-only section observer without schedule or grading responsibility.',
+        FALSE,
+        FALSE,
+        FALSE,
+        5
+    );
+
 INSERT INTO student_section_enrollment_status (code, name, sort_order, allow_linear_shift) VALUES
     ('REGISTERED', 'Registered', 1, TRUE),
     ('WAITLISTED', 'Waitlisted', 2, TRUE),

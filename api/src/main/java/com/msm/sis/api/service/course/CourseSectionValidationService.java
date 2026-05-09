@@ -194,30 +194,11 @@ public class CourseSectionValidationService {
         }
 
         validatePositiveId(request.staffId(), "Instructor staff id");
-
-        if (
-                request.assignmentStartDate() != null
-                        && request.assignmentEndDate() != null
-                        && request.assignmentStartDate().isAfter(request.assignmentEndDate())
-        ) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Instructor assignment start date must be on or before end date."
-            );
-        }
     }
 
     public void validateInstructorRequests(List<CreateCourseSectionInstructorRequest> requests) {
         if (requests == null) {
             return;
-        }
-
-        long primaryCount = requests.stream().filter(CreateCourseSectionInstructorRequest::primary).count();
-        if (primaryCount > 1) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Only one primary instructor is allowed."
-            );
         }
 
         for (CreateCourseSectionInstructorRequest request : requests) {

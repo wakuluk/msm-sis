@@ -11,12 +11,20 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static com.msm.sis.api.util.PagingUtils.validatePageRequest;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 @Service
 @RequiredArgsConstructor
 public class StaffService {
+    private static final List<String> INSTRUCTIONAL_ELIGIBILITY_ROLES = List.of(
+            "FACULTY",
+            "ADJUNCT",
+            "TEACHING_ASSISTANT"
+    );
+
     private final StaffRepository staffRepository;
 
     @Transactional(readOnly = true)
@@ -25,6 +33,7 @@ public class StaffService {
 
         Page<Staff> staffPage = staffRepository.searchStaff(
                 trimToNull(search),
+                INSTRUCTIONAL_ELIGIBILITY_ROLES,
                 PageRequest.of(
                         page,
                         size,

@@ -1,15 +1,20 @@
 // Data mapping and draft helpers for the section workspace.
 // Converts section API responses into UI previews and updates meeting schedule/search/draft structures.
 import type { AcademicYearCourseOfferingSearchResultResponse } from '@/services/schemas/admin-courses-schemas';
+import { CourseSectionInstructorConflictError } from '@/services/course-service';
 import type {
   CourseSectionDetailResponse,
+  CourseSectionInstructorResponse,
   CourseSectionListResultResponse,
 } from '@/services/schemas/course-schemas';
 import type { CatalogReferenceOption } from '@/services/schemas/reference-schemas';
+import { getErrorMessage } from '@/utils/errors';
 import {
   initialCourseSectionDraft,
   initialMeetingSchedule,
   type CourseSectionDraft,
+  type CourseSectionInstructorDraft,
+  type CourseSectionMutationState,
   type CourseSectionPreview,
   type CourseSectionSearchValues,
   type MeetingDaySchedule,
@@ -71,6 +76,24 @@ export function filterSections(
 
     return !searchValues.status || section.statusCode === searchValues.status;
   });
+}
+
+export function toCourseSectionMutationErrorState(
+  error: unknown,
+  fallbackMessage: string
+): CourseSectionMutationState {
+  if (error instanceof CourseSectionInstructorConflictError) {
+    return {
+      status: 'conflict',
+      message: error.message,
+      conflicts: error.conflicts,
+    };
+  }
+
+  return {
+    status: 'error',
+    message: getErrorMessage(error, fallbackMessage),
+  };
 }
 
 export function mapReferenceOptionsToCodeSelectOptions(
@@ -223,8 +246,7 @@ export function buildDraftFromSection(section: CourseSectionPreview): CourseSect
     ...initialCourseSectionDraft,
     sectionCode: section.sectionLetter,
     honors: section.honors,
-    teacherAssignment: section.instructor === 'Unassigned' ? '' : section.instructor,
-    teacherStaffId: section.primaryStaffId,
+    instructors: section.instructors.map((instructor) => ({ ...instructor })),
     academicDivision: section.academicDivisionCode,
     deliveryMode: section.deliveryModeCode,
     gradingBasis: section.gradingBasisCode,
@@ -256,7 +278,11 @@ export function mapCourseSectionResultToPreview(
     deliveryModeCode: section.deliveryModeCode,
     gradingBasisCode: section.gradingBasisCode,
     primaryStaffId: section.instructors.find((instructor) => instructor.primary)?.staffId ?? null,
-    instructor: section.instructorSummary ?? section.primaryInstructorName ?? 'Unassigned',
+    instructor: buildInstructorSummaryFromResponses(
+      section.instructors,
+      section.instructorSummary ?? section.primaryInstructorName
+    ),
+    instructors: section.instructors.map(mapInstructorResponseToDraft),
     meetingPattern: section.meetingSummary ?? 'TBD',
     room: section.roomSummary ?? 'TBD',
     credits: section.credits,
@@ -290,6 +316,7 @@ export function mapCourseSectionDetailToPreview(
     gradingBasisCode: section.gradingBasisCode,
     primaryStaffId: section.instructors.find((instructor) => instructor.primary)?.staffId ?? null,
     instructor: buildInstructorSummary(section),
+    instructors: section.instructors.map(mapInstructorResponseToDraft),
     meetingPattern: buildMeetingSummary(section),
     room: buildRoomSummary(section),
     credits: section.credits,
@@ -305,15 +332,63 @@ export function mapCourseSectionDetailToPreview(
   };
 }
 
-function buildInstructorSummary(section: CourseSectionDetailResponse): string {
-  const instructorNames = section.instructors
-    .map(
-      (instructor) =>
-        `${instructor.firstName ?? ''} ${instructor.lastName ?? ''}`.trim() || instructor.email
-    )
-    .filter((name): name is string => Boolean(name));
+export function getPrimaryInstructorDraft(
+  draft: CourseSectionDraft
+): CourseSectionInstructorDraft | null {
+  return (
+    draft.instructors.find((instructor) => instructor.roleCode === 'PRIMARY_INSTRUCTOR') ??
+    draft.instructors[0] ??
+    null
+  );
+}
 
-  return instructorNames.length === 0 ? 'Unassigned' : instructorNames.join(', ');
+export function getPrimaryInstructorSearchValue(draft: CourseSectionDraft): string {
+  return getPrimaryInstructorDraft(draft)?.label ?? '';
+}
+
+function mapInstructorResponseToDraft(
+  instructor: CourseSectionInstructorResponse
+): CourseSectionInstructorDraft {
+  return {
+    sectionInstructorId: instructor.sectionInstructorId,
+    staffId: instructor.staffId,
+    label: buildInstructorResponseLabel(instructor),
+    email: instructor.email,
+    roleCode: instructor.roleCode,
+    roleName: instructor.roleName,
+    canViewGrades: instructor.canViewGrades,
+    canManageGrades: instructor.canManageGrades,
+  };
+}
+
+function buildInstructorResponseLabel(instructor: CourseSectionInstructorResponse): string {
+  const displayName = `${instructor.firstName ?? ''} ${instructor.lastName ?? ''}`.trim();
+
+  return displayName || instructor.email || 'Instructor';
+}
+
+function buildInstructorSummary(section: CourseSectionDetailResponse): string {
+  return buildInstructorSummaryFromResponses(section.instructors);
+}
+
+function buildInstructorSummaryFromResponses(
+  instructors: ReadonlyArray<CourseSectionInstructorResponse>,
+  fallback?: string | null
+): string {
+  const instructorNames = instructors.map(buildInstructorSummaryItem).filter(Boolean);
+
+  return instructorNames.length === 0 ? (fallback ?? 'Unassigned') : instructorNames.join(', ');
+}
+
+function buildInstructorSummaryItem(instructor: CourseSectionInstructorResponse): string | null {
+  const name =
+    `${instructor.firstName ?? ''} ${instructor.lastName ?? ''}`.trim() || instructor.email;
+
+  if (!name) {
+    return null;
+  }
+
+  return instructor.roleName ? `${name} (${instructor.roleName})` : name;
 }
 
 function buildMeetingSummary(section: CourseSectionDetailResponse): string {

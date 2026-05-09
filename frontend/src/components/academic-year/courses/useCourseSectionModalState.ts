@@ -4,6 +4,7 @@ import type { AcademicYearCourseOfferingSearchResultResponse } from '@/services/
 import {
   buildCreditOptions,
   buildDraftFromSection,
+  getPrimaryInstructorSearchValue,
 } from './courseSectionsWorkspaceUtils';
 import {
   initialCourseSectionDraft,
@@ -91,9 +92,7 @@ export function useCourseSectionModalState({
           ? (nextCreditOptions[0]?.value ?? null)
           : String(updatedSection.credits),
     });
-    setStaffSearchValue(
-      updatedSection.instructor === 'Unassigned' ? '' : updatedSection.instructor
-    );
+    setStaffSearchValue(getPrimaryInstructorSearchValue(buildDraftFromSection(updatedSection)));
     setDetailEditing(false);
   }
 
@@ -116,9 +115,7 @@ export function useCourseSectionModalState({
           ? (nextCreditOptions[0]?.value ?? null)
           : String(selectedSection.credits),
     });
-    setStaffSearchValue(
-      selectedSection.instructor === 'Unassigned' ? '' : selectedSection.instructor
-    );
+    setStaffSearchValue(getPrimaryInstructorSearchValue(buildDraftFromSection(selectedSection)));
     setDuplicateOffering(sectionOffering);
     setSelectedSection(null);
     setDetailEditing(false);

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.Optional;
 
 public interface StaffRepository extends JpaRepository<Staff, Long> {
@@ -14,14 +15,25 @@ public interface StaffRepository extends JpaRepository<Staff, Long> {
     @Query("""
             select staff
             from Staff staff
-            where :search is null
-               or lower(staff.firstName) like lower(concat('%', :search, '%'))
-               or lower(staff.lastName) like lower(concat('%', :search, '%'))
-               or lower(staff.email) like lower(concat('%', :search, '%'))
-               or lower(concat(staff.firstName, ' ', staff.lastName)) like lower(concat('%', :search, '%'))
+            where staff.userId is not null
+              and exists (
+                  select 1
+                  from SisUser user
+                  join user.roles role
+                  where user.id = staff.userId
+                    and role.name in :eligibleRoleNames
+              )
+              and (
+                   :search is null
+                   or lower(staff.firstName) like lower(concat('%', :search, '%'))
+                   or lower(staff.lastName) like lower(concat('%', :search, '%'))
+                   or lower(staff.email) like lower(concat('%', :search, '%'))
+                   or lower(concat(staff.firstName, ' ', staff.lastName)) like lower(concat('%', :search, '%'))
+              )
             """)
     Page<Staff> searchStaff(
             @Param("search") String search,
+            @Param("eligibleRoleNames") Collection<String> eligibleRoleNames,
             Pageable pageable
     );
 

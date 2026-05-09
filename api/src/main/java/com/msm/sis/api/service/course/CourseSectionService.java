@@ -15,6 +15,7 @@ import com.msm.sis.api.mapper.CourseSectionMapper;
 import com.msm.sis.api.repository.AcademicDivisionRepository;
 import com.msm.sis.api.repository.CourseOfferingRepository;
 import com.msm.sis.api.repository.CourseOfferingSubTermRepository;
+import com.msm.sis.api.repository.CourseSectionInstructorRepository;
 import com.msm.sis.api.repository.CourseSectionRepository;
 import com.msm.sis.api.repository.CourseSectionStatusRepository;
 import com.msm.sis.api.repository.DeliveryModeRepository;
@@ -55,12 +56,14 @@ public class CourseSectionService {
     private final CourseSectionAssignmentService courseSectionAssignmentService;
     private final CourseOfferingRepository courseOfferingRepository;
     private final CourseOfferingSubTermRepository courseOfferingSubTermRepository;
+    private final CourseSectionInstructorRepository courseSectionInstructorRepository;
     private final CourseSectionRepository courseSectionRepository;
     private final CourseSectionStatusRepository courseSectionStatusRepository;
     private final AcademicDivisionRepository academicDivisionRepository;
     private final DeliveryModeRepository deliveryModeRepository;
     private final GradingBasisRepository gradingBasisRepository;
     private final CourseSectionMapper courseSectionMapper;
+    private final CourseSectionInstructorConflictService courseSectionInstructorConflictService;
     private final CourseSectionValidationService courseSectionValidationService;
 
     @Transactional
@@ -90,6 +93,12 @@ public class CourseSectionService {
         );
 
         courseSectionValidationService.validateCredits(courseOffering, request.credits());
+        courseSectionInstructorConflictService.assertNoConflicts(
+                null,
+                courseOfferingSubTerm.getSubTerm(),
+                request.instructors(),
+                request.meetings()
+        );
 
         CourseSection courseSection = new CourseSection();
         courseSection.setCourseOffering(courseOffering);
@@ -137,7 +146,11 @@ public class CourseSectionService {
                 savedCourseSection,
                 request.meetings()
         );
-        savedCourseSection.setInstructors(instructors);
+        savedCourseSection.setInstructors(
+                instructors.isEmpty()
+                        ? List.of()
+                        : courseSectionInstructorRepository.findAllByCourseSectionId(savedCourseSection.getId())
+        );
         savedCourseSection.setMeetings(meetings);
 
         return courseSectionMapper.toCourseSectionDetailResponse(savedCourseSection);

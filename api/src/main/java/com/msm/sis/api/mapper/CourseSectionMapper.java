@@ -18,8 +18,9 @@ import com.msm.sis.api.entity.CourseSectionStatus;
 import com.msm.sis.api.entity.CourseVersion;
 import com.msm.sis.api.entity.DeliveryMode;
 import com.msm.sis.api.entity.GradingBasis;
-import com.msm.sis.api.entity.SectionInstructorRole;
+import com.msm.sis.api.entity.InstructionalAssignmentRole;
 import com.msm.sis.api.entity.SectionMeetingType;
+import com.msm.sis.api.entity.SisUser;
 import com.msm.sis.api.entity.Staff;
 import com.msm.sis.api.entity.StudentSectionEnrollment;
 import com.msm.sis.api.patch.PatchValue;
@@ -154,21 +155,22 @@ public class CourseSectionMapper {
     }
 
     public CourseSectionInstructorResponse toCourseSectionInstructorResponse(CourseSectionInstructor instructor) {
-        Staff staff = instructor.getStaff();
-        SectionInstructorRole role = instructor.getRole();
+        Staff staff = instructor.getInstructorStaff();
+        SisUser user = instructor.getInstructorUser();
+        InstructionalAssignmentRole role = instructor.getRole();
 
         return new CourseSectionInstructorResponse(
                 instructor.getId(),
                 staff == null ? null : staff.getId(),
                 staff == null ? null : staff.getFirstName(),
                 staff == null ? null : staff.getLastName(),
-                staff == null ? null : staff.getEmail(),
+                staff == null ? user == null ? null : user.getEmail() : staff.getEmail(),
                 role == null ? null : role.getId(),
                 role == null ? null : role.getCode(),
                 role == null ? null : role.getName(),
                 instructor.isPrimary(),
-                instructor.getAssignmentStartDate(),
-                instructor.getAssignmentEndDate()
+                instructor.isCanViewGrades(),
+                instructor.isCanManageGrades()
         );
     }
 
@@ -254,8 +256,9 @@ public class CourseSectionMapper {
                 ? List.of()
                 : section.getInstructors().stream()
                 .sorted(Comparator.comparing(CourseSectionInstructor::isPrimary).reversed()
-                        .thenComparing(instructor -> instructor.getStaff() == null ? null : instructor.getStaff().getLastName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
-                        .thenComparing(instructor -> instructor.getStaff() == null ? null : instructor.getStaff().getFirstName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                        .thenComparing(instructor -> instructor.getRole() == null ? null : instructor.getRole().getSortOrder(), Comparator.nullsLast(Integer::compareTo))
+                        .thenComparing(instructor -> instructor.getInstructorStaff() == null ? null : instructor.getInstructorStaff().getLastName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                        .thenComparing(instructor -> instructor.getInstructorStaff() == null ? null : instructor.getInstructorStaff().getFirstName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
                         .thenComparing(CourseSectionInstructor::getId, Comparator.nullsLast(Long::compareTo)))
                 .toList();
     }
@@ -292,10 +295,10 @@ public class CourseSectionMapper {
     }
 
     private String buildInstructorName(CourseSectionInstructor instructor) {
-        Staff staff = instructor.getStaff();
+        Staff staff = instructor.getInstructorStaff();
 
         if (staff == null) {
-            return null;
+            return instructor.getInstructorUser() == null ? null : instructor.getInstructorUser().getEmail();
         }
 
         String firstName = staff.getFirstName() == null ? "" : staff.getFirstName().trim();

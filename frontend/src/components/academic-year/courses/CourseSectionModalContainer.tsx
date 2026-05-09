@@ -25,6 +25,7 @@ export function CourseSectionModalContainer({
       sectionPreview={workspace.sectionPreview}
       selectedStatusName={workspace.selectedStatusName}
       sectionStatusOptions={workspace.sectionStatusOptions}
+      sectionInstructorRoleOptions={workspace.sectionInstructorRoleOptions}
       academicDivisionOptions={workspace.academicDivisionOptions}
       sectionGradingBasisOptions={workspace.sectionGradingBasisOptions}
       enrollmentGradingBasisOptions={workspace.enrollmentGradingBasisOptions}
@@ -34,11 +35,7 @@ export function CourseSectionModalContainer({
       staffOptions={workspace.staffOptions}
       staffSearchValue={workspace.staffSearchValue}
       staffLoading={workspace.staffSearchState.status === 'loading'}
-      mutationError={
-        workspace.sectionMutationState.status === 'error'
-          ? workspace.sectionMutationState.message
-          : null
-      }
+      mutationState={workspace.sectionMutationState}
       mutating={workspace.sectionMutationState.status === 'saving'}
       onStaffSearchChange={workspace.setStaffSearchValue}
       onClose={workspace.closeSectionModal}

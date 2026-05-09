@@ -1,6 +1,7 @@
 // Conversion helpers for course-section mutations and staff options.
 // Turns UI draft state into create/patch API payloads and keeps selected instructors visible in combobox data.
 import type {
+  CreateCourseSectionInstructorRequest,
   CreateCourseSectionRequest,
   PatchCourseSectionRequest,
 } from '@/services/schemas/course-schemas';
@@ -57,6 +58,12 @@ export function buildCreateSectionRequest(
     return 'Hard capacity must be greater than or equal to capacity.';
   }
 
+  const instructors = buildInstructorRequests(draft);
+
+  if (typeof instructors === 'string') {
+    return instructors;
+  }
+
   return {
     subTermId,
     sectionLetter,
@@ -74,18 +81,7 @@ export function buildCreateSectionRequest(
     endDate: null,
     linkedGroupCode: null,
     notes: null,
-    instructors:
-      draft.teacherStaffId === null
-        ? null
-        : [
-            {
-              staffId: draft.teacherStaffId,
-              roleCode: 'PRIMARY',
-              primary: true,
-              assignmentStartDate: null,
-              assignmentEndDate: null,
-            },
-          ],
+    instructors,
     meetings: buildCreateMeetingRequests(draft),
   };
 }
@@ -99,23 +95,53 @@ export function buildStaffSelectOptions(
     label: buildStaffOptionLabel(staff),
     email: staff.email,
   }));
+  const selectedOptions = draft.instructors
+    .filter((instructor) => instructor.staffId !== null && instructor.label)
+    .map((instructor) => ({
+      value: String(instructor.staffId),
+      label: instructor.label,
+      email: instructor.email,
+    }))
+    .filter(
+      (option, index, selected) =>
+        selected.findIndex((selectedOption) => selectedOption.value === option.value) === index &&
+        !options.some((existingOption) => existingOption.value === option.value)
+    );
 
-  if (
-    draft.teacherStaffId !== null &&
-    draft.teacherAssignment &&
-    !options.some((option) => option.value === String(draft.teacherStaffId))
-  ) {
-    return [
-      {
-        value: String(draft.teacherStaffId),
-        label: draft.teacherAssignment,
-        email: null,
-      },
-      ...options,
-    ];
+  return [...selectedOptions, ...options];
+}
+
+function buildInstructorRequests(
+  draft: CourseSectionDraft
+): CreateCourseSectionRequest['instructors'] | string {
+  const instructors: CreateCourseSectionInstructorRequest[] = [];
+  const instructorStaffIds = new Set<number>();
+
+  for (const instructor of draft.instructors) {
+    const roleCode = instructor.roleCode?.trim() || null;
+
+    if (instructor.staffId === null) {
+      continue;
+    }
+
+    if (!roleCode) {
+      return 'Select a role for each instructor assignment.';
+    }
+
+    if (instructorStaffIds.has(instructor.staffId)) {
+      return 'An instructor can only be assigned once to a course section.';
+    }
+
+    instructorStaffIds.add(instructor.staffId);
+    instructors.push({
+      staffId: instructor.staffId,
+      roleCode,
+      canViewGrades: instructor.canManageGrades ? true : instructor.canViewGrades,
+      canManageGrades: instructor.canManageGrades,
+    });
   }
 
-  return options;
+  return instructors.length === 0 ? null : instructors;
 }
 
 function buildCreateMeetingRequests(

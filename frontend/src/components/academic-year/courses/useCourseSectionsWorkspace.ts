@@ -111,6 +111,7 @@ export function useCourseSectionsWorkspace({
     referenceState,
     referencesAreLoading,
     sectionGradingBasisOptions,
+    sectionInstructorRoleOptions,
     sectionStatusOptions,
     selectedStatusName,
   } = useCourseSectionReferences({
@@ -148,6 +149,7 @@ export function useCourseSectionsWorkspace({
     resetSelectedSectionDraft,
     sectionDetailState,
     sectionGradingBasisOptions,
+    sectionInstructorRoleOptions,
     sectionListState,
     sectionModalMode,
     sectionModalOffering,

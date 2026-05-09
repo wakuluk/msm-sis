@@ -29,7 +29,7 @@ import com.msm.sis.api.repository.GradeMarkRepository;
 import com.msm.sis.api.repository.GradingBasisRepository;
 import com.msm.sis.api.repository.GenderRepository;
 import com.msm.sis.api.repository.ProgramTypeRepository;
-import com.msm.sis.api.repository.SectionInstructorRoleRepository;
+import com.msm.sis.api.repository.InstructionalAssignmentRoleRepository;
 import com.msm.sis.api.repository.SectionMeetingTypeRepository;
 import com.msm.sis.api.repository.StudentSectionEnrollmentStatusRepository;
 import com.msm.sis.api.repository.StudentSectionGradeTypeRepository;
@@ -58,7 +58,7 @@ public class ReferenceDataService {
     private final DeliveryModeRepository deliveryModeRepository;
     private final GradingBasisRepository gradingBasisRepository;
     private final SectionMeetingTypeRepository sectionMeetingTypeRepository;
-    private final SectionInstructorRoleRepository sectionInstructorRoleRepository;
+    private final InstructionalAssignmentRoleRepository instructionalAssignmentRoleRepository;
     private final StudentSectionEnrollmentStatusRepository studentSectionEnrollmentStatusRepository;
     private final StudentSectionGradeTypeRepository studentSectionGradeTypeRepository;
     private final GradeMarkRepository gradeMarkRepository;
@@ -83,7 +83,7 @@ public class ReferenceDataService {
             DeliveryModeRepository deliveryModeRepository,
             GradingBasisRepository gradingBasisRepository,
             SectionMeetingTypeRepository sectionMeetingTypeRepository,
-            SectionInstructorRoleRepository sectionInstructorRoleRepository,
+            InstructionalAssignmentRoleRepository instructionalAssignmentRoleRepository,
             StudentSectionEnrollmentStatusRepository studentSectionEnrollmentStatusRepository,
             StudentSectionGradeTypeRepository studentSectionGradeTypeRepository,
             GradeMarkRepository gradeMarkRepository,
@@ -107,7 +107,7 @@ public class ReferenceDataService {
         this.deliveryModeRepository = deliveryModeRepository;
         this.gradingBasisRepository = gradingBasisRepository;
         this.sectionMeetingTypeRepository = sectionMeetingTypeRepository;
-        this.sectionInstructorRoleRepository = sectionInstructorRoleRepository;
+        this.instructionalAssignmentRoleRepository = instructionalAssignmentRoleRepository;
         this.studentSectionEnrollmentStatusRepository = studentSectionEnrollmentStatusRepository;
         this.studentSectionGradeTypeRepository = studentSectionGradeTypeRepository;
         this.gradeMarkRepository = gradeMarkRepository;
@@ -314,7 +314,7 @@ public class ReferenceDataService {
                 sectionMeetingTypeRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
                         .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
-                sectionInstructorRoleRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                instructionalAssignmentRoleRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
                         .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 studentSectionEnrollmentStatusRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()

@@ -1,0 +1,113 @@
+.summaryPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.42fr);
+  gap: var(--mantine-spacing-md);
+  align-items: stretch;
+}
+
+.identitySummary,
+.workloadSummary {
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  padding: var(--mantine-spacing-md);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+}
+
+.identitySummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--mantine-spacing-lg);
+}
+
+.workloadSummary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--mantine-spacing-md);
+}
+
+.summaryMetric {
+  justify-content: center;
+  min-height: 4rem;
+  border-left: 3px solid var(--mantine-color-blue-5);
+  padding-left: var(--mantine-spacing-sm);
+}
+
+.summaryMetricValue {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.calendarShell {
+  overflow: hidden;
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.calendar {
+  padding: var(--mantine-spacing-sm);
+}
+
+.calendar :global(.fc) {
+  --fc-border-color: var(--portal-ui-surface-border-color);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  --fc-today-bg-color: light-dark(rgb(228 244 255 / 0.62), rgb(28 126 214 / 0.16));
+
+  font-family: var(--portal-ui-font-family);
+}
+
+.calendar :global(.fc-toolbar-title) {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.calendar :global(.fc-button) {
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-blue-6);
+  border-color: var(--mantine-color-blue-6);
+  font-weight: 700;
+}
+
+.calendar :global(.fc-event) {
+  border-radius: var(--mantine-radius-sm);
+  border: 0;
+  padding: 0.15rem 0.2rem;
+}
+
+.eventContent {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+  line-height: 1.1;
+}
+
+.eventTitle {
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventMeta {
+  overflow: hidden;
+  font-size: 0.68rem;
+  opacity: 0.9;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (width <= 72rem) {
+  .summaryPanel,
+  .identitySummary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (width <= 48rem) {
+  .summaryPanel,
+  .identitySummary,
+  .workloadSummary {
+    grid-template-columns: 1fr;
+  }
+}

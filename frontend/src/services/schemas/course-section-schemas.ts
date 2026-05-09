@@ -3,9 +3,8 @@ import { z } from 'zod';
 export const CreateCourseSectionInstructorRequestSchema = z.object({
   staffId: z.number(),
   roleCode: z.string().trim().max(50).nullable(),
-  primary: z.boolean(),
-  assignmentStartDate: z.string().nullable(),
-  assignmentEndDate: z.string().nullable(),
+  canViewGrades: z.boolean().nullable(),
+  canManageGrades: z.boolean().nullable(),
 });
 
 export type CreateCourseSectionInstructorRequest = z.infer<
@@ -77,8 +76,8 @@ export const CourseSectionInstructorResponseSchema = z.object({
   roleCode: z.string().nullable(),
   roleName: z.string().nullable(),
   primary: z.boolean(),
-  assignmentStartDate: z.string().nullable(),
-  assignmentEndDate: z.string().nullable(),
+  canViewGrades: z.boolean(),
+  canManageGrades: z.boolean(),
 });
 
 export type CourseSectionInstructorResponse = z.infer<
@@ -101,6 +100,44 @@ export const CourseSectionMeetingResponseSchema = z.object({
 });
 
 export type CourseSectionMeetingResponse = z.infer<typeof CourseSectionMeetingResponseSchema>;
+
+export const CourseSectionInstructorConflictMeetingResponseSchema = z.object({
+  dayOfWeek: z.number(),
+  proposedStartTime: z.string(),
+  proposedEndTime: z.string(),
+  conflictingStartTime: z.string(),
+  conflictingEndTime: z.string(),
+});
+
+export type CourseSectionInstructorConflictMeetingResponse = z.infer<
+  typeof CourseSectionInstructorConflictMeetingResponseSchema
+>;
+
+export const CourseSectionInstructorConflictResponseSchema = z.object({
+  staffId: z.number(),
+  instructorUserId: z.number(),
+  instructorName: z.string(),
+  conflictingSectionId: z.number(),
+  conflictingSectionCode: z.string(),
+  conflictingSectionDisplay: z.string(),
+  subTermId: z.number(),
+  subTermCode: z.string(),
+  subTermName: z.string(),
+  meetings: z.array(CourseSectionInstructorConflictMeetingResponseSchema),
+});
+
+export type CourseSectionInstructorConflictResponse = z.infer<
+  typeof CourseSectionInstructorConflictResponseSchema
+>;
+
+export const CourseSectionInstructorConflictErrorResponseSchema = z.object({
+  message: z.string(),
+  conflicts: z.array(CourseSectionInstructorConflictResponseSchema),
+});
+
+export type CourseSectionInstructorConflictErrorResponse = z.infer<
+  typeof CourseSectionInstructorConflictErrorResponseSchema
+>;
 
 export const CourseSectionListResultResponseSchema = z.object({
   sectionId: z.number(),

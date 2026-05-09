@@ -17,7 +17,7 @@ export function CourseSectionDetailOverviewSection({
     >
       <ReadOnlyField label="Course" value={section.courseCode} span={{ base: 12, md: 3 }} />
       <ReadOnlyField label="Title" value={section.courseTitle} span={{ base: 12, md: 6 }} />
-      <ReadOnlyField label="Instructor" value={section.instructor} span={{ base: 12, md: 3 }} />
+      <ReadOnlyField label="Assignments" value={section.instructor} span={{ base: 12, md: 3 }} />
     </RecordPageSection>
   );
 }

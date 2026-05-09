@@ -21,7 +21,7 @@ export function CourseSectionsResultsTable({
             {isSearchScope ? <Table.Th>Course</Table.Th> : null}
             <Table.Th>Section</Table.Th>
             <Table.Th>Status</Table.Th>
-            <Table.Th>Instructor</Table.Th>
+            <Table.Th>Assignments</Table.Th>
             <Table.Th>Meeting Pattern</Table.Th>
             <Table.Th>Room</Table.Th>
             <Table.Th>Seats</Table.Th>
