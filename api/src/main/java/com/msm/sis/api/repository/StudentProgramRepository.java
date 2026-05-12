@@ -95,6 +95,25 @@ public interface StudentProgramRepository extends JpaRepository<StudentProgram, 
 
     @EntityGraph(attributePaths = {
             "student",
+            "programVersion",
+            "programVersion.program",
+            "programVersion.program.programType",
+            "programVersion.program.degreeType"
+    })
+    @Query("""
+            select studentProgram
+            from StudentProgram studentProgram
+            where studentProgram.student.id in :studentIds
+              and upper(studentProgram.status) in ('ACTIVE', 'COMPLETED')
+            order by studentProgram.programVersion.program.name asc,
+                     studentProgram.id asc
+            """)
+    List<StudentProgram> findRegistrationPreviewProgramsByStudentIds(
+            @Param("studentIds") List<Long> studentIds
+    );
+
+    @EntityGraph(attributePaths = {
+            "student",
             "student.classStanding",
             "programVersion",
             "programVersion.program",

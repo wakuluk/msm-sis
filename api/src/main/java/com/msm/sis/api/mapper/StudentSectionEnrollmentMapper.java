@@ -3,6 +3,7 @@ package com.msm.sis.api.mapper;
 import com.msm.sis.api.dto.course.CourseSectionStudentEnrollmentEventResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentGradeResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentResponse;
+import com.msm.sis.api.dto.course.CourseSectionStudentWaitlistOfferResponse;
 import com.msm.sis.api.entity.ClassStanding;
 import com.msm.sis.api.entity.GradeMark;
 import com.msm.sis.api.entity.GradingBasis;
@@ -13,6 +14,7 @@ import com.msm.sis.api.entity.StudentSectionEnrollmentEvent;
 import com.msm.sis.api.entity.StudentSectionEnrollmentStatus;
 import com.msm.sis.api.entity.StudentSectionGrade;
 import com.msm.sis.api.entity.StudentSectionGradeType;
+import com.msm.sis.api.entity.StudentSectionWaitlistOffer;
 import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
@@ -27,6 +29,14 @@ public class StudentSectionEnrollmentMapper {
     public CourseSectionStudentResponse toStudentResponse(
             StudentSectionEnrollment enrollment,
             List<StudentSectionGrade> grades
+    ) {
+        return toStudentResponse(enrollment, grades, null);
+    }
+
+    public CourseSectionStudentResponse toStudentResponse(
+            StudentSectionEnrollment enrollment,
+            List<StudentSectionGrade> grades,
+            StudentSectionWaitlistOffer waitlistOffer
     ) {
         Student student = enrollment.getStudent();
         ClassStanding classStanding = student == null ? null : student.getClassStanding();
@@ -68,12 +78,27 @@ public class StudentSectionEnrollmentMapper {
                 enrollment.getCreditsAttempted(),
                 enrollment.getCreditsEarned(),
                 enrollment.getWaitlistPosition(),
+                toWaitlistOfferResponse(waitlistOffer),
                 enrollment.isIncludeInGpa(),
                 enrollment.isCapacityOverride(),
                 enrollment.getManualAddReason(),
                 findCurrentGrade(sortedGrades, "MIDTERM"),
                 findCurrentGrade(sortedGrades, "FINAL"),
                 sortedGrades.stream().map(this::toGradeResponse).toList()
+        );
+    }
+
+    private CourseSectionStudentWaitlistOfferResponse toWaitlistOfferResponse(StudentSectionWaitlistOffer offer) {
+        if (offer == null) {
+            return null;
+        }
+
+        return new CourseSectionStudentWaitlistOfferResponse(
+                offer.getId(),
+                offer.getStatus(),
+                offer.getOfferedAt(),
+                offer.getExpiresAt(),
+                offer.getNotificationSentAt()
         );
     }
 

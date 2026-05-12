@@ -10,6 +10,7 @@ export const sortableStudentColumns: SortableStudentColumn[] = [
   { label: 'Student', sortBy: 'student' },
   { label: 'ID', sortBy: 'studentId' },
   { label: 'Status', sortBy: 'status' },
+  { label: 'Waitlist offer', sortBy: 'waitlistOffer' },
   { label: 'Credits', sortBy: 'credits' },
   { label: 'Grading', sortBy: 'grading' },
   { label: 'Final grade', sortBy: 'finalGrade' },
@@ -29,6 +30,33 @@ export function studentStatusColor(statusCode: string | null) {
     default:
       return 'gray';
   }
+}
+
+export function waitlistOfferStatusColor(status: string | null | undefined) {
+  switch (status) {
+    case 'OFFERED':
+      return 'blue';
+    case 'ACCEPTED':
+      return 'green';
+    case 'EXPIRED':
+      return 'red';
+    case 'CANCELLED':
+      return 'gray';
+    default:
+      return 'gray';
+  }
+}
+
+export function formatWaitlistOfferStatus(status: string | null | undefined) {
+  if (!status) {
+    return 'No offer';
+  }
+
+  return status
+    .toLowerCase()
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 export function formatStudentDate(value: string | null) {
@@ -160,6 +188,11 @@ export function compareStudentsByColumn(
       return compareNullableString(
         left.statusName ?? left.statusCode,
         right.statusName ?? right.statusCode
+      );
+    case 'waitlistOffer':
+      return compareNullableString(
+        left.waitlistOffer?.expiresAt ?? left.waitlistOffer?.status ?? null,
+        right.waitlistOffer?.expiresAt ?? right.waitlistOffer?.status ?? null
       );
     case 'credits':
       return compareNullableNumber(left.creditsAttempted, right.creditsAttempted);

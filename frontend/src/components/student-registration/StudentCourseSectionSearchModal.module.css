@@ -1,0 +1,40 @@
+.clickableRow {
+  cursor: pointer;
+}
+
+.clickableRow:hover > td {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}
+
+.selectedRow > td {
+  background-color: var(--portal-ui-accent-active-background) !important;
+}
+
+.selectedRow > td:first-child {
+  box-shadow: inset 3px 0 0 var(--portal-ui-accent-active-border-color);
+}
+
+.detailPanel {
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  padding: var(--mantine-spacing-md);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--mantine-spacing-md);
+}
+
+@media (max-width: 64em) {
+  .detailGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40em) {
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+}

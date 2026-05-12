@@ -6,6 +6,8 @@ import com.msm.sis.api.dto.course.CourseSectionInstructorResponse;
 import com.msm.sis.api.dto.course.CourseSectionListResponse;
 import com.msm.sis.api.dto.course.CourseSectionListResultResponse;
 import com.msm.sis.api.dto.course.CourseSectionMeetingResponse;
+import com.msm.sis.api.dto.course.CourseSectionStagingListResponse;
+import com.msm.sis.api.dto.course.CourseSectionStagingResultResponse;
 import com.msm.sis.api.dto.course.PatchCourseSectionRequest;
 import com.msm.sis.api.entity.AcademicDivision;
 import com.msm.sis.api.entity.AcademicSubject;
@@ -74,6 +76,68 @@ public class CourseSectionMapper {
                 section.getSubTerm() == null ? null : section.getSubTerm().getId(),
                 section.getSectionLetter(),
                 buildDisplaySectionCode(section),
+                section.getTitle(),
+                section.isHonors(),
+                status == null ? null : status.getId(),
+                status == null ? null : status.getCode(),
+                status == null ? null : status.getName(),
+                academicDivision == null ? null : academicDivision.getId(),
+                academicDivision == null ? null : academicDivision.getCode(),
+                academicDivision == null ? null : academicDivision.getName(),
+                deliveryMode == null ? null : deliveryMode.getId(),
+                deliveryMode == null ? null : deliveryMode.getCode(),
+                deliveryMode == null ? null : deliveryMode.getName(),
+                gradingBasis == null ? null : gradingBasis.getId(),
+                gradingBasis == null ? null : gradingBasis.getCode(),
+                gradingBasis == null ? null : gradingBasis.getName(),
+                section.getCredits(),
+                section.getCapacity(),
+                section.getHardCapacity(),
+                section.isWaitlistAllowed(),
+                section.getStartDate(),
+                section.getEndDate(),
+                buildPrimaryInstructorName(instructors),
+                buildInstructorSummary(instructors),
+                buildMeetingSummary(meetings),
+                buildRoomSummary(meetings),
+                buildEnrollmentSummary(section),
+                instructors.stream().map(this::toCourseSectionInstructorResponse).toList(),
+                meetings.stream().map(this::toCourseSectionMeetingResponse).toList()
+        );
+    }
+
+    public CourseSectionStagingListResponse toCourseSectionStagingListResponse(
+            Long subTermId,
+            List<CourseSection> sections
+    ) {
+        return new CourseSectionStagingListResponse(
+                subTermId,
+                sections.stream().map(this::toCourseSectionStagingResultResponse).toList(),
+                sections.size()
+        );
+    }
+
+    public CourseSectionStagingResultResponse toCourseSectionStagingResultResponse(CourseSection section) {
+        CourseOffering courseOffering = section.getCourseOffering();
+        CourseVersion courseVersion = courseOffering == null ? null : courseOffering.getCourseVersion();
+        Course course = courseVersion == null ? null : courseVersion.getCourse();
+        AcademicDivision academicDivision = section.getAcademicDivision();
+        CourseSectionStatus status = section.getStatus();
+        DeliveryMode deliveryMode = section.getDeliveryMode();
+        GradingBasis gradingBasis = section.getGradingBasis();
+        List<CourseSectionInstructor> instructors = sortedInstructors(section);
+        List<CourseSectionMeeting> meetings = sortedMeetings(section);
+
+        return new CourseSectionStagingResultResponse(
+                section.getId(),
+                courseOffering == null ? null : courseOffering.getId(),
+                section.getSubTerm() == null ? null : section.getSubTerm().getId(),
+                course == null ? null : course.getId(),
+                courseVersion == null ? null : courseVersion.getId(),
+                buildCourseCode(course),
+                courseVersion == null ? null : courseVersion.getTitle(),
+                section.getSectionLetter(),
+                buildFullSectionCode(section),
                 section.getTitle(),
                 section.isHonors(),
                 status == null ? null : status.getId(),
@@ -227,6 +291,24 @@ public class CourseSectionMapper {
         }
 
         return displayCode.toString();
+    }
+
+    private String buildFullSectionCode(CourseSection section) {
+        CourseOffering courseOffering = section.getCourseOffering();
+        CourseVersion courseVersion = courseOffering == null ? null : courseOffering.getCourseVersion();
+        Course course = courseVersion == null ? null : courseVersion.getCourse();
+        String courseCode = buildCourseCode(course);
+        String sectionCode = buildDisplaySectionCode(section);
+
+        if (courseCode == null || courseCode.isBlank()) {
+            return sectionCode;
+        }
+
+        if (sectionCode == null || sectionCode.isBlank()) {
+            return courseCode;
+        }
+
+        return courseCode + " " + sectionCode;
     }
 
     private CourseSectionEnrollmentSummaryResponse buildEnrollmentSummary(CourseSection section) {

@@ -10,8 +10,27 @@ export type CourseVersionRequisiteConditionType = z.infer<
   typeof CourseVersionRequisiteConditionTypeSchema
 >;
 
+export const CourseVersionRequisiteMinimumGradeSchema = z.enum([
+  'A',
+  'A-',
+  'B+',
+  'B',
+  'B-',
+  'C+',
+  'C',
+  'C-',
+  'D+',
+  'D',
+  'D-',
+]);
+
+export type CourseVersionRequisiteMinimumGrade = z.infer<
+  typeof CourseVersionRequisiteMinimumGradeSchema
+>;
+
 export const CreateCourseVersionRequisiteCourseRequestSchema = z.object({
   courseId: z.number().int().positive(),
+  minimumGrade: CourseVersionRequisiteMinimumGradeSchema.nullable().optional(),
   sortOrder: z.number().int().nonnegative().nullable().optional(),
 });
 
@@ -97,6 +116,7 @@ export const CourseVersionRequisiteCourseResponseSchema = z.object({
   subjectCode: z.string().nullable(),
   courseNumber: z.string().nullable(),
   courseCode: z.string().nullable(),
+  minimumGrade: CourseVersionRequisiteMinimumGradeSchema.nullable().optional(),
   lab: z.boolean(),
   sortOrder: z.number(),
 });
@@ -157,7 +177,10 @@ export const CourseVersionDetailResponseSchema: z.ZodType<{
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
   requisites: z.array(CourseVersionRequisiteGroupResponseSchema).nullable().optional(),
-  associatedLab: z.lazy(() => CourseVersionDetailResponseSchema).nullable().optional(),
+  associatedLab: z
+    .lazy(() => CourseVersionDetailResponseSchema)
+    .nullable()
+    .optional(),
 });
 
 export const CourseVersionSearchSortBySchema = z.enum([

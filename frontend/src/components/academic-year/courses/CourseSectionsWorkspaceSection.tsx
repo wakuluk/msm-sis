@@ -1,11 +1,13 @@
 // Renders the course-section workspace panel and action controls.
 import type { ComponentProps } from 'react';
 import { Button, Grid, Group } from '@mantine/core';
+import { Link } from 'react-router-dom';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { CourseSectionsTablePanel } from './CourseSectionsTablePanel';
 
 type CourseSectionsWorkspaceSectionProps = ComponentProps<typeof CourseSectionsTablePanel> & {
   canAddSection: boolean;
+  stageSectionsPath: string;
   workspaceDescription: string;
   onAddSection: () => void;
   onClearSectionFilters: () => void;
@@ -13,6 +15,7 @@ type CourseSectionsWorkspaceSectionProps = ComponentProps<typeof CourseSectionsT
 
 export function CourseSectionsWorkspaceSection({
   canAddSection,
+  stageSectionsPath,
   workspaceDescription,
   onAddSection,
   onClearSectionFilters,
@@ -24,6 +27,9 @@ export function CourseSectionsWorkspaceSection({
       description={workspaceDescription}
       action={
         <Group gap="sm" wrap="wrap" justify="flex-end">
+          <Button component={Link} to={stageSectionsPath} variant="default">
+            Stage sections
+          </Button>
           <Button
             variant="default"
             onClick={onClearSectionFilters}

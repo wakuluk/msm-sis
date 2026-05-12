@@ -7,6 +7,7 @@ public record CourseVersionRequisiteCourseResponse(
         String subjectCode,
         String courseNumber,
         String courseCode,
+        String minimumGrade,
         boolean lab,
         Integer sortOrder
 ) {

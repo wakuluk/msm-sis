@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useState } from 'react';
 import { useForm } from '@mantine/form';
 import {
   Alert,
@@ -16,6 +16,11 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAccessTokenData } from '@/auth/auth-store';
 import createClasses from '@/components/create/RecordPageLayout.module.css';
+import { StudentAffiliationsPanel } from '@/components/student-affiliations/StudentAffiliationsPanel';
+import {
+  StudentSchedulePanel,
+  type LoadStudentScheduleRequest,
+} from '@/components/student-schedule/StudentSchedulePanel';
 import { StudentDetailOverviewSections } from '@/components/student/StudentDetailOverviewSections';
 import { StudentTranscriptView } from '@/components/student/StudentTranscriptView';
 import { useStudentReferenceOptions } from '@/components/student/useStudentReferenceOptions';
@@ -31,6 +36,7 @@ import {
   type StudentDetailResponse,
   type StudentTranscriptResponse,
 } from '@/services/schemas/student-schemas';
+import { getStudentSchedule } from '@/services/student-schedule-service';
 import { getStudentById, getStudentTranscriptById, patchStudent } from '@/services/student-service';
 import { getErrorMessage } from '@/utils/errors';
 import { displayValue } from '@/utils/form-values';
@@ -52,7 +58,13 @@ type StudentTranscriptTabState =
   | { status: 'error'; message: string }
   | { status: 'success'; transcript: StudentTranscriptResponse };
 
-type StudentDetailTabKey = 'overview' | 'transcript' | 'billing' | 'medical';
+type StudentDetailTabKey =
+  | 'overview'
+  | 'transcript'
+  | 'schedule'
+  | 'affiliations'
+  | 'billing'
+  | 'medical';
 
 type StudentDetailTabConfig = {
   key: StudentDetailTabKey;
@@ -75,6 +87,16 @@ const studentDetailTabs: StudentDetailTabConfig[] = [
   {
     key: 'transcript',
     label: 'Transcript',
+    requiredRoles: [PORTAL_ROLES.ADMIN],
+  },
+  {
+    key: 'schedule',
+    label: 'Schedule',
+    requiredRoles: [PORTAL_ROLES.ADMIN],
+  },
+  {
+    key: 'affiliations',
+    label: 'Affiliations',
     requiredRoles: [PORTAL_ROLES.ADMIN],
   },
   {
@@ -182,6 +204,26 @@ function StudentDetailTranscriptPanel({ studentId }: { studentId: number }) {
   }
 
   return <StudentTranscriptView transcript={transcriptState.transcript} />;
+}
+
+function StudentDetailSchedulePanel({ studentId }: { studentId: number }) {
+  const loadSchedule = useCallback(
+    (request?: LoadStudentScheduleRequest) =>
+      getStudentSchedule({
+        studentId,
+        signal: request?.signal,
+        termId: request?.termId,
+      }),
+    [studentId]
+  );
+
+  return (
+    <StudentSchedulePanel
+      loadSchedule={loadSchedule}
+      loadingMessage="Loading student course schedule."
+      emptyActivityMessage="No local enrollment activity is available for this student's schedule yet."
+    />
+  );
 }
 
 export function StudentDetailPage() {
@@ -443,6 +485,17 @@ export function StudentDetailPage() {
 
             <Tabs.Panel value="transcript" className={classes.tabPanel}>
               <StudentDetailTranscriptPanel studentId={detail.studentId} />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="schedule" className={classes.tabPanel}>
+              <StudentDetailSchedulePanel studentId={detail.studentId} />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="affiliations" className={classes.tabPanel}>
+              <StudentAffiliationsPanel
+                studentId={detail.studentId}
+                canManage={canEditStudentDetail}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value="billing" className={classes.tabPanel}>

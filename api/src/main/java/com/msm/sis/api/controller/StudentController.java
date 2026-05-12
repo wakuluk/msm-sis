@@ -9,9 +9,11 @@ import com.msm.sis.api.dto.student.StudentProfileResponse;
 import com.msm.sis.api.dto.student.StudentSearchCriteria;
 import com.msm.sis.api.dto.student.StudentSearchResponse;
 import com.msm.sis.api.dto.student.StudentSearchSortField;
+import com.msm.sis.api.dto.student.schedule.StudentScheduleResponse;
 import com.msm.sis.api.dto.student.transcript.StudentTranscriptResponse;
 import com.msm.sis.api.service.StudentService;
 import com.msm.sis.api.service.StudentTranscriptService;
+import com.msm.sis.api.service.student.StudentScheduleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -34,10 +36,16 @@ public class StudentController {
 
     private final StudentService studentService;
     private final StudentTranscriptService studentTranscriptService;
+    private final StudentScheduleService studentScheduleService;
 
-    public StudentController(StudentService studentService, StudentTranscriptService studentTranscriptService) {
+    public StudentController(
+            StudentService studentService,
+            StudentTranscriptService studentTranscriptService,
+            StudentScheduleService studentScheduleService
+    ) {
         this.studentService = studentService;
         this.studentTranscriptService = studentTranscriptService;
+        this.studentScheduleService = studentScheduleService;
     }
 
     /***
@@ -74,6 +82,19 @@ public class StudentController {
     @Operation(summary = "Get student transcript by id", description = "Returns transcript rows and summaries for a student")
     public ResponseEntity<StudentTranscriptResponse> getStudentTranscriptById(@NotNull @PathVariable Long studentId) {
         return ResponseEntity.ok(studentTranscriptService.getTranscriptForStudent(studentId));
+    }
+
+    @GetMapping("/{studentId}/schedule")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Get student schedule by id",
+            description = "Returns term options, scheduled courses, dropped or withdrawn historical courses, and calendar meetings for a student. Optional termId selects a previous or current term from the student's local enrollment activity."
+    )
+    public ResponseEntity<StudentScheduleResponse> getStudentScheduleById(
+            @NotNull @PathVariable Long studentId,
+            @RequestParam(required = false) Long termId
+    ) {
+        return ResponseEntity.ok(studentScheduleService.getScheduleForStudent(studentId, termId));
     }
 
     @PatchMapping("/{studentId}")

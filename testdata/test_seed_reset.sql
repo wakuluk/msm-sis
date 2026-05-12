@@ -3,6 +3,10 @@
 
 TRUNCATE TABLE
     pdf_documents,
+    student_section_waitlist_offer,
+    student_athlete,
+    student_honors,
+    athletic_sport,
     student_section_enrollment_event,
     student_section_grade,
     student_section_enrollment,

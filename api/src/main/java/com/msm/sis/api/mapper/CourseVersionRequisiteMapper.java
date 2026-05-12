@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
+import static com.msm.sis.api.util.TextUtils.trimToNull;
+
 @Component
 public class CourseVersionRequisiteMapper {
 
@@ -39,6 +41,7 @@ public class CourseVersionRequisiteMapper {
         CourseVersionRequisiteCourse requisiteCourse = new CourseVersionRequisiteCourse();
         requisiteCourse.setGroup(group);
         requisiteCourse.setCourse(coursesById.get(request.courseId()));
+        requisiteCourse.setMinimumGrade(trimToNull(request.minimumGrade()));
         requisiteCourse.setSortOrder(defaultSortOrder(request.sortOrder()));
         return requisiteCourse;
     }
@@ -69,6 +72,7 @@ public class CourseVersionRequisiteMapper {
                 subjectCode,
                 courseNumber,
                 subjectCode == null || courseNumber == null ? null : subjectCode + courseNumber,
+                requisiteCourse.getMinimumGrade(),
                 course != null && course.isLab(),
                 requisiteCourse.getSortOrder()
         );

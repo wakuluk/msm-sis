@@ -2,7 +2,9 @@ services:
   msm-sis-db:
     image: postgres:17
     restart: unless-stopped
+    command: ["postgres", "-c", "timezone=${APP_TIME_ZONE:-America/New_York}"]
     environment:
+      TZ: ${APP_TIME_ZONE:-America/New_York}
       POSTGRES_USER: root
       POSTGRES_PASSWORD: msmsisdb
       POSTGRES_DB: msmsisdb
@@ -24,7 +26,7 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app
-      - /app/node_modules
+      - msm_sis_frontend_node_modules:/app/node_modules
     environment:
       CHOKIDAR_USEPOLLING: "true"
       VITE_PROXY_TARGET: "http://msm-sis-api:8080"
@@ -42,15 +44,30 @@ services:
     volumes:
       - ./msm-sis-file-share:/app/files
     environment:
+      TZ: ${APP_TIME_ZONE:-America/New_York}
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:postgresql://msm-sis-db:5432/msmsisdb
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: msmsisdb
       APP_STORAGE_ROOT_DIR: /app/files
       APP_CORS_ALLOWED_ORIGIN: http://localhost:5173
+      JAVA_TOOL_OPTIONS: -Duser.timezone=${APP_TIME_ZONE:-America/New_York}
       JAVA_OPTS: ${JAVA_OPTS:-}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-smtp.gmail.com}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "true"
+      APP_EMAIL_NOTIFICATIONS_ENABLED: ${APP_EMAIL_NOTIFICATIONS_ENABLED:-false}
+      APP_EMAIL_NOTIFICATIONS_RECIPIENT_OVERRIDE: ${APP_EMAIL_NOTIFICATIONS_RECIPIENT_OVERRIDE:-atwakuluk@email.msmary.edu}
+      APP_EMAIL_NOTIFICATIONS_FROM: ${APP_EMAIL_NOTIFICATIONS_FROM:-}
 
 volumes:
   msm_sis_db_data:
+  msm_sis_frontend_node_modules:
+    external: true
+    name: msm_sis_frontend_node_modules
   #Change this to the volume share for msm-sis-api volume later.c
   msm_sis_files:

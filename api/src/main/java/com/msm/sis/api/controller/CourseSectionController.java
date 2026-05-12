@@ -4,6 +4,9 @@ import com.msm.sis.api.config.AuthenticatedJwt;
 import com.msm.sis.api.dto.course.AddCourseSectionStudentRequest;
 import com.msm.sis.api.dto.course.CourseSectionDetailResponse;
 import com.msm.sis.api.dto.course.CourseSectionListResponse;
+import com.msm.sis.api.dto.course.CourseSectionStageTransitionRequest;
+import com.msm.sis.api.dto.course.CourseSectionStageTransitionResponse;
+import com.msm.sis.api.dto.course.CourseSectionStagingListResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentEnrollmentEventListResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentListResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentResponse;
@@ -15,6 +18,7 @@ import com.msm.sis.api.service.course.CourseSectionAccessService;
 import com.msm.sis.api.service.course.CourseSectionGradePermissionService;
 import com.msm.sis.api.service.course.CourseSectionPatchService;
 import com.msm.sis.api.service.course.CourseSectionService;
+import com.msm.sis.api.service.course.CourseSectionStageTransitionService;
 import com.msm.sis.api.service.course.StudentSectionEnrollmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,6 +45,7 @@ public class CourseSectionController {
     private final CourseSectionGradePermissionService courseSectionGradePermissionService;
     private final CourseSectionPatchService courseSectionPatchService;
     private final CourseSectionService courseSectionService;
+    private final CourseSectionStageTransitionService courseSectionStageTransitionService;
     private final StudentSectionEnrollmentService studentSectionEnrollmentService;
 
     public CourseSectionController(
@@ -48,13 +53,57 @@ public class CourseSectionController {
             CourseSectionGradePermissionService courseSectionGradePermissionService,
             CourseSectionPatchService courseSectionPatchService,
             CourseSectionService courseSectionService,
+            CourseSectionStageTransitionService courseSectionStageTransitionService,
             StudentSectionEnrollmentService studentSectionEnrollmentService
     ) {
         this.courseSectionAccessService = courseSectionAccessService;
         this.courseSectionGradePermissionService = courseSectionGradePermissionService;
         this.courseSectionPatchService = courseSectionPatchService;
         this.courseSectionService = courseSectionService;
+        this.courseSectionStageTransitionService = courseSectionStageTransitionService;
         this.studentSectionEnrollmentService = studentSectionEnrollmentService;
+    }
+
+    @GetMapping("/academic-sub-terms/{subTermId}/course-sections/staging")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "List course sections for sub term staging",
+            description = "Returns all course sections in an academic sub term for the section staging workflow."
+    )
+    public ResponseEntity<CourseSectionStagingListResponse> getCourseSectionsForSubTermStaging(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @PathVariable Long subTermId,
+            @RequestParam(required = false) String sourceStatusCode,
+            @RequestParam(required = false) String course,
+            @RequestParam(required = false) String section,
+            @RequestParam(required = false) String instructor,
+            @RequestParam(required = false) String meetingPattern,
+            @RequestParam(required = false) String room,
+            @RequestParam(required = false) String status
+    ) {
+        return ResponseEntity.ok(courseSectionService.getCourseSectionsForSubTermStaging(
+                subTermId,
+                sourceStatusCode,
+                course,
+                section,
+                instructor,
+                meetingPattern,
+                room,
+                status
+        ));
+    }
+
+    @PostMapping("/course-sections/stage-transitions")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Transition selected course sections to the next stage",
+            description = "Moves only the selected course sections when they still belong to the requested sub term and are still in the source status."
+    )
+    public ResponseEntity<CourseSectionStageTransitionResponse> transitionCourseSectionStages(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @Valid @NotNull @RequestBody CourseSectionStageTransitionRequest request
+    ) {
+        return ResponseEntity.ok(courseSectionStageTransitionService.transitionSections(request));
     }
 
     @GetMapping("/course-offerings/{courseOfferingId}/sections")
@@ -212,6 +261,38 @@ public class CourseSectionController {
                 enrollmentId,
                 request,
                 jwt.getUserId()
+        ));
+    }
+
+    @PostMapping("/course-sections/{sectionId}/students/{enrollmentId}/waitlist-offer/expire-now")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEPARTMENT_HEAD')")
+    @Operation(
+            summary = "Expire a waitlist offer now",
+            description = "POC helper that sets the active waitlist offer expiration time to now so the scheduled cleanup can expire it."
+    )
+    public ResponseEntity<CourseSectionStudentResponse> expireWaitlistOfferNow(
+            @PathVariable Long sectionId,
+            @PathVariable Long enrollmentId
+    ) {
+        return ResponseEntity.ok(studentSectionEnrollmentService.expireWaitlistOfferNow(
+                sectionId,
+                enrollmentId
+        ));
+    }
+
+    @PostMapping("/course-sections/{sectionId}/students/{enrollmentId}/waitlist-offer/run-expired-cleanup")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEPARTMENT_HEAD')")
+    @Operation(
+            summary = "Run expired waitlist cleanup",
+            description = "POC helper that immediately runs the waitlist offer expiration cleanup instead of waiting for the scheduler."
+    )
+    public ResponseEntity<CourseSectionStudentResponse> runExpiredWaitlistOfferCleanup(
+            @PathVariable Long sectionId,
+            @PathVariable Long enrollmentId
+    ) {
+        return ResponseEntity.ok(studentSectionEnrollmentService.runExpiredWaitlistOfferCleanup(
+                sectionId,
+                enrollmentId
         ));
     }
 

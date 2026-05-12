@@ -59,6 +59,18 @@ export type PostCourseSectionStudentGradeRequestArgs = {
   signal?: AbortSignal;
 };
 
+export type ExpireCourseSectionWaitlistOfferNowRequest = {
+  sectionId: number;
+  enrollmentId: number;
+  signal?: AbortSignal;
+};
+
+export type RunCourseSectionExpiredWaitlistCleanupRequest = {
+  sectionId: number;
+  enrollmentId: number;
+  signal?: AbortSignal;
+};
+
 export async function getCourseSectionStudents({
   sectionId,
   page = 0,
@@ -231,6 +243,76 @@ export async function postCourseSectionStudentGrade({
   if (!response.ok) {
     throw new Error(
       typeof payload?.message === 'string' ? payload.message : 'Failed to post student grade.'
+    );
+  }
+
+  return CourseSectionStudentResponseSchema.parse(payload);
+}
+
+export async function expireCourseSectionWaitlistOfferNow({
+  sectionId,
+  enrollmentId,
+  signal,
+}: ExpireCourseSectionWaitlistOfferNowRequest): Promise<CourseSectionStudentResponse> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error('Not authenticated.');
+  }
+
+  const response = await fetch(
+    `/api/course-sections/${sectionId}/students/${enrollmentId}/waitlist-offer/expire-now`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      signal,
+    }
+  );
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.message === 'string'
+        ? payload.message
+        : 'Failed to expire waitlist offer.'
+    );
+  }
+
+  return CourseSectionStudentResponseSchema.parse(payload);
+}
+
+export async function runCourseSectionExpiredWaitlistCleanup({
+  sectionId,
+  enrollmentId,
+  signal,
+}: RunCourseSectionExpiredWaitlistCleanupRequest): Promise<CourseSectionStudentResponse> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error('Not authenticated.');
+  }
+
+  const response = await fetch(
+    `/api/course-sections/${sectionId}/students/${enrollmentId}/waitlist-offer/run-expired-cleanup`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      signal,
+    }
+  );
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.message === 'string'
+        ? payload.message
+        : 'Failed to run waitlist cleanup.'
     );
   }
 

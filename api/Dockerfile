@@ -15,6 +15,7 @@ RUN ./gradlew bootJar --no-daemon -x test
 FROM amazoncorretto:26.0.0-alpine3.22
 
 WORKDIR /app
+RUN apk add --no-cache tzdata
 COPY --from=build /app/build/libs/*.jar app.jar
 
 EXPOSE 8080

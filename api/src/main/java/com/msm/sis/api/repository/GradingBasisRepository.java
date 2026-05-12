@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface GradingBasisRepository extends JpaRepository<GradingBasis, Long> {
     Optional<GradingBasis> findByCode(String code);
 
+    Optional<GradingBasis> findByCodeIgnoreCase(String code);
+
     List<GradingBasis> findAllByActiveTrueOrderBySortOrderAsc();
 
     List<GradingBasis> findAllByActiveTrueOrderByNameAsc();

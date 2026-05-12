@@ -315,6 +315,10 @@ CREATE INDEX idx_student_section_enrollment_waitlist
     ON student_section_enrollment (section_id, waitlist_position)
     WHERE waitlist_position IS NOT NULL;
 
+CREATE UNIQUE INDEX uq_student_section_enrollment_waitlist_position
+    ON student_section_enrollment (section_id, waitlist_position)
+    WHERE waitlist_position IS NOT NULL;
+
 CREATE INDEX idx_student_section_grade_enrollment
     ON student_section_grade (student_section_enrollment_id);
 

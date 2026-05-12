@@ -38,6 +38,7 @@ export type StudentSortBy =
   | 'student'
   | 'studentId'
   | 'status'
+  | 'waitlistOffer'
   | 'credits'
   | 'grading'
   | 'finalGrade'

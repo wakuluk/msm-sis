@@ -28,6 +28,7 @@ import { AcademicYearDetailPage } from './pages/portal/AcademicYearDetail.page';
 import { AcademicYearCoursesPage } from './pages/portal/AcademicYearCourses.page';
 import { AcademicTermGroupDetailPage } from './pages/portal/AcademicTermGroupDetail.page';
 import { CourseSectionDetailPage } from './pages/portal/CourseSectionDetail.page';
+import { CourseSectionStageWizardPage } from './pages/portal/CourseSectionStageWizard.page';
 import { ProgramDetailPage } from './pages/portal/ProgramDetail.page';
 import { AdminStudentProgramsPage } from './pages/portal/AdminStudentPrograms.page';
 import { DepartmentMajorStudentsPage } from './pages/portal/DepartmentMajorStudents.page';
@@ -35,6 +36,14 @@ import { ProgramSearchPage } from './pages/portal/ProgramSearch.page';
 import { ProgramRequestDetailPage } from './pages/portal/ProgramRequestDetail.page';
 import { RequirementDetailPage } from './pages/portal/RequirementDetail.page';
 import { RequirementLibraryPage } from './pages/portal/RequirementLibrary.page';
+import { AthleticsPage } from './pages/portal/Athletics.page';
+import { RegistrationGroupBuilderPage } from './pages/portal/RegistrationGroupBuilder.page';
+import { RegistrationGroupDetailPage } from './pages/portal/RegistrationGroupDetail.page';
+import { RegistrationGroupPublishPage } from './pages/portal/RegistrationGroupPublish.page';
+import { RegistrationGroupUnassignedBuilderPage } from './pages/portal/RegistrationGroupUnassignedBuilder.page';
+import { RegistrationGroupsPage } from './pages/portal/RegistrationGroups.page';
+import { StudentCourseRegistrationPage } from './pages/portal/StudentCourseRegistration.page';
+import { StudentSchedulePage } from './pages/portal/StudentSchedule.page';
 import { TeachingSchedulePage } from './pages/portal/TeachingSchedule.page';
 import { TeachingScheduleSearchPage } from './pages/portal/TeachingScheduleSearch.page';
 import {
@@ -65,6 +74,8 @@ const portalRouteComponents = {
   'student-transcript': StudentTranscriptPage,
   'student-course-history': StudentCourseHistoryPage,
   'student-programs': StudentProgramsPage,
+  'student-course-registration': StudentCourseRegistrationPage,
+  'student-schedule': StudentSchedulePage,
   'academic-schools': AcademicSchoolsPage,
   'academic-school-detail': AcademicSchoolDetailPage,
   'academic-departments': AcademicDepartmentsPage,
@@ -76,12 +87,19 @@ const portalRouteComponents = {
   'academic-years-detail': AcademicYearDetailPage,
   'academic-year-courses': AcademicYearCoursesPage,
   'course-section-detail': CourseSectionDetailPage,
+  'course-section-stage-wizard': CourseSectionStageWizardPage,
   'teaching-schedule-search': TeachingScheduleSearchPage,
   'teaching-schedule': TeachingSchedulePage,
   'teaching-schedule-detail': TeachingSchedulePage,
+  'registration-groups': RegistrationGroupsPage,
+  'registration-group-builder': RegistrationGroupBuilderPage,
+  'registration-group-publish': RegistrationGroupPublishPage,
+  'registration-group-unassigned-builder': RegistrationGroupUnassignedBuilderPage,
+  'registration-group-detail': RegistrationGroupDetailPage,
   'academic-term-detail': AcademicTermDetailPage,
   'academic-term-group-detail': AcademicTermGroupDetailPage,
   'academic-years-search': AcademicYearsSearchPage,
+  athletics: AthleticsPage,
   student: StudentProfilePage,
   studentCreate: StudentCreatePage,
   studentDetail: StudentDetailPage,

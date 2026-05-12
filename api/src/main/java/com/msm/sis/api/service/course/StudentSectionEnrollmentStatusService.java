@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
@@ -87,6 +88,21 @@ public class StudentSectionEnrollmentStatusService {
         }
     }
 
+    public void compactWaitlistPositions(Long sectionId) {
+        List<StudentSectionEnrollment> waitlistedEnrollments = enrollmentRepository.findWaitlistedQueueBySectionId(sectionId);
+        if (waitlistedEnrollments.isEmpty() || isAlreadyCompact(waitlistedEnrollments)) {
+            return;
+        }
+
+        waitlistedEnrollments.forEach(enrollment -> enrollment.setWaitlistPosition(null));
+        enrollmentRepository.saveAllAndFlush(waitlistedEnrollments);
+
+        for (int index = 0; index < waitlistedEnrollments.size(); index++) {
+            waitlistedEnrollments.get(index).setWaitlistPosition(index + 1);
+        }
+        enrollmentRepository.saveAllAndFlush(waitlistedEnrollments);
+    }
+
     public String statusChangeEventType(
             StudentSectionEnrollmentStatus fromStatus,
             StudentSectionEnrollmentStatus toStatus
@@ -138,6 +154,17 @@ public class StudentSectionEnrollmentStatusService {
 
     private int nextWaitlistPosition(Long sectionId) {
         return enrollmentRepository.findMaxWaitlistPositionBySectionId(sectionId) + 1;
+    }
+
+    private boolean isAlreadyCompact(List<StudentSectionEnrollment> waitlistedEnrollments) {
+        for (int index = 0; index < waitlistedEnrollments.size(); index++) {
+            Integer expectedPosition = index + 1;
+            if (!expectedPosition.equals(waitlistedEnrollments.get(index).getWaitlistPosition())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private boolean isRegistered(StudentSectionEnrollmentStatus status) {

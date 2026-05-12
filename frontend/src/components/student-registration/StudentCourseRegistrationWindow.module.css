@@ -1,0 +1,66 @@
+.windowPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.42fr);
+  gap: var(--mantine-spacing-md);
+  align-items: stretch;
+}
+
+.identitySummary,
+.windowSummary {
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  padding: var(--mantine-spacing-md);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+}
+
+.identitySummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--mantine-spacing-lg);
+}
+
+.windowSummary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--mantine-spacing-md);
+}
+
+.windowMetric {
+  justify-content: center;
+  min-height: 4rem;
+  border-left: 3px solid var(--mantine-color-blue-5);
+  padding-left: var(--mantine-spacing-sm);
+}
+
+.windowMetricValue {
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.clickableCourseRow {
+  cursor: pointer;
+}
+
+.clickableCourseRow:hover > td {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}
+
+.courseManagementGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--mantine-spacing-md);
+}
+
+@media (max-width: 64em) {
+  .windowPanel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 48em) {
+  .identitySummary,
+  .windowSummary,
+  .courseManagementGrid {
+    grid-template-columns: 1fr;
+  }
+}

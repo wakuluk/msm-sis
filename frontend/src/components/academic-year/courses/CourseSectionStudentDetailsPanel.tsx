@@ -29,7 +29,9 @@ import {
   formatStatusTransition,
   formatStudentDate,
   formatStudentDateTime,
+  formatWaitlistOfferStatus,
   studentStatusColor,
+  waitlistOfferStatusColor,
 } from './courseSectionStudentUtils';
 import type { SelectOption } from './courseSectionsWorkspaceTypes';
 
@@ -65,6 +67,15 @@ function compareNullableString(left: string | null | undefined, right: string | 
     numeric: true,
     sensitivity: 'base',
   });
+}
+
+function isFutureDateTime(value: string | null | undefined) {
+  if (!value) {
+    return false;
+  }
+
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) && timestamp > Date.now();
 }
 
 function getGradeTypeRank(grade: CourseSectionStudentGradeResponse) {
@@ -167,6 +178,8 @@ type CourseSectionStudentDetailsPanelProps = {
   student: CourseSectionStudentResponse;
   eventState: EnrollmentEventListState;
   onEditEnrollment: () => void;
+  onExpireWaitlistOfferNow: () => Promise<void>;
+  onRunExpiredWaitlistCleanup: () => Promise<void>;
   onPostGrade: (values: PostCourseSectionStudentGradeRequest) => Promise<boolean>;
 };
 
@@ -179,6 +192,8 @@ export function CourseSectionStudentDetailsPanel({
   student,
   eventState,
   onEditEnrollment,
+  onExpireWaitlistOfferNow,
+  onRunExpiredWaitlistCleanup,
   onPostGrade,
 }: CourseSectionStudentDetailsPanelProps) {
   const [gradeModalOpened, setGradeModalOpened] = useState(false);
@@ -195,6 +210,16 @@ export function CourseSectionStudentDetailsPanel({
     () => eventState.events.filter((event) => !isGradeEvent(event.eventType)),
     [eventState.events]
   );
+  const canExpireWaitlistOffer =
+    canManage &&
+    student.waitlistOffer?.status === 'OFFERED' &&
+    isFutureDateTime(student.waitlistOffer.expiresAt) &&
+    student.statusCode === 'WAITLISTED';
+  const canRunExpiredWaitlistCleanup =
+    canManage &&
+    student.waitlistOffer?.status === 'OFFERED' &&
+    !isFutureDateTime(student.waitlistOffer.expiresAt) &&
+    student.statusCode === 'WAITLISTED';
 
   function handleToggleGradeSort(nextSortBy: CurrentGradeSortBy) {
     if (nextSortBy === gradeSortBy) {
@@ -245,6 +270,30 @@ export function CourseSectionStudentDetailsPanel({
             <Button size="xs" variant="light" onClick={onEditEnrollment}>
               Edit enrollment
             </Button>
+            {canExpireWaitlistOffer ? (
+              <Button
+                size="xs"
+                variant="light"
+                color="red"
+                onClick={() => {
+                  void onExpireWaitlistOfferNow();
+                }}
+              >
+                Expire waitlist offer now
+              </Button>
+            ) : null}
+            {canRunExpiredWaitlistCleanup ? (
+              <Button
+                size="xs"
+                variant="light"
+                color="red"
+                onClick={() => {
+                  void onRunExpiredWaitlistCleanup();
+                }}
+              >
+                Run waitlist cleanup now
+              </Button>
+            ) : null}
           </Group>
         ) : null}
       </Group>
@@ -292,6 +341,38 @@ export function CourseSectionStudentDetailsPanel({
           <DetailField
             label="Waitlist position"
             value={student.waitlistPosition?.toString() ?? 'Not set'}
+          />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, sm: 4 }}>
+          <Stack gap={4}>
+            <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+              Waitlist offer
+            </Text>
+            {student.waitlistOffer ? (
+              <Badge variant="light" color={waitlistOfferStatusColor(student.waitlistOffer.status)}>
+                {formatWaitlistOfferStatus(student.waitlistOffer.status)}
+              </Badge>
+            ) : (
+              <Text size="sm">No offer</Text>
+            )}
+          </Stack>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, sm: 4 }}>
+          <DetailField
+            label="Offer expires"
+            value={formatStudentDateTime(student.waitlistOffer?.expiresAt ?? null)}
+          />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, sm: 4 }}>
+          <DetailField
+            label="Offered"
+            value={formatStudentDateTime(student.waitlistOffer?.offeredAt ?? null)}
+          />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, sm: 4 }}>
+          <DetailField
+            label="Notification sent"
+            value={formatStudentDateTime(student.waitlistOffer?.notificationSentAt ?? null)}
           />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 4 }}>

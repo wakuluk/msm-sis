@@ -186,7 +186,7 @@ public class CourseService {
                 "ALL",
                 null,
                 sortOrder,
-                List.of(new CreateCourseVersionRequisiteCourseRequest(courseId, 0))
+                List.of(new CreateCourseVersionRequisiteCourseRequest(courseId, null, 0))
         );
     }
 

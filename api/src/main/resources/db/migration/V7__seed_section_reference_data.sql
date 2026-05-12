@@ -1,10 +1,9 @@
 INSERT INTO course_section_status (code, name, sort_order, allow_linear_shift) VALUES
     ('DRAFT', 'Draft', 1, TRUE),
     ('PLANNED', 'Planned', 2, TRUE),
-    ('CLOSED', 'Closed', 3, TRUE),
-    ('IN_PROGRESS', 'In progress', 4, TRUE),
-    ('CANCELLED', 'Cancelled', 5, FALSE),
-    ('COMPLETED', 'Completed', 6, FALSE);
+    ('IN_PROGRESS', 'In progress', 3, TRUE),
+    ('COMPLETED', 'Completed', 4, FALSE),
+    ('CANCELLED', 'Cancelled', 10, FALSE);
 
 INSERT INTO delivery_mode (code, name, sort_order) VALUES
     ('IN_PERSON', 'In person', 1),
@@ -92,7 +91,8 @@ INSERT INTO student_section_enrollment_status (code, name, sort_order, allow_lin
     ('DROPPED', 'Dropped', 3, FALSE),
     ('WITHDRAWN', 'Withdrawn', 4, FALSE),
     ('COMPLETED', 'Completed', 5, FALSE),
-    ('CANCELLED', 'Cancelled', 6, FALSE);
+    ('CANCELLED', 'Cancelled', 6, FALSE),
+    ('WAITLIST_EXPIRED', 'Waitlist Expired', 7, FALSE);
 
 INSERT INTO student_section_grade_type (code, name, sort_order) VALUES
     ('MIDTERM', 'Midterm', 1),

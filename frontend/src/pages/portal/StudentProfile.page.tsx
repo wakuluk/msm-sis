@@ -4,6 +4,7 @@ import { Alert, Badge, Button, Grid, Group, Loader, Stack, Text, TextInput } fro
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { RecordPageShell } from '@/components/create/RecordPageShell';
 import { ReadOnlyField } from '@/components/fields/ReadOnlyField';
+import { StudentAffiliationsPanel } from '@/components/student-affiliations/StudentAffiliationsPanel';
 import {
   fetchStudentProfile,
   type StudentProfileResponse,
@@ -354,6 +355,8 @@ export function StudentProfilePage() {
           />
           <ReadOnlyField label="Class of" value={displayValue(currentProfile.classOf)} />
         </RecordPageSection>
+
+        <StudentAffiliationsPanel studentId={currentProfile.studentId} canManage={false} />
 
         <RecordPageSection
           title="Contact"

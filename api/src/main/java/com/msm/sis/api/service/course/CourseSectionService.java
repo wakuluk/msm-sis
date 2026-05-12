@@ -3,6 +3,8 @@ package com.msm.sis.api.service.course;
 import com.msm.sis.api.dto.course.CreateCourseSectionRequest;
 import com.msm.sis.api.dto.course.CourseSectionDetailResponse;
 import com.msm.sis.api.dto.course.CourseSectionListResponse;
+import com.msm.sis.api.dto.course.CourseSectionStagingListResponse;
+import com.msm.sis.api.dto.course.CourseSectionStagingResultResponse;
 import com.msm.sis.api.entity.AcademicDivision;
 import com.msm.sis.api.entity.CourseOffering;
 import com.msm.sis.api.entity.CourseOfferingSubTerm;
@@ -13,9 +15,11 @@ import com.msm.sis.api.entity.CourseSectionMeeting;
 import com.msm.sis.api.entity.GradingBasis;
 import com.msm.sis.api.mapper.CourseSectionMapper;
 import com.msm.sis.api.repository.AcademicDivisionRepository;
+import com.msm.sis.api.repository.AcademicSubTermRepository;
 import com.msm.sis.api.repository.CourseOfferingRepository;
 import com.msm.sis.api.repository.CourseOfferingSubTermRepository;
 import com.msm.sis.api.repository.CourseSectionInstructorRepository;
+import com.msm.sis.api.repository.CourseSectionMeetingRepository;
 import com.msm.sis.api.repository.CourseSectionRepository;
 import com.msm.sis.api.repository.CourseSectionStatusRepository;
 import com.msm.sis.api.repository.DeliveryModeRepository;
@@ -35,7 +39,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import static com.msm.sis.api.util.TextUtils.containsIgnoreCase;
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 @Service
@@ -57,8 +63,10 @@ public class CourseSectionService {
     private final CourseOfferingRepository courseOfferingRepository;
     private final CourseOfferingSubTermRepository courseOfferingSubTermRepository;
     private final CourseSectionInstructorRepository courseSectionInstructorRepository;
+    private final CourseSectionMeetingRepository courseSectionMeetingRepository;
     private final CourseSectionRepository courseSectionRepository;
     private final CourseSectionStatusRepository courseSectionStatusRepository;
+    private final AcademicSubTermRepository academicSubTermRepository;
     private final AcademicDivisionRepository academicDivisionRepository;
     private final DeliveryModeRepository deliveryModeRepository;
     private final GradingBasisRepository gradingBasisRepository;
@@ -182,6 +190,43 @@ public class CourseSectionService {
     }
 
     @Transactional(readOnly = true)
+    public CourseSectionStagingListResponse getCourseSectionsForSubTermStaging(
+            Long subTermId,
+            String sourceStatusCode,
+            String course,
+            String section,
+            String instructor,
+            String meetingPattern,
+            String room,
+            String status
+    ) {
+        courseSectionValidationService.validatePositiveId(subTermId, "Academic sub term id");
+
+        if (!academicSubTermRepository.existsById(subTermId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Academic sub term was not found.");
+        }
+
+        List<CourseSection> sections = courseSectionRepository.findAllForStagingBySubTermId(subTermId);
+        attachStagingAssociations(sections);
+
+        List<CourseSectionStagingResultResponse> results = sections.stream()
+                .map(courseSectionMapper::toCourseSectionStagingResultResponse)
+                .filter(row -> matchesStagingFilters(
+                        row,
+                        sourceStatusCode,
+                        course,
+                        section,
+                        instructor,
+                        meetingPattern,
+                        room,
+                        status
+                ))
+                .toList();
+
+        return new CourseSectionStagingListResponse(subTermId, results, results.size());
+    }
+
+    @Transactional(readOnly = true)
     public CourseSectionDetailResponse getCourseSectionDetail(
             Long sectionId,
             Long userId,
@@ -223,6 +268,88 @@ public class CourseSectionService {
                 subTermId,
                 pageable
         );
+    }
+
+    private boolean matchesStagingFilters(
+            CourseSectionStagingResultResponse row,
+            String sourceStatusCode,
+            String course,
+            String section,
+            String instructor,
+            String meetingPattern,
+            String room,
+            String status
+    ) {
+        return matchesStatus(row, sourceStatusCode)
+                && matchesCourse(row, course)
+                && matchesSection(row, section)
+                && matchesInstructor(row, instructor)
+                && containsIgnoreCase(row.meetingSummary(), meetingPattern)
+                && containsIgnoreCase(row.roomSummary(), room)
+                && matchesStatus(row, status);
+    }
+
+    private boolean matchesStatus(CourseSectionStagingResultResponse row, String statusFilter) {
+        String normalizedStatusFilter = trimToNull(statusFilter);
+
+        if (normalizedStatusFilter == null) {
+            return true;
+        }
+
+        return normalizedStatusFilter.equalsIgnoreCase(row.statusCode())
+                || normalizedStatusFilter.equalsIgnoreCase(row.statusName())
+                || containsIgnoreCase(row.statusCode(), normalizedStatusFilter)
+                || containsIgnoreCase(row.statusName(), normalizedStatusFilter);
+    }
+
+    private boolean matchesCourse(CourseSectionStagingResultResponse row, String courseFilter) {
+        return containsIgnoreCase(row.courseCode(), courseFilter)
+                || containsIgnoreCase(row.courseTitle(), courseFilter)
+                || containsIgnoreCase(row.title(), courseFilter);
+    }
+
+    private boolean matchesSection(CourseSectionStagingResultResponse row, String sectionFilter) {
+        return containsIgnoreCase(row.displaySectionCode(), sectionFilter)
+                || containsIgnoreCase(row.sectionLetter(), sectionFilter)
+                || containsIgnoreCase(row.title(), sectionFilter);
+    }
+
+    private boolean matchesInstructor(CourseSectionStagingResultResponse row, String instructorFilter) {
+        String normalizedInstructorFilter = trimToNull(instructorFilter);
+
+        if (normalizedInstructorFilter == null) {
+            return true;
+        }
+
+        return containsIgnoreCase(row.primaryInstructorName(), normalizedInstructorFilter)
+                || containsIgnoreCase(row.instructorSummary(), normalizedInstructorFilter)
+                || row.instructors().stream().anyMatch(instructor ->
+                containsIgnoreCase(instructor.firstName(), normalizedInstructorFilter)
+                        || containsIgnoreCase(instructor.lastName(), normalizedInstructorFilter)
+                        || containsIgnoreCase(instructor.email(), normalizedInstructorFilter)
+                        || containsIgnoreCase(instructor.roleName(), normalizedInstructorFilter)
+        );
+    }
+
+    private void attachStagingAssociations(List<CourseSection> sections) {
+        if (sections.isEmpty()) {
+            return;
+        }
+
+        List<Long> sectionIds = sections.stream()
+                .map(CourseSection::getId)
+                .toList();
+        Map<Long, List<CourseSectionInstructor>> instructorsBySectionId =
+                courseSectionInstructorRepository.findAllByCourseSectionIdIn(sectionIds).stream()
+                        .collect(Collectors.groupingBy(instructor -> instructor.getCourseSection().getId()));
+        Map<Long, List<CourseSectionMeeting>> meetingsBySectionId =
+                courseSectionMeetingRepository.findAllByCourseSectionIdIn(sectionIds).stream()
+                        .collect(Collectors.groupingBy(meeting -> meeting.getCourseSection().getId()));
+
+        sections.forEach(section -> {
+            section.setInstructors(instructorsBySectionId.getOrDefault(section.getId(), List.of()));
+            section.setMeetings(meetingsBySectionId.getOrDefault(section.getId(), List.of()));
+        });
     }
 
     private <T> T resolveRequiredReference(

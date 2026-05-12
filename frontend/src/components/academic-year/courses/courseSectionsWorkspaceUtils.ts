@@ -6,6 +6,7 @@ import type {
   CourseSectionDetailResponse,
   CourseSectionInstructorResponse,
   CourseSectionListResultResponse,
+  CourseSectionStagingResultResponse,
 } from '@/services/schemas/course-schemas';
 import type { CatalogReferenceOption } from '@/services/schemas/reference-schemas';
 import { getErrorMessage } from '@/utils/errors';
@@ -49,10 +50,10 @@ function containsIgnoreCase(value: string, filter: string): boolean {
   return value.toLowerCase().includes(normalizedFilter);
 }
 
-export function filterSections(
-  sections: ReadonlyArray<CourseSectionPreview>,
+export function filterSections<T extends CourseSectionPreview>(
+  sections: ReadonlyArray<T>,
   searchValues: CourseSectionSearchValues
-): CourseSectionPreview[] {
+): T[] {
   return sections.filter((section) => {
     if (!containsIgnoreCase(section.courseCode, searchValues.courseCode)) {
       return false;
@@ -268,6 +269,46 @@ export function mapCourseSectionResultToPreview(
     courseOfferingId: section.courseOfferingId ?? offering?.courseOfferingId ?? 0,
     courseCode: offering?.courseCode ?? 'Course',
     courseTitle: offering?.title ?? section.title ?? 'Title unavailable',
+    sectionId: section.sectionId,
+    sectionCode: section.displaySectionCode || section.sectionLetter || 'Section',
+    sectionLetter: section.sectionLetter ?? '',
+    honors: section.honors,
+    statusCode: section.statusCode ?? 'DRAFT',
+    statusName: section.statusName ?? section.statusCode ?? 'Draft',
+    academicDivisionCode: section.academicDivisionCode,
+    academicDivisionName: section.academicDivisionName,
+    deliveryModeCode: section.deliveryModeCode,
+    deliveryModeName: section.deliveryModeName,
+    gradingBasisCode: section.gradingBasisCode,
+    gradingBasisName: section.gradingBasisName,
+    primaryStaffId: section.instructors.find((instructor) => instructor.primary)?.staffId ?? null,
+    instructor: buildInstructorSummaryFromResponses(
+      section.instructors,
+      section.instructorSummary ?? section.primaryInstructorName
+    ),
+    instructors: section.instructors.map(mapInstructorResponseToDraft),
+    meetingPattern: section.meetingSummary ?? 'TBD',
+    room: section.roomSummary ?? 'TBD',
+    credits: section.credits,
+    capacity: section.capacity ?? 0,
+    hardCapacity: section.hardCapacity,
+    enrolled: section.enrollmentSummary.enrolledCount,
+    waitlistAllowed: section.waitlistAllowed,
+    meetings: section.meetings.map((meeting) => ({
+      dayOfWeek: meeting.dayOfWeek,
+      startTime: meeting.startTime,
+      endTime: meeting.endTime,
+    })),
+  };
+}
+
+export function mapCourseSectionStagingResultToPreview(
+  section: CourseSectionStagingResultResponse
+): CourseSectionPreview {
+  return {
+    courseOfferingId: section.courseOfferingId ?? 0,
+    courseCode: section.courseCode ?? 'Course',
+    courseTitle: section.courseTitle ?? section.title ?? 'Title unavailable',
     sectionId: section.sectionId,
     sectionCode: section.displaySectionCode || section.sectionLetter || 'Section',
     sectionLetter: section.sectionLetter ?? '',

@@ -1,6 +1,7 @@
 import type {
   CourseVersionDetailResponse,
   CourseVersionRequisiteConditionType,
+  CourseVersionRequisiteMinimumGrade,
   CourseVersionRequisiteType,
   CreateCourseVersionRequisiteGroupRequest,
 } from '@/services/schemas/course-schemas';
@@ -13,6 +14,7 @@ export type CourseRequisiteCourseDraft = {
   courseId: number | string;
   courseCode: string;
   courseTitle: string;
+  minimumGrade: CourseVersionRequisiteMinimumGrade | null;
   lab?: boolean;
   pendingAssociatedLab?: boolean;
 };
@@ -54,6 +56,7 @@ export function createEmptyRequisiteCourse(): CourseRequisiteCourseDraft {
     courseId: '',
     courseCode: '',
     courseTitle: '',
+    minimumGrade: null,
   };
 }
 
@@ -78,6 +81,7 @@ export function upsertAssociatedLabCorequisiteDraft({
     courseId: associatedLabCourseId,
     courseCode: courseCode.trim() || 'Associated lab',
     courseTitle: courseTitle.trim() || 'Pending lab course',
+    minimumGrade: null,
     pendingAssociatedLab: true,
   };
   const nextGroup: CourseRequisiteGroupDraft = {
@@ -104,6 +108,7 @@ export function courseReferenceToDraft(
     courseId: course.courseId,
     courseCode: course.courseCode,
     courseTitle: course.currentVersionTitle ?? '',
+    minimumGrade: null,
     lab: course.lab,
   };
 }
@@ -116,6 +121,7 @@ export function courseSearchResultToDraft(
     courseId: course.courseId,
     courseCode: course.courseCode ?? '',
     courseTitle: course.currentVersionTitle ?? '',
+    minimumGrade: null,
     lab: course.lab,
   };
 }
@@ -162,19 +168,15 @@ export function buildCourseRequisitesRequest(
       courseIds.add(courseId);
       courses.push({
         courseId,
+        minimumGrade: group.requisiteType === 'PREREQUISITE' ? course.minimumGrade : null,
         sortOrder: courses.length,
       });
     }
 
-    const minimumRequired =
-      group.conditionType === 'ANY' ? Number(group.minimumRequired) : null;
+    const minimumRequired = group.conditionType === 'ANY' ? Number(group.minimumRequired) : null;
 
     if (group.conditionType === 'ANY') {
-      if (
-        minimumRequired === null ||
-        !Number.isInteger(minimumRequired) ||
-        minimumRequired <= 0
-      ) {
+      if (minimumRequired === null || !Number.isInteger(minimumRequired) || minimumRequired <= 0) {
         return {
           status: 'invalid',
           message: `Requisite group ${groupIndex + 1} needs a minimum required value.`,
@@ -216,6 +218,7 @@ export function courseVersionToRequisiteDrafts(
       courseId: course.courseId ?? '',
       courseCode: course.courseCode ?? '',
       courseTitle: '',
+      minimumGrade: course.minimumGrade ?? null,
       lab: false,
     })),
   }));

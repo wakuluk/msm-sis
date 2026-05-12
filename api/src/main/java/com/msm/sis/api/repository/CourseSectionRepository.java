@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +22,7 @@ public interface CourseSectionRepository extends JpaRepository<CourseSection, Lo
             "courseOffering.courseVersion.course",
             "courseOffering.courseVersion.course.subject",
             "subTerm",
+            "subTerm.status",
             "academicDivision",
             "status",
             "deliveryMode",
@@ -30,7 +32,11 @@ public interface CourseSectionRepository extends JpaRepository<CourseSection, Lo
 
     @EntityGraph(attributePaths = {
             "courseOffering",
+            "courseOffering.courseVersion",
+            "courseOffering.courseVersion.course",
+            "courseOffering.courseVersion.course.subject",
             "subTerm",
+            "subTerm.status",
             "academicDivision",
             "status",
             "deliveryMode",
@@ -84,6 +90,88 @@ public interface CourseSectionRepository extends JpaRepository<CourseSection, Lo
             @Param("courseOfferingId") Long courseOfferingId,
             @Param("subTermId") Long subTermId,
             Sort sort
+    );
+
+    @EntityGraph(attributePaths = {
+            "courseOffering",
+            "courseOffering.courseVersion",
+            "courseOffering.courseVersion.course",
+            "courseOffering.courseVersion.course.subject",
+            "subTerm",
+            "academicDivision",
+            "status",
+            "deliveryMode",
+            "gradingBasis"
+    })
+    @Query("""
+            select courseSection
+            from CourseSection courseSection
+            join courseSection.courseOffering courseOffering
+            join courseOffering.courseVersion courseVersion
+            join courseVersion.course course
+            left join course.subject subject
+            where courseSection.subTerm.id = :subTermId
+            order by subject.code asc,
+                     course.courseNumber asc,
+                     courseSection.sectionLetter asc,
+                     courseSection.id asc
+            """)
+    List<CourseSection> findAllForStagingBySubTermId(@Param("subTermId") Long subTermId);
+
+    @EntityGraph(attributePaths = {
+            "courseOffering",
+            "courseOffering.courseVersion",
+            "courseOffering.courseVersion.course",
+            "courseOffering.courseVersion.course.subject",
+            "subTerm",
+            "academicDivision",
+            "status",
+            "deliveryMode",
+            "gradingBasis"
+    })
+    @Query("""
+            select courseSection
+            from CourseSection courseSection
+            join courseSection.courseOffering courseOffering
+            join courseOffering.courseVersion courseVersion
+            join courseVersion.course course
+            left join course.subject subject
+            where courseSection.id in :sectionIds
+            order by subject.code asc,
+                     course.courseNumber asc,
+                     courseSection.sectionLetter asc,
+                     courseSection.id asc
+            """)
+    List<CourseSection> findAllForStagingByIdIn(@Param("sectionIds") Collection<Long> sectionIds);
+
+    @EntityGraph(attributePaths = {
+            "courseOffering",
+            "courseOffering.courseVersion",
+            "courseOffering.courseVersion.course",
+            "courseOffering.courseVersion.course.subject",
+            "subTerm",
+            "academicDivision",
+            "status",
+            "deliveryMode",
+            "gradingBasis"
+    })
+    @Query("""
+            select courseSection
+            from CourseSection courseSection
+            join courseSection.courseOffering courseOffering
+            join courseOffering.courseVersion courseVersion
+            join courseVersion.course course
+            left join course.subject subject
+            join courseSection.status status
+            where courseSection.subTerm.id in :subTermIds
+              and upper(status.code) = 'PLANNED'
+            order by subject.code asc,
+                     course.courseNumber asc,
+                     courseSection.sectionLetter asc,
+                     courseSection.id asc
+            """)
+    List<CourseSection> findAvailableForStudentRegistrationBySubTermIds(
+            @Param("subTermIds") Collection<Long> subTermIds
     );
 
     @Query("""

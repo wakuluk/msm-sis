@@ -800,6 +800,54 @@ ON CONFLICT ON CONSTRAINT uq_student_program_version DO UPDATE
         completed_date = EXCLUDED.completed_date,
         updated_by_user_id = EXCLUDED.updated_by_user_id;
 
+-- Registration grouping needs every active student to resolve cleanly into an academic division.
+-- Undergraduate students receive the undergraduate core, while graduate students receive the History MA.
+WITH student_division_programs(alt_id, program_code, version_number, status, declared_date, completed_date) AS (
+    SELECT student.alt_id,
+           CASE
+               WHEN student.alt_id IN (
+                   'STU-1004',
+                   'SEC-2011', 'SEC-2012', 'SEC-2013', 'SEC-2014',
+                   'SEC-2017', 'SEC-2018', 'SEC-2019', 'SEC-2020',
+                   'SEC-2021', 'SEC-2022', 'SEC-2023', 'SEC-2024',
+                   'SEC-2025', 'SEC-2026', 'SEC-2027', 'SEC-2028'
+               )
+                   THEN 'HIST-MA'
+               ELSE 'CORE-UG'
+           END,
+           1,
+           'ACTIVE',
+           '2026-08-20'::date,
+           NULL::date
+    FROM student
+    WHERE student.is_disabled = FALSE
+)
+INSERT INTO student_program (
+    student_id,
+    program_version_id,
+    status,
+    declared_date,
+    completed_date,
+    updated_by_user_id
+)
+SELECT student.student_id,
+       program_version.program_version_id,
+       student_division_programs.status,
+       student_division_programs.declared_date,
+       student_division_programs.completed_date,
+       actor.id
+FROM student_division_programs
+JOIN student ON student.alt_id = student_division_programs.alt_id
+JOIN program ON program.code = student_division_programs.program_code
+JOIN program_version ON program_version.program_id = program.program_id
+                    AND program_version.version_number = student_division_programs.version_number
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me'
+ON CONFLICT ON CONSTRAINT uq_student_program_version DO UPDATE
+    SET status = EXCLUDED.status,
+        declared_date = EXCLUDED.declared_date,
+        completed_date = EXCLUDED.completed_date,
+        updated_by_user_id = EXCLUDED.updated_by_user_id;
+
 DELETE FROM student_program_request
 USING student, program
 WHERE student_program_request.student_id = student.student_id

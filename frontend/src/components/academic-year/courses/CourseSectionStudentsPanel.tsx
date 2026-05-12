@@ -4,11 +4,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import {
   addCourseSectionStudent,
+  expireCourseSectionWaitlistOfferNow,
   getCourseSectionStudentEnrollment,
   getCourseSectionStudentEnrollmentEvents,
   getCourseSectionStudents,
   patchCourseSectionStudentEnrollment,
   postCourseSectionStudentGrade,
+  runCourseSectionExpiredWaitlistCleanup,
 } from '@/services/course-service';
 import type {
   CourseSectionStudentResponse,
@@ -196,7 +198,6 @@ export function CourseSectionStudentsPanel({
     selectedEnrollmentDetailReloadKey,
     selectedEnrollmentId,
     selectedSection.sectionId,
-    selectedStudentFromList,
     updateEnrollmentInList,
   ]);
 
@@ -336,6 +337,59 @@ export function CourseSectionStudentsPanel({
     }
   }
 
+  async function handleExpireWaitlistOfferNow() {
+    if (!selectedStudent || studentMutationState.status === 'saving') {
+      return;
+    }
+
+    try {
+      setStudentMutationState({ status: 'saving' });
+      const updatedStudent = await expireCourseSectionWaitlistOfferNow({
+        sectionId: selectedSection.sectionId,
+        enrollmentId: selectedStudent.enrollmentId,
+      });
+
+      updateEnrollmentInList(updatedStudent);
+      setSelectedEnrollmentId(updatedStudent.enrollmentId);
+      setSelectedEnrollmentDetailState({ status: 'success', student: updatedStudent });
+      setStudentMutationState({ status: 'idle' });
+      setSelectedEnrollmentDetailReloadKey((current) => current + 1);
+      setStudentListReloadKey((current) => current + 1);
+    } catch (error: unknown) {
+      setStudentMutationState({
+        status: 'error',
+        message: getErrorMessage(error, 'Failed to expire waitlist offer.'),
+      });
+    }
+  }
+
+  async function handleRunExpiredWaitlistCleanup() {
+    if (!selectedStudent || studentMutationState.status === 'saving') {
+      return;
+    }
+
+    try {
+      setStudentMutationState({ status: 'saving' });
+      const updatedStudent = await runCourseSectionExpiredWaitlistCleanup({
+        sectionId: selectedSection.sectionId,
+        enrollmentId: selectedStudent.enrollmentId,
+      });
+
+      updateEnrollmentInList(updatedStudent);
+      setSelectedEnrollmentId(updatedStudent.enrollmentId);
+      setSelectedEnrollmentDetailState({ status: 'success', student: updatedStudent });
+      setStudentMutationState({ status: 'idle' });
+      setSelectedEnrollmentDetailReloadKey((current) => current + 1);
+      setEventListReloadKey((current) => current + 1);
+      setStudentListReloadKey((current) => current + 1);
+    } catch (error: unknown) {
+      setStudentMutationState({
+        status: 'error',
+        message: getErrorMessage(error, 'Failed to run waitlist cleanup.'),
+      });
+    }
+  }
+
   function handleToggleSort(nextSortBy: StudentSortBy) {
     setSortDirection((currentDirection) =>
       sortBy === nextSortBy && currentDirection === 'asc' ? 'desc' : 'asc'
@@ -434,6 +488,8 @@ export function CourseSectionStudentsPanel({
             setStudentMutationState({ status: 'idle' });
             setEditEnrollmentModalOpened(true);
           }}
+          onExpireWaitlistOfferNow={handleExpireWaitlistOfferNow}
+          onRunExpiredWaitlistCleanup={handleRunExpiredWaitlistCleanup}
           onPostGrade={handlePostGrade}
         />
       ) : (

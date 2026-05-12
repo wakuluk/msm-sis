@@ -29,6 +29,23 @@ public interface CourseSectionInstructorRepository extends JpaRepository<CourseS
             """)
     List<CourseSectionInstructor> findAllByCourseSectionId(@Param("sectionId") Long sectionId);
 
+    @EntityGraph(attributePaths = {"courseSection", "instructorUser", "instructorStaff", "role"})
+    @Query("""
+            select instructor
+            from CourseSectionInstructor instructor
+            left join instructor.instructorStaff staff
+            left join instructor.role role
+            where instructor.courseSection.id in :sectionIds
+            order by instructor.courseSection.id asc,
+                     role.sortOrder asc,
+                     staff.lastName asc,
+                     staff.firstName asc,
+                     instructor.id asc
+            """)
+    List<CourseSectionInstructor> findAllByCourseSectionIdIn(
+            @Param("sectionIds") Collection<Long> sectionIds
+    );
+
     @Modifying
     @Query("""
             delete from CourseSectionInstructor instructor

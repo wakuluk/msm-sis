@@ -11,9 +11,12 @@ import type {
 import {
   formatCredits,
   formatStudentDate,
+  formatStudentDateTime,
+  formatWaitlistOfferStatus,
   getCurrentFinalGradeLabel,
   sortableStudentColumns,
   studentStatusColor,
+  waitlistOfferStatusColor,
 } from './courseSectionStudentUtils';
 import tableClasses from '@/components/search/SearchResultsTable.module.css';
 
@@ -156,6 +159,25 @@ export function CourseSectionStudentTable({
                   <Badge variant="light" color={studentStatusColor(student.statusCode)}>
                     {student.statusName ?? 'Unknown'}
                   </Badge>
+                </Table.Td>
+                <Table.Td>
+                  {student.waitlistOffer ? (
+                    <>
+                      <Badge
+                        variant="light"
+                        color={waitlistOfferStatusColor(student.waitlistOffer.status)}
+                      >
+                        {formatWaitlistOfferStatus(student.waitlistOffer.status)}
+                      </Badge>
+                      <Text size="xs" c="dimmed" mt={4}>
+                        Expires {formatStudentDateTime(student.waitlistOffer.expiresAt)}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text size="sm" c="dimmed">
+                      No offer
+                    </Text>
+                  )}
                 </Table.Td>
                 <Table.Td>{formatCredits(student.creditsAttempted)}</Table.Td>
                 <Table.Td>{student.gradingBasisName ?? 'Not set'}</Table.Td>
