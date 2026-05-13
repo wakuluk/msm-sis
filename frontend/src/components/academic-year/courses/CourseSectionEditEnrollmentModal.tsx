@@ -49,6 +49,8 @@ export function CourseSectionEditEnrollmentModal({
   const [manualAddReason, setManualAddReason] = useState('');
   const [reason, setReason] = useState('');
 
+  const studentEnrollmentId = student?.enrollmentId ?? null;
+
   useEffect(() => {
     if (!opened || !student) {
       return;
@@ -61,7 +63,7 @@ export function CourseSectionEditEnrollmentModal({
     setCapacityOverride(student.capacityOverride);
     setManualAddReason(student.manualAddReason ?? '');
     setReason('');
-  }, [opened, student]);
+  }, [opened, studentEnrollmentId]);
 
   const statusChanged = student ? statusCode !== student.statusCode : false;
   const showManualAddReason = capacityOverride;

@@ -360,7 +360,7 @@ export function CourseSectionAddStudentModal({
 
         {!willWaitlist && !hardCapacityReached ? (
           <Checkbox
-            label={`Allow capacity override (${registeredCount}/${capacity} registered)`}
+            label={`Allow capacity override (${registeredCount}/${capacity} enrolled)`}
             checked={capacityOverride}
             onChange={(event) => {
               setCapacityOverride(event.currentTarget.checked);

@@ -1,13 +1,8 @@
 // Academic setup field group for the course-section form.
-// Handles instructor assignment, academic division, credits, and grading basis inputs.
+// Handles academic division, credits, and grading basis inputs.
 import type { Dispatch, SetStateAction } from 'react';
 import { Divider, Grid, Select, Stack, type SelectProps, type TextInputProps } from '@mantine/core';
-import type {
-  CourseSectionDraft,
-  SelectOption,
-  StaffSelectOption,
-} from './courseSectionsWorkspaceTypes';
-import { StaffCombobox } from './StaffCombobox';
+import type { CourseSectionDraft, SelectOption } from './courseSectionsWorkspaceTypes';
 
 type CourseSectionAcademicFieldsProps = {
   academicDivisionOptions: SelectOption[];
@@ -17,11 +12,7 @@ type CourseSectionAcademicFieldsProps = {
   gradingBasisOptions: SelectOption[];
   readOnlyInputStyles: TextInputProps['styles'];
   referencesAreLoading: boolean;
-  staffLoading: boolean;
-  staffOptions: StaffSelectOption[];
-  staffSearchValue: string;
   setDraft: Dispatch<SetStateAction<CourseSectionDraft>>;
-  onStaffSearchChange: (value: string) => void;
 };
 
 export function CourseSectionAcademicFields({
@@ -32,52 +23,12 @@ export function CourseSectionAcademicFields({
   gradingBasisOptions,
   readOnlyInputStyles,
   referencesAreLoading,
-  staffLoading,
-  staffOptions,
-  staffSearchValue,
   setDraft,
-  onStaffSearchChange,
 }: CourseSectionAcademicFieldsProps) {
   return (
     <Stack gap="sm">
       <Divider label="Academic setup" labelPosition="left" />
       <Grid>
-        <Grid.Col span={{ base: 12, md: 5 }}>
-          <StaffCombobox
-            label="Teacher assignment"
-            placeholder="Search staff"
-            options={staffOptions}
-            value={staffSearchValue}
-            selectedStaffId={draft.teacherStaffId}
-            disabled={fieldsDisabled}
-            loading={staffLoading}
-            styles={readOnlyInputStyles}
-            onSearchChange={(value) => {
-              onStaffSearchChange(value);
-              setDraft((current) => ({
-                ...current,
-                teacherStaffId: null,
-                teacherAssignment: value,
-              }));
-            }}
-            onSelect={(staffId, label) => {
-              onStaffSearchChange(label);
-              setDraft((current) => ({
-                ...current,
-                teacherStaffId: staffId,
-                teacherAssignment: label,
-              }));
-            }}
-            onClear={() => {
-              onStaffSearchChange('');
-              setDraft((current) => ({
-                ...current,
-                teacherStaffId: null,
-                teacherAssignment: '',
-              }));
-            }}
-          />
-        </Grid.Col>
         <Grid.Col span={{ base: 12, md: 3 }}>
           <Select
             label="Academic division"

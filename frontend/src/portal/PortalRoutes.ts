@@ -23,6 +23,8 @@ export type PortalRouteItemKey =
   | 'student-transcript'
   | 'student-course-history'
   | 'student-programs'
+  | 'student-course-registration'
+  | 'student-schedule'
   | 'academic-schools'
   | 'academic-school-detail'
   | 'academic-departments'
@@ -34,8 +36,18 @@ export type PortalRouteItemKey =
   | 'academic-years-detail'
   | 'academic-year-courses'
   | 'course-section-detail'
+  | 'course-section-stage-wizard'
+  | 'teaching-schedule-search'
+  | 'teaching-schedule'
+  | 'teaching-schedule-detail'
+  | 'registration-groups'
+  | 'registration-group-builder'
+  | 'registration-group-publish'
+  | 'registration-group-unassigned-builder'
+  | 'registration-group-detail'
   | 'academic-term-detail'
-  | 'academic-term-group-detail';
+  | 'academic-term-group-detail'
+  | 'athletics';
 export type PortalRoutePath =
   | '/portal'
   | '/student/profile'
@@ -59,6 +71,8 @@ export type PortalRoutePath =
   | '/academics/transcript'
   | '/academics/course-history'
   | '/academics/student-programs'
+  | '/registration/course-registration'
+  | '/registration/schedule'
   | '/academics/schools'
   | '/academics/schools/:schoolId'
   | '/academics/departments'
@@ -70,10 +84,27 @@ export type PortalRoutePath =
   | '/academics/academic-years/:academicYearId'
   | '/academics/academic-years/:academicYearId/courses'
   | '/academics/course-sections/:sectionId'
+  | '/academics/academic-sub-term/:subTermId/section-stage'
+  | '/calendar/instructor-schedules'
+  | '/calendar/instructor-schedules/:instructorId'
+  | '/calendar/my-schedule'
+  | '/registration/groups'
+  | '/registration/groups/builder'
+  | '/registration/groups/publish'
+  | '/registration/groups/unassigned'
+  | '/registration/groups/:registrationGroupId'
+  | '/athletics'
   | '/academics/academic-sub-term/:subTermId'
   | '/academics/academic-terms/:termId';
 
-export type PortalRouteGroupKey = 'people' | 'catalog' | 'academics' | 'programs' | 'calendar';
+export type PortalRouteGroupKey =
+  | 'people'
+  | 'catalog'
+  | 'academics'
+  | 'programs'
+  | 'calendar'
+  | 'registration'
+  | 'athletics';
 
 export type PortalRouteItem = {
   kind: 'item';
@@ -282,6 +313,20 @@ export const portalRoutes: PortalRouteNode[] = [
         key: 'course-section-detail',
         label: 'Course Section Detail',
         path: '/academics/course-sections/:sectionId',
+        requiredRoles: [
+          PORTAL_ROLES.ADMIN,
+          PORTAL_ROLES.FACULTY,
+          PORTAL_ROLES.ADJUNCT,
+          PORTAL_ROLES.TEACHING_ASSISTANT,
+          PORTAL_ROLES.DEPARTMENT_HEAD,
+        ],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'course-section-stage-wizard',
+        label: 'Stage Course Sections',
+        path: '/academics/academic-sub-term/:subTermId/section-stage',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
       },
@@ -411,6 +456,112 @@ export const portalRoutes: PortalRouteNode[] = [
         key: 'academic-years-create',
         label: 'Create Academic Year',
         path: '/academics/academic-years/create',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'teaching-schedule-search',
+        label: 'Instructor Schedule Search',
+        path: '/calendar/instructor-schedules',
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'teaching-schedule',
+        label: 'My Schedule',
+        path: '/calendar/my-schedule',
+        requiredRoles: [PORTAL_ROLES.FACULTY],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'teaching-schedule-detail',
+        label: 'Instructor Schedule Detail',
+        path: '/calendar/instructor-schedules/:instructorId',
+        requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.DEPARTMENT_HEAD],
+        showInNav: false,
+      },
+    ],
+  },
+  {
+    kind: 'group',
+    key: 'registration',
+    label: 'Registration',
+    requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.STUDENT],
+    showInNav: true,
+    children: [
+      {
+        kind: 'item',
+        key: 'registration-groups',
+        label: 'Registration Groups',
+        path: '/registration/groups',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'student-course-registration',
+        label: 'Course Registration',
+        path: '/registration/course-registration',
+        requiredRoles: [PORTAL_ROLES.STUDENT],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'student-schedule',
+        label: 'My Schedule',
+        path: '/registration/schedule',
+        requiredRoles: [PORTAL_ROLES.STUDENT],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'registration-group-builder',
+        label: 'Registration Group Builder',
+        path: '/registration/groups/builder',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'registration-group-publish',
+        label: 'Publish Registration Groups',
+        path: '/registration/groups/publish',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'registration-group-unassigned-builder',
+        label: 'Unassigned Registration Students',
+        path: '/registration/groups/unassigned',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'registration-group-detail',
+        label: 'Registration Group Detail',
+        path: '/registration/groups/:registrationGroupId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+    ],
+  },
+  {
+    kind: 'group',
+    key: 'athletics',
+    label: 'Athletics',
+    requiredRoles: [PORTAL_ROLES.ADMIN],
+    showInNav: true,
+    children: [
+      {
+        kind: 'item',
+        key: 'athletics',
+        label: 'Athletics',
+        path: '/athletics',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: true,
       },

@@ -1,13 +1,15 @@
 package com.msm.sis.api.service.course;
 
 import com.msm.sis.api.dto.course.AddCourseSectionStudentRequest;
+import com.msm.sis.api.dto.course.CourseSectionInitialGradesResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentEnrollmentEventResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentEnrollmentEventListResponse;
-import com.msm.sis.api.dto.course.CourseSectionStudentGradeResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentListResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentResponse;
+import com.msm.sis.api.dto.course.InitialCourseSectionGradeRequest;
 import com.msm.sis.api.dto.course.PatchCourseSectionStudentEnrollmentRequest;
 import com.msm.sis.api.dto.course.PostCourseSectionStudentGradeRequest;
+import com.msm.sis.api.dto.course.PostInitialCourseSectionGradesRequest;
 import com.msm.sis.api.entity.CourseSection;
 import com.msm.sis.api.entity.GradeMark;
 import com.msm.sis.api.entity.GradingBasis;
@@ -17,11 +19,13 @@ import com.msm.sis.api.entity.StudentSectionEnrollment;
 import com.msm.sis.api.entity.StudentSectionEnrollmentStatus;
 import com.msm.sis.api.entity.StudentSectionGrade;
 import com.msm.sis.api.entity.StudentSectionGradeType;
+import com.msm.sis.api.entity.StudentSectionWaitlistOffer;
 import com.msm.sis.api.mapper.StudentSectionEnrollmentMapper;
 import com.msm.sis.api.repository.CourseSectionRepository;
 import com.msm.sis.api.repository.StudentRepository;
 import com.msm.sis.api.repository.StudentSectionEnrollmentRepository;
 import com.msm.sis.api.repository.StudentSectionGradeRepository;
+import com.msm.sis.api.repository.StudentSectionWaitlistOfferRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,9 +37,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.msm.sis.api.util.PagingUtils.validatePageRequest;
@@ -49,6 +57,19 @@ public class StudentSectionEnrollmentService {
     private static final String DEFAULT_EVENT_TYPE_ADDED = "ADDED";
     private static final String EVENT_TYPE_GRADE_POSTED = "GRADE_POSTED";
     private static final String EVENT_TYPE_GRADE_CHANGED = "GRADE_CHANGED";
+    private static final Set<String> GRADEABLE_ENROLLMENT_STATUS_CODES = Set.of(
+            "REGISTERED",
+            "IN_PROGRESS",
+            "COMPLETED"
+    );
+    private static final Set<String> GRADEABLE_SECTION_STATUS_CODES = Set.of(
+            "IN_PROGRESS",
+            "COMPLETED"
+    );
+    private static final Set<String> POSTABLE_GRADE_TYPE_CODES = Set.of(
+            "MIDTERM",
+            "FINAL"
+    );
 
     private static final Map<String, String> SORT_FIELDS = Map.of(
             "student", "student.lastName",
@@ -66,7 +87,10 @@ public class StudentSectionEnrollmentService {
     private final StudentSectionEnrollmentPatchService enrollmentPatchService;
     private final StudentSectionEnrollmentReferenceResolver referenceResolver;
     private final StudentSectionEnrollmentStatusService enrollmentStatusService;
+    private final StudentSectionWaitlistActivationService waitlistActivationService;
+    private final StudentSectionWaitlistExpirationService waitlistExpirationService;
     private final StudentSectionGradeRepository gradeRepository;
+    private final StudentSectionWaitlistOfferRepository waitlistOfferRepository;
 
     @Transactional(readOnly = true)
     public CourseSectionStudentListResponse getSectionStudents(
@@ -85,13 +109,16 @@ public class StudentSectionEnrollmentService {
                 pageable
         );
         Map<Long, List<StudentSectionGrade>> currentGrades = findCurrentGrades(enrollmentsPage.getContent());
+        Map<Long, StudentSectionWaitlistOffer> waitlistOffersByEnrollmentId =
+                findLatestWaitlistOffers(enrollmentsPage.getContent());
 
         return new CourseSectionStudentListResponse(
                 sectionId,
                 enrollmentsPage.getContent().stream()
                         .map(enrollment -> studentSectionEnrollmentMapper.toStudentResponse(
                                 enrollment,
-                                currentGrades.get(enrollment.getId())
+                                currentGrades.get(enrollment.getId()),
+                                waitlistOffersByEnrollmentId.get(enrollment.getId())
                         ))
                         .toList(),
                 enrollmentsPage.getNumber(),
@@ -113,7 +140,7 @@ public class StudentSectionEnrollmentService {
                 .findBySectionIdAndEnrollmentId(sectionId, enrollmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        return studentSectionEnrollmentMapper.toStudentResponse(enrollment, enrollment.getGrades());
+        return mapEnrollmentWithFreshGrades(enrollment);
     }
 
     @Transactional
@@ -165,7 +192,7 @@ public class StudentSectionEnrollmentService {
                 request.manualAddReason()
         );
 
-        return studentSectionEnrollmentMapper.toStudentResponse(savedEnrollment, List.of());
+        return studentSectionEnrollmentMapper.toStudentResponse(savedEnrollment, List.of(), null);
     }
 
     @Transactional
@@ -197,13 +224,104 @@ public class StudentSectionEnrollmentService {
                     actorUser,
                     request.getReason().orElse(null)
             );
+            compactWaitlistIfEnrollmentLeftQueue(savedEnrollment, priorStatus);
+            activateWaitlistIfSeatWasReleased(savedEnrollment, priorStatus);
         }
 
-        return studentSectionEnrollmentMapper.toStudentResponse(savedEnrollment, savedEnrollment.getGrades());
+        return studentSectionEnrollmentMapper.toStudentResponse(
+                savedEnrollment,
+                savedEnrollment.getGrades(),
+                findLatestWaitlistOffer(savedEnrollment.getId())
+        );
     }
 
     @Transactional
-    public CourseSectionStudentGradeResponse postGrade(
+    public CourseSectionStudentResponse expireWaitlistOfferNow(Long sectionId, Long enrollmentId) {
+        validatePositiveId(sectionId, "Course section id");
+        validatePositiveId(enrollmentId, "Enrollment id");
+
+        StudentSectionEnrollment enrollment = enrollmentRepository
+                .findBySectionIdAndEnrollmentId(sectionId, enrollmentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        StudentSectionWaitlistOffer offer = waitlistOfferRepository
+                .findByStudentSectionEnrollmentIdAndStatus(enrollmentId, "OFFERED")
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Student does not have an active waitlist offer."
+                ));
+
+        offer.setExpiresAt(java.time.LocalDateTime.now());
+        waitlistOfferRepository.saveAndFlush(offer);
+
+        return mapEnrollmentWithFreshGrades(enrollment);
+    }
+
+    @Transactional
+    public CourseSectionStudentResponse runExpiredWaitlistOfferCleanup(Long sectionId, Long enrollmentId) {
+        validatePositiveId(sectionId, "Course section id");
+        validatePositiveId(enrollmentId, "Enrollment id");
+
+        StudentSectionEnrollment enrollment = enrollmentRepository
+                .findBySectionIdAndEnrollmentId(sectionId, enrollmentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        waitlistExpirationService.expireOverdueOffers();
+
+        StudentSectionEnrollment refreshedEnrollment = enrollmentRepository
+                .findBySectionIdAndEnrollmentId(sectionId, enrollmentId)
+                .orElse(enrollment);
+        return mapEnrollmentWithFreshGrades(refreshedEnrollment);
+    }
+
+    private void activateWaitlistIfSeatWasReleased(
+            StudentSectionEnrollment enrollment,
+            StudentSectionEnrollmentStatus priorStatus
+    ) {
+        if (!isSeatHoldingStatus(priorStatus) || !isSeatReleasingStatus(enrollment.getStatus())) {
+            return;
+        }
+
+        CourseSection section = enrollment.getCourseSection();
+        if (section == null || section.getId() == null || !section.isWaitlistAllowed()) {
+            return;
+        }
+
+        waitlistActivationService.activateNextWaitlistedStudent(section.getId());
+    }
+
+    private void compactWaitlistIfEnrollmentLeftQueue(
+            StudentSectionEnrollment enrollment,
+            StudentSectionEnrollmentStatus priorStatus
+    ) {
+        if (!isWaitlistedStatus(priorStatus) || isWaitlistedStatus(enrollment.getStatus())) {
+            return;
+        }
+
+        CourseSection section = enrollment.getCourseSection();
+        if (section == null || section.getId() == null) {
+            return;
+        }
+
+        enrollmentStatusService.compactWaitlistPositions(section.getId());
+    }
+
+    private boolean isSeatHoldingStatus(StudentSectionEnrollmentStatus status) {
+        String code = status == null ? null : status.getCode();
+        return "REGISTERED".equalsIgnoreCase(code) || "IN_PROGRESS".equalsIgnoreCase(code);
+    }
+
+    private boolean isSeatReleasingStatus(StudentSectionEnrollmentStatus status) {
+        String code = status == null ? null : status.getCode();
+        return "DROPPED".equalsIgnoreCase(code) || "WITHDRAWN".equalsIgnoreCase(code);
+    }
+
+    private boolean isWaitlistedStatus(StudentSectionEnrollmentStatus status) {
+        String code = status == null ? null : status.getCode();
+        return "WAITLISTED".equalsIgnoreCase(code);
+    }
+
+    @Transactional
+    public CourseSectionStudentResponse postGrade(
             Long sectionId,
             Long enrollmentId,
             PostCourseSectionStudentGradeRequest request,
@@ -219,19 +337,38 @@ public class StudentSectionEnrollmentService {
         StudentSectionGradeType gradeType = referenceResolver.resolveGradeType(request.gradeTypeCode());
         GradeMark gradeMark = referenceResolver.resolveGradeMark(request.gradeMarkCode());
         SisUser actorUser = referenceResolver.resolveOptionalUser(actorUserId);
-
-        boolean changedExistingGrade = gradeRepository.expireCurrentGradesByEnrollmentIdAndGradeTypeCode(
+        Optional<StudentSectionGrade> currentGrade = gradeRepository.findCurrentGradeByEnrollmentIdAndGradeTypeCode(
                 enrollmentId,
                 gradeType.getCode()
-        ) > 0;
+        );
+
+        validateGradePost(enrollment, gradeType);
+
+        if (currentGrade.isPresent() && currentGrade.get().getGradeMark() != null
+                && currentGrade.get().getGradeMark().getId().equals(gradeMark.getId())) {
+            return mapEnrollmentWithFreshGrades(enrollment);
+        }
+
+        requireReasonForGradeChange(currentGrade, request);
+
+        boolean changedExistingGrade = currentGrade.isPresent();
+        currentGrade.ifPresent(previousGrade -> {
+            previousGrade.setCurrent(false);
+            gradeRepository.saveAndFlush(previousGrade);
+        });
 
         StudentSectionGrade grade = new StudentSectionGrade();
         grade.setStudentSectionEnrollment(enrollment);
         grade.setGradeType(gradeType);
         grade.setGradeMark(gradeMark);
+        currentGrade.ifPresent(previousGrade -> {
+            grade.setPreviousGradeMark(previousGrade.getGradeMark());
+            grade.setChangedFromGrade(previousGrade);
+            grade.setChangeReason(trimToNull(request.reason()));
+        });
         grade.setPostedByUser(actorUser);
 
-        StudentSectionGrade savedGrade = gradeRepository.saveAndFlush(grade);
+        gradeRepository.saveAndFlush(grade);
         enrollmentEventService.createEvent(
                 enrollment,
                 changedExistingGrade ? EVENT_TYPE_GRADE_CHANGED : EVENT_TYPE_GRADE_POSTED,
@@ -241,7 +378,160 @@ public class StudentSectionEnrollmentService {
                 null
         );
 
-        return studentSectionEnrollmentMapper.toGradeResponse(savedGrade);
+        return mapEnrollmentWithFreshGrades(enrollment);
+    }
+
+    @Transactional
+    public CourseSectionInitialGradesResponse postInitialGrades(
+            Long sectionId,
+            PostInitialCourseSectionGradesRequest request,
+            Long actorUserId
+    ) {
+        validatePositiveId(sectionId, "Course section id");
+        requireRequestBody(request);
+
+        if (request.grades() == null || request.grades().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one grade is required.");
+        }
+
+        SisUser actorUser = referenceResolver.resolveOptionalUser(actorUserId);
+        Map<Long, StudentSectionEnrollment> updatedEnrollments = new LinkedHashMap<>();
+        Set<String> requestKeys = new HashSet<>();
+
+        for (InitialCourseSectionGradeRequest initialGradeRequest : request.grades()) {
+            validatePositiveId(initialGradeRequest.enrollmentId(), "Enrollment id");
+
+            StudentSectionEnrollment enrollment = enrollmentRepository
+                    .findBySectionIdAndEnrollmentId(sectionId, initialGradeRequest.enrollmentId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+            StudentSectionGradeType gradeType = referenceResolver.resolveGradeType(initialGradeRequest.gradeTypeCode());
+            GradeMark gradeMark = referenceResolver.resolveGradeMark(initialGradeRequest.gradeMarkCode());
+
+            validateGradePost(enrollment, gradeType);
+            validateUniqueInitialGradeRequest(requestKeys, enrollment.getId(), gradeType);
+            requireMissingInitialGrade(enrollment.getId(), gradeType);
+
+            StudentSectionGrade grade = new StudentSectionGrade();
+            grade.setStudentSectionEnrollment(enrollment);
+            grade.setGradeType(gradeType);
+            grade.setGradeMark(gradeMark);
+            grade.setPreviousGradeMark(null);
+            grade.setChangedFromGrade(null);
+            grade.setChangeReason(null);
+            grade.setCurrent(true);
+            grade.setPostedByUser(actorUser);
+
+            gradeRepository.saveAndFlush(grade);
+            enrollmentEventService.createEvent(
+                    enrollment,
+                    EVENT_TYPE_GRADE_POSTED,
+                    enrollment.getStatus(),
+                    enrollment.getStatus(),
+                    actorUser,
+                    null
+            );
+
+            updatedEnrollments.put(enrollment.getId(), enrollment);
+        }
+
+        List<CourseSectionStudentResponse> updatedStudents = new ArrayList<>();
+        for (StudentSectionEnrollment enrollment : updatedEnrollments.values()) {
+            updatedStudents.add(mapEnrollmentWithFreshGrades(enrollment));
+        }
+
+        return new CourseSectionInitialGradesResponse(sectionId, updatedStudents);
+    }
+
+    private void validateUniqueInitialGradeRequest(
+            Set<String> requestKeys,
+            Long enrollmentId,
+            StudentSectionGradeType gradeType
+    ) {
+        String requestKey = enrollmentId + ":" + gradeType.getCode().toUpperCase();
+        if (!requestKeys.add(requestKey)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Only one initial grade can be submitted per student and grade type."
+            );
+        }
+    }
+
+    private void requireMissingInitialGrade(Long enrollmentId, StudentSectionGradeType gradeType) {
+        if (gradeRepository.findCurrentGradeByEnrollmentIdAndGradeTypeCode(
+                enrollmentId,
+                gradeType.getCode()
+        ).isPresent()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Initial " + gradeType.getName() + " grade has already been posted."
+            );
+        }
+    }
+
+    private void validateGradePost(
+            StudentSectionEnrollment enrollment,
+            StudentSectionGradeType gradeType
+    ) {
+        validateGradeableSectionStatus(enrollment);
+        validateGradeableEnrollmentStatus(enrollment);
+        validatePostableGradeType(gradeType);
+    }
+
+    private void requireReasonForGradeChange(
+            Optional<StudentSectionGrade> currentGrade,
+            PostCourseSectionStudentGradeRequest request
+    ) {
+        if (currentGrade.isPresent() && trimToNull(request.reason()) == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A reason is required when changing an existing grade."
+            );
+        }
+    }
+
+    private CourseSectionStudentResponse mapEnrollmentWithFreshGrades(StudentSectionEnrollment enrollment) {
+        return studentSectionEnrollmentMapper.toStudentResponse(
+                enrollment,
+                gradeRepository.findAllByEnrollmentId(enrollment.getId()),
+                findLatestWaitlistOffer(enrollment.getId())
+        );
+    }
+
+    private void validateGradeableSectionStatus(StudentSectionEnrollment enrollment) {
+        CourseSection section = enrollment.getCourseSection();
+        String statusCode = section == null || section.getStatus() == null
+                ? null
+                : section.getStatus().getCode();
+
+        if (statusCode == null || !GRADEABLE_SECTION_STATUS_CODES.contains(statusCode.toUpperCase())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Grades can only be posted when the course section is in progress or completed."
+            );
+        }
+    }
+
+    private void validateGradeableEnrollmentStatus(StudentSectionEnrollment enrollment) {
+        StudentSectionEnrollmentStatus status = enrollment.getStatus();
+        String statusCode = status == null ? null : status.getCode();
+
+        if (statusCode == null || !GRADEABLE_ENROLLMENT_STATUS_CODES.contains(statusCode.toUpperCase())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Grades can only be posted for registered or completed enrollments."
+            );
+        }
+    }
+
+    private void validatePostableGradeType(StudentSectionGradeType gradeType) {
+        String gradeTypeCode = gradeType == null ? null : gradeType.getCode();
+
+        if (gradeTypeCode == null || !POSTABLE_GRADE_TYPE_CODES.contains(gradeTypeCode.toUpperCase())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Only midterm and final grades can be posted."
+            );
+        }
     }
 
     @Transactional(readOnly = true)
@@ -285,6 +575,37 @@ public class StudentSectionEnrollmentService {
 
         return gradeRepository.findCurrentGradesByEnrollmentIds(enrollmentIds).stream()
                 .collect(Collectors.groupingBy(grade -> grade.getStudentSectionEnrollment().getId()));
+    }
+
+    private Map<Long, StudentSectionWaitlistOffer> findLatestWaitlistOffers(
+            List<StudentSectionEnrollment> enrollments
+    ) {
+        List<Long> enrollmentIds = enrollments.stream()
+                .map(StudentSectionEnrollment::getId)
+                .filter(id -> id != null)
+                .toList();
+        if (enrollmentIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return waitlistOfferRepository.findByStudentSectionEnrollmentIdInOrderByCreatedAtDesc(enrollmentIds).stream()
+                .filter(offer -> offer.getStudentSectionEnrollment() != null)
+                .collect(Collectors.toMap(
+                        offer -> offer.getStudentSectionEnrollment().getId(),
+                        offer -> offer,
+                        (existing, ignored) -> existing
+                ));
+    }
+
+    private StudentSectionWaitlistOffer findLatestWaitlistOffer(Long enrollmentId) {
+        if (enrollmentId == null) {
+            return null;
+        }
+
+        return waitlistOfferRepository.findByStudentSectionEnrollmentIdInOrderByCreatedAtDesc(List.of(enrollmentId))
+                .stream()
+                .findFirst()
+                .orElse(null);
     }
 
     private Sort buildSort(String sortBy, String sortDirection) {

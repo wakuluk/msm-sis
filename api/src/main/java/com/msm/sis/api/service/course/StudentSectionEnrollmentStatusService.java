@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
@@ -22,6 +23,10 @@ import static com.msm.sis.api.util.TextUtils.trimToNull;
 public class StudentSectionEnrollmentStatusService {
     private static final String REGISTERED_STATUS_CODE = "REGISTERED";
     private static final String WAITLISTED_STATUS_CODE = "WAITLISTED";
+    private static final List<String> SEAT_HOLDING_STATUS_CODES = List.of(
+            "REGISTERED",
+            "IN_PROGRESS"
+    );
 
     private final StudentSectionEnrollmentRepository enrollmentRepository;
 
@@ -32,13 +37,10 @@ public class StudentSectionEnrollmentStatusService {
             return requestedStatusCode;
         }
 
-        long registeredCount = enrollmentRepository.countBySectionIdAndStatusCode(
-                courseSection.getId(),
-                REGISTERED_STATUS_CODE
-        );
-        validateHardCapacity(courseSection, registeredCount);
+        long seatHoldingCount = countSeatHoldingEnrollments(courseSection);
+        validateHardCapacity(courseSection, seatHoldingCount);
 
-        boolean hasCapacity = courseSection.getCapacity() == null || registeredCount < courseSection.getCapacity();
+        boolean hasCapacity = courseSection.getCapacity() == null || seatHoldingCount < courseSection.getCapacity();
         boolean capacityOverride = Optional.ofNullable(request.capacityOverride()).orElse(false);
 
         if (hasCapacity || capacityOverride) {
@@ -87,6 +89,21 @@ public class StudentSectionEnrollmentStatusService {
         }
     }
 
+    public void compactWaitlistPositions(Long sectionId) {
+        List<StudentSectionEnrollment> waitlistedEnrollments = enrollmentRepository.findWaitlistedQueueBySectionId(sectionId);
+        if (waitlistedEnrollments.isEmpty() || isAlreadyCompact(waitlistedEnrollments)) {
+            return;
+        }
+
+        waitlistedEnrollments.forEach(enrollment -> enrollment.setWaitlistPosition(null));
+        enrollmentRepository.saveAllAndFlush(waitlistedEnrollments);
+
+        for (int index = 0; index < waitlistedEnrollments.size(); index++) {
+            waitlistedEnrollments.get(index).setWaitlistPosition(index + 1);
+        }
+        enrollmentRepository.saveAllAndFlush(waitlistedEnrollments);
+    }
+
     public String statusChangeEventType(
             StudentSectionEnrollmentStatus fromStatus,
             StudentSectionEnrollmentStatus toStatus
@@ -108,16 +125,19 @@ public class StudentSectionEnrollmentStatusService {
             return;
         }
 
-        long registeredCount = enrollmentRepository.countBySectionIdAndStatusCode(
-                courseSection.getId(),
-                REGISTERED_STATUS_CODE
-        );
-        validateHardCapacity(courseSection, registeredCount);
+        validateHardCapacity(courseSection, countSeatHoldingEnrollments(courseSection));
     }
 
-    private void validateHardCapacity(CourseSection courseSection, long registeredCount) {
+    private long countSeatHoldingEnrollments(CourseSection courseSection) {
+        return enrollmentRepository.countBySectionIdAndStatusCodes(
+                courseSection.getId(),
+                SEAT_HOLDING_STATUS_CODES
+        );
+    }
+
+    private void validateHardCapacity(CourseSection courseSection, long seatHoldingCount) {
         Integer hardCapacity = courseSection.getHardCapacity();
-        if (hardCapacity != null && registeredCount >= hardCapacity) {
+        if (hardCapacity != null && seatHoldingCount >= hardCapacity) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Course section has reached its hard capacity."
@@ -138,6 +158,17 @@ public class StudentSectionEnrollmentStatusService {
 
     private int nextWaitlistPosition(Long sectionId) {
         return enrollmentRepository.findMaxWaitlistPositionBySectionId(sectionId) + 1;
+    }
+
+    private boolean isAlreadyCompact(List<StudentSectionEnrollment> waitlistedEnrollments) {
+        for (int index = 0; index < waitlistedEnrollments.size(); index++) {
+            Integer expectedPosition = index + 1;
+            if (!expectedPosition.equals(waitlistedEnrollments.get(index).getWaitlistPosition())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private boolean isRegistered(StudentSectionEnrollmentStatus status) {

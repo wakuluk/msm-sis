@@ -1,5 +1,6 @@
 // Shared type and initial-state definitions for the section workspace.
 // Describes section previews, editable draft state, search filters, reference loading state, and select options.
+import type { CourseSectionInstructorConflictResponse } from '@/services/schemas/course-schemas';
 import type { CourseSectionReferenceOptionsResponse } from '@/services/schemas/reference-schemas';
 
 export type CourseSectionPreview = {
@@ -13,10 +14,14 @@ export type CourseSectionPreview = {
   statusCode: string;
   statusName: string;
   academicDivisionCode: string | null;
+  academicDivisionName: string | null;
   deliveryModeCode: string | null;
+  deliveryModeName: string | null;
   gradingBasisCode: string | null;
+  gradingBasisName: string | null;
   primaryStaffId: number | null;
   instructor: string;
+  instructors: ReadonlyArray<CourseSectionInstructorDraft>;
   meetingPattern: string;
   room: string;
   credits: number | null;
@@ -29,6 +34,17 @@ export type CourseSectionPreview = {
     startTime: string | null;
     endTime: string | null;
   }>;
+};
+
+export type CourseSectionInstructorDraft = {
+  sectionInstructorId: number | null;
+  staffId: number | null;
+  label: string;
+  email: string | null;
+  roleCode: string | null;
+  roleName: string | null;
+  canViewGrades: boolean;
+  canManageGrades: boolean;
 };
 
 export type CourseSectionSearchValues = {
@@ -49,8 +65,7 @@ export type MeetingDaySchedule = {
 export type CourseSectionDraft = {
   sectionCode: string;
   honors: boolean;
-  teacherAssignment: string;
-  teacherStaffId: number | null;
+  instructors: CourseSectionInstructorDraft[];
   academicDivision: string | null;
   deliveryMode: string | null;
   gradingBasis: string | null;
@@ -68,6 +83,16 @@ export type SectionReferenceState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
   | { status: 'success'; response: CourseSectionReferenceOptionsResponse };
+
+export type CourseSectionMutationState =
+  | { status: 'idle' }
+  | { status: 'saving' }
+  | { status: 'error'; message: string }
+  | {
+      status: 'conflict';
+      message: string;
+      conflicts: CourseSectionInstructorConflictResponse[];
+    };
 
 export type SelectOption = {
   value: string;
@@ -111,8 +136,7 @@ export const initialMeetingSchedule = Object.fromEntries(
 export const initialCourseSectionDraft: CourseSectionDraft = {
   sectionCode: '',
   honors: false,
-  teacherAssignment: '',
-  teacherStaffId: null,
+  instructors: [],
   academicDivision: null,
   deliveryMode: null,
   gradingBasis: null,

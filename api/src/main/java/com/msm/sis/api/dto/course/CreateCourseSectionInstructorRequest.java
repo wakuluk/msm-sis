@@ -3,8 +3,6 @@ package com.msm.sis.api.dto.course;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
-
 public record CreateCourseSectionInstructorRequest(
         @NotNull
         Long staffId,
@@ -12,10 +10,8 @@ public record CreateCourseSectionInstructorRequest(
         @Size(max = 50)
         String roleCode,
 
-        boolean primary,
+        Boolean canViewGrades,
 
-        LocalDate assignmentStartDate,
-
-        LocalDate assignmentEndDate
+        Boolean canManageGrades
 ) {
 }

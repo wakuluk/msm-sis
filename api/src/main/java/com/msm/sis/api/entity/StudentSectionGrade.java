@@ -42,6 +42,19 @@ public class StudentSectionGrade {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "previous_grade_mark_id")
+    private GradeMark previousGradeMark;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "changed_from_grade_id")
+    private StudentSectionGrade changedFromGrade;
+
+    @Column(name = "change_reason", length = 1000)
+    private String changeReason;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "posted_by_user_id")
     private SisUser postedByUser;
 

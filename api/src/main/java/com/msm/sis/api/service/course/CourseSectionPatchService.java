@@ -1,8 +1,11 @@
 package com.msm.sis.api.service.course;
 
 import com.msm.sis.api.dto.course.CourseSectionDetailResponse;
+import com.msm.sis.api.dto.course.CreateCourseSectionInstructorRequest;
+import com.msm.sis.api.dto.course.CreateCourseSectionMeetingRequest;
 import com.msm.sis.api.dto.course.PatchCourseSectionRequest;
 import com.msm.sis.api.entity.AcademicDivision;
+import com.msm.sis.api.entity.AcademicSubTerm;
 import com.msm.sis.api.entity.CourseOffering;
 import com.msm.sis.api.entity.CourseOfferingSubTerm;
 import com.msm.sis.api.entity.CourseOfferingSubTermId;
@@ -16,6 +19,7 @@ import com.msm.sis.api.mapper.CourseSectionMapper;
 import com.msm.sis.api.patch.PatchValue;
 import com.msm.sis.api.repository.AcademicDivisionRepository;
 import com.msm.sis.api.repository.CourseOfferingSubTermRepository;
+import com.msm.sis.api.repository.CourseSectionInstructorRepository;
 import com.msm.sis.api.repository.CourseSectionRepository;
 import com.msm.sis.api.repository.CourseSectionStatusRepository;
 import com.msm.sis.api.repository.DeliveryModeRepository;
@@ -38,12 +42,14 @@ import static com.msm.sis.api.util.TextUtils.trimToNull;
 public class CourseSectionPatchService {
     private final CourseSectionAssignmentService courseSectionAssignmentService;
     private final CourseOfferingSubTermRepository courseOfferingSubTermRepository;
+    private final CourseSectionInstructorRepository courseSectionInstructorRepository;
     private final CourseSectionRepository courseSectionRepository;
     private final CourseSectionStatusRepository courseSectionStatusRepository;
     private final AcademicDivisionRepository academicDivisionRepository;
     private final DeliveryModeRepository deliveryModeRepository;
     private final GradingBasisRepository gradingBasisRepository;
     private final CourseSectionMapper courseSectionMapper;
+    private final CourseSectionInstructorConflictService courseSectionInstructorConflictService;
     private final CourseSectionValidationService courseSectionValidationService;
 
     @Transactional
@@ -61,9 +67,10 @@ public class CourseSectionPatchService {
         Long courseOfferingId = courseOffering.getId();
         Long finalSubTermId = request.getSubTermId().orElse(courseSection.getSubTerm().getId());
         String finalSectionLetter = request.getSectionLetter().isPresent()
-                ? request.getSectionLetter().getValue().trim().toUpperCase(Locale.US)
+                ? courseSectionValidationService.normalizeSectionLetter(request.getSectionLetter().getValue())
                 : courseSection.getSectionLetter();
         boolean finalHonors = request.getHonors().orElse(courseSection.isHonors());
+        AcademicSubTerm finalSubTerm = courseSection.getSubTerm();
 
         if (request.getCredits().isPresent()) {
             courseSectionValidationService.validateCredits(courseOffering, request.getCredits().getValue());
@@ -86,7 +93,8 @@ public class CourseSectionPatchService {
                             HttpStatus.BAD_REQUEST,
                             "Course offering is not assigned to the requested academic sub term."
                     ));
-            courseSection.setSubTerm(courseOfferingSubTerm.getSubTerm());
+            finalSubTerm = courseOfferingSubTerm.getSubTerm();
+            courseSection.setSubTerm(finalSubTerm);
         }
 
         PatchValue<CourseSectionStatus> status = resolveRequiredReferencePatch(
@@ -113,6 +121,14 @@ public class CourseSectionPatchService {
             courseSectionValidationService.validateSectionGradingBasis(gradingBasis.getValue());
         }
 
+        CourseSectionStatus finalStatus = status.isPresent() ? status.getValue() : courseSection.getStatus();
+        List<CreateCourseSectionInstructorRequest> finalInstructors = request.getInstructors().isPresent()
+                ? request.getInstructors().getValue()
+                : toInstructorRequests(courseSection.getInstructors());
+        List<CreateCourseSectionMeetingRequest> finalMeetings = request.getMeetings().isPresent()
+                ? request.getMeetings().getValue()
+                : toMeetingRequests(courseSection.getMeetings());
+
         courseSectionMapper.applyPatch(
                 courseSection,
                 request,
@@ -123,6 +139,15 @@ public class CourseSectionPatchService {
                 gradingBasis
         );
 
+        if (!isCancelled(finalStatus)) {
+            courseSectionInstructorConflictService.assertNoConflicts(
+                    sectionId,
+                    finalSubTerm,
+                    finalInstructors,
+                    finalMeetings
+            );
+        }
+
         CourseSection savedCourseSection = courseSectionRepository.saveAndFlush(courseSection);
 
         if (request.getInstructors().isPresent()) {
@@ -130,7 +155,11 @@ public class CourseSectionPatchService {
                     savedCourseSection,
                     request.getInstructors().getValue()
             );
-            savedCourseSection.setInstructors(instructors);
+            savedCourseSection.setInstructors(
+                    instructors.isEmpty()
+                            ? List.of()
+                            : courseSectionInstructorRepository.findAllByCourseSectionId(savedCourseSection.getId())
+            );
         }
 
         if (request.getMeetings().isPresent()) {
@@ -169,6 +198,46 @@ public class CourseSectionPatchService {
         return request.getSubTermId().isPresent()
                 || request.getSectionLetter().isPresent()
                 || request.getHonors().isPresent();
+    }
+
+    private List<CreateCourseSectionInstructorRequest> toInstructorRequests(List<CourseSectionInstructor> instructors) {
+        if (instructors == null || instructors.isEmpty()) {
+            return List.of();
+        }
+
+        return instructors.stream()
+                .filter(instructor -> instructor.getInstructorStaff() != null)
+                .map(instructor -> new CreateCourseSectionInstructorRequest(
+                        instructor.getInstructorStaff().getId(),
+                        instructor.getRole() == null ? null : instructor.getRole().getCode(),
+                        instructor.isCanViewGrades(),
+                        instructor.isCanManageGrades()
+                ))
+                .toList();
+    }
+
+    private List<CreateCourseSectionMeetingRequest> toMeetingRequests(List<CourseSectionMeeting> meetings) {
+        if (meetings == null || meetings.isEmpty()) {
+            return List.of();
+        }
+
+        return meetings.stream()
+                .map(meeting -> new CreateCourseSectionMeetingRequest(
+                        meeting.getMeetingType() == null ? null : meeting.getMeetingType().getCode(),
+                        meeting.getDayOfWeek(),
+                        meeting.getStartTime(),
+                        meeting.getEndTime(),
+                        meeting.getBuilding(),
+                        meeting.getRoom(),
+                        meeting.getStartDate(),
+                        meeting.getEndDate(),
+                        meeting.getSequenceNumber()
+                ))
+                .toList();
+    }
+
+    private boolean isCancelled(CourseSectionStatus status) {
+        return status != null && "CANCELLED".equalsIgnoreCase(status.getCode());
     }
 
     private <T> PatchValue<T> resolveRequiredReferencePatch(

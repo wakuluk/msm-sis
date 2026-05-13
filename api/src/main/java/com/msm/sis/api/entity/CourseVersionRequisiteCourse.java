@@ -47,6 +47,9 @@ public class CourseVersionRequisiteCourse {
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
 
+    @Column(name = "minimum_grade")
+    private String minimumGrade;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

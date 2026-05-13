@@ -57,4 +57,76 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             @Param("countryCode") String countryCode,
             Pageable pageable
     );
+
+    @Query(value = """
+            select
+                student.student_id as studentId,
+                student.alt_id as studentNumber,
+                student.first_name as firstName,
+                student.last_name as lastName,
+                student.email as email,
+                class_standing.class_standing_name as classStanding,
+                cast(extract(year from student.estimated_grad_date) as int) as classOf
+            from student student
+            left join class_standing class_standing
+              on class_standing.class_standing_id = student.class_standing_id
+            where student.is_disabled = false
+              and exists (
+                  select 1
+                  from student_academic_career student_academic_career
+                  where student_academic_career.student_id = student.student_id
+                    and upper(student_academic_career.status) = 'ACTIVE'
+                    and student_academic_career.effective_end_date is null
+              )
+              and (
+                   cast(:search as text) is null
+                   or cast(student.student_id as text) = cast(:search as text)
+                   or lower(coalesce(student.alt_id, '')) like concat('%', lower(cast(:search as text)), '%')
+                   or lower(coalesce(student.email, '')) like concat('%', lower(cast(:search as text)), '%')
+                   or lower(coalesce(student.first_name, '')) like concat('%', lower(cast(:search as text)), '%')
+                   or lower(coalesce(student.last_name, '')) like concat('%', lower(cast(:search as text)), '%')
+                   or lower(concat(coalesce(student.first_name, ''), ' ', coalesce(student.last_name, '')))
+                        like concat('%', lower(cast(:search as text)), '%')
+              )
+            order by student.last_name, student.first_name, student.student_id
+            limit :limit
+            """, nativeQuery = true)
+    List<RegistrationGroupStudentOptionProjection> findRegistrationGroupStudentOptions(
+            @Param("search") String search,
+            @Param("limit") int limit
+    );
+
+    @EntityGraph(attributePaths = {"classStanding"})
+    @Query("""
+            select student
+            from Student student
+            where student.disabled = false
+              and exists (
+                  select studentAcademicCareer.id
+                  from StudentAcademicCareer studentAcademicCareer
+                  where studentAcademicCareer.student.id = student.id
+                    and upper(studentAcademicCareer.status) = 'ACTIVE'
+                    and studentAcademicCareer.effectiveEndDate is null
+              )
+            order by student.lastName asc,
+                     student.firstName asc,
+                     student.id asc
+            """)
+    List<Student> findActiveStudentsForRegistrationGroupPreview();
+
+    interface RegistrationGroupStudentOptionProjection {
+        Long getStudentId();
+
+        String getStudentNumber();
+
+        String getFirstName();
+
+        String getLastName();
+
+        String getEmail();
+
+        String getClassStanding();
+
+        Integer getClassOf();
+    }
 }

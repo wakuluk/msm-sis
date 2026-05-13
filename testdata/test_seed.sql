@@ -70,10 +70,10 @@ VALUES
 
 INSERT INTO class_standing (class_standing_id, class_standing_name)
 VALUES
-    (1, 'First Age'),
-    (2, 'Second Age'),
-    (3, 'Third Age'),
-    (4, 'Fourth Age');
+    (1, 'Freshman'),
+    (2, 'Sophomore'),
+    (3, 'Junior'),
+    (4, 'Senior');
 
 INSERT INTO gender (gender_id, gender_name)
 VALUES
@@ -241,7 +241,9 @@ VALUES
     ('ADMIN'),
     ('STUDENT'),
     ('FACULTY'),
-    ('DEPARTMENT_HEAD')
+    ('DEPARTMENT_HEAD'),
+    ('ADJUNCT'),
+    ('TEACHING_ASSISTANT')
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role_id)

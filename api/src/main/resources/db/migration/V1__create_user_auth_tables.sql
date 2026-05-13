@@ -59,5 +59,7 @@ VALUES
     ('ADMIN'),
     ('STUDENT'),
     ('FACULTY'),
-    ('DEPARTMENT_HEAD')
+    ('DEPARTMENT_HEAD'),
+    ('ADJUNCT'),
+    ('TEACHING_ASSISTANT')
 ON CONFLICT (name) DO NOTHING;

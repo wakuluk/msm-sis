@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface GradeMarkRepository extends JpaRepository<GradeMark, Long> {
     Optional<GradeMark> findByCode(String code);
 
+    Optional<GradeMark> findByCodeAndActiveTrue(String code);
+
     List<GradeMark> findAllByActiveTrueOrderBySortOrderAsc();
 
     List<GradeMark> findAllByActiveTrueOrderByNameAsc();

@@ -12,7 +12,14 @@ import java.util.Optional;
 
 public interface StudentSectionGradeRepository extends JpaRepository<StudentSectionGrade, Long> {
 
-    @EntityGraph(attributePaths = {"studentSectionEnrollment", "gradeType", "gradeMark", "postedByUser"})
+    @EntityGraph(attributePaths = {
+            "studentSectionEnrollment",
+            "gradeType",
+            "gradeMark",
+            "previousGradeMark",
+            "changedFromGrade",
+            "postedByUser"
+    })
     @Query("""
             select grade
             from StudentSectionGrade grade
@@ -23,7 +30,14 @@ public interface StudentSectionGradeRepository extends JpaRepository<StudentSect
             @Param("enrollmentId") Long enrollmentId
     );
 
-    @EntityGraph(attributePaths = {"studentSectionEnrollment", "gradeType", "gradeMark", "postedByUser"})
+    @EntityGraph(attributePaths = {
+            "studentSectionEnrollment",
+            "gradeType",
+            "gradeMark",
+            "previousGradeMark",
+            "changedFromGrade",
+            "postedByUser"
+    })
     @Query("""
             select grade
             from StudentSectionGrade grade
@@ -35,7 +49,14 @@ public interface StudentSectionGradeRepository extends JpaRepository<StudentSect
             @Param("enrollmentIds") List<Long> enrollmentIds
     );
 
-    @EntityGraph(attributePaths = {"studentSectionEnrollment", "gradeType", "gradeMark", "postedByUser"})
+    @EntityGraph(attributePaths = {
+            "studentSectionEnrollment",
+            "gradeType",
+            "gradeMark",
+            "previousGradeMark",
+            "changedFromGrade",
+            "postedByUser"
+    })
     @Query("""
             select grade
             from StudentSectionGrade grade

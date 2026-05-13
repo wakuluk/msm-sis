@@ -97,6 +97,7 @@ export function CourseVersionDetailsSection({
                         <Table.Th>Type</Table.Th>
                         <Table.Th>Condition</Table.Th>
                         <Table.Th>Courses</Table.Th>
+                        <Table.Th>Minimum Grade</Table.Th>
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -123,6 +124,28 @@ export function CourseVersionDetailsSection({
                                     </Group>
                                   ))}
                             </Group>
+                          </Table.Td>
+                          <Table.Td>
+                            <Stack gap={4}>
+                              {group.courses.length === 0
+                                ? '-'
+                                : group.courses.map((course) => (
+                                    <Group
+                                      key={course.courseVersionRequisiteCourseId}
+                                      gap="xs"
+                                      wrap="nowrap"
+                                    >
+                                      <Text size="sm" c="dimmed">
+                                        {course.courseCode ?? '-'}
+                                      </Text>
+                                      <Text size="sm" fw={700}>
+                                        {group.requisiteType === 'PREREQUISITE'
+                                          ? course.minimumGrade ?? 'Passed course'
+                                          : '-'}
+                                      </Text>
+                                    </Group>
+                                  ))}
+                            </Stack>
                           </Table.Td>
                         </Table.Tr>
                       ))}

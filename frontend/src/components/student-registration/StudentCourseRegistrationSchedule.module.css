@@ -1,0 +1,80 @@
+.calendarShell {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.calendar {
+  width: 100%;
+  min-width: 0;
+  padding: var(--mantine-spacing-sm);
+}
+
+.calendar :global(.fc) {
+  --fc-border-color: var(--portal-ui-surface-border-color);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  --fc-today-bg-color: light-dark(rgb(228 244 255 / 0.62), rgb(28 126 214 / 0.16));
+
+  width: 100%;
+  max-width: 100%;
+  font-family: var(--portal-ui-font-family);
+}
+
+.calendar :global(.fc-scroller) {
+  scrollbar-gutter: stable;
+}
+
+.calendar :global(.fc-event) {
+  border: 0;
+  border-radius: var(--mantine-radius-sm);
+  padding: 0.15rem 0.2rem;
+}
+
+.subTermDateSummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--mantine-spacing-sm);
+}
+
+.subTermDateItem {
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  padding: var(--mantine-spacing-sm);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+}
+
+.eventContent {
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
+  line-height: 1.1;
+}
+
+.eventTitle {
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventTime,
+.eventStatus {
+  overflow: hidden;
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0.95;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventMeta {
+  overflow: hidden;
+  font-size: 0.64rem;
+  opacity: 0.9;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

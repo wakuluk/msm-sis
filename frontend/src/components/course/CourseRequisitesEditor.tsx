@@ -1,7 +1,10 @@
 import { Alert, Button, Group, Stack } from '@mantine/core';
 import { useState } from 'react';
 import type { CourseSearchResultResponse } from '@/services/schemas/course-search-schemas';
-import type { CourseVersionRequisiteType } from '@/services/schemas/course-schemas';
+import type {
+  CourseVersionRequisiteMinimumGrade,
+  CourseVersionRequisiteType,
+} from '@/services/schemas/course-schemas';
 import {
   courseSearchResultToDraft,
   createEmptyRequisiteCourse,
@@ -57,11 +60,7 @@ export function CourseRequisitesEditor({
     );
   }
 
-  function changeDepartment(
-    groupId: number,
-    courseDraftId: number,
-    departmentId: string | null
-  ) {
+  function changeDepartment(groupId: number, courseDraftId: number, departmentId: string | null) {
     if (groupId < 0 || courseDraftId < 0) {
       return;
     }
@@ -79,6 +78,7 @@ export function CourseRequisitesEditor({
                       courseId: '',
                       courseCode: '',
                       courseTitle: '',
+                      minimumGrade: null,
                     }
                   : course
               ),
@@ -136,9 +136,38 @@ export function CourseRequisitesEditor({
                       ...course,
                       ...(selectedCourse
                         ? courseSearchResultToDraft(selectedCourse)
-                        : { courseId: '', courseCode: '', courseTitle: '', lab: false }),
+                        : {
+                            courseId: '',
+                            courseCode: '',
+                            courseTitle: '',
+                            minimumGrade: null,
+                            lab: false,
+                          }),
                     }
                   : course
+              ),
+            }
+          : group
+      )
+    );
+  }
+
+  function changeMinimumGrade(
+    groupId: number,
+    courseDraftId: number,
+    minimumGrade: CourseVersionRequisiteMinimumGrade | null
+  ) {
+    if (groupId < 0 || courseDraftId < 0) {
+      return;
+    }
+
+    onChange((current) =>
+      current.map((group) =>
+        group.id === groupId
+          ? {
+              ...group,
+              courses: group.courses.map((course) =>
+                course.id === courseDraftId ? { ...course, minimumGrade } : course
               ),
             }
           : group
@@ -199,6 +228,7 @@ export function CourseRequisitesEditor({
               onAddCourse={addCourse}
               onChangeCourse={changeCourse}
               onChangeDepartment={changeDepartment}
+              onChangeMinimumGrade={changeMinimumGrade}
               onRemoveCourse={removeCourse}
               onRemoveGroup={removeGroup}
               onToggleLabOnly={toggleLabOnly}

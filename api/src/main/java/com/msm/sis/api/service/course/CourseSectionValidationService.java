@@ -17,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
@@ -27,14 +28,21 @@ import static com.msm.sis.api.util.ValidationUtils.requireRequestBody;
 public class CourseSectionValidationService {
     private final CourseSectionRepository courseSectionRepository;
 
+    public String normalizeSectionLetter(String sectionLetter) {
+        String trimmedSectionLetter = trimToNull(sectionLetter);
+        return trimmedSectionLetter == null ? null : trimmedSectionLetter.toUpperCase(Locale.US);
+    }
+
     public void validateCreateRequest(CreateCourseSectionRequest request) {
         requireRequestBody(request);
 
         validatePositiveId(request.subTermId(), "Academic sub term id");
+        String sectionLetter = normalizeSectionLetter(request.sectionLetter());
 
-        if (trimToNull(request.sectionLetter()) == null) {
+        if (sectionLetter == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Section letter is required.");
         }
+        validateHonorsSectionLetter(sectionLetter, request.honors());
 
         if (request.credits() == null || request.credits().compareTo(BigDecimal.ZERO) < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Credits must be zero or greater.");
@@ -74,8 +82,14 @@ public class CourseSectionValidationService {
         ) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Section letter cannot be blank.");
         }
-
         validatePresentBoolean(request.getHonors().isPresent(), request.getHonors().getValue(), "Honors");
+        String finalSectionLetter = request.getSectionLetter().isPresent()
+                ? request.getSectionLetter().getValue()
+                : existingSection.getSectionLetter();
+        finalSectionLetter = normalizeSectionLetter(finalSectionLetter);
+        boolean finalHonors = request.getHonors().orElse(existingSection.isHonors());
+        validateHonorsSectionLetter(finalSectionLetter, finalHonors);
+
         validatePresentBoolean(
                 request.getWaitlistAllowed().isPresent(),
                 request.getWaitlistAllowed().getValue(),
@@ -188,36 +202,39 @@ public class CourseSectionValidationService {
         }
     }
 
+    private void validateHonorsSectionLetter(String sectionLetter, boolean honors) {
+        String normalizedSectionLetter = normalizeSectionLetter(sectionLetter);
+        if (normalizedSectionLetter == null) {
+            return;
+        }
+
+        boolean endsWithHonorsSuffix = normalizedSectionLetter.endsWith("H");
+        boolean containsHonorsMarker = normalizedSectionLetter.contains("H");
+        if (honors && !endsWithHonorsSuffix) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Honors section letters must end in H."
+            );
+        }
+        if (!honors && containsHonorsMarker) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Non-honors section letters cannot contain H."
+            );
+        }
+    }
+
     public void validateInstructorRequest(CreateCourseSectionInstructorRequest request) {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Instructor request cannot be null.");
         }
 
         validatePositiveId(request.staffId(), "Instructor staff id");
-
-        if (
-                request.assignmentStartDate() != null
-                        && request.assignmentEndDate() != null
-                        && request.assignmentStartDate().isAfter(request.assignmentEndDate())
-        ) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Instructor assignment start date must be on or before end date."
-            );
-        }
     }
 
     public void validateInstructorRequests(List<CreateCourseSectionInstructorRequest> requests) {
         if (requests == null) {
             return;
-        }
-
-        long primaryCount = requests.stream().filter(CreateCourseSectionInstructorRequest::primary).count();
-        if (primaryCount > 1) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Only one primary instructor is allowed."
-            );
         }
 
         for (CreateCourseSectionInstructorRequest request : requests) {

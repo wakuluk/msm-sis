@@ -4,6 +4,7 @@ import { Alert, Button, Grid, Group, Stack } from '@mantine/core';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { CourseSectionAcademicFields } from './CourseSectionAcademicFields';
 import { CourseSectionIdentityFields } from './CourseSectionIdentityFields';
+import { CourseSectionInstructorAssignments } from './CourseSectionInstructorAssignments';
 import { CourseSectionRegistrationFields } from './CourseSectionRegistrationFields';
 import { CourseSectionScheduleFields } from './CourseSectionScheduleFields';
 import {
@@ -13,22 +14,26 @@ import {
 } from './courseSectionReadOnlyStyles';
 import type {
   CourseSectionDraft,
+  CourseSectionMutationState,
   CourseSectionPreview,
   SelectOption,
   StaffSelectOption,
 } from './courseSectionsWorkspaceTypes';
+import { CourseSectionInstructorConflictAlert } from './CourseSectionInstructorConflictAlert';
 
 type CourseSectionDetailSetupSectionProps = {
   academicDivisionOptions: SelectOption[];
+  canManage: boolean;
   creditOptions: SelectOption[];
   deliveryModeOptions: SelectOption[];
   detailEditing: boolean;
   draft: CourseSectionDraft;
-  mutationError: string | null;
+  mutationState: CourseSectionMutationState;
   mutating: boolean;
   referencesAreLoading: boolean;
   section: CourseSectionPreview;
   sectionGradingBasisOptions: SelectOption[];
+  sectionInstructorRoleOptions: SelectOption[];
   sectionStatusOptions: SelectOption[];
   setDraft: Dispatch<SetStateAction<CourseSectionDraft>>;
   staffLoading: boolean;
@@ -43,15 +48,17 @@ type CourseSectionDetailSetupSectionProps = {
 
 export function CourseSectionDetailSetupSection({
   academicDivisionOptions,
+  canManage,
   creditOptions,
   deliveryModeOptions,
   detailEditing,
   draft,
-  mutationError,
+  mutationState,
   mutating,
   referencesAreLoading,
   section,
   sectionGradingBasisOptions,
+  sectionInstructorRoleOptions,
   sectionStatusOptions,
   setDraft,
   staffLoading,
@@ -67,38 +74,48 @@ export function CourseSectionDetailSetupSection({
   const readOnlyInputStyles = fieldsDisabled ? readableDisabledInputStyles : undefined;
   const readOnlySwitchStyles = fieldsDisabled ? readableDisabledSwitchStyles : undefined;
   const readOnlyCheckboxStyles = fieldsDisabled ? readableDisabledCheckboxStyles : undefined;
+  const hasMutationError =
+    mutationState.status === 'error' || mutationState.status === 'conflict';
 
   return (
     <RecordPageSection
       title="Section Details"
-      description="Review and update the section setup."
+      description={
+        canManage ? 'Review and update the section setup.' : 'Review the section setup.'
+      }
       action={
-        <Group gap="sm" wrap="wrap" justify="flex-end">
-          {detailEditing ? (
-            <>
-              <Button variant="default" onClick={onCancelEdit}>
-                Cancel edit
-              </Button>
-              <Button loading={mutating} onClick={onSaveSection}>
-                Save changes
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="default" onClick={onStartEdit}>
-                Edit
-              </Button>
-              <Button
-                variant="default"
-                loading={mutating}
-                disabled={section.statusCode === 'CANCELLED'}
-                onClick={onCancelSection}
-              >
-                Cancel section
-              </Button>
-            </>
-          )}
-        </Group>
+        canManage ? (
+          <Group gap="sm" wrap="wrap" justify="flex-end">
+            {detailEditing ? (
+              <>
+                <Button variant="default" onClick={onCancelEdit}>
+                  Cancel edit
+                </Button>
+                <Button
+                  color={hasMutationError ? 'red' : undefined}
+                  loading={mutating}
+                  onClick={onSaveSection}
+                >
+                  Save changes
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="default" onClick={onStartEdit}>
+                  Edit
+                </Button>
+                <Button
+                  variant="default"
+                  loading={mutating}
+                  disabled={section.statusCode === 'CANCELLED'}
+                  onClick={onCancelSection}
+                >
+                  Cancel section
+                </Button>
+              </>
+            )}
+          </Group>
+        ) : null
       }
     >
       <Grid.Col span={12}>
@@ -120,12 +137,32 @@ export function CourseSectionDetailSetupSection({
             gradingBasisOptions={sectionGradingBasisOptions}
             readOnlyInputStyles={readOnlyInputStyles}
             referencesAreLoading={referencesAreLoading}
+            setDraft={setDraft}
+          />
+          <CourseSectionInstructorAssignments
+            draft={draft}
+            fieldsDisabled={fieldsDisabled}
+            roleOptions={sectionInstructorRoleOptions}
             staffLoading={staffLoading}
             staffOptions={staffOptions}
             staffSearchValue={staffSearchValue}
+            styles={readOnlyInputStyles}
+            selectStyles={readOnlyInputStyles}
             setDraft={setDraft}
             onStaffSearchChange={onStaffSearchChange}
           />
+          {mutationState.status === 'conflict' ? (
+            <CourseSectionInstructorConflictAlert
+              message={mutationState.message}
+              conflicts={mutationState.conflicts}
+            />
+          ) : null}
+
+          {mutationState.status === 'error' ? (
+            <Alert color="red" title="Unable to update course section">
+              {mutationState.message}
+            </Alert>
+          ) : null}
           <CourseSectionScheduleFields
             deliveryModeOptions={deliveryModeOptions}
             draft={draft}
@@ -142,11 +179,6 @@ export function CourseSectionDetailSetupSection({
             readOnlySwitchStyles={readOnlySwitchStyles}
             setDraft={setDraft}
           />
-          {mutationError ? (
-            <Alert color="red" title="Unable to update course section">
-              {mutationError}
-            </Alert>
-          ) : null}
         </Stack>
       </Grid.Col>
     </RecordPageSection>

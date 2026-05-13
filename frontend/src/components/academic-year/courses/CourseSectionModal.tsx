@@ -5,6 +5,7 @@ import { Modal, Stack } from '@mantine/core';
 import type { AcademicYearCourseOfferingSearchResultResponse } from '@/services/schemas/admin-courses-schemas';
 import type {
   CourseSectionDraft,
+  CourseSectionMutationState,
   CourseSectionPreview,
   SelectOption,
   StaffSelectOption,
@@ -31,16 +32,19 @@ type CourseSectionModalProps = {
   sectionPreview: string;
   selectedStatusName: string | null;
   sectionStatusOptions: SelectOption[];
+  sectionInstructorRoleOptions: SelectOption[];
   academicDivisionOptions: SelectOption[];
   sectionGradingBasisOptions: SelectOption[];
   enrollmentGradingBasisOptions: SelectOption[];
+  gradeMarkOptions: SelectOption[];
+  gradeTypeOptions: SelectOption[];
   deliveryModeOptions: SelectOption[];
   creditOptions: SelectOption[];
   staffOptions: StaffSelectOption[];
   staffSearchValue: string;
   staffLoading: boolean;
   referencesAreLoading: boolean;
-  mutationError: string | null;
+  mutationState: CourseSectionMutationState;
   mutating: boolean;
   onStaffSearchChange: (value: string) => void;
   onClose: () => void;
@@ -64,16 +68,19 @@ export function CourseSectionModal({
   sectionPreview,
   selectedStatusName,
   sectionStatusOptions,
+  sectionInstructorRoleOptions,
   academicDivisionOptions,
   sectionGradingBasisOptions,
   enrollmentGradingBasisOptions,
+  gradeMarkOptions,
+  gradeTypeOptions,
   deliveryModeOptions,
   creditOptions,
   staffOptions,
   staffSearchValue,
   staffLoading,
   referencesAreLoading,
-  mutationError,
+  mutationState,
   mutating,
   onStaffSearchChange,
   onClose,
@@ -113,12 +120,15 @@ export function CourseSectionModal({
             draft={draft}
             enrollmentGradingBasisOptions={enrollmentGradingBasisOptions}
             fieldsDisabled={fieldsDisabled}
-            mutationError={mutationError}
+            gradeMarkOptions={gradeMarkOptions}
+            gradeTypeOptions={gradeTypeOptions}
+            mutationState={mutationState}
             mode={mode}
             readOnlyCheckboxStyles={readOnlyCheckboxStyles}
             readOnlyInputStyles={readOnlyInputStyles}
             readOnlySwitchStyles={readOnlySwitchStyles}
             referencesAreLoading={referencesAreLoading}
+            sectionInstructorRoleOptions={sectionInstructorRoleOptions}
             sectionGradingBasisOptions={sectionGradingBasisOptions}
             sectionStatusOptions={sectionStatusOptions}
             selectedSection={selectedSection}
@@ -131,6 +141,7 @@ export function CourseSectionModal({
 
           <CourseSectionModalFooter
             mutating={mutating}
+            mutationState={mutationState}
             detailEditing={detailEditing}
             mode={mode}
             selectedSection={selectedSection}

@@ -6,6 +6,10 @@ import com.msm.sis.api.dto.catalog.*;
 import com.msm.sis.api.dto.course.CoursePickerReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CourseReferenceOptionResponse;
 import com.msm.sis.api.dto.course.CourseSearchReferenceOptionsResponse;
+import com.msm.sis.api.dto.instructor.schedule.InstructorScheduleAcademicYearOptionResponse;
+import com.msm.sis.api.dto.instructor.schedule.InstructorScheduleReferenceOptionsResponse;
+import com.msm.sis.api.dto.instructor.schedule.InstructorScheduleSubTermOptionResponse;
+import com.msm.sis.api.dto.instructor.schedule.InstructorScheduleTermOptionResponse;
 import com.msm.sis.api.dto.program.ProgramReferenceOptionsResponse;
 import com.msm.sis.api.dto.reference.CourseSectionReferenceOptionsResponse;
 import com.msm.sis.api.entity.*;
@@ -14,6 +18,7 @@ import com.msm.sis.api.repository.AcademicDivisionRepository;
 import com.msm.sis.api.repository.AcademicSchoolRepository;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
 import com.msm.sis.api.repository.AcademicDepartmentRepository;
+import com.msm.sis.api.repository.AcademicTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.repository.AcademicSubjectRepository;
 import com.msm.sis.api.repository.AcademicSubTermRepository;
@@ -29,7 +34,7 @@ import com.msm.sis.api.repository.GradeMarkRepository;
 import com.msm.sis.api.repository.GradingBasisRepository;
 import com.msm.sis.api.repository.GenderRepository;
 import com.msm.sis.api.repository.ProgramTypeRepository;
-import com.msm.sis.api.repository.SectionInstructorRoleRepository;
+import com.msm.sis.api.repository.InstructionalAssignmentRoleRepository;
 import com.msm.sis.api.repository.SectionMeetingTypeRepository;
 import com.msm.sis.api.repository.StudentSectionEnrollmentStatusRepository;
 import com.msm.sis.api.repository.StudentSectionGradeTypeRepository;
@@ -51,6 +56,7 @@ public class ReferenceDataService {
     private final AcademicDivisionRepository academicDivisionRepository;
     private final AcademicSchoolRepository academicSchoolRepository;
     private final AcademicDepartmentRepository academicDepartmentRepository;
+    private final AcademicTermRepository academicTermRepository;
     private final AcademicSubjectRepository academicSubjectRepository;
     private final AcademicSubTermRepository academicSubTermRepository;
     private final AcademicSubTermStatusRepository academicSubTermStatusRepository;
@@ -58,7 +64,7 @@ public class ReferenceDataService {
     private final DeliveryModeRepository deliveryModeRepository;
     private final GradingBasisRepository gradingBasisRepository;
     private final SectionMeetingTypeRepository sectionMeetingTypeRepository;
-    private final SectionInstructorRoleRepository sectionInstructorRoleRepository;
+    private final InstructionalAssignmentRoleRepository instructionalAssignmentRoleRepository;
     private final StudentSectionEnrollmentStatusRepository studentSectionEnrollmentStatusRepository;
     private final StudentSectionGradeTypeRepository studentSectionGradeTypeRepository;
     private final GradeMarkRepository gradeMarkRepository;
@@ -76,6 +82,7 @@ public class ReferenceDataService {
             AcademicDivisionRepository academicDivisionRepository,
             AcademicSchoolRepository academicSchoolRepository,
             AcademicDepartmentRepository academicDepartmentRepository,
+            AcademicTermRepository academicTermRepository,
             AcademicSubjectRepository academicSubjectRepository,
             AcademicSubTermRepository academicSubTermRepository,
             AcademicSubTermStatusRepository academicSubTermStatusRepository,
@@ -83,7 +90,7 @@ public class ReferenceDataService {
             DeliveryModeRepository deliveryModeRepository,
             GradingBasisRepository gradingBasisRepository,
             SectionMeetingTypeRepository sectionMeetingTypeRepository,
-            SectionInstructorRoleRepository sectionInstructorRoleRepository,
+            InstructionalAssignmentRoleRepository instructionalAssignmentRoleRepository,
             StudentSectionEnrollmentStatusRepository studentSectionEnrollmentStatusRepository,
             StudentSectionGradeTypeRepository studentSectionGradeTypeRepository,
             GradeMarkRepository gradeMarkRepository,
@@ -100,6 +107,7 @@ public class ReferenceDataService {
         this.academicDivisionRepository = academicDivisionRepository;
         this.academicSchoolRepository = academicSchoolRepository;
         this.academicDepartmentRepository = academicDepartmentRepository;
+        this.academicTermRepository = academicTermRepository;
         this.academicSubjectRepository = academicSubjectRepository;
         this.academicSubTermRepository = academicSubTermRepository;
         this.academicSubTermStatusRepository = academicSubTermStatusRepository;
@@ -107,7 +115,7 @@ public class ReferenceDataService {
         this.deliveryModeRepository = deliveryModeRepository;
         this.gradingBasisRepository = gradingBasisRepository;
         this.sectionMeetingTypeRepository = sectionMeetingTypeRepository;
-        this.sectionInstructorRoleRepository = sectionInstructorRoleRepository;
+        this.instructionalAssignmentRoleRepository = instructionalAssignmentRoleRepository;
         this.studentSectionEnrollmentStatusRepository = studentSectionEnrollmentStatusRepository;
         this.studentSectionGradeTypeRepository = studentSectionGradeTypeRepository;
         this.gradeMarkRepository = gradeMarkRepository;
@@ -314,7 +322,7 @@ public class ReferenceDataService {
                 sectionMeetingTypeRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
                         .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
-                sectionInstructorRoleRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                instructionalAssignmentRoleRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
                         .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList(),
                 studentSectionEnrollmentStatusRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
@@ -325,6 +333,42 @@ public class ReferenceDataService {
                         .toList(),
                 gradeMarkRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
                         .map(referenceDataMapper::toGradeMarkReferenceOptionResponse)
+                        .toList()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public InstructorScheduleReferenceOptionsResponse getInstructorScheduleReferenceOptions() {
+        List<AcademicSchool> schools = academicSchoolRepository.findAllByActiveTrueOrderByNameAsc();
+        List<CodeNameReferenceOptionResponse> schoolOptions = schools.stream()
+                .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
+                .toList();
+
+        List<AcademicDepartmentReferenceOptionResponse> departmentOptions = schools.isEmpty()
+                ? List.of()
+                : academicDepartmentRepository.findAllByActiveTrueAndSchool_IdIn(
+                                schools.stream().map(AcademicSchool::getId).toList(),
+                                Sort.by(Sort.Direction.ASC, "name")
+                                        .and(Sort.by(Sort.Direction.ASC, "code"))
+                                        .and(Sort.by(Sort.Direction.ASC, "id"))
+                        ).stream()
+                        .map(referenceDataMapper::toAcademicDepartmentReferenceOptionResponse)
+                        .toList();
+
+        return new InstructorScheduleReferenceOptionsResponse(
+                catalogAcademicYearRepository.findAllAcademicYears().stream()
+                        .map(this::toInstructorScheduleAcademicYearOptionResponse)
+                        .toList(),
+                schoolOptions,
+                departmentOptions,
+                courseSectionStatusRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
+                        .toList(),
+                instructionalAssignmentRoleRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
+                        .toList(),
+                deliveryModeRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                        .map(referenceDataMapper::toCodeNameReferenceOptionResponse)
                         .toList()
         );
     }
@@ -392,6 +436,47 @@ public class ReferenceDataService {
         return activeCourses.stream()
                 .filter(course -> courseIdsWithCurrentVersions.contains(course.getId()))
                 .toList();
+    }
+
+    private InstructorScheduleAcademicYearOptionResponse toInstructorScheduleAcademicYearOptionResponse(
+            AcademicYear academicYear
+    ) {
+        return new InstructorScheduleAcademicYearOptionResponse(
+                academicYear.getId(),
+                academicYear.getCode(),
+                academicYear.getName(),
+                academicYear.getStartDate(),
+                academicYear.getEndDate(),
+                academicTermRepository.findAllByAcademicYear_IdOrderByStartDateAsc(academicYear.getId()).stream()
+                        .map(this::toInstructorScheduleTermOptionResponse)
+                        .toList()
+        );
+    }
+
+    private InstructorScheduleTermOptionResponse toInstructorScheduleTermOptionResponse(AcademicTerm term) {
+        return new InstructorScheduleTermOptionResponse(
+                term.getId(),
+                term.getCode(),
+                term.getName(),
+                term.getStartDate(),
+                term.getEndDate(),
+                term.getAcademicSubTerms().stream()
+                        .map(this::toInstructorScheduleSubTermOptionResponse)
+                        .toList()
+        );
+    }
+
+    private InstructorScheduleSubTermOptionResponse toInstructorScheduleSubTermOptionResponse(
+            AcademicSubTerm subTerm
+    ) {
+        return new InstructorScheduleSubTermOptionResponse(
+                subTerm.getId(),
+                subTerm.getCode(),
+                subTerm.getName(),
+                subTerm.getStartDate(),
+                subTerm.getEndDate(),
+                subTerm.getSortOrder()
+        );
     }
 
 }

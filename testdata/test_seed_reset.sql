@@ -3,6 +3,10 @@
 
 TRUNCATE TABLE
     pdf_documents,
+    student_section_waitlist_offer,
+    student_athlete,
+    student_honors,
+    athletic_sport,
     student_section_enrollment_event,
     student_section_grade,
     student_section_enrollment,
@@ -21,6 +25,7 @@ TRUNCATE TABLE
     student_academic_plan,
     student_program_request,
     student_program,
+    student_academic_career,
     academic_department_staff_role,
     student_transfer_credit_course,
     student_transfer_credit,

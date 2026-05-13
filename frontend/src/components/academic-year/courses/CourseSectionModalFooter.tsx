@@ -1,10 +1,14 @@
 // Footer controls for the course-section modal.
 // Switches actions based on create/detail mode, edit state, selected section, and mutation state.
 import { Button, Group } from '@mantine/core';
-import type { CourseSectionPreview } from './courseSectionsWorkspaceTypes';
+import type {
+  CourseSectionMutationState,
+  CourseSectionPreview,
+} from './courseSectionsWorkspaceTypes';
 
 type CourseSectionModalFooterProps = {
   mutating: boolean;
+  mutationState: CourseSectionMutationState;
   detailEditing: boolean;
   mode: 'create' | 'detail';
   selectedSection: CourseSectionPreview | null;
@@ -19,6 +23,7 @@ type CourseSectionModalFooterProps = {
 
 export function CourseSectionModalFooter({
   mutating,
+  mutationState,
   detailEditing,
   mode,
   selectedSection,
@@ -30,6 +35,9 @@ export function CourseSectionModalFooter({
   onSave,
   onStartEdit,
 }: CourseSectionModalFooterProps) {
+  const hasMutationError =
+    mutationState.status === 'error' || mutationState.status === 'conflict';
+
   return (
     <Group
       justify="flex-end"
@@ -52,7 +60,11 @@ export function CourseSectionModalFooter({
             <Button variant="default" onClick={onCancelEdit}>
               Cancel edit
             </Button>
-            <Button loading={mutating} onClick={onSave}>
+            <Button
+              color={hasMutationError ? 'red' : undefined}
+              loading={mutating}
+              onClick={onSave}
+            >
               Save changes
             </Button>
           </>
@@ -79,7 +91,11 @@ export function CourseSectionModalFooter({
           <Button variant="default" onClick={onClose}>
             Cancel
           </Button>
-          <Button loading={mutating} onClick={onCreate}>
+          <Button
+            color={hasMutationError ? 'red' : undefined}
+            loading={mutating}
+            onClick={onCreate}
+          >
             Create section
           </Button>
         </>

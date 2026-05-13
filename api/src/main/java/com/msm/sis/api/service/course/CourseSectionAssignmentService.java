@@ -5,10 +5,12 @@ import com.msm.sis.api.dto.course.CreateCourseSectionMeetingRequest;
 import com.msm.sis.api.entity.CourseSection;
 import com.msm.sis.api.entity.CourseSectionInstructor;
 import com.msm.sis.api.entity.CourseSectionMeeting;
+import com.msm.sis.api.entity.Staff;
 import com.msm.sis.api.repository.CourseSectionInstructorRepository;
 import com.msm.sis.api.repository.CourseSectionMeetingRepository;
-import com.msm.sis.api.repository.SectionInstructorRoleRepository;
+import com.msm.sis.api.repository.InstructionalAssignmentRoleRepository;
 import com.msm.sis.api.repository.SectionMeetingTypeRepository;
+import com.msm.sis.api.repository.SisUserRepository;
 import com.msm.sis.api.repository.StaffRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,13 +30,14 @@ import static com.msm.sis.api.util.TextUtils.trimToNull;
 @Service
 @RequiredArgsConstructor
 public class CourseSectionAssignmentService {
-    private static final String DEFAULT_INSTRUCTOR_ROLE_CODE = "PRIMARY";
+    private static final String DEFAULT_INSTRUCTOR_ROLE_CODE = "PRIMARY_INSTRUCTOR";
     private static final String DEFAULT_MEETING_TYPE_CODE = "CLASS";
 
     private final CourseSectionInstructorRepository courseSectionInstructorRepository;
     private final CourseSectionMeetingRepository courseSectionMeetingRepository;
-    private final SectionInstructorRoleRepository sectionInstructorRoleRepository;
+    private final InstructionalAssignmentRoleRepository instructionalAssignmentRoleRepository;
     private final SectionMeetingTypeRepository sectionMeetingTypeRepository;
+    private final SisUserRepository sisUserRepository;
     private final StaffRepository staffRepository;
     private final CourseSectionValidationService courseSectionValidationService;
 
@@ -69,6 +72,7 @@ public class CourseSectionAssignmentService {
             List<CreateCourseSectionInstructorRequest> requests
     ) {
         courseSectionInstructorRepository.deleteAllByCourseSectionId(courseSection.getId());
+        courseSectionInstructorRepository.flush();
         return createInstructors(courseSection, requests);
     }
 
@@ -88,42 +92,55 @@ public class CourseSectionAssignmentService {
             return List.of();
         }
 
-        long primaryCount = requests.stream().filter(CreateCourseSectionInstructorRequest::primary).count();
-        if (primaryCount > 1) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Only one primary instructor is allowed."
-            );
-        }
-
-        Set<Long> staffIds = new HashSet<>();
+        Set<Long> instructorStaffIds = new HashSet<>();
         List<CourseSectionInstructor> instructors = new ArrayList<>();
 
         for (CreateCourseSectionInstructorRequest request : requests) {
             courseSectionValidationService.validateInstructorRequest(request);
 
-            if (!staffIds.add(request.staffId())) {
+            String roleCode = normalizeInstructorRoleCode(request.roleCode());
+            if (!instructorStaffIds.add(request.staffId())) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
-                        "Instructor staff ids must be unique for a course section."
+                        "An instructor can only be assigned once to a course section."
+                );
+            }
+
+            Staff staff = staffRepository.findById(request.staffId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Instructor staff id does not exist."
+                    ));
+            if (staff.getUserId() == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Instructor staff record is not linked to a user."
                 );
             }
 
             CourseSectionInstructor instructor = new CourseSectionInstructor();
             instructor.setCourseSection(courseSection);
-            instructor.setStaff(staffRepository.findById(request.staffId())
+            instructor.setInstructorUser(sisUserRepository.findById(staff.getUserId())
                     .orElseThrow(() -> new ResponseStatusException(
                             HttpStatus.BAD_REQUEST,
-                            "Instructor staff id does not exist."
+                            "Instructor user id does not exist."
                     )));
+            instructor.setInstructorStaff(staff);
             instructor.setRole(resolveRequiredReference(
-                    Optional.ofNullable(trimToNull(request.roleCode())).orElse(DEFAULT_INSTRUCTOR_ROLE_CODE),
-                    sectionInstructorRoleRepository::findByCode,
-                    "Section instructor role"
+                    roleCode,
+                    instructionalAssignmentRoleRepository::findByCode,
+                    "Instructional assignment role"
             ));
-            instructor.setPrimary(primaryCount == 0 ? instructors.isEmpty() : request.primary());
-            instructor.setAssignmentStartDate(request.assignmentStartDate());
-            instructor.setAssignmentEndDate(request.assignmentEndDate());
+            instructor.setCanViewGrades(
+                    request.canViewGrades() == null
+                            ? instructor.getRole().isDefaultCanViewGrades()
+                            : request.canViewGrades()
+            );
+            instructor.setCanManageGrades(
+                    request.canManageGrades() == null
+                            ? instructor.getRole().isDefaultCanManageGrades()
+                            : request.canManageGrades()
+            );
             instructors.add(instructor);
         }
 
@@ -178,6 +195,12 @@ public class CourseSectionAssignmentService {
         }
 
         return meetings;
+    }
+
+    private String normalizeInstructorRoleCode(String requestedRoleCode) {
+        String roleCode = Optional.ofNullable(trimToNull(requestedRoleCode)).orElse(DEFAULT_INSTRUCTOR_ROLE_CODE);
+
+        return "PRIMARY".equalsIgnoreCase(roleCode) ? DEFAULT_INSTRUCTOR_ROLE_CODE : roleCode;
     }
 
     private <T> T resolveRequiredReference(

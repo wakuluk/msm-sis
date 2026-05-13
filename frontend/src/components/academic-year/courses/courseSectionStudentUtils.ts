@@ -10,8 +10,11 @@ export const sortableStudentColumns: SortableStudentColumn[] = [
   { label: 'Student', sortBy: 'student' },
   { label: 'ID', sortBy: 'studentId' },
   { label: 'Status', sortBy: 'status' },
+  { label: 'Waitlist offer', sortBy: 'waitlistOffer' },
   { label: 'Credits', sortBy: 'credits' },
   { label: 'Grading', sortBy: 'grading' },
+  { label: 'Midterm grade', sortBy: 'midtermGrade' },
+  { label: 'Final grade', sortBy: 'finalGrade' },
   { label: 'Registered', sortBy: 'registered' },
 ];
 
@@ -30,6 +33,33 @@ export function studentStatusColor(statusCode: string | null) {
   }
 }
 
+export function waitlistOfferStatusColor(status: string | null | undefined) {
+  switch (status) {
+    case 'OFFERED':
+      return 'blue';
+    case 'ACCEPTED':
+      return 'green';
+    case 'EXPIRED':
+      return 'red';
+    case 'CANCELLED':
+      return 'gray';
+    default:
+      return 'gray';
+  }
+}
+
+export function formatWaitlistOfferStatus(status: string | null | undefined) {
+  if (!status) {
+    return 'No offer';
+  }
+
+  return status
+    .toLowerCase()
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 export function formatStudentDate(value: string | null) {
   if (!value) {
     return 'Not set';
@@ -42,8 +72,45 @@ export function formatStudentDate(value: string | null) {
   }).format(new Date(value));
 }
 
+export function formatStudentDateTime(value: string | null) {
+  if (!value) {
+    return 'Not set';
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(new Date(value));
+}
+
 export function formatCredits(value: number | null) {
   return value === null ? 'Not set' : value.toFixed(1);
+}
+
+export function getCurrentFinalGradeLabel(student: CourseSectionStudentResponse) {
+  if (!student.currentFinalGrade) {
+    return 'Not posted';
+  }
+
+  return (
+    student.currentFinalGrade.gradeMarkCode ?? student.currentFinalGrade.gradeMarkName ?? 'Not set'
+  );
+}
+
+export function getCurrentMidtermGradeLabel(student: CourseSectionStudentResponse) {
+  if (!student.currentMidtermGrade) {
+    return 'Not posted';
+  }
+
+  return (
+    student.currentMidtermGrade.gradeMarkCode ??
+    student.currentMidtermGrade.gradeMarkName ??
+    'Not set'
+  );
 }
 
 export function formatBoolean(value: boolean) {
@@ -91,6 +158,8 @@ export function studentMatchesSearch(student: CourseSectionStudentResponse, sear
     student.studentId === null ? null : String(student.studentId),
     student.statusName,
     student.gradingBasisName,
+    getCurrentMidtermGradeLabel(student),
+    getCurrentFinalGradeLabel(student),
   ]
     .filter(Boolean)
     .some((value) => value!.toLowerCase().includes(normalizedSearch));
@@ -134,12 +203,27 @@ export function compareStudentsByColumn(
         left.statusName ?? left.statusCode,
         right.statusName ?? right.statusCode
       );
+    case 'waitlistOffer':
+      return compareNullableString(
+        left.waitlistOffer?.expiresAt ?? left.waitlistOffer?.status ?? null,
+        right.waitlistOffer?.expiresAt ?? right.waitlistOffer?.status ?? null
+      );
     case 'credits':
       return compareNullableNumber(left.creditsAttempted, right.creditsAttempted);
     case 'grading':
       return compareNullableString(
         left.gradingBasisName ?? left.gradingBasisCode,
         right.gradingBasisName ?? right.gradingBasisCode
+      );
+    case 'midtermGrade':
+      return compareNullableString(
+        getCurrentMidtermGradeLabel(left),
+        getCurrentMidtermGradeLabel(right)
+      );
+    case 'finalGrade':
+      return compareNullableString(
+        getCurrentFinalGradeLabel(left),
+        getCurrentFinalGradeLabel(right)
       );
     case 'registered':
       return compareNullableString(getRegisteredSortValue(left), getRegisteredSortValue(right));

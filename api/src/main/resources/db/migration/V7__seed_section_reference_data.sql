@@ -1,10 +1,9 @@
 INSERT INTO course_section_status (code, name, sort_order, allow_linear_shift) VALUES
     ('DRAFT', 'Draft', 1, TRUE),
     ('PLANNED', 'Planned', 2, TRUE),
-    ('OPEN', 'Open', 3, TRUE),
-    ('CLOSED', 'Closed', 4, TRUE),
-    ('CANCELLED', 'Cancelled', 5, FALSE),
-    ('COMPLETED', 'Completed', 6, FALSE);
+    ('IN_PROGRESS', 'In progress', 3, TRUE),
+    ('COMPLETED', 'Completed', 4, FALSE),
+    ('CANCELLED', 'Cancelled', 10, FALSE);
 
 INSERT INTO delivery_mode (code, name, sort_order) VALUES
     ('IN_PERSON', 'In person', 1),
@@ -31,13 +30,69 @@ INSERT INTO section_instructor_role (code, name, sort_order) VALUES
     ('SECONDARY', 'Secondary', 2),
     ('TA', 'Teaching Assistant', 3);
 
+INSERT INTO instructional_assignment_role (
+    code,
+    name,
+    description,
+    counts_for_conflict_check,
+    default_can_view_grades,
+    default_can_manage_grades,
+    sort_order
+) VALUES
+    (
+        'PRIMARY_INSTRUCTOR',
+        'Primary Instructor',
+        'Instructor of record for the section.',
+        TRUE,
+        TRUE,
+        TRUE,
+        1
+    ),
+    (
+        'CO_INSTRUCTOR',
+        'Co-Instructor',
+        'Additional instructor assigned to teach the section.',
+        TRUE,
+        TRUE,
+        TRUE,
+        2
+    ),
+    (
+        'TEACHING_ASSISTANT',
+        'Teaching Assistant',
+        'Teaching assistant supporting the section.',
+        TRUE,
+        TRUE,
+        FALSE,
+        3
+    ),
+    (
+        'GRADER',
+        'Grader',
+        'Grade-entry support without a scheduled teaching assignment.',
+        FALSE,
+        TRUE,
+        TRUE,
+        4
+    ),
+    (
+        'OBSERVER',
+        'Observer',
+        'Read-only section observer without schedule or grading responsibility.',
+        FALSE,
+        FALSE,
+        FALSE,
+        5
+    );
+
 INSERT INTO student_section_enrollment_status (code, name, sort_order, allow_linear_shift) VALUES
     ('REGISTERED', 'Registered', 1, TRUE),
     ('WAITLISTED', 'Waitlisted', 2, TRUE),
     ('DROPPED', 'Dropped', 3, FALSE),
     ('WITHDRAWN', 'Withdrawn', 4, FALSE),
     ('COMPLETED', 'Completed', 5, FALSE),
-    ('CANCELLED', 'Cancelled', 6, FALSE);
+    ('CANCELLED', 'Cancelled', 6, FALSE),
+    ('WAITLIST_EXPIRED', 'Waitlist Expired', 7, FALSE);
 
 INSERT INTO student_section_grade_type (code, name, sort_order) VALUES
     ('MIDTERM', 'Midterm', 1),

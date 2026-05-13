@@ -25,6 +25,7 @@ import com.msm.sis.api.entity.Ethnicity;
 import com.msm.sis.api.entity.Gender;
 import com.msm.sis.api.entity.GradeMark;
 import com.msm.sis.api.entity.GradingBasis;
+import com.msm.sis.api.entity.InstructionalAssignmentRole;
 import com.msm.sis.api.entity.ProgramType;
 import com.msm.sis.api.entity.SectionInstructorRole;
 import com.msm.sis.api.entity.SectionMeetingType;
@@ -82,6 +83,10 @@ public class ReferenceDataMapper {
     }
 
     public CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(SectionInstructorRole reference) {
+        return toCodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
+    }
+
+    public CodeNameReferenceOptionResponse toCodeNameReferenceOptionResponse(InstructionalAssignmentRole reference) {
         return toCodeNameReferenceOptionResponse(reference.getId(), reference.getCode(), reference.getName());
     }
 

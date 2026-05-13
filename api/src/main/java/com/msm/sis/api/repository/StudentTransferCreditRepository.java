@@ -70,6 +70,7 @@ public interface StudentTransferCreditRepository extends JpaRepository<StudentTr
                 catalog_course.course_number as courseNumber,
                 coalesce(current_version.title, stc.external_course_title) as title,
                 stc.credits_earned as creditsEarned,
+                stc.transfer_grade_mark as gradeCode,
                 stc.transcript_sort_date as completedDate
             from student_transfer_credit stc
             join student_transfer_credit_course stcc
@@ -93,6 +94,18 @@ public interface StudentTransferCreditRepository extends JpaRepository<StudentTr
                 catalog_course.course_number
             """, nativeQuery = true)
     List<StudentCompletedTransferCourseProjection> findCompletedLocalTransferCourses(@Param("studentId") Long studentId);
+
+    @Query("""
+            select transferCredit.student.id as studentId,
+                   coalesce(sum(transferCredit.creditsEarned), 0) as credits
+            from StudentTransferCredit transferCredit
+            where transferCredit.student.id in :studentIds
+              and transferCredit.creditsEarned > 0
+            group by transferCredit.student.id
+            """)
+    List<StudentTransferCreditTotalProjection> sumTransferCreditsByStudentIds(
+            @Param("studentIds") List<Long> studentIds
+    );
 
     interface StudentTranscriptCourseProjection {
         Long getRecordId();
@@ -149,6 +162,14 @@ public interface StudentTransferCreditRepository extends JpaRepository<StudentTr
 
         BigDecimal getCreditsEarned();
 
+        String getGradeCode();
+
         LocalDate getCompletedDate();
+    }
+
+    interface StudentTransferCreditTotalProjection {
+        Long getStudentId();
+
+        BigDecimal getCredits();
     }
 }

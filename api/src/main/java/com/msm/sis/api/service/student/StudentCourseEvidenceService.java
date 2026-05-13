@@ -53,6 +53,7 @@ public class StudentCourseEvidenceService {
                 courseCode(projection.getSubjectCode(), projection.getCourseNumber()),
                 projection.getTitle(),
                 projection.getCreditsEarned(),
+                projection.getGradeCode(),
                 "LOCAL",
                 projection.getEnrollmentId(),
                 projection.getCompletedDate()
@@ -70,6 +71,7 @@ public class StudentCourseEvidenceService {
                 courseCode(projection.getSubjectCode(), projection.getCourseNumber()),
                 projection.getTitle(),
                 projection.getCreditsEarned(),
+                projection.getGradeCode(),
                 "TRANSFER",
                 projection.getTransferCreditId(),
                 projection.getCompletedDate()

@@ -1,5 +1,7 @@
 package com.msm.sis.api.controller;
 
+import com.msm.sis.api.exception.CourseSectionInstructorConflictException;
+import com.msm.sis.api.exception.StudentCourseRegistrationScheduleConflictException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.ObjectError;
@@ -12,6 +14,38 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ApiValidationExceptionHandler {
+
+    @ExceptionHandler(CourseSectionInstructorConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleCourseSectionInstructorConflict(
+            CourseSectionInstructorConflictException exception
+    ) {
+        String message = exception.getMessage();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "message",
+                        message == null || message.isBlank() ? "Instructor schedule conflict detected." : message,
+                        "conflicts",
+                        exception.getConflicts()
+                ));
+    }
+
+    @ExceptionHandler(StudentCourseRegistrationScheduleConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleStudentCourseRegistrationScheduleConflict(
+            StudentCourseRegistrationScheduleConflictException exception
+    ) {
+        String message = exception.getMessage();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "message",
+                        message == null || message.isBlank() ? "Course schedule conflict detected." : message,
+                        "conflicts",
+                        exception.getConflicts()
+                ));
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleMethodArgumentNotValid(

@@ -1,7 +1,5 @@
 package com.msm.sis.api.dto.course;
 
-import java.time.LocalDate;
-
 public record CourseSectionInstructorResponse(
         Long sectionInstructorId,
         Long staffId,
@@ -12,7 +10,7 @@ public record CourseSectionInstructorResponse(
         String roleCode,
         String roleName,
         boolean primary,
-        LocalDate assignmentStartDate,
-        LocalDate assignmentEndDate
+        boolean canViewGrades,
+        boolean canManageGrades
 ) {
 }

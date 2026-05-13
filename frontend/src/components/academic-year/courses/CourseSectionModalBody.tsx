@@ -3,12 +3,15 @@ import type { Dispatch, SetStateAction } from 'react';
 import { Alert, Stack } from '@mantine/core';
 import type {
   CourseSectionDraft,
+  CourseSectionMutationState,
   CourseSectionPreview,
   SelectOption,
   StaffSelectOption,
 } from './courseSectionsWorkspaceTypes';
 import { CourseSectionAcademicFields } from './CourseSectionAcademicFields';
 import { CourseSectionIdentityFields } from './CourseSectionIdentityFields';
+import { CourseSectionInstructorAssignments } from './CourseSectionInstructorAssignments';
+import { CourseSectionInstructorConflictAlert } from './CourseSectionInstructorConflictAlert';
 import { CourseSectionRegistrationFields } from './CourseSectionRegistrationFields';
 import { CourseSectionScheduleFields } from './CourseSectionScheduleFields';
 import { CourseSectionStudentsPanel } from './CourseSectionStudentsPanel';
@@ -20,12 +23,15 @@ type CourseSectionModalBodyProps = {
   draft: CourseSectionDraft;
   enrollmentGradingBasisOptions: SelectOption[];
   fieldsDisabled: boolean;
-  mutationError: string | null;
+  gradeMarkOptions: SelectOption[];
+  gradeTypeOptions: SelectOption[];
+  mutationState: CourseSectionMutationState;
   mode: 'create' | 'detail';
   readOnlyCheckboxStyles: object | undefined;
   readOnlyInputStyles: object | undefined;
   readOnlySwitchStyles: object | undefined;
   referencesAreLoading: boolean;
+  sectionInstructorRoleOptions: SelectOption[];
   sectionGradingBasisOptions: SelectOption[];
   sectionStatusOptions: SelectOption[];
   selectedSection: CourseSectionPreview | null;
@@ -43,12 +49,15 @@ export function CourseSectionModalBody({
   draft,
   enrollmentGradingBasisOptions,
   fieldsDisabled,
-  mutationError,
+  gradeMarkOptions,
+  gradeTypeOptions,
+  mutationState,
   mode,
   readOnlyCheckboxStyles,
   readOnlyInputStyles,
   readOnlySwitchStyles,
   referencesAreLoading,
+  sectionInstructorRoleOptions,
   sectionGradingBasisOptions,
   sectionStatusOptions,
   selectedSection,
@@ -78,12 +87,41 @@ export function CourseSectionModalBody({
         gradingBasisOptions={sectionGradingBasisOptions}
         readOnlyInputStyles={readOnlyInputStyles}
         referencesAreLoading={referencesAreLoading}
+        setDraft={setDraft}
+      />
+
+      <CourseSectionInstructorAssignments
+        draft={draft}
+        fieldsDisabled={fieldsDisabled}
+        roleOptions={sectionInstructorRoleOptions}
         staffLoading={staffLoading}
         staffOptions={staffOptions}
         staffSearchValue={staffSearchValue}
+        styles={readOnlyInputStyles}
+        selectStyles={readOnlyInputStyles}
         setDraft={setDraft}
         onStaffSearchChange={onStaffSearchChange}
       />
+
+      {mutationState.status === 'conflict' ? (
+        <CourseSectionInstructorConflictAlert
+          message={mutationState.message}
+          conflicts={mutationState.conflicts}
+        />
+      ) : null}
+
+      {mutationState.status === 'error' ? (
+        <Alert
+          color="red"
+          title={
+            mode === 'detail'
+              ? 'Unable to update course section'
+              : 'Unable to create course section'
+          }
+        >
+          {mutationState.message}
+        </Alert>
+      ) : null}
 
       <CourseSectionScheduleFields
         deliveryModeOptions={deliveryModeOptions}
@@ -106,21 +144,10 @@ export function CourseSectionModalBody({
       {mode === 'detail' && selectedSection ? (
         <CourseSectionStudentsPanel
           selectedSection={selectedSection}
+          gradeMarkOptions={gradeMarkOptions}
+          gradeTypeOptions={gradeTypeOptions}
           gradingBasisOptions={enrollmentGradingBasisOptions}
         />
-      ) : null}
-
-      {mutationError ? (
-        <Alert
-          color="red"
-          title={
-            mode === 'detail'
-              ? 'Unable to update course section'
-              : 'Unable to create course section'
-          }
-        >
-          {mutationError}
-        </Alert>
       ) : null}
     </Stack>
   );

@@ -11,6 +11,7 @@ public record StudentCourseEvidence(
         String courseCode,
         String title,
         BigDecimal creditsEarned,
+        String gradeCode,
         String source,
         Long sourceRecordId,
         LocalDate completedDate

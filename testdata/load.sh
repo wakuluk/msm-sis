@@ -8,8 +8,11 @@ DB_PASSWORD="${DB_PASSWORD:-msmsisdb}"
 RESET_SEED_FILE="${RESET_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_reset.sql}"
 SEED_FILE="${SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed.sql}"
 COURSE_SEED_FILE="${COURSE_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_courses.sql}"
+AFFILIATION_SEED_FILE="${AFFILIATION_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_affiliations.sql}"
+INSTRUCTOR_SCHEDULE_SEED_FILE="${INSTRUCTOR_SCHEDULE_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_instructor_schedules.sql}"
 ENROLLMENT_SEED_FILE="${ENROLLMENT_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_enrollments.sql}"
 TRANSFER_CREDIT_SEED_FILE="${TRANSFER_CREDIT_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_transfer_credits.sql}"
+STUDENT_REGISTRATION_COURSE_SEED_FILE="${STUDENT_REGISTRATION_COURSE_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_student_registration_courses.sql}"
 PROGRAM_SEED_FILE="${PROGRAM_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_programs.sql}"
 
 if [[ -n "$RESET_SEED_FILE" && ! -f "$RESET_SEED_FILE" ]]; then
@@ -27,6 +30,16 @@ if [[ -n "$COURSE_SEED_FILE" && ! -f "$COURSE_SEED_FILE" ]]; then
   exit 1
 fi
 
+if [[ -n "$AFFILIATION_SEED_FILE" && ! -f "$AFFILIATION_SEED_FILE" ]]; then
+  echo "Affiliation seed file not found: $AFFILIATION_SEED_FILE"
+  exit 1
+fi
+
+if [[ -n "$INSTRUCTOR_SCHEDULE_SEED_FILE" && ! -f "$INSTRUCTOR_SCHEDULE_SEED_FILE" ]]; then
+  echo "Instructor schedule seed file not found: $INSTRUCTOR_SCHEDULE_SEED_FILE"
+  exit 1
+fi
+
 if [[ -n "$ENROLLMENT_SEED_FILE" && ! -f "$ENROLLMENT_SEED_FILE" ]]; then
   echo "Enrollment seed file not found: $ENROLLMENT_SEED_FILE"
   exit 1
@@ -34,6 +47,11 @@ fi
 
 if [[ -n "$TRANSFER_CREDIT_SEED_FILE" && ! -f "$TRANSFER_CREDIT_SEED_FILE" ]]; then
   echo "Transfer credit seed file not found: $TRANSFER_CREDIT_SEED_FILE"
+  exit 1
+fi
+
+if [[ -n "$STUDENT_REGISTRATION_COURSE_SEED_FILE" && ! -f "$STUDENT_REGISTRATION_COURSE_SEED_FILE" ]]; then
+  echo "Student registration course seed file not found: $STUDENT_REGISTRATION_COURSE_SEED_FILE"
   exit 1
 fi
 
@@ -60,16 +78,34 @@ if [[ -n "$COURSE_SEED_FILE" ]]; then
     psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$COURSE_SEED_FILE"
 fi
 
+if [[ -n "$INSTRUCTOR_SCHEDULE_SEED_FILE" ]]; then
+  echo "Loading instructor schedule seed data from: $INSTRUCTOR_SCHEDULE_SEED_FILE"
+  docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
+    psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$INSTRUCTOR_SCHEDULE_SEED_FILE"
+fi
+
 if [[ -n "$ENROLLMENT_SEED_FILE" ]]; then
   echo "Loading enrollment seed data from: $ENROLLMENT_SEED_FILE"
   docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
     psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$ENROLLMENT_SEED_FILE"
 fi
 
+if [[ -n "$AFFILIATION_SEED_FILE" ]]; then
+  echo "Loading student affiliation seed data from: $AFFILIATION_SEED_FILE"
+  docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
+    psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$AFFILIATION_SEED_FILE"
+fi
+
 if [[ -n "$TRANSFER_CREDIT_SEED_FILE" ]]; then
   echo "Loading transfer credit seed data from: $TRANSFER_CREDIT_SEED_FILE"
   docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
     psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$TRANSFER_CREDIT_SEED_FILE"
+fi
+
+if [[ -n "$STUDENT_REGISTRATION_COURSE_SEED_FILE" ]]; then
+  echo "Loading student registration course seed data from: $STUDENT_REGISTRATION_COURSE_SEED_FILE"
+  docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
+    psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$STUDENT_REGISTRATION_COURSE_SEED_FILE"
 fi
 
 if [[ -n "$PROGRAM_SEED_FILE" ]]; then

@@ -5,6 +5,7 @@ import com.msm.sis.api.dto.catalog.CatalogAdvancedSearchReferenceOptionsResponse
 import com.msm.sis.api.dto.catalog.CatalogSearchReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CoursePickerReferenceOptionsResponse;
 import com.msm.sis.api.dto.course.CourseSearchReferenceOptionsResponse;
+import com.msm.sis.api.dto.instructor.schedule.InstructorScheduleReferenceOptionsResponse;
 import com.msm.sis.api.dto.program.ProgramReferenceOptionsResponse;
 import com.msm.sis.api.dto.reference.CourseSectionReferenceOptionsResponse;
 import com.msm.sis.api.dto.student.StudentReferenceOptionsResponse;
@@ -77,13 +78,23 @@ public class ReferenceController {
     }
 
     @GetMapping("/course-section-options")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'ADJUNCT', 'TEACHING_ASSISTANT')")
     @Operation(
             summary = "Get course section reference options",
             description = "Returns active section statuses, divisions, delivery modes, grading bases, meeting types, instructor roles, enrollment statuses, grade types, and grade marks."
     )
     public ResponseEntity<CourseSectionReferenceOptionsResponse> getCourseSectionReferenceOptions() {
         return ResponseEntity.ok(referenceDataService.getCourseSectionReferenceOptions());
+    }
+
+    @GetMapping("/instructor-schedule-options")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'ADJUNCT', 'TEACHING_ASSISTANT')")
+    @Operation(
+            summary = "Get instructor schedule reference options",
+            description = "Returns academic years, terms, sub terms, schools, departments, section statuses, instructor assignment roles, and delivery modes used by instructor schedule filters."
+    )
+    public ResponseEntity<InstructorScheduleReferenceOptionsResponse> getInstructorScheduleReferenceOptions() {
+        return ResponseEntity.ok(referenceDataService.getInstructorScheduleReferenceOptions());
     }
 
     @GetMapping("/catalog-search-options")

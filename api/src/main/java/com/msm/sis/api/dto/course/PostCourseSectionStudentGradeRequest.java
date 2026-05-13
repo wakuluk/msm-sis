@@ -10,6 +10,9 @@ public record PostCourseSectionStudentGradeRequest(
 
         @NotBlank
         @Size(max = 20)
-        String gradeMarkCode
+        String gradeMarkCode,
+
+        @Size(max = 1000)
+        String reason
 ) {
 }

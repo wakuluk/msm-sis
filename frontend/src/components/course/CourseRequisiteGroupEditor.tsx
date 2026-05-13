@@ -19,6 +19,7 @@ import { searchCourses } from '@/services/course-service';
 import type { CourseSearchResultResponse } from '@/services/schemas/course-search-schemas';
 import type {
   CourseVersionRequisiteConditionType,
+  CourseVersionRequisiteMinimumGrade,
   CourseVersionRequisiteType,
 } from '@/services/schemas/course-schemas';
 import { getErrorMessage } from '@/utils/errors';
@@ -37,10 +38,11 @@ type CourseRequisiteGroupEditorProps = {
     courseDraftId: number,
     course: CourseSearchResultResponse | null
   ) => void;
-  onChangeDepartment: (
+  onChangeDepartment: (groupId: number, courseDraftId: number, departmentId: string | null) => void;
+  onChangeMinimumGrade: (
     groupId: number,
     courseDraftId: number,
-    departmentId: string | null
+    minimumGrade: CourseVersionRequisiteMinimumGrade | null
   ) => void;
   onRemoveCourse: (groupId: number, courseDraftId: number) => void;
   onRemoveGroup: (groupId: number) => void;
@@ -64,6 +66,20 @@ const conditionTypeOptions: Array<{
   { value: 'ANY', label: 'Choose from list' },
 ];
 
+const minimumGradeOptions: CourseVersionRequisiteMinimumGrade[] = [
+  'A',
+  'A-',
+  'B+',
+  'B',
+  'B-',
+  'C+',
+  'C',
+  'C-',
+  'D+',
+  'D',
+  'D-',
+];
+
 export function CourseRequisiteGroupEditor({
   departmentOptions,
   disabled,
@@ -74,6 +90,7 @@ export function CourseRequisiteGroupEditor({
   onAddCourse,
   onChangeCourse,
   onChangeDepartment,
+  onChangeMinimumGrade,
   onRemoveCourse,
   onRemoveGroup,
   onToggleLabOnly,
@@ -134,12 +151,7 @@ export function CourseRequisiteGroupEditor({
               }}
             />
           ) : null}
-          <Button
-            size="xs"
-            variant="light"
-            disabled={locked}
-            onClick={() => onAddCourse(group.id)}
-          >
+          <Button size="xs" variant="light" disabled={locked} onClick={() => onAddCourse(group.id)}>
             Add course
           </Button>
           <ActionIcon
@@ -159,12 +171,13 @@ export function CourseRequisiteGroupEditor({
           Add at least one course to this requisite group.
         </Alert>
       ) : (
-        <Table.ScrollContainer minWidth={720}>
+        <Table.ScrollContainer minWidth={860}>
           <Table withTableBorder withColumnBorders>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Department</Table.Th>
                 <Table.Th>Course</Table.Th>
+                <Table.Th>Minimum grade</Table.Th>
                 <Table.Th>Selected</Table.Th>
                 <Table.Th>Actions</Table.Th>
               </Table.Tr>
@@ -204,6 +217,22 @@ export function CourseRequisiteGroupEditor({
                         onChange={(value) => onChangeCourse(group.id, course.id, value)}
                       />
                     )}
+                  </Table.Td>
+                  <Table.Td>
+                    <Select
+                      clearable
+                      placeholder="No minimum"
+                      data={minimumGradeOptions}
+                      value={course.minimumGrade}
+                      disabled={disabled || group.requisiteType !== 'PREREQUISITE'}
+                      onChange={(value) =>
+                        onChangeMinimumGrade(
+                          group.id,
+                          course.id,
+                          value as CourseVersionRequisiteMinimumGrade | null
+                        )
+                      }
+                    />
                   </Table.Td>
                   <Table.Td>
                     <Stack gap={2}>

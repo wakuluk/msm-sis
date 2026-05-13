@@ -40,6 +40,7 @@ public record CourseSectionStudentResponse(
         BigDecimal creditsAttempted,
         BigDecimal creditsEarned,
         Integer waitlistPosition,
+        CourseSectionStudentWaitlistOfferResponse waitlistOffer,
         boolean includeInGpa,
         boolean capacityOverride,
         String manualAddReason,

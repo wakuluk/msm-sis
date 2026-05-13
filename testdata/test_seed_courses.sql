@@ -1114,37 +1114,69 @@ WHERE NOT EXISTS (
       AND existing_course.course_id = required_course.course_id
 );
 
-INSERT INTO staff (first_name, last_name, email)
-SELECT 'Jane', 'Smith', 'jane.smith@msm.edu'
+WITH desired_instructor_users(email) AS (
+    VALUES
+        ('jane.smith@msm.edu'),
+        ('alan.reed@msm.edu'),
+        ('maria.chen@msm.edu'),
+        ('nadia.rivera@msm.edu')
+)
+INSERT INTO users (email, password_hash, enabled)
+SELECT desired_instructor_users.email,
+       '$argon2id$v=19$m=16384,t=2,p=1$euvZ8L29MjjHzluLVaMllA$AgSCCYqDSXV+aos7IVvNB3IPK3RFW2d9achT5oOs3+I',
+       TRUE
+FROM desired_instructor_users
 WHERE NOT EXISTS (
     SELECT 1
-    FROM staff
-    WHERE email = 'jane.smith@msm.edu'
+    FROM users
+    WHERE users.email = desired_instructor_users.email
 );
 
-INSERT INTO staff (first_name, last_name, email)
-SELECT 'Alan', 'Reed', 'alan.reed@msm.edu'
+WITH desired_instructor_user_roles(email, role_name) AS (
+    VALUES
+        ('jane.smith@msm.edu', 'FACULTY'),
+        ('maria.chen@msm.edu', 'FACULTY'),
+        ('nadia.rivera@msm.edu', 'ADJUNCT'),
+        ('alan.reed@msm.edu', 'TEACHING_ASSISTANT')
+)
+INSERT INTO user_roles (user_id, role_id)
+SELECT users.id, roles.id
+FROM desired_instructor_user_roles
+JOIN users ON users.email = desired_instructor_user_roles.email
+JOIN roles ON roles.name = desired_instructor_user_roles.role_name
+ON CONFLICT DO NOTHING;
+
+WITH desired_instructors(first_name, last_name, email) AS (
+    VALUES
+        ('Jane', 'Smith', 'jane.smith@msm.edu'),
+        ('Alan', 'Reed', 'alan.reed@msm.edu'),
+        ('Maria', 'Chen', 'maria.chen@msm.edu'),
+        ('Nadia', 'Rivera', 'nadia.rivera@msm.edu')
+)
+INSERT INTO staff (user_id, first_name, last_name, email)
+SELECT users.id,
+       desired_instructors.first_name,
+       desired_instructors.last_name,
+       desired_instructors.email
+FROM desired_instructors
+JOIN users ON users.email = desired_instructors.email
 WHERE NOT EXISTS (
     SELECT 1
     FROM staff
-    WHERE email = 'alan.reed@msm.edu'
+    WHERE staff.email = desired_instructors.email
 );
 
-INSERT INTO staff (first_name, last_name, email)
-SELECT 'Maria', 'Chen', 'maria.chen@msm.edu'
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM staff
-    WHERE email = 'maria.chen@msm.edu'
-);
-
-INSERT INTO staff (first_name, last_name, email)
-SELECT 'Nadia', 'Rivera', 'nadia.rivera@msm.edu'
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM staff
-    WHERE email = 'nadia.rivera@msm.edu'
-);
+UPDATE staff
+SET user_id = users.id
+FROM users
+WHERE users.email = staff.email
+  AND staff.email IN (
+    'jane.smith@msm.edu',
+    'alan.reed@msm.edu',
+    'maria.chen@msm.edu',
+    'nadia.rivera@msm.edu'
+  )
+  AND staff.user_id IS NULL;
 
 WITH desired_offerings(subject_code, course_number, version_number, academic_year_code, notes) AS (
     VALUES
@@ -1320,19 +1352,20 @@ WITH desired_sections(
     notes
 ) AS (
     VALUES
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 28, 32, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Lecture section for general registration.'),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'OPEN', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 3.00, 18, 22, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Honors section with additional seminar discussion.'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 28, 32, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Lecture section for general registration.'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'BH', TRUE, 'PLANNED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 3.00, 18, 22, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Honors section with additional seminar discussion.'),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 3.00, 24, 28, TRUE, '2027-05-24'::date, '2027-06-25'::date, 'Condensed online summer section.'),
-        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 16, 18, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Discussion-heavy seminar section.'),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 16, 18, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Discussion-heavy seminar section.'),
         ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'COMPLETED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Seeded completed first-semester lecture section for planner history testing.'),
-        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Language lab attached to weekly class meeting.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'B', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Instructor conflict test target: overlaps TOLK 240 A if Maria Chen is assigned.'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Language lab attached to weekly class meeting.'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 4.00, 18, 22, TRUE, '2027-06-28'::date, '2027-07-30'::date, 'Online summer language intensive.'),
         ('ELV', '201L', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'COMPLETED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 0.00, 20, 20, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Seeded completed first-semester lab section for planner history testing.'),
-        ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'OPEN', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 0.00, 20, 20, FALSE, '2027-01-19'::date, '2027-05-07'::date, 'Required pronunciation lab.'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 0.00, 20, 20, FALSE, '2027-01-19'::date, '2027-05-07'::date, 'Required pronunciation lab.'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, 6, FALSE, '2027-05-24'::date, '2027-06-25'::date, 'Registrar-managed independent study placements.'),
         ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'CLOSED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 2.00, 6, 6, FALSE, '2027-06-28'::date, '2027-07-30'::date, 'Registrar-managed independent study placements.'),
         ('MEH', '310', 1, 'AY-2027-2028', 'FALL-2027', 'A', FALSE, 'PLANNED', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, 28, TRUE, '2027-08-23'::date, '2027-12-10'::date, 'Graduate lecture section.'),
-        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'DRAFT', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, 28, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'Draft spring lecture section.'),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'A', FALSE, 'IN_PROGRESS', 'GRADUATE', 'IN_PERSON', 'GRADED', 3.00, 24, 28, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'In-progress spring lecture section for grading workflow testing.'),
         ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, 'DRAFT', 'GRADUATE', 'HYBRID', 'PASS_FAIL', 3.00, 18, 22, TRUE, '2028-01-18'::date, '2028-05-05'::date, 'Draft seminar section for manual registration testing.')
 )
 INSERT INTO course_section (
@@ -1396,9 +1429,11 @@ WITH desired_section_instructors(
 ) AS (
     VALUES
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'jane.smith@msm.edu'),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'alan.reed@msm.edu'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'BH', TRUE, 'alan.reed@msm.edu'),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'jane.smith@msm.edu'),
         ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'maria.chen@msm.edu'),
+        ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'maria.chen@msm.edu'),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'maria.chen@msm.edu'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'nadia.rivera@msm.edu'),
         ('ELV', '201', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'nadia.rivera@msm.edu'),
         ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'nadia.rivera@msm.edu'),
@@ -1410,14 +1445,16 @@ WITH desired_section_instructors(
 )
 INSERT INTO course_section_instructor (
     section_id,
-    staff_id,
-    section_instructor_role_id,
-    is_primary
+    instructor_user_id,
+    instructional_assignment_role_id,
+    can_view_grades,
+    can_manage_grades
 )
 SELECT course_section.section_id,
-       staff.id,
-       role.section_instructor_role_id,
-       TRUE
+       staff.user_id,
+       role.instructional_assignment_role_id,
+       role.default_can_view_grades,
+       role.default_can_manage_grades
 FROM desired_section_instructors
 JOIN academic_subject s ON s.code = desired_section_instructors.subject_code
 JOIN course c ON c.subject_id = s.subject_id
@@ -1434,7 +1471,61 @@ JOIN course_section ON course_section.course_offering_id = co.course_offering_id
                    AND course_section.section_letter = desired_section_instructors.section_letter
                    AND course_section.is_honors = desired_section_instructors.is_honors
 JOIN staff ON staff.email = desired_section_instructors.staff_email
-JOIN section_instructor_role role ON role.code = 'PRIMARY'
+JOIN instructional_assignment_role role ON role.code = 'PRIMARY_INSTRUCTOR'
+;
+
+WITH desired_additional_section_instructors(
+    subject_code,
+    course_number,
+    version_number,
+    academic_year_code,
+    sub_term_code,
+    section_letter,
+    is_honors,
+    staff_email,
+    role_code,
+    can_view_grades,
+    can_manage_grades
+) AS (
+    VALUES
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'alan.reed@msm.edu', 'TEACHING_ASSISTANT', NULL, NULL),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'BH', TRUE, 'jane.smith@msm.edu', 'CO_INSTRUCTOR', TRUE, FALSE),
+        ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'gandalf@valinor.me', 'OBSERVER', NULL, NULL),
+        ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'legolas@mirkwood.me', 'CO_INSTRUCTOR', NULL, NULL),
+        ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'legolas@mirkwood.me', 'TEACHING_ASSISTANT', NULL, NULL),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'maria.chen@msm.edu', 'CO_INSTRUCTOR', NULL, NULL),
+        ('TOLK', '480', 1, 'AY-2026-2027', 'SUMMER-II-2027', 'A', FALSE, 'maria.chen@msm.edu', 'CO_INSTRUCTOR', NULL, NULL),
+        ('MEH', '310', 1, 'AY-2027-2028', 'SPRING-2028', 'B', FALSE, 'maria.chen@msm.edu', 'GRADER', NULL, NULL)
+)
+INSERT INTO course_section_instructor (
+    section_id,
+    instructor_user_id,
+    instructional_assignment_role_id,
+    can_view_grades,
+    can_manage_grades
+)
+SELECT course_section.section_id,
+       staff.user_id,
+       role.instructional_assignment_role_id,
+       COALESCE(desired_additional_section_instructors.can_view_grades, role.default_can_view_grades),
+       COALESCE(desired_additional_section_instructors.can_manage_grades, role.default_can_manage_grades)
+FROM desired_additional_section_instructors
+JOIN academic_subject s ON s.code = desired_additional_section_instructors.subject_code
+JOIN course c ON c.subject_id = s.subject_id
+             AND c.course_number = desired_additional_section_instructors.course_number
+JOIN course_version cv ON cv.course_id = c.course_id
+                      AND cv.version_number = desired_additional_section_instructors.version_number
+JOIN academic_year ay ON ay.code = desired_additional_section_instructors.academic_year_code
+JOIN course_offering co ON co.course_version_id = cv.course_version_id
+                       AND co.academic_year_id = ay.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = ay.academic_year_id
+                           AND sub_term.code = desired_additional_section_instructors.sub_term_code
+JOIN course_section ON course_section.course_offering_id = co.course_offering_id
+                   AND course_section.sub_term_id = sub_term.sub_term_id
+                   AND course_section.section_letter = desired_additional_section_instructors.section_letter
+                   AND course_section.is_honors = desired_additional_section_instructors.is_honors
+JOIN staff ON staff.email = desired_additional_section_instructors.staff_email
+JOIN instructional_assignment_role role ON role.code = desired_additional_section_instructors.role_code
 ;
 
 WITH desired_section_meetings(
@@ -1456,10 +1547,12 @@ WITH desired_section_meetings(
     VALUES
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'CLASS', 1, '09:00'::time, '10:15'::time, 'Rivendell Hall', '204', 1),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'CLASS', 3, '09:00'::time, '10:15'::time, 'Rivendell Hall', '204', 2),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'CLASS', 2, '11:00'::time, '12:15'::time, 'Lore House', '012', 1),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'CLASS', 4, '13:00'::time, '14:15'::time, 'Lore House', '012', 2),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'BH', TRUE, 'CLASS', 2, '11:00'::time, '12:15'::time, 'Lore House', '012', 1),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'BH', TRUE, 'CLASS', 4, '13:00'::time, '14:15'::time, 'Lore House', '012', 2),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'CLASS', NULL, NULL, NULL, NULL, NULL, 1),
         ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'CLASS', 5, '13:00'::time, '15:30'::time, 'Rivendell Hall', '110', 1),
+        ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'CLASS', 5, '09:00'::time, '10:00'::time, 'Language Hall', '201', 1),
+        ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'B', FALSE, 'CLASS', 5, '14:00'::time, '15:00'::time, 'Language Hall', '202', 1),
         ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'CLASS', 1, '10:30'::time, '11:45'::time, 'Language Hall', '201', 1),
         ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'CLASS', 3, '10:30'::time, '11:45'::time, 'Language Hall', '201', 2),
         ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'LAB', 4, '14:00'::time, '15:30'::time, 'Language Hall', '210', 1),

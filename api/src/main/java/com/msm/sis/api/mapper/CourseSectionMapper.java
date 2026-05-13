@@ -6,6 +6,8 @@ import com.msm.sis.api.dto.course.CourseSectionInstructorResponse;
 import com.msm.sis.api.dto.course.CourseSectionListResponse;
 import com.msm.sis.api.dto.course.CourseSectionListResultResponse;
 import com.msm.sis.api.dto.course.CourseSectionMeetingResponse;
+import com.msm.sis.api.dto.course.CourseSectionStagingListResponse;
+import com.msm.sis.api.dto.course.CourseSectionStagingResultResponse;
 import com.msm.sis.api.dto.course.PatchCourseSectionRequest;
 import com.msm.sis.api.entity.AcademicDivision;
 import com.msm.sis.api.entity.AcademicSubject;
@@ -18,8 +20,9 @@ import com.msm.sis.api.entity.CourseSectionStatus;
 import com.msm.sis.api.entity.CourseVersion;
 import com.msm.sis.api.entity.DeliveryMode;
 import com.msm.sis.api.entity.GradingBasis;
-import com.msm.sis.api.entity.SectionInstructorRole;
+import com.msm.sis.api.entity.InstructionalAssignmentRole;
 import com.msm.sis.api.entity.SectionMeetingType;
+import com.msm.sis.api.entity.SisUser;
 import com.msm.sis.api.entity.Staff;
 import com.msm.sis.api.entity.StudentSectionEnrollment;
 import com.msm.sis.api.patch.PatchValue;
@@ -31,6 +34,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.msm.sis.api.patch.PatchUtils.apply;
 import static com.msm.sis.api.patch.PatchUtils.applyTrimmed;
@@ -38,6 +42,11 @@ import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 @Component
 public class CourseSectionMapper {
+    private static final Set<String> SEAT_HOLDING_STATUS_CODES = Set.of(
+            "REGISTERED",
+            "IN_PROGRESS"
+    );
+
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h:mm a");
 
     public CourseSectionListResponse toCourseSectionListResponse(
@@ -73,6 +82,68 @@ public class CourseSectionMapper {
                 section.getSubTerm() == null ? null : section.getSubTerm().getId(),
                 section.getSectionLetter(),
                 buildDisplaySectionCode(section),
+                section.getTitle(),
+                section.isHonors(),
+                status == null ? null : status.getId(),
+                status == null ? null : status.getCode(),
+                status == null ? null : status.getName(),
+                academicDivision == null ? null : academicDivision.getId(),
+                academicDivision == null ? null : academicDivision.getCode(),
+                academicDivision == null ? null : academicDivision.getName(),
+                deliveryMode == null ? null : deliveryMode.getId(),
+                deliveryMode == null ? null : deliveryMode.getCode(),
+                deliveryMode == null ? null : deliveryMode.getName(),
+                gradingBasis == null ? null : gradingBasis.getId(),
+                gradingBasis == null ? null : gradingBasis.getCode(),
+                gradingBasis == null ? null : gradingBasis.getName(),
+                section.getCredits(),
+                section.getCapacity(),
+                section.getHardCapacity(),
+                section.isWaitlistAllowed(),
+                section.getStartDate(),
+                section.getEndDate(),
+                buildPrimaryInstructorName(instructors),
+                buildInstructorSummary(instructors),
+                buildMeetingSummary(meetings),
+                buildRoomSummary(meetings),
+                buildEnrollmentSummary(section),
+                instructors.stream().map(this::toCourseSectionInstructorResponse).toList(),
+                meetings.stream().map(this::toCourseSectionMeetingResponse).toList()
+        );
+    }
+
+    public CourseSectionStagingListResponse toCourseSectionStagingListResponse(
+            Long subTermId,
+            List<CourseSection> sections
+    ) {
+        return new CourseSectionStagingListResponse(
+                subTermId,
+                sections.stream().map(this::toCourseSectionStagingResultResponse).toList(),
+                sections.size()
+        );
+    }
+
+    public CourseSectionStagingResultResponse toCourseSectionStagingResultResponse(CourseSection section) {
+        CourseOffering courseOffering = section.getCourseOffering();
+        CourseVersion courseVersion = courseOffering == null ? null : courseOffering.getCourseVersion();
+        Course course = courseVersion == null ? null : courseVersion.getCourse();
+        AcademicDivision academicDivision = section.getAcademicDivision();
+        CourseSectionStatus status = section.getStatus();
+        DeliveryMode deliveryMode = section.getDeliveryMode();
+        GradingBasis gradingBasis = section.getGradingBasis();
+        List<CourseSectionInstructor> instructors = sortedInstructors(section);
+        List<CourseSectionMeeting> meetings = sortedMeetings(section);
+
+        return new CourseSectionStagingResultResponse(
+                section.getId(),
+                courseOffering == null ? null : courseOffering.getId(),
+                section.getSubTerm() == null ? null : section.getSubTerm().getId(),
+                course == null ? null : course.getId(),
+                courseVersion == null ? null : courseVersion.getId(),
+                buildCourseCode(course),
+                courseVersion == null ? null : courseVersion.getTitle(),
+                section.getSectionLetter(),
+                buildFullSectionCode(section),
                 section.getTitle(),
                 section.isHonors(),
                 status == null ? null : status.getId(),
@@ -154,21 +225,22 @@ public class CourseSectionMapper {
     }
 
     public CourseSectionInstructorResponse toCourseSectionInstructorResponse(CourseSectionInstructor instructor) {
-        Staff staff = instructor.getStaff();
-        SectionInstructorRole role = instructor.getRole();
+        Staff staff = instructor.getInstructorStaff();
+        SisUser user = instructor.getInstructorUser();
+        InstructionalAssignmentRole role = instructor.getRole();
 
         return new CourseSectionInstructorResponse(
                 instructor.getId(),
                 staff == null ? null : staff.getId(),
                 staff == null ? null : staff.getFirstName(),
                 staff == null ? null : staff.getLastName(),
-                staff == null ? null : staff.getEmail(),
+                staff == null ? user == null ? null : user.getEmail() : staff.getEmail(),
                 role == null ? null : role.getId(),
                 role == null ? null : role.getCode(),
                 role == null ? null : role.getName(),
                 instructor.isPrimary(),
-                instructor.getAssignmentStartDate(),
-                instructor.getAssignmentEndDate()
+                instructor.isCanViewGrades(),
+                instructor.isCanManageGrades()
         );
     }
 
@@ -218,13 +290,25 @@ public class CourseSectionMapper {
     }
 
     private String buildDisplaySectionCode(CourseSection section) {
-        StringBuilder displayCode = new StringBuilder(section.getSectionLetter() == null ? "" : section.getSectionLetter());
+        return section.getSectionLetter() == null ? "" : section.getSectionLetter();
+    }
 
-        if (section.isHonors()) {
-            displayCode.append("H");
+    private String buildFullSectionCode(CourseSection section) {
+        CourseOffering courseOffering = section.getCourseOffering();
+        CourseVersion courseVersion = courseOffering == null ? null : courseOffering.getCourseVersion();
+        Course course = courseVersion == null ? null : courseVersion.getCourse();
+        String courseCode = buildCourseCode(course);
+        String sectionCode = buildDisplaySectionCode(section);
+
+        if (courseCode == null || courseCode.isBlank()) {
+            return sectionCode;
         }
 
-        return displayCode.toString();
+        if (sectionCode == null || sectionCode.isBlank()) {
+            return courseCode;
+        }
+
+        return courseCode + " " + sectionCode;
     }
 
     private CourseSectionEnrollmentSummaryResponse buildEnrollmentSummary(CourseSection section) {
@@ -233,7 +317,9 @@ public class CourseSectionMapper {
                 : section.getEnrollments();
         int enrolledCount = (int) enrollments.stream()
                 .filter(enrollment -> enrollment.getStatus() != null)
-                .filter(enrollment -> "REGISTERED".equalsIgnoreCase(enrollment.getStatus().getCode()))
+                .filter(enrollment -> SEAT_HOLDING_STATUS_CODES.contains(
+                        enrollment.getStatus().getCode().toUpperCase()
+                ))
                 .count();
         int waitlistedCount = (int) enrollments.stream()
                 .filter(enrollment -> enrollment.getStatus() != null)
@@ -254,8 +340,9 @@ public class CourseSectionMapper {
                 ? List.of()
                 : section.getInstructors().stream()
                 .sorted(Comparator.comparing(CourseSectionInstructor::isPrimary).reversed()
-                        .thenComparing(instructor -> instructor.getStaff() == null ? null : instructor.getStaff().getLastName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
-                        .thenComparing(instructor -> instructor.getStaff() == null ? null : instructor.getStaff().getFirstName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                        .thenComparing(instructor -> instructor.getRole() == null ? null : instructor.getRole().getSortOrder(), Comparator.nullsLast(Integer::compareTo))
+                        .thenComparing(instructor -> instructor.getInstructorStaff() == null ? null : instructor.getInstructorStaff().getLastName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                        .thenComparing(instructor -> instructor.getInstructorStaff() == null ? null : instructor.getInstructorStaff().getFirstName(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
                         .thenComparing(CourseSectionInstructor::getId, Comparator.nullsLast(Long::compareTo)))
                 .toList();
     }
@@ -292,10 +379,10 @@ public class CourseSectionMapper {
     }
 
     private String buildInstructorName(CourseSectionInstructor instructor) {
-        Staff staff = instructor.getStaff();
+        Staff staff = instructor.getInstructorStaff();
 
         if (staff == null) {
-            return null;
+            return instructor.getInstructorUser() == null ? null : instructor.getInstructorUser().getEmail();
         }
 
         String firstName = staff.getFirstName() == null ? "" : staff.getFirstName().trim();

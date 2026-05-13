@@ -7,18 +7,14 @@ import {
   buildPatchSectionRequest,
 } from './courseSectionRequestBuilders';
 import {
-  getErrorMessage,
   mapCourseSectionDetailToPreview,
+  toCourseSectionMutationErrorState,
 } from './courseSectionsWorkspaceUtils';
 import type {
   CourseSectionDraft,
+  CourseSectionMutationState,
   CourseSectionPreview,
 } from './courseSectionsWorkspaceTypes';
-
-type CourseSectionMutationState =
-  | { status: 'idle' }
-  | { status: 'saving' }
-  | { status: 'error'; message: string };
 
 type UseCourseSectionMutationsParams = {
   applySelectedSectionUpdate: (section: CourseSectionPreview) => void;
@@ -74,10 +70,9 @@ export function useCourseSectionMutations({
       reloadSectionList();
       onCancelAdd();
     } catch (error: unknown) {
-      setSectionMutationState({
-        status: 'error',
-        message: getErrorMessage(error, 'Failed to create course section.'),
-      });
+      setSectionMutationState(
+        toCourseSectionMutationErrorState(error, 'Failed to create course section.')
+      );
     }
   }
 
@@ -105,10 +100,9 @@ export function useCourseSectionMutations({
       resetSectionMutationState();
       reloadSectionList();
     } catch (error: unknown) {
-      setSectionMutationState({
-        status: 'error',
-        message: getErrorMessage(error, 'Failed to update course section.'),
-      });
+      setSectionMutationState(
+        toCourseSectionMutationErrorState(error, 'Failed to update course section.')
+      );
     }
   }
 
@@ -131,10 +125,9 @@ export function useCourseSectionMutations({
       resetSectionMutationState();
       reloadSectionList();
     } catch (error: unknown) {
-      setSectionMutationState({
-        status: 'error',
-        message: getErrorMessage(error, 'Failed to cancel course section.'),
-      });
+      setSectionMutationState(
+        toCourseSectionMutationErrorState(error, 'Failed to cancel course section.')
+      );
     }
   }
 

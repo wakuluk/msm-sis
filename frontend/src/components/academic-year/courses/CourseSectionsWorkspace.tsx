@@ -64,6 +64,7 @@ export function CourseSectionsWorkspace({
         sectionStatusOptions={workspace.sectionStatusOptions}
         sectionsAreLoading={workspace.sectionsAreLoading}
         selectedOffering={selectedOffering}
+        stageSectionsPath={`/academics/academic-sub-term/${subTermId}/section-stage`}
         subTermLabel={subTermLabel}
         totalPages={workspace.totalPages}
         workspaceDescription={workspace.workspaceDescription}

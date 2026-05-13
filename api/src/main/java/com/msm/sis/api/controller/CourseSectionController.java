@@ -3,15 +3,24 @@ package com.msm.sis.api.controller;
 import com.msm.sis.api.config.AuthenticatedJwt;
 import com.msm.sis.api.dto.course.AddCourseSectionStudentRequest;
 import com.msm.sis.api.dto.course.CourseSectionDetailResponse;
+import com.msm.sis.api.dto.course.CourseSectionInitialGradesResponse;
 import com.msm.sis.api.dto.course.CourseSectionListResponse;
+import com.msm.sis.api.dto.course.CourseSectionStageTransitionRequest;
+import com.msm.sis.api.dto.course.CourseSectionStageTransitionResponse;
+import com.msm.sis.api.dto.course.CourseSectionStagingListResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentEnrollmentEventListResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentListResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentResponse;
 import com.msm.sis.api.dto.course.CreateCourseSectionRequest;
 import com.msm.sis.api.dto.course.PatchCourseSectionRequest;
 import com.msm.sis.api.dto.course.PatchCourseSectionStudentEnrollmentRequest;
+import com.msm.sis.api.dto.course.PostCourseSectionStudentGradeRequest;
+import com.msm.sis.api.dto.course.PostInitialCourseSectionGradesRequest;
+import com.msm.sis.api.service.course.CourseSectionAccessService;
+import com.msm.sis.api.service.course.CourseSectionGradePermissionService;
 import com.msm.sis.api.service.course.CourseSectionPatchService;
 import com.msm.sis.api.service.course.CourseSectionService;
+import com.msm.sis.api.service.course.CourseSectionStageTransitionService;
 import com.msm.sis.api.service.course.StudentSectionEnrollmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,18 +43,69 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 @Tag(name = "Course Sections", description = "Manage course sections")
 public class CourseSectionController {
+    private final CourseSectionAccessService courseSectionAccessService;
+    private final CourseSectionGradePermissionService courseSectionGradePermissionService;
     private final CourseSectionPatchService courseSectionPatchService;
     private final CourseSectionService courseSectionService;
+    private final CourseSectionStageTransitionService courseSectionStageTransitionService;
     private final StudentSectionEnrollmentService studentSectionEnrollmentService;
 
     public CourseSectionController(
+            CourseSectionAccessService courseSectionAccessService,
+            CourseSectionGradePermissionService courseSectionGradePermissionService,
             CourseSectionPatchService courseSectionPatchService,
             CourseSectionService courseSectionService,
+            CourseSectionStageTransitionService courseSectionStageTransitionService,
             StudentSectionEnrollmentService studentSectionEnrollmentService
     ) {
+        this.courseSectionAccessService = courseSectionAccessService;
+        this.courseSectionGradePermissionService = courseSectionGradePermissionService;
         this.courseSectionPatchService = courseSectionPatchService;
         this.courseSectionService = courseSectionService;
+        this.courseSectionStageTransitionService = courseSectionStageTransitionService;
         this.studentSectionEnrollmentService = studentSectionEnrollmentService;
+    }
+
+    @GetMapping("/academic-sub-terms/{subTermId}/course-sections/staging")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "List course sections for sub term staging",
+            description = "Returns all course sections in an academic sub term for the section staging workflow."
+    )
+    public ResponseEntity<CourseSectionStagingListResponse> getCourseSectionsForSubTermStaging(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @PathVariable Long subTermId,
+            @RequestParam(required = false) String sourceStatusCode,
+            @RequestParam(required = false) String course,
+            @RequestParam(required = false) String section,
+            @RequestParam(required = false) String instructor,
+            @RequestParam(required = false) String meetingPattern,
+            @RequestParam(required = false) String room,
+            @RequestParam(required = false) String status
+    ) {
+        return ResponseEntity.ok(courseSectionService.getCourseSectionsForSubTermStaging(
+                subTermId,
+                sourceStatusCode,
+                course,
+                section,
+                instructor,
+                meetingPattern,
+                room,
+                status
+        ));
+    }
+
+    @PostMapping("/course-sections/stage-transitions")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Transition selected course sections to the next stage",
+            description = "Moves only the selected course sections when they still belong to the requested sub term and are still in the source status."
+    )
+    public ResponseEntity<CourseSectionStageTransitionResponse> transitionCourseSectionStages(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @Valid @NotNull @RequestBody CourseSectionStageTransitionRequest request
+    ) {
+        return ResponseEntity.ok(courseSectionStageTransitionService.transitionSections(request));
     }
 
     @GetMapping("/course-offerings/{courseOfferingId}/sections")
@@ -89,7 +149,7 @@ public class CourseSectionController {
     }
 
     @GetMapping("/course-sections/{sectionId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'ADJUNCT', 'TEACHING_ASSISTANT', 'DEPARTMENT_HEAD')")
     @Operation(
             summary = "Get course section detail",
             description = "Returns the detail view for a single course section."
@@ -98,7 +158,11 @@ public class CourseSectionController {
             @AuthenticationPrincipal AuthenticatedJwt jwt,
             @PathVariable Long sectionId
     ) {
-        return ResponseEntity.ok(courseSectionService.getCourseSectionDetail(sectionId));
+        return ResponseEntity.ok(courseSectionService.getCourseSectionDetail(
+                sectionId,
+                jwt.getUserId(),
+                jwt.getRoles()
+        ));
     }
 
     @PatchMapping("/course-sections/{sectionId}")
@@ -116,7 +180,7 @@ public class CourseSectionController {
     }
 
     @GetMapping("/course-sections/{sectionId}/students")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'ADJUNCT', 'TEACHING_ASSISTANT', 'DEPARTMENT_HEAD')")
     @Operation(
             summary = "List course section students",
             description = "Returns paged student enrollments for a course section."
@@ -129,6 +193,8 @@ public class CourseSectionController {
             @RequestParam(defaultValue = "student") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection
     ) {
+        courseSectionAccessService.assertCanViewSection(sectionId, jwt.getUserId(), jwt.getRoles());
+
         return ResponseEntity.ok(studentSectionEnrollmentService.getSectionStudents(
                 sectionId,
                 page,
@@ -158,7 +224,7 @@ public class CourseSectionController {
     }
 
     @GetMapping("/course-sections/{sectionId}/students/{enrollmentId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'ADJUNCT', 'TEACHING_ASSISTANT', 'DEPARTMENT_HEAD')")
     @Operation(
             summary = "Get course section student enrollment",
             description = "Returns the detail view for one student enrollment in a course section."
@@ -168,6 +234,12 @@ public class CourseSectionController {
             @PathVariable Long sectionId,
             @PathVariable Long enrollmentId
     ) {
+        courseSectionGradePermissionService.assertCanViewGrades(
+                sectionId,
+                jwt.getUserId(),
+                jwt.getRoles()
+        );
+
         return ResponseEntity.ok(studentSectionEnrollmentService.getSectionStudentEnrollment(
                 sectionId,
                 enrollmentId
@@ -189,6 +261,88 @@ public class CourseSectionController {
         return ResponseEntity.ok(studentSectionEnrollmentService.patchEnrollment(
                 sectionId,
                 enrollmentId,
+                request,
+                jwt.getUserId()
+        ));
+    }
+
+    @PostMapping("/course-sections/{sectionId}/students/{enrollmentId}/waitlist-offer/expire-now")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEPARTMENT_HEAD')")
+    @Operation(
+            summary = "Expire a waitlist offer now",
+            description = "POC helper that sets the active waitlist offer expiration time to now so the scheduled cleanup can expire it."
+    )
+    public ResponseEntity<CourseSectionStudentResponse> expireWaitlistOfferNow(
+            @PathVariable Long sectionId,
+            @PathVariable Long enrollmentId
+    ) {
+        return ResponseEntity.ok(studentSectionEnrollmentService.expireWaitlistOfferNow(
+                sectionId,
+                enrollmentId
+        ));
+    }
+
+    @PostMapping("/course-sections/{sectionId}/students/{enrollmentId}/waitlist-offer/run-expired-cleanup")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEPARTMENT_HEAD')")
+    @Operation(
+            summary = "Run expired waitlist cleanup",
+            description = "POC helper that immediately runs the waitlist offer expiration cleanup instead of waiting for the scheduler."
+    )
+    public ResponseEntity<CourseSectionStudentResponse> runExpiredWaitlistOfferCleanup(
+            @PathVariable Long sectionId,
+            @PathVariable Long enrollmentId
+    ) {
+        return ResponseEntity.ok(studentSectionEnrollmentService.runExpiredWaitlistOfferCleanup(
+                sectionId,
+                enrollmentId
+        ));
+    }
+
+    @PostMapping("/course-sections/{sectionId}/students/{enrollmentId}/grades")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'ADJUNCT', 'TEACHING_ASSISTANT', 'DEPARTMENT_HEAD')")
+    @Operation(
+            summary = "Post course section student grade",
+            description = "Posts a midterm or final grade. Admins can post any grade; assigned instructors must have grade management permission for the section."
+    )
+    public ResponseEntity<CourseSectionStudentResponse> postCourseSectionStudentGrade(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @PathVariable Long sectionId,
+            @PathVariable Long enrollmentId,
+            @Valid @NotNull @RequestBody PostCourseSectionStudentGradeRequest request
+    ) {
+        courseSectionGradePermissionService.assertCanManageGrades(
+                sectionId,
+                jwt.getUserId(),
+                jwt.getRoles()
+        );
+
+        return ResponseEntity.ok(studentSectionEnrollmentService.postGrade(
+                sectionId,
+                enrollmentId,
+                request,
+                jwt.getUserId()
+        ));
+    }
+
+    @PostMapping("/course-sections/{sectionId}/initial-grades")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'ADJUNCT', 'TEACHING_ASSISTANT', 'DEPARTMENT_HEAD')")
+    @Operation(
+            summary = "Post initial course section grades",
+            description = "Posts initial midterm or final grades in bulk. Existing grades are not overwritten."
+    )
+    public ResponseEntity<CourseSectionInitialGradesResponse> postInitialCourseSectionGrades(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @PathVariable Long sectionId,
+            @Valid @NotNull @RequestBody PostInitialCourseSectionGradesRequest request
+    ) {
+        courseSectionGradePermissionService.assertCanManageGrades(
+                sectionId,
+                jwt.getUserId(),
+                jwt.getRoles()
+        );
+
+        return ResponseEntity.ok(studentSectionEnrollmentService.postInitialGrades(
+                sectionId,
                 request,
                 jwt.getUserId()
         ));
