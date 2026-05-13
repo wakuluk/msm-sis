@@ -14,12 +14,15 @@ import com.msm.sis.api.entity.AthleticSport;
 import com.msm.sis.api.entity.ClassStanding;
 import com.msm.sis.api.entity.RegistrationGroup;
 import com.msm.sis.api.entity.RegistrationGroupGeneration;
+import com.msm.sis.api.entity.RegistrationGroupGenerationAcademicDivision;
 import com.msm.sis.api.entity.RegistrationGroupGenerationSport;
 import com.msm.sis.api.entity.RegistrationGroupStudent;
 import com.msm.sis.api.entity.Student;
+import com.msm.sis.api.repository.RegistrationGroupGenerationAcademicDivisionRepository;
 import com.msm.sis.api.repository.RegistrationGroupGenerationSportRepository;
 import com.msm.sis.api.repository.RegistrationGroupRepository;
 import com.msm.sis.api.repository.RegistrationGroupStudentRepository;
+import com.msm.sis.api.service.student.StudentAcademicCareerEligibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.msm.sis.api.util.TextUtils.trimToNull;
 import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
@@ -38,7 +43,9 @@ public class RegistrationGroupDetailService {
     private final RegistrationGroupLifecycleService lifecycleService;
     private final RegistrationGroupRepository registrationGroupRepository;
     private final RegistrationGroupStudentRepository registrationGroupStudentRepository;
+    private final RegistrationGroupGenerationAcademicDivisionRepository generationAcademicDivisionRepository;
     private final RegistrationGroupGenerationSportRepository generationSportRepository;
+    private final StudentAcademicCareerEligibilityService academicCareerEligibilityService;
 
     @Transactional(readOnly = true)
     public RegistrationGroupDetailResponse getRegistrationGroupDetail(Long registrationGroupId) {
@@ -57,6 +64,13 @@ public class RegistrationGroupDetailService {
                 ));
         List<RegistrationGroupStudent> assignedStudents =
                 registrationGroupStudentRepository.findAssignedStudentsForGroup(registrationGroup.getId());
+        Map<Long, List<AcademicDivision>> academicDivisionsByStudentId =
+                academicCareerEligibilityService.getAllowedAcademicDivisionsByStudentId(
+                        assignedStudents.stream()
+                                .map(RegistrationGroupStudent::getStudent)
+                                .map(Student::getId)
+                                .toList()
+                );
         RegistrationGroupGeneration generation = registrationGroup.getRegistrationGroupGeneration();
 
         return new RegistrationGroupDetailResponse(
@@ -72,7 +86,13 @@ public class RegistrationGroupDetailService {
                         generation == null ? null : generation.getSplitCount()
                 ),
                 assignedStudents.stream()
-                        .map(this::toAssignedStudentResponse)
+                        .map(assignedStudent -> toAssignedStudentResponse(
+                                assignedStudent,
+                                academicDivisionsByStudentId.getOrDefault(
+                                        assignedStudent.getStudent().getId(),
+                                        List.of()
+                                )
+                        ))
                         .toList()
         );
     }
@@ -108,7 +128,7 @@ public class RegistrationGroupDetailService {
 
         AcademicYear academicYear = generation.getAcademicYear();
         AcademicTerm term = generation.getTerm();
-        AcademicDivision academicDivision = generation.getAcademicDivision();
+        List<CodeNameReferenceOptionResponse> academicDivisions = findAcademicDivisionResponses(generation);
 
         return new RegistrationGroupSavedSearchCriteriaResponse(
                 generation.getId(),
@@ -122,13 +142,8 @@ public class RegistrationGroupDetailService {
                 generation.getStudentSearchText(),
                 generation.getProgramSearchText(),
                 generation.getGroupNamePrefix(),
-                academicDivision == null
-                        ? null
-                        : new CodeNameReferenceOptionResponse(
-                                academicDivision.getId(),
-                                academicDivision.getCode(),
-                                academicDivision.getName()
-                        ),
+                academicDivisions.isEmpty() ? null : academicDivisions.getFirst(),
+                academicDivisions,
                 generation.getHonorsFilter(),
                 generation.getAthleteFilter(),
                 generation.getExistingGroupFilter(),
@@ -145,6 +160,30 @@ public class RegistrationGroupDetailService {
         );
     }
 
+    private List<CodeNameReferenceOptionResponse> findAcademicDivisionResponses(
+            RegistrationGroupGeneration generation
+    ) {
+        List<CodeNameReferenceOptionResponse> academicDivisions =
+                generationAcademicDivisionRepository.findAcademicDivisionsForGeneration(generation.getId()).stream()
+                        .map(RegistrationGroupGenerationAcademicDivision::getAcademicDivision)
+                        .map(this::toAcademicDivisionOption)
+                        .toList();
+        if (!academicDivisions.isEmpty()) {
+            return academicDivisions;
+        }
+
+        AcademicDivision academicDivision = generation.getAcademicDivision();
+        return academicDivision == null ? List.of() : List.of(toAcademicDivisionOption(academicDivision));
+    }
+
+    private CodeNameReferenceOptionResponse toAcademicDivisionOption(AcademicDivision academicDivision) {
+        return new CodeNameReferenceOptionResponse(
+                academicDivision.getId(),
+                academicDivision.getCode(),
+                academicDivision.getName()
+        );
+    }
+
     private CodeNameReferenceOptionResponse toAthleticSportOption(AthleticSport athleticSport) {
         return new CodeNameReferenceOptionResponse(
                 athleticSport.getId(),
@@ -154,7 +193,8 @@ public class RegistrationGroupDetailService {
     }
 
     private RegistrationGroupAssignedStudentResponse toAssignedStudentResponse(
-            RegistrationGroupStudent registrationGroupStudent
+            RegistrationGroupStudent registrationGroupStudent,
+            List<AcademicDivision> academicDivisions
     ) {
         Student student = registrationGroupStudent.getStudent();
         ClassStanding classStanding = student == null ? null : student.getClassStanding();
@@ -167,6 +207,8 @@ public class RegistrationGroupDetailService {
                 student == null ? null : student.getLastName(),
                 buildDisplayName(student),
                 student == null ? null : student.getEmail(),
+                academicDivisionCodes(academicDivisions),
+                academicDivisionNames(academicDivisions),
                 classStanding == null ? null : classStanding.getId(),
                 classStanding == null ? null : classStanding.getName(),
                 student == null ? null : student.getEstimatedGradDate(),
@@ -174,6 +216,22 @@ public class RegistrationGroupDetailService {
                 registrationGroupStudent.getCreatedAt(),
                 registrationGroupStudent.getUpdatedAt()
         );
+    }
+
+    private String academicDivisionCodes(List<AcademicDivision> academicDivisions) {
+        return academicDivisions.stream()
+                .map(AcademicDivision::getCode)
+                .filter(code -> trimToNull(code) != null)
+                .distinct()
+                .collect(Collectors.joining(", "));
+    }
+
+    private String academicDivisionNames(List<AcademicDivision> academicDivisions) {
+        return academicDivisions.stream()
+                .map(AcademicDivision::getName)
+                .filter(name -> trimToNull(name) != null)
+                .distinct()
+                .collect(Collectors.joining(", "));
     }
 
     private String buildDisplayName(Student student) {

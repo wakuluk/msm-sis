@@ -80,9 +80,7 @@ export const CourseSectionInstructorResponseSchema = z.object({
   canManageGrades: z.boolean(),
 });
 
-export type CourseSectionInstructorResponse = z.infer<
-  typeof CourseSectionInstructorResponseSchema
->;
+export type CourseSectionInstructorResponse = z.infer<typeof CourseSectionInstructorResponseSchema>;
 
 export const CourseSectionMeetingResponseSchema = z.object({
   sectionMeetingId: z.number(),
@@ -177,9 +175,7 @@ export const CourseSectionListResultResponseSchema = z.object({
   meetings: z.array(CourseSectionMeetingResponseSchema),
 });
 
-export type CourseSectionListResultResponse = z.infer<
-  typeof CourseSectionListResultResponseSchema
->;
+export type CourseSectionListResultResponse = z.infer<typeof CourseSectionListResultResponseSchema>;
 
 export const CourseSectionListResponseSchema = z.object({
   courseOfferingId: z.number().nullable(),
@@ -334,9 +330,7 @@ export const AddCourseSectionStudentRequestSchema = z.object({
   manualAddReason: z.string().trim().max(500).nullable().optional(),
 });
 
-export type AddCourseSectionStudentRequest = z.infer<
-  typeof AddCourseSectionStudentRequestSchema
->;
+export type AddCourseSectionStudentRequest = z.infer<typeof AddCourseSectionStudentRequestSchema>;
 
 export const PatchCourseSectionStudentEnrollmentRequestSchema = z.object({
   statusCode: z.string().trim().max(50).nullable().optional(),
@@ -435,6 +429,33 @@ export const PostCourseSectionStudentGradeRequestSchema = z.object({
 
 export type PostCourseSectionStudentGradeRequest = z.infer<
   typeof PostCourseSectionStudentGradeRequestSchema
+>;
+
+export const InitialCourseSectionGradeRequestSchema = z.object({
+  enrollmentId: z.number(),
+  gradeTypeCode: z.string().trim().min(1).max(50),
+  gradeMarkCode: z.string().trim().min(1).max(20),
+});
+
+export type InitialCourseSectionGradeRequest = z.infer<
+  typeof InitialCourseSectionGradeRequestSchema
+>;
+
+export const PostInitialCourseSectionGradesRequestSchema = z.object({
+  grades: z.array(InitialCourseSectionGradeRequestSchema).min(1),
+});
+
+export type PostInitialCourseSectionGradesRequest = z.infer<
+  typeof PostInitialCourseSectionGradesRequestSchema
+>;
+
+export const CourseSectionInitialGradesResponseSchema = z.object({
+  sectionId: z.number().nullable(),
+  results: z.array(CourseSectionStudentResponseSchema),
+});
+
+export type CourseSectionInitialGradesResponse = z.infer<
+  typeof CourseSectionInitialGradesResponseSchema
 >;
 
 export const CourseSectionStudentListResponseSchema = z.object({

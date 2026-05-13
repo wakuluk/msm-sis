@@ -7,6 +7,8 @@ public record RegistrationGroupStudentOptionResponse(
         String lastName,
         String displayName,
         String email,
+        String academicDivisionCode,
+        String academicDivisionName,
         String classStanding,
         Integer classOf,
         RegistrationGroupExistingAssignmentResponse existingAssignment

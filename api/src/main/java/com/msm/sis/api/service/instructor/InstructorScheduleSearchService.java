@@ -464,8 +464,7 @@ public class InstructorScheduleSearchService {
         }
 
         String sectionLetter = trimToNull(section.getSectionLetter());
-        String honorsSuffix = section.isHonors() ? "H" : "";
-        String displaySection = sectionLetter == null ? honorsSuffix : sectionLetter + honorsSuffix;
+        String displaySection = sectionLetter == null ? "" : sectionLetter;
 
         if (trimToNull(courseCode) == null) {
             return trimToNull(displaySection);

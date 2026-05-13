@@ -1,12 +1,15 @@
 package com.msm.sis.api.service.course;
 
 import com.msm.sis.api.dto.course.AddCourseSectionStudentRequest;
+import com.msm.sis.api.dto.course.CourseSectionInitialGradesResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentEnrollmentEventResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentEnrollmentEventListResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentListResponse;
 import com.msm.sis.api.dto.course.CourseSectionStudentResponse;
+import com.msm.sis.api.dto.course.InitialCourseSectionGradeRequest;
 import com.msm.sis.api.dto.course.PatchCourseSectionStudentEnrollmentRequest;
 import com.msm.sis.api.dto.course.PostCourseSectionStudentGradeRequest;
+import com.msm.sis.api.dto.course.PostInitialCourseSectionGradesRequest;
 import com.msm.sis.api.entity.CourseSection;
 import com.msm.sis.api.entity.GradeMark;
 import com.msm.sis.api.entity.GradingBasis;
@@ -34,6 +37,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -373,6 +379,93 @@ public class StudentSectionEnrollmentService {
         );
 
         return mapEnrollmentWithFreshGrades(enrollment);
+    }
+
+    @Transactional
+    public CourseSectionInitialGradesResponse postInitialGrades(
+            Long sectionId,
+            PostInitialCourseSectionGradesRequest request,
+            Long actorUserId
+    ) {
+        validatePositiveId(sectionId, "Course section id");
+        requireRequestBody(request);
+
+        if (request.grades() == null || request.grades().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one grade is required.");
+        }
+
+        SisUser actorUser = referenceResolver.resolveOptionalUser(actorUserId);
+        Map<Long, StudentSectionEnrollment> updatedEnrollments = new LinkedHashMap<>();
+        Set<String> requestKeys = new HashSet<>();
+
+        for (InitialCourseSectionGradeRequest initialGradeRequest : request.grades()) {
+            validatePositiveId(initialGradeRequest.enrollmentId(), "Enrollment id");
+
+            StudentSectionEnrollment enrollment = enrollmentRepository
+                    .findBySectionIdAndEnrollmentId(sectionId, initialGradeRequest.enrollmentId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+            StudentSectionGradeType gradeType = referenceResolver.resolveGradeType(initialGradeRequest.gradeTypeCode());
+            GradeMark gradeMark = referenceResolver.resolveGradeMark(initialGradeRequest.gradeMarkCode());
+
+            validateGradePost(enrollment, gradeType);
+            validateUniqueInitialGradeRequest(requestKeys, enrollment.getId(), gradeType);
+            requireMissingInitialGrade(enrollment.getId(), gradeType);
+
+            StudentSectionGrade grade = new StudentSectionGrade();
+            grade.setStudentSectionEnrollment(enrollment);
+            grade.setGradeType(gradeType);
+            grade.setGradeMark(gradeMark);
+            grade.setPreviousGradeMark(null);
+            grade.setChangedFromGrade(null);
+            grade.setChangeReason(null);
+            grade.setCurrent(true);
+            grade.setPostedByUser(actorUser);
+
+            gradeRepository.saveAndFlush(grade);
+            enrollmentEventService.createEvent(
+                    enrollment,
+                    EVENT_TYPE_GRADE_POSTED,
+                    enrollment.getStatus(),
+                    enrollment.getStatus(),
+                    actorUser,
+                    null
+            );
+
+            updatedEnrollments.put(enrollment.getId(), enrollment);
+        }
+
+        List<CourseSectionStudentResponse> updatedStudents = new ArrayList<>();
+        for (StudentSectionEnrollment enrollment : updatedEnrollments.values()) {
+            updatedStudents.add(mapEnrollmentWithFreshGrades(enrollment));
+        }
+
+        return new CourseSectionInitialGradesResponse(sectionId, updatedStudents);
+    }
+
+    private void validateUniqueInitialGradeRequest(
+            Set<String> requestKeys,
+            Long enrollmentId,
+            StudentSectionGradeType gradeType
+    ) {
+        String requestKey = enrollmentId + ":" + gradeType.getCode().toUpperCase();
+        if (!requestKeys.add(requestKey)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Only one initial grade can be submitted per student and grade type."
+            );
+        }
+    }
+
+    private void requireMissingInitialGrade(Long enrollmentId, StudentSectionGradeType gradeType) {
+        if (gradeRepository.findCurrentGradeByEnrollmentIdAndGradeTypeCode(
+                enrollmentId,
+                gradeType.getCode()
+        ).isPresent()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Initial " + gradeType.getName() + " grade has already been posted."
+            );
+        }
     }
 
     private void validateGradePost(

@@ -240,7 +240,12 @@ WITH desired_courses(course_number) AS (
         ('274'),
         ('275'),
         ('276'),
-        ('277')
+        ('277'),
+        ('278'),
+        ('279'),
+        ('280'),
+        ('281'),
+        ('282')
 )
 INSERT INTO course (subject_id, course_number, is_lab, active)
 SELECT subject.subject_id,
@@ -295,7 +300,12 @@ WITH desired_versions(course_number, title, catalog_description) AS (
         ('274', 'Minimum Grade Too Low Target', 'A seeded Fall 2026 registration target blocked by Sam earning below the required B in TOLK 271.'),
         ('275', 'Minimum Grade Satisfied Target', 'A seeded Fall 2026 registration target satisfied by Sam earning above the required B in TOLK 272.'),
         ('276', 'In-Progress Prerequisite Source', 'A seeded Spring 2026 in-progress transcript course for Sam with no posted grade.'),
-        ('277', 'In-Progress Prerequisite Target', 'A seeded Fall 2026 registration target satisfied by Sam currently taking TOLK 276.')
+        ('277', 'In-Progress Prerequisite Target', 'A seeded Fall 2026 registration target satisfied by Sam currently taking TOLK 276.'),
+        ('278', 'Graduate Registration Eligibility Target', 'A seeded Fall 2026 graduate-level section for academic career eligibility testing.'),
+        ('279', 'Seminary Registration Eligibility Target', 'A seeded Fall 2026 seminary-level section for academic career eligibility testing.'),
+        ('280', 'Honors Eligibility Target', 'A seeded Fall 2026 honors-only course for honors registration eligibility testing.'),
+        ('281', 'Honors Warning Target', 'A seeded Fall 2026 course with regular and honors sections for honors warning testing.'),
+        ('282', 'Regular Section Honors Control', 'A seeded Fall 2026 regular-only course for honors warning control testing.')
 )
 INSERT INTO course_version (
     course_id,
@@ -450,7 +460,12 @@ WITH desired_offerings(subject_code, course_number, version_number, academic_yea
         ('TOLK', '273', 1, 'AY-2026-2027', 'Registration minimum-grade POC: target with no minimum grade and a failed prerequisite.'),
         ('TOLK', '274', 1, 'AY-2026-2027', 'Registration minimum-grade POC: target with B minimum not met.'),
         ('TOLK', '275', 1, 'AY-2026-2027', 'Registration minimum-grade POC: target with B minimum met.'),
-        ('TOLK', '277', 1, 'AY-2026-2027', 'Registration prerequisite POC: target satisfied by current in-progress course.')
+        ('TOLK', '277', 1, 'AY-2026-2027', 'Registration prerequisite POC: target satisfied by current in-progress course.'),
+        ('TOLK', '278', 1, 'AY-2026-2027', 'Registration academic career POC: graduate-level target.'),
+        ('TOLK', '279', 1, 'AY-2026-2027', 'Registration academic career POC: seminary-level target.'),
+        ('TOLK', '280', 1, 'AY-2026-2027', 'Registration honors POC: honors-only target.'),
+        ('TOLK', '281', 1, 'AY-2026-2027', 'Registration honors POC: regular and honors section target.'),
+        ('TOLK', '282', 1, 'AY-2026-2027', 'Registration honors POC: regular-only control target.')
 )
 INSERT INTO course_offering (
     course_version_id,
@@ -493,7 +508,12 @@ WITH desired_offering_sub_terms(subject_code, course_number, version_number, aca
         ('TOLK', '273', 1, 'AY-2026-2027', 'FALL-2026'),
         ('TOLK', '274', 1, 'AY-2026-2027', 'FALL-2026'),
         ('TOLK', '275', 1, 'AY-2026-2027', 'FALL-2026'),
-        ('TOLK', '277', 1, 'AY-2026-2027', 'FALL-2026')
+        ('TOLK', '277', 1, 'AY-2026-2027', 'FALL-2026'),
+        ('TOLK', '278', 1, 'AY-2026-2027', 'FALL-2026'),
+        ('TOLK', '279', 1, 'AY-2026-2027', 'FALL-2026'),
+        ('TOLK', '280', 1, 'AY-2026-2027', 'FALL-2026'),
+        ('TOLK', '281', 1, 'AY-2026-2027', 'FALL-2026'),
+        ('TOLK', '282', 1, 'AY-2026-2027', 'FALL-2026')
 )
 INSERT INTO course_offering_sub_term (
     course_offering_id,
@@ -562,7 +582,9 @@ WITH desired_sections(
         ('TOLK', '273', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'IN_PERSON', 3.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Minimum-grade POC target: no minimum grade, failed prerequisite.'),
         ('TOLK', '274', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'IN_PERSON', 3.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Minimum-grade POC target: B minimum not met.'),
         ('TOLK', '275', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'IN_PERSON', 3.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Minimum-grade POC target: B minimum met.'),
-        ('TOLK', '277', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'IN_PERSON', 3.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Prerequisite POC target: current in-progress Spring 2026 prerequisite.')
+        ('TOLK', '277', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'IN_PERSON', 3.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Prerequisite POC target: current in-progress Spring 2026 prerequisite.'),
+        ('TOLK', '281', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'IN_PERSON', 3.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Honors warning POC: regular section with an honors version available.'),
+        ('TOLK', '282', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'IN_PERSON', 3.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Honors warning POC: regular-only section with no honors version.')
 )
 INSERT INTO course_section (
     course_offering_id,
@@ -610,6 +632,168 @@ JOIN academic_sub_term sub_term ON sub_term.academic_year_id = year.academic_yea
 JOIN academic_division division ON division.code = 'UNDERGRADUATE'
 JOIN course_section_status status ON status.code = 'PLANNED'
 JOIN delivery_mode ON delivery_mode.code = desired_sections.delivery_mode_code
+JOIN grading_basis ON grading_basis.code = 'GRADED'
+ON CONFLICT ON CONSTRAINT uq_course_section_offering_sub_term_letter DO UPDATE
+SET academic_division_id = EXCLUDED.academic_division_id,
+    course_section_status_id = EXCLUDED.course_section_status_id,
+    delivery_mode_id = EXCLUDED.delivery_mode_id,
+    grading_basis_id = EXCLUDED.grading_basis_id,
+    credits = EXCLUDED.credits,
+    capacity = EXCLUDED.capacity,
+    hard_capacity = EXCLUDED.hard_capacity,
+    waitlist_allowed = EXCLUDED.waitlist_allowed,
+    start_date = EXCLUDED.start_date,
+    end_date = EXCLUDED.end_date,
+    notes = EXCLUDED.notes;
+
+WITH desired_honors_sections(
+    subject_code,
+    course_number,
+    version_number,
+    academic_year_code,
+    sub_term_code,
+    section_letter,
+    academic_division_code,
+    delivery_mode_code,
+    credits,
+    capacity,
+    hard_capacity,
+    waitlist_allowed,
+    start_date,
+    end_date,
+    notes
+) AS (
+    VALUES
+        ('TOLK', '280', 1, 'AY-2026-2027', 'FALL-2026', 'AH', 'UNDERGRADUATE', 'IN_PERSON', 3.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Honors POC: honors-only section.'),
+        ('TOLK', '281', 1, 'AY-2026-2027', 'FALL-2026', 'AH', 'UNDERGRADUATE', 'IN_PERSON', 3.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Honors POC: honors section paired with regular section A.')
+)
+INSERT INTO course_section (
+    course_offering_id,
+    sub_term_id,
+    academic_division_id,
+    section_letter,
+    is_honors,
+    course_section_status_id,
+    delivery_mode_id,
+    grading_basis_id,
+    credits,
+    capacity,
+    hard_capacity,
+    waitlist_allowed,
+    start_date,
+    end_date,
+    notes
+)
+SELECT offering.course_offering_id,
+       sub_term.sub_term_id,
+       division.academic_division_id,
+       desired_honors_sections.section_letter,
+       TRUE,
+       status.course_section_status_id,
+       delivery_mode.delivery_mode_id,
+       grading_basis.grading_basis_id,
+       desired_honors_sections.credits,
+       desired_honors_sections.capacity,
+       desired_honors_sections.hard_capacity,
+       desired_honors_sections.waitlist_allowed,
+       desired_honors_sections.start_date,
+       desired_honors_sections.end_date,
+       desired_honors_sections.notes
+FROM desired_honors_sections
+JOIN academic_subject subject ON subject.code = desired_honors_sections.subject_code
+JOIN course ON course.subject_id = subject.subject_id
+           AND course.course_number = desired_honors_sections.course_number
+JOIN course_version version ON version.course_id = course.course_id
+                           AND version.version_number = desired_honors_sections.version_number
+JOIN academic_year year ON year.code = desired_honors_sections.academic_year_code
+JOIN course_offering offering ON offering.course_version_id = version.course_version_id
+                             AND offering.academic_year_id = year.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = year.academic_year_id
+                               AND sub_term.code = desired_honors_sections.sub_term_code
+JOIN academic_division division ON division.code = desired_honors_sections.academic_division_code
+JOIN course_section_status status ON status.code = 'PLANNED'
+JOIN delivery_mode ON delivery_mode.code = desired_honors_sections.delivery_mode_code
+JOIN grading_basis ON grading_basis.code = 'GRADED'
+ON CONFLICT ON CONSTRAINT uq_course_section_offering_sub_term_letter DO UPDATE
+SET academic_division_id = EXCLUDED.academic_division_id,
+    course_section_status_id = EXCLUDED.course_section_status_id,
+    delivery_mode_id = EXCLUDED.delivery_mode_id,
+    grading_basis_id = EXCLUDED.grading_basis_id,
+    credits = EXCLUDED.credits,
+    capacity = EXCLUDED.capacity,
+    hard_capacity = EXCLUDED.hard_capacity,
+    waitlist_allowed = EXCLUDED.waitlist_allowed,
+    start_date = EXCLUDED.start_date,
+    end_date = EXCLUDED.end_date,
+    notes = EXCLUDED.notes;
+
+WITH desired_division_sections(
+    subject_code,
+    course_number,
+    version_number,
+    academic_year_code,
+    sub_term_code,
+    section_letter,
+    academic_division_code,
+    delivery_mode_code,
+    credits,
+    capacity,
+    hard_capacity,
+    waitlist_allowed,
+    start_date,
+    end_date,
+    notes
+) AS (
+    VALUES
+        ('TOLK', '278', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'GRADUATE', 'IN_PERSON', 3.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Graduate academic career eligibility test section.'),
+        ('TOLK', '279', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'SEMINARY', 'IN_PERSON', 3.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Seminary academic career eligibility test section.')
+)
+INSERT INTO course_section (
+    course_offering_id,
+    sub_term_id,
+    academic_division_id,
+    section_letter,
+    is_honors,
+    course_section_status_id,
+    delivery_mode_id,
+    grading_basis_id,
+    credits,
+    capacity,
+    hard_capacity,
+    waitlist_allowed,
+    start_date,
+    end_date,
+    notes
+)
+SELECT offering.course_offering_id,
+       sub_term.sub_term_id,
+       division.academic_division_id,
+       desired_division_sections.section_letter,
+       FALSE,
+       status.course_section_status_id,
+       delivery_mode.delivery_mode_id,
+       grading_basis.grading_basis_id,
+       desired_division_sections.credits,
+       desired_division_sections.capacity,
+       desired_division_sections.hard_capacity,
+       desired_division_sections.waitlist_allowed,
+       desired_division_sections.start_date,
+       desired_division_sections.end_date,
+       desired_division_sections.notes
+FROM desired_division_sections
+JOIN academic_subject subject ON subject.code = desired_division_sections.subject_code
+JOIN course ON course.subject_id = subject.subject_id
+           AND course.course_number = desired_division_sections.course_number
+JOIN course_version version ON version.course_id = course.course_id
+                           AND version.version_number = desired_division_sections.version_number
+JOIN academic_year year ON year.code = desired_division_sections.academic_year_code
+JOIN course_offering offering ON offering.course_version_id = version.course_version_id
+                             AND offering.academic_year_id = year.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = year.academic_year_id
+                               AND sub_term.code = desired_division_sections.sub_term_code
+JOIN academic_division division ON division.code = desired_division_sections.academic_division_code
+JOIN course_section_status status ON status.code = 'PLANNED'
+JOIN delivery_mode ON delivery_mode.code = desired_division_sections.delivery_mode_code
 JOIN grading_basis ON grading_basis.code = 'GRADED'
 ON CONFLICT ON CONSTRAINT uq_course_section_offering_sub_term_letter DO UPDATE
 SET academic_division_id = EXCLUDED.academic_division_id,
@@ -688,7 +872,11 @@ WITH desired_instructors(
         ('TOLK', '273', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'jane.smith@msm.edu'),
         ('TOLK', '274', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'nadia.rivera@msm.edu'),
         ('TOLK', '275', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'alan.reed@msm.edu'),
-        ('TOLK', '277', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'jane.smith@msm.edu')
+        ('TOLK', '277', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'jane.smith@msm.edu'),
+        ('TOLK', '281', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'nadia.rivera@msm.edu'),
+        ('TOLK', '282', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'alan.reed@msm.edu'),
+        ('TOLK', '278', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'maria.chen@msm.edu'),
+        ('TOLK', '279', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'legolas@mirkwood.me')
 )
 INSERT INTO course_section_instructor (
     section_id,
@@ -722,6 +910,59 @@ JOIN course_section section ON section.course_offering_id = offering.course_offe
                            AND section.section_letter = desired_instructors.section_letter
                            AND section.is_honors = FALSE
 JOIN staff ON staff.email = desired_instructors.staff_email
+JOIN instructional_assignment_role role ON role.code = 'PRIMARY_INSTRUCTOR'
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me'
+ON CONFLICT ON CONSTRAINT uq_course_section_instructor_unique DO UPDATE
+SET instructional_assignment_role_id = EXCLUDED.instructional_assignment_role_id,
+    can_view_grades = EXCLUDED.can_view_grades,
+    can_manage_grades = EXCLUDED.can_manage_grades,
+    updated_by_user_id = EXCLUDED.updated_by_user_id;
+
+WITH desired_honors_instructors(
+    subject_code,
+    course_number,
+    version_number,
+    academic_year_code,
+    sub_term_code,
+    section_letter,
+    staff_email
+) AS (
+    VALUES
+        ('TOLK', '280', 1, 'AY-2026-2027', 'FALL-2026', 'AH', 'jane.smith@msm.edu'),
+        ('TOLK', '281', 1, 'AY-2026-2027', 'FALL-2026', 'AH', 'jane.smith@msm.edu')
+)
+INSERT INTO course_section_instructor (
+    section_id,
+    instructor_user_id,
+    instructional_assignment_role_id,
+    can_view_grades,
+    can_manage_grades,
+    created_by_user_id,
+    updated_by_user_id
+)
+SELECT section.section_id,
+       staff.user_id,
+       role.instructional_assignment_role_id,
+       role.default_can_view_grades,
+       role.default_can_manage_grades,
+       actor.id,
+       actor.id
+FROM desired_honors_instructors
+JOIN academic_subject subject ON subject.code = desired_honors_instructors.subject_code
+JOIN course ON course.subject_id = subject.subject_id
+           AND course.course_number = desired_honors_instructors.course_number
+JOIN course_version version ON version.course_id = course.course_id
+                           AND version.version_number = desired_honors_instructors.version_number
+JOIN academic_year year ON year.code = desired_honors_instructors.academic_year_code
+JOIN course_offering offering ON offering.course_version_id = version.course_version_id
+                             AND offering.academic_year_id = year.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = year.academic_year_id
+                               AND sub_term.code = desired_honors_instructors.sub_term_code
+JOIN course_section section ON section.course_offering_id = offering.course_offering_id
+                           AND section.sub_term_id = sub_term.sub_term_id
+                           AND section.section_letter = desired_honors_instructors.section_letter
+                           AND section.is_honors = TRUE
+JOIN staff ON staff.email = desired_honors_instructors.staff_email
 JOIN instructional_assignment_role role ON role.code = 'PRIMARY_INSTRUCTOR'
 LEFT JOIN users actor ON actor.email = 'frodo@shire.me'
 ON CONFLICT ON CONSTRAINT uq_course_section_instructor_unique DO UPDATE
@@ -801,7 +1042,15 @@ WITH desired_meetings(
         ('TOLK', '274', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 2, '14:00'::time, '15:15'::time, 'Lore House', '219', 1),
         ('TOLK', '274', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 4, '14:00'::time, '15:15'::time, 'Lore House', '219', 2),
         ('TOLK', '275', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 5, '12:00'::time, '14:30'::time, 'Language Hall', '215', 1),
-        ('TOLK', '277', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 4, '11:00'::time, '13:30'::time, 'Rivendell Hall', '243', 1)
+        ('TOLK', '277', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 4, '11:00'::time, '13:30'::time, 'Rivendell Hall', '243', 1),
+        ('TOLK', '281', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 2, '13:00'::time, '14:15'::time, 'Lore House', '231', 1),
+        ('TOLK', '281', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 4, '13:00'::time, '14:15'::time, 'Lore House', '231', 2),
+        ('TOLK', '282', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 5, '09:00'::time, '11:30'::time, 'Rivendell Hall', '245', 1),
+        ('TOLK', '278', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 2, '11:00'::time, '12:15'::time, 'Lore House', '230', 1),
+        ('TOLK', '278', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 4, '11:00'::time, '12:15'::time, 'Lore House', '230', 2),
+        ('TOLK', '279', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 1, '15:00'::time, '15:50'::time, 'Rivendell Hall', '244', 1),
+        ('TOLK', '279', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 3, '15:00'::time, '15:50'::time, 'Rivendell Hall', '244', 2),
+        ('TOLK', '279', 1, 'AY-2026-2027', 'FALL-2026', 'A', 'CLASS', 5, '15:00'::time, '15:50'::time, 'Rivendell Hall', '244', 3)
 )
 INSERT INTO course_section_meeting (
     section_id,
@@ -837,6 +1086,70 @@ JOIN course_section section ON section.course_offering_id = offering.course_offe
                            AND section.section_letter = desired_meetings.section_letter
                            AND section.is_honors = FALSE
 JOIN section_meeting_type meeting_type ON meeting_type.code = desired_meetings.meeting_type_code
+ON CONFLICT ON CONSTRAINT uq_course_section_meeting_sequence DO UPDATE
+SET section_meeting_type_id = EXCLUDED.section_meeting_type_id,
+    day_of_week = EXCLUDED.day_of_week,
+    start_time = EXCLUDED.start_time,
+    end_time = EXCLUDED.end_time,
+    building = EXCLUDED.building,
+    room = EXCLUDED.room;
+
+WITH desired_honors_meetings(
+    subject_code,
+    course_number,
+    version_number,
+    academic_year_code,
+    sub_term_code,
+    section_letter,
+    meeting_type_code,
+    day_of_week,
+    start_time,
+    end_time,
+    building,
+    room,
+    sequence_number
+) AS (
+    VALUES
+        ('TOLK', '280', 1, 'AY-2026-2027', 'FALL-2026', 'AH', 'CLASS', 1, '10:00'::time, '10:50'::time, 'Rivendell Hall', '246', 1),
+        ('TOLK', '280', 1, 'AY-2026-2027', 'FALL-2026', 'AH', 'CLASS', 3, '10:00'::time, '10:50'::time, 'Rivendell Hall', '246', 2),
+        ('TOLK', '280', 1, 'AY-2026-2027', 'FALL-2026', 'AH', 'CLASS', 5, '10:00'::time, '10:50'::time, 'Rivendell Hall', '246', 3),
+        ('TOLK', '281', 1, 'AY-2026-2027', 'FALL-2026', 'AH', 'CLASS', 2, '15:00'::time, '16:15'::time, 'Lore House', '232', 1),
+        ('TOLK', '281', 1, 'AY-2026-2027', 'FALL-2026', 'AH', 'CLASS', 4, '15:00'::time, '16:15'::time, 'Lore House', '232', 2)
+)
+INSERT INTO course_section_meeting (
+    section_id,
+    section_meeting_type_id,
+    day_of_week,
+    start_time,
+    end_time,
+    building,
+    room,
+    sequence_number
+)
+SELECT section.section_id,
+       meeting_type.section_meeting_type_id,
+       desired_honors_meetings.day_of_week,
+       desired_honors_meetings.start_time,
+       desired_honors_meetings.end_time,
+       desired_honors_meetings.building,
+       desired_honors_meetings.room,
+       desired_honors_meetings.sequence_number
+FROM desired_honors_meetings
+JOIN academic_subject subject ON subject.code = desired_honors_meetings.subject_code
+JOIN course ON course.subject_id = subject.subject_id
+           AND course.course_number = desired_honors_meetings.course_number
+JOIN course_version version ON version.course_id = course.course_id
+                           AND version.version_number = desired_honors_meetings.version_number
+JOIN academic_year year ON year.code = desired_honors_meetings.academic_year_code
+JOIN course_offering offering ON offering.course_version_id = version.course_version_id
+                             AND offering.academic_year_id = year.academic_year_id
+JOIN academic_sub_term sub_term ON sub_term.academic_year_id = year.academic_year_id
+                               AND sub_term.code = desired_honors_meetings.sub_term_code
+JOIN course_section section ON section.course_offering_id = offering.course_offering_id
+                           AND section.sub_term_id = sub_term.sub_term_id
+                           AND section.section_letter = desired_honors_meetings.section_letter
+                           AND section.is_honors = TRUE
+JOIN section_meeting_type meeting_type ON meeting_type.code = desired_honors_meetings.meeting_type_code
 ON CONFLICT ON CONSTRAINT uq_course_section_meeting_sequence DO UPDATE
 SET section_meeting_type_id = EXCLUDED.section_meeting_type_id,
     day_of_week = EXCLUDED.day_of_week,
@@ -919,6 +1232,183 @@ WHERE registration_group.academic_year_id = year.academic_year_id
   AND registration_group.term_id = term.term_id
   AND registration_group.name = desired_groups.name;
 
+-- Academic career POC registration groups.
+-- These draft groups are intentionally seeded with one valid and one stale assignment
+-- so publish validation can be checked against active student academic careers.
+WITH desired_generations(
+    academic_year_code,
+    term_code,
+    name,
+    group_name_prefix,
+    academic_division_code,
+    matched_student_count
+) AS (
+    VALUES
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Graduate Career Validation Seed', 'POC Graduate Career Validation', 'GRADUATE', 2),
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Undergraduate Career Validation Seed', 'POC Undergraduate Career Validation', 'UNDERGRADUATE', 2)
+)
+INSERT INTO registration_group_generation (
+    academic_year_id,
+    term_id,
+    name,
+    group_name_prefix,
+    academic_division_id,
+    honors_filter,
+    athlete_filter,
+    existing_group_filter,
+    include_current_credits,
+    include_transfer_credits,
+    split_count,
+    matched_student_count,
+    created_by_user_id,
+    updated_by_user_id
+)
+SELECT year.academic_year_id,
+       term.term_id,
+       desired_generations.name,
+       desired_generations.group_name_prefix,
+       division.academic_division_id,
+       'ANY',
+       'ANY',
+       'ANY',
+       TRUE,
+       TRUE,
+       1,
+       desired_generations.matched_student_count,
+       actor.id,
+       actor.id
+FROM desired_generations
+JOIN academic_year year ON year.code = desired_generations.academic_year_code
+JOIN academic_term term ON term.academic_year_id = year.academic_year_id
+                       AND term.code = desired_generations.term_code
+JOIN academic_division division ON division.code = desired_generations.academic_division_code
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM registration_group_generation existing_generation
+    WHERE existing_generation.academic_year_id = year.academic_year_id
+      AND existing_generation.term_id = term.term_id
+      AND existing_generation.name = desired_generations.name
+);
+
+WITH desired_generations(
+    academic_year_code,
+    term_code,
+    name,
+    group_name_prefix,
+    academic_division_code,
+    matched_student_count
+) AS (
+    VALUES
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Graduate Career Validation Seed', 'POC Graduate Career Validation', 'GRADUATE', 2),
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Undergraduate Career Validation Seed', 'POC Undergraduate Career Validation', 'UNDERGRADUATE', 2)
+)
+UPDATE registration_group_generation generation
+SET group_name_prefix = desired_generations.group_name_prefix,
+    academic_division_id = division.academic_division_id,
+    honors_filter = 'ANY',
+    athlete_filter = 'ANY',
+    existing_group_filter = 'ANY',
+    include_current_credits = TRUE,
+    include_transfer_credits = TRUE,
+    split_count = 1,
+    matched_student_count = desired_generations.matched_student_count,
+    updated_by_user_id = actor.id
+FROM desired_generations
+JOIN academic_year year ON year.code = desired_generations.academic_year_code
+JOIN academic_term term ON term.academic_year_id = year.academic_year_id
+                       AND term.code = desired_generations.term_code
+JOIN academic_division division ON division.code = desired_generations.academic_division_code
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me'
+WHERE generation.academic_year_id = year.academic_year_id
+  AND generation.term_id = term.term_id
+  AND generation.name = desired_generations.name;
+
+WITH desired_groups(
+    academic_year_code,
+    term_code,
+    generation_name,
+    name,
+    status,
+    registration_opens_at,
+    registration_closes_at,
+    sort_order
+) AS (
+    VALUES
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Graduate Career Validation Seed', 'POC Graduate Career Validation', 'DRAFT', '2026-09-01 08:00'::timestamp, '2026-12-10 23:59'::timestamp, 30),
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Undergraduate Career Validation Seed', 'POC Undergraduate Career Validation', 'DRAFT', '2026-09-01 08:00'::timestamp, '2026-12-10 23:59'::timestamp, 40)
+)
+INSERT INTO registration_group (
+    registration_group_generation_id,
+    academic_year_id,
+    term_id,
+    name,
+    status,
+    registration_opens_at,
+    registration_closes_at,
+    sort_order,
+    created_by_user_id,
+    updated_by_user_id
+)
+SELECT generation.registration_group_generation_id,
+       year.academic_year_id,
+       term.term_id,
+       desired_groups.name,
+       desired_groups.status,
+       desired_groups.registration_opens_at,
+       desired_groups.registration_closes_at,
+       desired_groups.sort_order,
+       actor.id,
+       actor.id
+FROM desired_groups
+JOIN academic_year year ON year.code = desired_groups.academic_year_code
+JOIN academic_term term ON term.academic_year_id = year.academic_year_id
+                       AND term.code = desired_groups.term_code
+JOIN registration_group_generation generation ON generation.academic_year_id = year.academic_year_id
+                                             AND generation.term_id = term.term_id
+                                             AND generation.name = desired_groups.generation_name
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM registration_group existing_group
+    WHERE existing_group.academic_year_id = year.academic_year_id
+      AND existing_group.term_id = term.term_id
+      AND existing_group.name = desired_groups.name
+);
+
+WITH desired_groups(
+    academic_year_code,
+    term_code,
+    generation_name,
+    name,
+    status,
+    registration_opens_at,
+    registration_closes_at,
+    sort_order
+) AS (
+    VALUES
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Graduate Career Validation Seed', 'POC Graduate Career Validation', 'DRAFT', '2026-09-01 08:00'::timestamp, '2026-12-10 23:59'::timestamp, 30),
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Undergraduate Career Validation Seed', 'POC Undergraduate Career Validation', 'DRAFT', '2026-09-01 08:00'::timestamp, '2026-12-10 23:59'::timestamp, 40)
+)
+UPDATE registration_group registration_group
+SET registration_group_generation_id = generation.registration_group_generation_id,
+    status = desired_groups.status,
+    registration_opens_at = desired_groups.registration_opens_at,
+    registration_closes_at = desired_groups.registration_closes_at,
+    sort_order = desired_groups.sort_order,
+    updated_by_user_id = actor.id
+FROM desired_groups
+JOIN academic_year year ON year.code = desired_groups.academic_year_code
+JOIN academic_term term ON term.academic_year_id = year.academic_year_id
+                       AND term.code = desired_groups.term_code
+JOIN registration_group_generation generation ON generation.academic_year_id = year.academic_year_id
+                                             AND generation.term_id = term.term_id
+                                             AND generation.name = desired_groups.generation_name
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me'
+WHERE registration_group.academic_year_id = year.academic_year_id
+  AND registration_group.term_id = term.term_id
+  AND registration_group.name = desired_groups.name;
+
 -- POC login for a student already registered in the full Fall 2026 section.
 -- Password: Password123
 INSERT INTO users (email, password_hash, enabled)
@@ -944,11 +1434,95 @@ FROM users
 WHERE users.email = 'rosie.cotton@shire.me'
   AND student.alt_id = 'SEC-2001';
 
+-- POC logins for honors and academic-career registration eligibility testing.
+-- Password: Password123
+WITH eligibility_login_users(email, student_alt_id) AS (
+    VALUES
+        ('eligibility.honors.undergrad@shire.me', 'SEC-2002'),
+        ('eligibility.grad@shire.me', 'SEC-2011'),
+        ('eligibility.seminary@shire.me', 'SEC-2029'),
+        ('eligibility.leave@shire.me', 'STU-1003'),
+        ('eligibility.withdrawn@shire.me', 'SEC-2015'),
+        ('eligibility.graduated@shire.me', 'SEC-2016')
+)
+INSERT INTO users (email, password_hash, enabled)
+SELECT eligibility_login_users.email,
+       '$argon2id$v=19$m=16384,t=2,p=1$euvZ8L29MjjHzluLVaMllA$AgSCCYqDSXV+aos7IVvNB3IPK3RFW2d9achT5oOs3+I',
+       TRUE
+FROM eligibility_login_users
+ON CONFLICT (email) DO UPDATE
+SET password_hash = EXCLUDED.password_hash,
+    enabled = EXCLUDED.enabled;
+
+WITH eligibility_login_users(email) AS (
+    VALUES
+        ('eligibility.honors.undergrad@shire.me'),
+        ('eligibility.grad@shire.me'),
+        ('eligibility.seminary@shire.me'),
+        ('eligibility.leave@shire.me'),
+        ('eligibility.withdrawn@shire.me'),
+        ('eligibility.graduated@shire.me')
+)
+INSERT INTO user_roles (user_id, role_id)
+SELECT users.id, roles.id
+FROM eligibility_login_users
+JOIN users ON users.email = eligibility_login_users.email
+JOIN roles ON roles.name = 'STUDENT'
+ON CONFLICT DO NOTHING;
+
+WITH eligibility_login_users(email, student_alt_id) AS (
+    VALUES
+        ('eligibility.honors.undergrad@shire.me', 'SEC-2002'),
+        ('eligibility.grad@shire.me', 'SEC-2011'),
+        ('eligibility.seminary@shire.me', 'SEC-2029'),
+        ('eligibility.leave@shire.me', 'STU-1003'),
+        ('eligibility.withdrawn@shire.me', 'SEC-2015'),
+        ('eligibility.graduated@shire.me', 'SEC-2016')
+)
+UPDATE student
+SET user_id = users.id
+FROM eligibility_login_users
+JOIN users ON users.email = eligibility_login_users.email
+WHERE student.alt_id = eligibility_login_users.student_alt_id;
+
+WITH desired_honors_status(student_alt_id, active) AS (
+    VALUES
+        ('STU-1001', FALSE),
+        ('SEC-2002', TRUE),
+        ('SEC-2011', TRUE)
+)
+INSERT INTO student_honors (
+    student_id,
+    active,
+    updated_by_user_id
+)
+SELECT student.student_id,
+       desired_honors_status.active,
+       actor.id
+FROM desired_honors_status
+JOIN student ON student.alt_id = desired_honors_status.student_alt_id
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me'
+ON CONFLICT ON CONSTRAINT uq_student_honors_student DO UPDATE
+SET active = EXCLUDED.active,
+    updated_by_user_id = EXCLUDED.updated_by_user_id;
+
 WITH desired_assignments(academic_year_code, term_code, group_name, student_alt_id) AS (
     VALUES
         ('AY-2026-2027', 'FALL-2026-2027', 'Sam Fall 2026 Registration', 'STU-1001'),
         ('AY-2026-2027', 'FALL-2026-2027', 'Sam Fall 2026 Registration', 'SEC-2001'),
-        ('AY-2027-2028', 'FALL-2027-2028', 'Sam Fall 2027 Registration', 'STU-1001')
+        ('AY-2026-2027', 'FALL-2026-2027', 'Sam Fall 2026 Registration', 'SEC-2002'),
+        ('AY-2026-2027', 'FALL-2026-2027', 'Sam Fall 2026 Registration', 'SEC-2011'),
+        ('AY-2026-2027', 'FALL-2026-2027', 'Sam Fall 2026 Registration', 'SEC-2029'),
+        ('AY-2026-2027', 'FALL-2026-2027', 'Sam Fall 2026 Registration', 'STU-1003'),
+        ('AY-2026-2027', 'FALL-2026-2027', 'Sam Fall 2026 Registration', 'SEC-2015'),
+        ('AY-2026-2027', 'FALL-2026-2027', 'Sam Fall 2026 Registration', 'SEC-2016'),
+        ('AY-2027-2028', 'FALL-2027-2028', 'Sam Fall 2027 Registration', 'STU-1001'),
+        -- Academic career POC: SEC-2011 is active graduate; STU-1001 is active undergraduate only.
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Graduate Career Validation', 'SEC-2011'),
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Graduate Career Validation', 'STU-1001'),
+        -- Academic career POC: STU-1001 is active undergraduate; SEC-2015 has no active career.
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Undergraduate Career Validation', 'STU-1001'),
+        ('AY-2026-2027', 'FALL-2026-2027', 'POC Undergraduate Career Validation', 'SEC-2015')
 )
 INSERT INTO registration_group_student (
     registration_group_id,

@@ -3,12 +3,14 @@ package com.msm.sis.api.service.registration;
 import com.msm.sis.api.dto.registration.RegistrationGroupExistingAssignmentResponse;
 import com.msm.sis.api.dto.registration.RegistrationGroupStudentOptionResponse;
 import com.msm.sis.api.dto.registration.RegistrationGroupStudentOptionsResponse;
+import com.msm.sis.api.entity.AcademicDivision;
 import com.msm.sis.api.entity.AcademicTerm;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.RegistrationGroup;
 import com.msm.sis.api.entity.RegistrationGroupStudent;
 import com.msm.sis.api.repository.RegistrationGroupStudentRepository;
 import com.msm.sis.api.repository.StudentRepository;
+import com.msm.sis.api.service.student.StudentAcademicCareerEligibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,7 @@ public class RegistrationGroupStudentOptionService {
     private static final Pattern DIGITS_ONLY = Pattern.compile("\\d+");
 
     private final RegistrationGroupStudentRepository registrationGroupStudentRepository;
+    private final StudentAcademicCareerEligibilityService academicCareerEligibilityService;
     private final StudentRepository studentRepository;
 
     @Transactional(readOnly = true)
@@ -56,9 +59,19 @@ public class RegistrationGroupStudentOptionService {
                 .toList();
         Map<Long, RegistrationGroupStudent> assignmentsByStudentId =
                 loadExistingAssignmentsByStudentId(results, academicYearId, termId);
+        Map<Long, List<AcademicDivision>> academicDivisionsByStudentId =
+                academicCareerEligibilityService.getAllowedAcademicDivisionsByStudentId(
+                        results.stream()
+                                .map(StudentRepository.RegistrationGroupStudentOptionProjection::getStudentId)
+                                .toList()
+                );
 
         return new RegistrationGroupStudentOptionsResponse(results.stream()
-                .map(projection -> toResponse(projection, assignmentsByStudentId.get(projection.getStudentId())))
+                .map(projection -> toResponse(
+                        projection,
+                        assignmentsByStudentId.get(projection.getStudentId()),
+                        academicDivisionsByStudentId.getOrDefault(projection.getStudentId(), List.of())
+                ))
                 .toList());
     }
 
@@ -72,7 +85,8 @@ public class RegistrationGroupStudentOptionService {
 
     private RegistrationGroupStudentOptionResponse toResponse(
             StudentRepository.RegistrationGroupStudentOptionProjection projection,
-            RegistrationGroupStudent existingAssignment
+            RegistrationGroupStudent existingAssignment,
+            List<AcademicDivision> academicDivisions
     ) {
         return new RegistrationGroupStudentOptionResponse(
                 projection.getStudentId(),
@@ -81,10 +95,28 @@ public class RegistrationGroupStudentOptionService {
                 projection.getLastName(),
                 buildDisplayName(projection),
                 projection.getEmail(),
+                academicDivisionCodes(academicDivisions),
+                academicDivisionNames(academicDivisions),
                 projection.getClassStanding(),
                 projection.getClassOf(),
                 toExistingAssignmentResponse(existingAssignment)
         );
+    }
+
+    private String academicDivisionCodes(List<AcademicDivision> academicDivisions) {
+        return academicDivisions.stream()
+                .map(AcademicDivision::getCode)
+                .filter(code -> trimToNull(code) != null)
+                .distinct()
+                .collect(Collectors.joining(", "));
+    }
+
+    private String academicDivisionNames(List<AcademicDivision> academicDivisions) {
+        return academicDivisions.stream()
+                .map(AcademicDivision::getName)
+                .filter(name -> trimToNull(name) != null)
+                .distinct()
+                .collect(Collectors.joining(", "));
     }
 
     private Map<Long, RegistrationGroupStudent> loadExistingAssignmentsByStudentId(

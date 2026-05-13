@@ -2,13 +2,11 @@
 import { Grid } from '@mantine/core';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import { CourseSectionStudentsPanel } from './CourseSectionStudentsPanel';
-import type {
-  CourseSectionPreview,
-  SelectOption,
-} from './courseSectionsWorkspaceTypes';
+import type { CourseSectionPreview, SelectOption } from './courseSectionsWorkspaceTypes';
 
 type CourseSectionDetailStudentsSectionProps = {
   canManage?: boolean;
+  canEditGrades?: boolean;
   gradeMarkOptions: SelectOption[];
   gradeTypeOptions: SelectOption[];
   enrollmentGradingBasisOptions: SelectOption[];
@@ -18,6 +16,7 @@ type CourseSectionDetailStudentsSectionProps = {
 
 export function CourseSectionDetailStudentsSection({
   canManage = true,
+  canEditGrades = true,
   gradeMarkOptions,
   gradeTypeOptions,
   enrollmentGradingBasisOptions,
@@ -37,6 +36,7 @@ export function CourseSectionDetailStudentsSection({
         <CourseSectionStudentsPanel
           selectedSection={section}
           canManage={canManage}
+          canEditGrades={canEditGrades}
           gradeMarkOptions={gradeMarkOptions}
           gradeTypeOptions={gradeTypeOptions}
           gradingBasisOptions={enrollmentGradingBasisOptions}

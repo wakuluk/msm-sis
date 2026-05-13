@@ -93,7 +93,7 @@ public class CourseSectionService {
                         "Course offering is not assigned to the requested academic sub term."
                 ));
 
-        String sectionLetter = request.sectionLetter().trim().toUpperCase(Locale.US);
+        String sectionLetter = courseSectionValidationService.normalizeSectionLetter(request.sectionLetter());
         courseSectionValidationService.validateUniqueSectionIdentity(
                 courseOfferingId,
                 subTermId,

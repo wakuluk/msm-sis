@@ -103,3 +103,37 @@
   max-width: 34rem;
   color: var(--portal-ui-muted-text-color);
 }
+
+.academicCareerSubheading {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.academicCareerRow {
+  cursor: pointer;
+}
+
+.academicCareerRow:hover {
+  background-color: light-dark(rgb(243 247 250), rgb(35 38 45));
+}
+
+.academicCareerRow:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -2px;
+}
+
+.academicCareerPreview {
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  padding: 0.9rem 1rem;
+  background-color: light-dark(rgb(247 250 252), rgb(31 34 41));
+}
+
+.academicCareerAccessPreview {
+  border: 1px solid var(--portal-ui-surface-border-color);
+  border-radius: var(--mantine-radius-sm);
+  padding: 1rem;
+  background-color: light-dark(rgb(247 250 252), rgb(31 34 41));
+}

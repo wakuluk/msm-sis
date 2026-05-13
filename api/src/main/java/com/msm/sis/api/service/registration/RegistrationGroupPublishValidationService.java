@@ -4,11 +4,17 @@ import com.msm.sis.api.dto.registration.RegistrationGroupPublishGroupResponse;
 import com.msm.sis.api.dto.registration.RegistrationGroupPublishRequest;
 import com.msm.sis.api.dto.registration.RegistrationGroupPublishValidationIssueResponse;
 import com.msm.sis.api.dto.registration.RegistrationGroupPublishValidationResponse;
+import com.msm.sis.api.entity.AcademicDivision;
 import com.msm.sis.api.entity.AcademicTerm;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.RegistrationGroup;
+import com.msm.sis.api.entity.RegistrationGroupGenerationAcademicDivision;
+import com.msm.sis.api.entity.RegistrationGroupStudent;
+import com.msm.sis.api.entity.Student;
+import com.msm.sis.api.repository.RegistrationGroupGenerationAcademicDivisionRepository;
 import com.msm.sis.api.repository.RegistrationGroupRepository;
 import com.msm.sis.api.repository.RegistrationGroupStudentRepository;
+import com.msm.sis.api.service.student.StudentAcademicCareerEligibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,9 +24,12 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
@@ -34,7 +43,10 @@ public class RegistrationGroupPublishValidationService {
     private static final String FIELD_REGISTRATION_CLOSES_AT = "registrationClosesAt";
     private static final String FIELD_REGISTRATION_WINDOW = "registrationWindow";
     private static final String FIELD_STATUS = "status";
+    private static final String FIELD_ACADEMIC_DIVISION = "academicDivision";
 
+    private final StudentAcademicCareerEligibilityService academicCareerEligibilityService;
+    private final RegistrationGroupGenerationAcademicDivisionRepository generationAcademicDivisionRepository;
     private final RegistrationGroupRepository registrationGroupRepository;
     private final RegistrationGroupStudentRepository registrationGroupStudentRepository;
 
@@ -62,6 +74,8 @@ public class RegistrationGroupPublishValidationService {
                 .toList();
 
         Map<Long, Long> studentCountsByGroupId = loadStudentCounts(groups);
+        Map<Long, List<RegistrationGroupPublishValidationIssueResponse>> academicCareerIssuesByGroupId =
+                validateAssignedStudentAcademicDivisions(groups);
         List<RegistrationGroupPublishValidationIssueResponse> responseIssues = new ArrayList<>();
 
         if (groups.isEmpty()) {
@@ -76,7 +90,12 @@ public class RegistrationGroupPublishValidationService {
 
         LocalDateTime now = LocalDateTime.now();
         List<RegistrationGroupPublishGroupResponse> groupResponses = groups.stream()
-                .map(group -> toGroupResponse(group, studentCountsByGroupId.getOrDefault(group.getId(), 0L), now))
+                .map(group -> toGroupResponse(
+                        group,
+                        studentCountsByGroupId.getOrDefault(group.getId(), 0L),
+                        now,
+                        academicCareerIssuesByGroupId.getOrDefault(group.getId(), List.of())
+                ))
                 .toList();
 
         groupResponses.stream()
@@ -123,16 +142,20 @@ public class RegistrationGroupPublishValidationService {
         return toGroupResponse(
                 registrationGroup,
                 studentCountsByGroupId.getOrDefault(registrationGroup.getId(), 0L),
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                validateAssignedStudentAcademicDivisions(List.of(registrationGroup))
+                        .getOrDefault(registrationGroup.getId(), List.of())
         );
     }
 
     private RegistrationGroupPublishGroupResponse toGroupResponse(
             RegistrationGroup group,
             long studentCount,
-            LocalDateTime now
+            LocalDateTime now,
+            List<RegistrationGroupPublishValidationIssueResponse> additionalIssues
     ) {
         List<RegistrationGroupPublishValidationIssueResponse> issues = validateGroup(group, now);
+        issues.addAll(additionalIssues);
         String status = normalizeStatus(group.getStatus());
         boolean hasRegistrationWindow = group.getRegistrationOpensAt() != null
                 && group.getRegistrationClosesAt() != null
@@ -190,6 +213,134 @@ public class RegistrationGroupPublishValidationService {
         }
 
         return issues;
+    }
+
+    private Map<Long, List<RegistrationGroupPublishValidationIssueResponse>> validateAssignedStudentAcademicDivisions(
+            List<RegistrationGroup> groups
+    ) {
+        List<RegistrationGroup> groupsWithAcademicDivision = groups.stream()
+                .filter(group -> !requiredAcademicDivisions(group).isEmpty())
+                .toList();
+        if (groupsWithAcademicDivision.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, RegistrationGroup> groupsById = groupsWithAcademicDivision.stream()
+                .collect(Collectors.toMap(RegistrationGroup::getId, group -> group));
+        List<Long> groupIds = groupsWithAcademicDivision.stream()
+                .map(RegistrationGroup::getId)
+                .toList();
+        List<RegistrationGroupStudent> assignments = registrationGroupStudentRepository
+                .findAssignedStudentsForGroups(groupIds);
+        if (assignments.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> studentIds = assignments.stream()
+                .map(RegistrationGroupStudent::getStudent)
+                .map(Student::getId)
+                .filter(studentId -> studentId != null)
+                .distinct()
+                .toList();
+        Map<Long, List<AcademicDivision>> allowedAcademicDivisionsByStudentId =
+                academicCareerEligibilityService.getAllowedAcademicDivisionsByStudentId(studentIds);
+        Map<Long, Set<Long>> allowedAcademicDivisionIdsByStudentId = allowedAcademicDivisionsByStudentId.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().stream()
+                                .map(AcademicDivision::getId)
+                                .collect(Collectors.toSet())
+                ));
+
+        Map<Long, List<RegistrationGroupPublishValidationIssueResponse>> issuesByGroupId = new HashMap<>();
+        Set<String> reportedIssueKeys = new HashSet<>();
+        for (RegistrationGroupStudent assignment : assignments) {
+            RegistrationGroup group = groupsById.get(assignment.getRegistrationGroup().getId());
+            if (group == null) {
+                continue;
+            }
+
+            List<AcademicDivision> requiredAcademicDivisions = requiredAcademicDivisions(group);
+            Student student = assignment.getStudent();
+            Long studentId = student == null ? null : student.getId();
+            Set<Long> requiredAcademicDivisionIds = requiredAcademicDivisions.stream()
+                    .map(AcademicDivision::getId)
+                    .collect(Collectors.toSet());
+            if (studentId == null || requiredAcademicDivisionIds.isEmpty()) {
+                continue;
+            }
+
+            boolean eligible = allowedAcademicDivisionIdsByStudentId
+                    .getOrDefault(studentId, Set.of())
+                    .containsAll(requiredAcademicDivisionIds);
+            if (eligible) {
+                continue;
+            }
+
+            String issueKey = group.getId() + ":" + studentId + ":" + requiredAcademicDivisionIds;
+            if (!reportedIssueKeys.add(issueKey)) {
+                continue;
+            }
+
+            issuesByGroupId.computeIfAbsent(group.getId(), ignored -> new ArrayList<>())
+                    .add(issue(
+                            group,
+                            FIELD_ACADEMIC_DIVISION,
+                            "STUDENT_ACADEMIC_CAREER_DIVISION_MISMATCH",
+                            studentDisplayName(student)
+                                    + " no longer has active academic career access for "
+                                    + academicDivisionNames(requiredAcademicDivisions)
+                                    + "."
+                    ));
+        }
+
+        return issuesByGroupId;
+    }
+
+    private List<AcademicDivision> requiredAcademicDivisions(RegistrationGroup group) {
+        if (group == null || group.getRegistrationGroupGeneration() == null) {
+            return List.of();
+        }
+
+        List<AcademicDivision> academicDivisions =
+                generationAcademicDivisionRepository
+                        .findAcademicDivisionsForGeneration(group.getRegistrationGroupGeneration().getId())
+                        .stream()
+                        .map(RegistrationGroupGenerationAcademicDivision::getAcademicDivision)
+                        .toList();
+        if (!academicDivisions.isEmpty()) {
+            return academicDivisions;
+        }
+
+        AcademicDivision academicDivision = group.getRegistrationGroupGeneration().getAcademicDivision();
+        return academicDivision == null ? List.of() : List.of(academicDivision);
+    }
+
+    private String academicDivisionNames(List<AcademicDivision> academicDivisions) {
+        return academicDivisions.stream()
+                .map(AcademicDivision::getName)
+                .filter(name -> name != null && !name.isBlank())
+                .collect(Collectors.joining(", "));
+    }
+
+    private String studentDisplayName(Student student) {
+        if (student == null) {
+            return "Assigned student";
+        }
+
+        String firstName = student.getFirstName() == null ? "" : student.getFirstName().trim();
+        String lastName = student.getLastName() == null ? "" : student.getLastName().trim();
+        String displayName = (firstName + " " + lastName).trim();
+        if (!displayName.isBlank()) {
+            return displayName;
+        }
+
+        if (student.getAltId() != null && !student.getAltId().isBlank()) {
+            return "Student " + student.getAltId();
+        }
+
+        return "Student " + student.getId();
     }
 
     private RegistrationGroupPublishValidationIssueResponse issue(

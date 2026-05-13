@@ -291,6 +291,17 @@ public interface StudentSectionEnrollmentRepository extends JpaRepository<Studen
     );
 
     @Query("""
+            select count(enrollment)
+            from StudentSectionEnrollment enrollment
+            where enrollment.courseSection.id = :sectionId
+              and upper(enrollment.status.code) in :statusCodes
+            """)
+    long countBySectionIdAndStatusCodes(
+            @Param("sectionId") Long sectionId,
+            @Param("statusCodes") List<String> statusCodes
+    );
+
+    @Query("""
             select coalesce(max(enrollment.waitlistPosition), 0)
             from StudentSectionEnrollment enrollment
             where enrollment.courseSection.id = :sectionId

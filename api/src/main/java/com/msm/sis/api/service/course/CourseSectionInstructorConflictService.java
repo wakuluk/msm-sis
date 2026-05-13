@@ -331,9 +331,8 @@ public class CourseSectionInstructorConflictService {
                 : (subject == null || subject.getCode() == null
                 ? course.getCourseNumber()
                 : subject.getCode() + " " + course.getCourseNumber());
-        String honorsSuffix = section.isHonors() ? "H" : "";
 
-        return courseCode + " " + section.getSectionLetter() + honorsSuffix;
+        return courseCode + " " + section.getSectionLetter();
     }
 
     private String buildSectionDisplay(String sectionCode, CourseSection section) {

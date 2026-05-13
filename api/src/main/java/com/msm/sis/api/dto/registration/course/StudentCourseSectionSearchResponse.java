@@ -7,6 +7,6 @@ public record StudentCourseSectionSearchResponse(
         int size,
         long totalElements,
         int totalPages,
-        List<StudentCourseSectionSearchResultResponse> results
+        List<StudentCourseSectionSearchRowResponse> results
 ) {
 }

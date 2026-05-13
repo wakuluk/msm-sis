@@ -450,12 +450,7 @@ public class StudentCourseScheduleConflictService {
 
     private String displaySectionCode(CourseSection section) {
         String sectionLetter = section == null ? null : section.getSectionLetter();
-        StringBuilder displayCode = new StringBuilder(sectionLetter == null ? "" : sectionLetter);
-        if (section != null && section.isHonors()) {
-            displayCode.append("H");
-        }
-
-        return displayCode.isEmpty() ? null : displayCode.toString();
+        return sectionLetter == null || sectionLetter.isBlank() ? null : sectionLetter;
     }
 
     private String displayCourseSection(String courseCode, String sectionCode) {

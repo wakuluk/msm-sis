@@ -2,6 +2,7 @@ package com.msm.sis.api.service.registration;
 
 import com.msm.sis.api.dto.registration.BulkAssignRegistrationGroupStudentsRequest;
 import com.msm.sis.api.dto.registration.BulkAssignRegistrationGroupStudentsResponse;
+import com.msm.sis.api.entity.AcademicDivision;
 import com.msm.sis.api.entity.AcademicTerm;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.RegistrationGroup;
@@ -12,6 +13,7 @@ import com.msm.sis.api.repository.RegistrationGroupRepository;
 import com.msm.sis.api.repository.RegistrationGroupStudentRepository;
 import com.msm.sis.api.repository.SisUserRepository;
 import com.msm.sis.api.repository.StudentRepository;
+import com.msm.sis.api.service.student.StudentAcademicCareerEligibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class RegistrationGroupUnassignedStudentAssignmentService {
     private final RegistrationGroupRepository registrationGroupRepository;
     private final RegistrationGroupStudentRepository registrationGroupStudentRepository;
     private final SisUserRepository sisUserRepository;
+    private final StudentAcademicCareerEligibilityService academicCareerEligibilityService;
     private final StudentRepository studentRepository;
 
     @Transactional
@@ -48,6 +51,7 @@ public class RegistrationGroupUnassignedStudentAssignmentService {
         RegistrationGroup registrationGroup = resolveRegistrationGroup(requiredRequest.registrationGroupId());
         List<Long> studentIds = normalizeStudentIds(requiredRequest.studentIds());
         Map<Long, Student> studentsById = loadActiveStudents(studentIds);
+        validateStudentsHaveActiveAcademicCareers(studentIds);
         validateStudentsAreStillUnassigned(registrationGroup, studentIds);
         SisUser actorUser = resolveActorUser(actorUserId);
 
@@ -122,6 +126,19 @@ public class RegistrationGroupUnassignedStudentAssignmentService {
             );
         }
         return studentsById;
+    }
+
+    private void validateStudentsHaveActiveAcademicCareers(List<Long> studentIds) {
+        Map<Long, List<AcademicDivision>> academicDivisionsByStudentId =
+                academicCareerEligibilityService.getAllowedAcademicDivisionsByStudentId(studentIds);
+        for (Long studentId : studentIds) {
+            if (academicDivisionsByStudentId.getOrDefault(studentId, List.of()).isEmpty()) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Student " + studentId + " does not have an active academic career."
+                );
+            }
+        }
     }
 
     private void validateStudentsAreStillUnassigned(

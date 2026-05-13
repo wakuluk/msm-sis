@@ -39,6 +39,7 @@ public record StudentCourseSectionSearchResultResponse(
         String gradingBasisCode,
         String gradingBasisName,
         BigDecimal credits,
+        boolean honors,
         Integer capacity,
         Integer hardCapacity,
         boolean waitlistAllowed,
@@ -58,8 +59,14 @@ public record StudentCourseSectionSearchResultResponse(
         boolean sameCourseAlreadyEnrolled,
         String duplicateCourseReason,
         boolean prerequisitesSatisfied,
+        boolean registrationEligibilitySatisfied,
+        String registrationEligibilityMessage,
+        boolean honorsEligibilitySatisfied,
+        String honorsEligibilityMessage,
+        String honorsWarningMessage,
         String unavailableReason,
         List<StudentCourseRegistrationRequisiteResponse> requisites,
+        List<StudentCourseRegistrationRequisiteGroupResponse> requisiteGroups,
         List<String> corequisiteWarnings,
         List<StudentCourseRegistrationMeetingResponse> meetings
 ) {

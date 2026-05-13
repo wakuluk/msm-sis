@@ -23,6 +23,10 @@ import static com.msm.sis.api.util.TextUtils.trimToNull;
 public class StudentSectionEnrollmentStatusService {
     private static final String REGISTERED_STATUS_CODE = "REGISTERED";
     private static final String WAITLISTED_STATUS_CODE = "WAITLISTED";
+    private static final List<String> SEAT_HOLDING_STATUS_CODES = List.of(
+            "REGISTERED",
+            "IN_PROGRESS"
+    );
 
     private final StudentSectionEnrollmentRepository enrollmentRepository;
 
@@ -33,13 +37,10 @@ public class StudentSectionEnrollmentStatusService {
             return requestedStatusCode;
         }
 
-        long registeredCount = enrollmentRepository.countBySectionIdAndStatusCode(
-                courseSection.getId(),
-                REGISTERED_STATUS_CODE
-        );
-        validateHardCapacity(courseSection, registeredCount);
+        long seatHoldingCount = countSeatHoldingEnrollments(courseSection);
+        validateHardCapacity(courseSection, seatHoldingCount);
 
-        boolean hasCapacity = courseSection.getCapacity() == null || registeredCount < courseSection.getCapacity();
+        boolean hasCapacity = courseSection.getCapacity() == null || seatHoldingCount < courseSection.getCapacity();
         boolean capacityOverride = Optional.ofNullable(request.capacityOverride()).orElse(false);
 
         if (hasCapacity || capacityOverride) {
@@ -124,16 +125,19 @@ public class StudentSectionEnrollmentStatusService {
             return;
         }
 
-        long registeredCount = enrollmentRepository.countBySectionIdAndStatusCode(
-                courseSection.getId(),
-                REGISTERED_STATUS_CODE
-        );
-        validateHardCapacity(courseSection, registeredCount);
+        validateHardCapacity(courseSection, countSeatHoldingEnrollments(courseSection));
     }
 
-    private void validateHardCapacity(CourseSection courseSection, long registeredCount) {
+    private long countSeatHoldingEnrollments(CourseSection courseSection) {
+        return enrollmentRepository.countBySectionIdAndStatusCodes(
+                courseSection.getId(),
+                SEAT_HOLDING_STATUS_CODES
+        );
+    }
+
+    private void validateHardCapacity(CourseSection courseSection, long seatHoldingCount) {
         Integer hardCapacity = courseSection.getHardCapacity();
-        if (hardCapacity != null && registeredCount >= hardCapacity) {
+        if (hardCapacity != null && seatHoldingCount >= hardCapacity) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Course section has reached its hard capacity."

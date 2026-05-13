@@ -2,6 +2,8 @@ import { getAccessToken } from '@/auth/auth-store';
 import {
   AddCourseSectionStudentRequestSchema,
   type AddCourseSectionStudentRequest,
+  CourseSectionInitialGradesResponseSchema,
+  type CourseSectionInitialGradesResponse,
   CourseSectionStudentListResponseSchema,
   type CourseSectionStudentListResponse,
   CourseSectionStudentEnrollmentEventListResponseSchema,
@@ -12,6 +14,8 @@ import {
   type CourseSectionSortDirection,
   PatchCourseSectionStudentEnrollmentRequestSchema,
   type PatchCourseSectionStudentEnrollmentRequest,
+  PostInitialCourseSectionGradesRequestSchema,
+  type PostInitialCourseSectionGradesRequest,
   PostCourseSectionStudentGradeRequestSchema,
   type PostCourseSectionStudentGradeRequest,
 } from './schemas/course-schemas';
@@ -56,6 +60,12 @@ export type PostCourseSectionStudentGradeRequestArgs = {
   sectionId: number;
   enrollmentId: number;
   request: PostCourseSectionStudentGradeRequest;
+  signal?: AbortSignal;
+};
+
+export type PostCourseSectionInitialGradesRequestArgs = {
+  sectionId: number;
+  grades: PostInitialCourseSectionGradesRequest['grades'];
   signal?: AbortSignal;
 };
 
@@ -105,6 +115,10 @@ export async function getCourseSectionStudents({
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (response.status === 409) {
+      throw new Error('Some initial grades were already posted. Refresh and try again.');
+    }
+
     throw new Error(
       typeof payload?.message === 'string'
         ? payload.message
@@ -169,9 +183,7 @@ export async function getCourseSectionStudentEnrollment({
 
   if (!response.ok) {
     throw new Error(
-      typeof payload?.message === 'string'
-        ? payload.message
-        : 'Failed to load student enrollment.'
+      typeof payload?.message === 'string' ? payload.message : 'Failed to load student enrollment.'
     );
   }
 
@@ -249,6 +261,40 @@ export async function postCourseSectionStudentGrade({
   return CourseSectionStudentResponseSchema.parse(payload);
 }
 
+export async function postCourseSectionInitialGrades({
+  sectionId,
+  grades,
+  signal,
+}: PostCourseSectionInitialGradesRequestArgs): Promise<CourseSectionInitialGradesResponse> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error('Not authenticated.');
+  }
+
+  const response = await fetch(`/api/course-sections/${sectionId}/initial-grades`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(PostInitialCourseSectionGradesRequestSchema.parse({ grades })),
+    signal,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.message === 'string'
+        ? payload.message
+        : 'Failed to post initial student grades.'
+    );
+  }
+
+  return CourseSectionInitialGradesResponseSchema.parse(payload);
+}
+
 export async function expireCourseSectionWaitlistOfferNow({
   sectionId,
   enrollmentId,
@@ -275,9 +321,7 @@ export async function expireCourseSectionWaitlistOfferNow({
 
   if (!response.ok) {
     throw new Error(
-      typeof payload?.message === 'string'
-        ? payload.message
-        : 'Failed to expire waitlist offer.'
+      typeof payload?.message === 'string' ? payload.message : 'Failed to expire waitlist offer.'
     );
   }
 
@@ -310,9 +354,7 @@ export async function runCourseSectionExpiredWaitlistCleanup({
 
   if (!response.ok) {
     throw new Error(
-      typeof payload?.message === 'string'
-        ? payload.message
-        : 'Failed to run waitlist cleanup.'
+      typeof payload?.message === 'string' ? payload.message : 'Failed to run waitlist cleanup.'
     );
   }
 
@@ -351,9 +393,7 @@ export async function getCourseSectionStudentEnrollmentEvents({
 
   if (!response.ok) {
     throw new Error(
-      typeof payload?.message === 'string'
-        ? payload.message
-        : 'Failed to load enrollment events.'
+      typeof payload?.message === 'string' ? payload.message : 'Failed to load enrollment events.'
     );
   }
 

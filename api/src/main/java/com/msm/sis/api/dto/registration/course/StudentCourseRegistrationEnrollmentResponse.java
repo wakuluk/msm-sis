@@ -36,6 +36,7 @@ public record StudentCourseRegistrationEnrollmentResponse(
         String gradingBasisName,
         BigDecimal creditsAttempted,
         BigDecimal creditsEarned,
+        boolean honors,
         Integer waitlistPosition,
         Integer capacity,
         Integer hardCapacity,
@@ -57,6 +58,7 @@ public record StudentCourseRegistrationEnrollmentResponse(
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         LocalDateTime waitlistedAt,
         List<StudentCourseRegistrationRequisiteResponse> requisites,
+        List<StudentCourseRegistrationRequisiteGroupResponse> requisiteGroups,
         List<StudentCourseRegistrationMeetingResponse> meetings
 ) {
 }

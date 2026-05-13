@@ -7,6 +7,7 @@ import type {
 } from '@/services/schemas/course-schemas';
 import type { StaffReferenceOptionResponse } from '@/services/schemas/staff-schemas';
 import type { CourseSectionDraft, StaffSelectOption } from './courseSectionsWorkspaceTypes';
+import { normalizeCourseSectionCode } from './courseSectionCodeUtils';
 
 const meetingDayNumbersByKey = new Map<string, number>([
   ['MONDAY', 1],
@@ -27,13 +28,19 @@ export function buildCreateSectionRequest(
   draft: CourseSectionDraft,
   subTermId: number
 ): CreateCourseSectionRequest | string {
-  const sectionLetter = draft.sectionCode.trim();
+  const sectionLetter = normalizeCourseSectionCode(draft.sectionCode);
   const credits = draft.credits === null ? Number.NaN : Number(draft.credits);
   const capacity = Number(draft.capacity);
   const hardCapacity = draft.hardCapacity.trim() === '' ? null : Number(draft.hardCapacity);
 
   if (!sectionLetter) {
     return 'Section is required.';
+  }
+  if (draft.honors && !sectionLetter.endsWith('H')) {
+    return 'Honors section codes must end in H.';
+  }
+  if (!draft.honors && sectionLetter.includes('H')) {
+    return 'Non-honors section codes cannot contain H.';
   }
 
   if (!draft.deliveryMode) {

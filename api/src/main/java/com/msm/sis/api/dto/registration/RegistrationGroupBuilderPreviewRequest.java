@@ -10,6 +10,7 @@ public record RegistrationGroupBuilderPreviewRequest(
         String programSearchText,
         String groupNamePrefix,
         Long academicDivisionId,
+        List<Long> academicDivisionIds,
         String honorsFilter,
         String athleteFilter,
         List<Long> athleticSportIds,

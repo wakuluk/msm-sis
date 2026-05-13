@@ -11,6 +11,8 @@ public record RegistrationGroupAssignedStudentResponse(
         String lastName,
         String displayName,
         String email,
+        String academicDivisionCode,
+        String academicDivisionName,
         Integer classStandingId,
         String classStandingName,
         LocalDate estimatedGradDate,

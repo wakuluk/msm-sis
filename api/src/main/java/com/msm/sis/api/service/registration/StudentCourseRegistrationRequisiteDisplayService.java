@@ -1,5 +1,7 @@
 package com.msm.sis.api.service.registration;
 
+import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationRequisiteCourseResponse;
+import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationRequisiteGroupResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationRequisiteResponse;
 import com.msm.sis.api.entity.AcademicSubject;
 import com.msm.sis.api.entity.Course;
@@ -28,8 +30,10 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class StudentCourseRegistrationRequisiteDisplayService {
+    private static final String CONDITION_TYPE_ANY = "ANY";
     private static final String REQUISITE_TYPE_PREREQUISITE = "PREREQUISITE";
     private static final String REQUISITE_TYPE_COREQUISITE = "COREQUISITE";
+    private static final Set<String> SATISFYING_STATUSES = Set.of("MET", "PLANNED", "IN_PROGRESS");
     private static final Set<String> COMPARABLE_GRADES = Set.of(
             "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-"
     );
@@ -90,6 +94,64 @@ public class StudentCourseRegistrationRequisiteDisplayService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<StudentCourseRegistrationRequisiteGroupResponse> findRequisiteGroupsForStudentCourseVersion(
+            Long studentId,
+            Long courseVersionId,
+            CourseSection targetSection,
+            List<StudentCoursePlannedPrerequisiteEvidence> plannedEvidence
+    ) {
+        if (studentId == null || courseVersionId == null) {
+            return List.of();
+        }
+
+        List<CourseVersionRequisiteGroup> groups =
+                requisiteGroupRepository.findGroupsForCourseVersion(courseVersionId);
+        if (groups.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, List<CourseVersionRequisiteCourse>> coursesByGroupId = findCoursesByGroupId(groups);
+        List<StudentCoursePrerequisiteEvidence> prerequisiteEvidence =
+                evidenceService.findPrerequisiteEvidence(studentId);
+        Map<Long, List<StudentCoursePrerequisiteEvidence>> evidenceByCourseId =
+                prerequisiteEvidence.stream()
+                        .filter(evidence -> evidence.courseId() != null)
+                        .collect(Collectors.groupingBy(
+                                StudentCoursePrerequisiteEvidence::courseId,
+                                LinkedHashMap::new,
+                                Collectors.toList()
+                        ));
+        Set<Long> chronologicallyEligiblePlannedCourseIds =
+                evidenceService.findChronologicallyEligiblePlannedCourseIds(plannedEvidence, targetSection);
+        Set<Long> plannedCourseIds = plannedEvidence == null
+                ? Set.of()
+                : plannedEvidence.stream()
+                .map(StudentCoursePlannedPrerequisiteEvidence::courseId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Map<String, Integer> gradeSortOrders = gradeSortOrders();
+
+        return groups.stream()
+                .map(group -> {
+                    List<StudentCourseRegistrationRequisiteResponse> requisiteRows =
+                            coursesByGroupId.getOrDefault(group.getId(), List.of()).stream()
+                                    .map(requisiteCourse -> toResponse(
+                                            group,
+                                            requisiteCourse,
+                                            evidenceByCourseId,
+                                            chronologicallyEligiblePlannedCourseIds,
+                                            plannedCourseIds,
+                                            gradeSortOrders
+                                    ))
+                                    .toList();
+
+                    return toGroupResponse(group, requisiteRows);
+                })
+                .filter(group -> !group.courses().isEmpty())
+                .toList();
+    }
+
     private Map<Long, List<CourseVersionRequisiteCourse>> findCoursesByGroupId(
             List<CourseVersionRequisiteGroup> groups
     ) {
@@ -144,6 +206,101 @@ public class StudentCourseRegistrationRequisiteDisplayService {
                 display.evidence(),
                 display.status()
         );
+    }
+
+    private StudentCourseRegistrationRequisiteGroupResponse toGroupResponse(
+            CourseVersionRequisiteGroup group,
+            List<StudentCourseRegistrationRequisiteResponse> requisiteRows
+    ) {
+        return new StudentCourseRegistrationRequisiteGroupResponse(
+                group.getId(),
+                group.getRequisiteType(),
+                group.getConditionType(),
+                minimumRequired(group),
+                minimumGradeSummary(group, requisiteRows),
+                groupStatus(group, requisiteRows),
+                title(group),
+                requisiteRows.stream()
+                        .map(this::toCourseResponse)
+                        .toList()
+        );
+    }
+
+    private StudentCourseRegistrationRequisiteCourseResponse toCourseResponse(
+            StudentCourseRegistrationRequisiteResponse row
+    ) {
+        return new StudentCourseRegistrationRequisiteCourseResponse(
+                row.courseVersionRequisiteCourseId(),
+                row.requiredCourseId(),
+                row.requiredCourseCode(),
+                row.requiredCourseLab(),
+                row.minimumGrade(),
+                row.studentEvidence(),
+                row.status()
+        );
+    }
+
+    private String minimumGradeSummary(
+            CourseVersionRequisiteGroup group,
+            List<StudentCourseRegistrationRequisiteResponse> requisiteRows
+    ) {
+        if (REQUISITE_TYPE_COREQUISITE.equals(normalize(group.getRequisiteType()))) {
+            return "Registered or planned";
+        }
+
+        Set<String> minimumGrades = requisiteRows.stream()
+                .map(StudentCourseRegistrationRequisiteResponse::minimumGrade)
+                .map(this::normalize)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (minimumGrades.isEmpty()) {
+            return "Pass / completed course";
+        }
+
+        if (minimumGrades.size() == 1) {
+            return minimumGrades.iterator().next();
+        }
+
+        return "Varies by course option";
+    }
+
+    private String groupStatus(
+            CourseVersionRequisiteGroup group,
+            List<StudentCourseRegistrationRequisiteResponse> requisiteRows
+    ) {
+        long satisfiedCount = requisiteRows.stream()
+                .map(StudentCourseRegistrationRequisiteResponse::status)
+                .map(this::normalize)
+                .filter(SATISFYING_STATUSES::contains)
+                .count();
+        int requiredCount = isAnyCondition(group)
+                ? minimumRequired(group)
+                : requisiteRows.size();
+
+        return satisfiedCount >= requiredCount ? "MET" : "MISSING";
+    }
+
+    private String title(CourseVersionRequisiteGroup group) {
+        if (isAnyCondition(group)) {
+            int required = minimumRequired(group);
+            return "Complete " + required + " of the following courses";
+        }
+
+        if (REQUISITE_TYPE_COREQUISITE.equals(normalize(group.getRequisiteType()))) {
+            return "Take all of the following courses with this registration";
+        }
+
+        return "Complete all of the following courses";
+    }
+
+    private boolean isAnyCondition(CourseVersionRequisiteGroup group) {
+        return CONDITION_TYPE_ANY.equals(normalize(group.getConditionType()));
+    }
+
+    private int minimumRequired(CourseVersionRequisiteGroup group) {
+        Integer minimumRequired = group.getMinimumRequired();
+        return minimumRequired == null || minimumRequired < 1 ? 1 : minimumRequired;
     }
 
     private StudentCourseRequisiteDisplay displayForCourse(

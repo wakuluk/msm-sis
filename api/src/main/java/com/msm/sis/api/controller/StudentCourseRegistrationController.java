@@ -6,6 +6,7 @@ import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationGroupCho
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationSubmitResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseSectionSearchResponse;
+import com.msm.sis.api.dto.registration.course.StudentCourseSectionSearchResultResponse;
 import com.msm.sis.api.dto.registration.course.SubmitStudentCourseRegistrationRequest;
 import com.msm.sis.api.service.registration.StudentCourseRegistrationContextService;
 import com.msm.sis.api.service.registration.StudentCourseRegistrationService;
@@ -186,6 +187,26 @@ public class StudentCourseRegistrationController {
         ));
     }
 
+    @GetMapping("/course-sections/{sectionId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    @Operation(
+            summary = "Get course section registration details",
+            description = "Returns prerequisite, duplicate, registration eligibility, and honors guidance for one section in the authenticated student's selected registration group term."
+    )
+    public ResponseEntity<StudentCourseSectionSearchResultResponse> getCourseSectionDetail(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @PathVariable Long sectionId,
+            @RequestParam(required = false) Long registrationGroupId,
+            @RequestParam(required = false) Long termId
+    ) {
+        return ResponseEntity.ok(courseSectionSearchService.getCourseSectionDetailForAuthenticatedStudent(
+                jwt.getUserId(),
+                sectionId,
+                registrationGroupId,
+                termId
+        ));
+    }
+
     @GetMapping("/course-sections")
     @PreAuthorize("hasRole('STUDENT')")
     @Operation(
@@ -194,11 +215,13 @@ public class StudentCourseRegistrationController {
     )
     public ResponseEntity<StudentCourseSectionSearchResponse> searchCourseSections(
             @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @RequestParam(required = false) Long registrationGroupId,
             @RequestParam(required = false) Long termId,
             @RequestParam(required = false) List<Long> subTermIds,
             @RequestParam(required = false) String courseCode,
             @RequestParam(required = false) String section,
             @RequestParam(required = false) String instructor,
+            @RequestParam(required = false) String honorsFilter,
             @RequestParam(required = false) List<Short> dayOfWeeks,
             @RequestParam(required = false) Integer startHour,
             @RequestParam(required = false) String time,
@@ -209,11 +232,13 @@ public class StudentCourseRegistrationController {
     ) {
         return ResponseEntity.ok(courseSectionSearchService.searchCourseSectionsForAuthenticatedStudent(
                 jwt.getUserId(),
+                registrationGroupId,
                 termId,
                 subTermIds,
                 courseCode,
                 section,
                 instructor,
+                honorsFilter,
                 dayOfWeeks,
                 startHour,
                 time,

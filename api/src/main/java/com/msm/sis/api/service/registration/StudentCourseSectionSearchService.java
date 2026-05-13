@@ -1,11 +1,13 @@
 package com.msm.sis.api.service.registration;
 
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationMeetingResponse;
+import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationRequisiteGroupResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationRequisiteResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationSubTermResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationWindowResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseSectionSearchResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseSectionSearchResultResponse;
+import com.msm.sis.api.dto.registration.course.StudentCourseSectionSearchRowResponse;
 import com.msm.sis.api.entity.AcademicDivision;
 import com.msm.sis.api.entity.AcademicSubject;
 import com.msm.sis.api.entity.AcademicSubTerm;
@@ -26,8 +28,10 @@ import com.msm.sis.api.repository.CourseSectionInstructorRepository;
 import com.msm.sis.api.repository.CourseSectionMeetingRepository;
 import com.msm.sis.api.repository.CourseSectionRepository;
 import com.msm.sis.api.repository.StudentCourseRegistrationSelectionRepository;
+import com.msm.sis.api.repository.StudentHonorsRepository;
 import com.msm.sis.api.repository.StudentRepository;
 import com.msm.sis.api.repository.StudentSectionEnrollmentRepository;
+import com.msm.sis.api.service.student.StudentAcademicCareerEligibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -64,6 +68,9 @@ public class StudentCourseSectionSearchService {
     private static final int DEFAULT_SIZE = 10;
     private static final int MAX_PAGE_SIZE = 100;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h:mm a");
+    private static final String HONORS_FILTER_ALL = "ALL";
+    private static final String HONORS_FILTER_HONORS_ONLY = "HONORS_ONLY";
+    private static final String HONORS_FILTER_NON_HONORS_ONLY = "NON_HONORS_ONLY";
 
     private final CourseSectionInstructorRepository courseSectionInstructorRepository;
     private final CourseSectionMeetingRepository courseSectionMeetingRepository;
@@ -76,15 +83,19 @@ public class StudentCourseSectionSearchService {
     private final StudentCourseRegistrationRequisiteDisplayService requisiteDisplayService;
     private final StudentRepository studentRepository;
     private final StudentSectionEnrollmentRepository enrollmentRepository;
+    private final StudentAcademicCareerEligibilityService academicCareerEligibilityService;
+    private final StudentHonorsRepository studentHonorsRepository;
 
     @Transactional(readOnly = true)
     public StudentCourseSectionSearchResponse searchCourseSectionsForAuthenticatedStudent(
             Long userId,
+            Long registrationGroupId,
             Long requestedTermId,
             List<Long> requestedSubTermIds,
             String courseCode,
             String section,
             String instructor,
+            String honorsFilter,
             List<Short> dayOfWeeks,
             Integer startHour,
             String time,
@@ -99,7 +110,7 @@ public class StudentCourseSectionSearchService {
                         "Authenticated user is not linked to a student record."
                 ));
         StudentCourseRegistrationWindowResponse registrationWindow =
-                contextService.getRegistrationWindowForStudent(student.getId());
+                contextService.getRegistrationWindowForStudent(student.getId(), registrationGroupId, requestedTermId);
 
         Long termId = registrationWindow.termId();
         if (requestedTermId != null && !Objects.equals(requestedTermId, termId)) {
@@ -118,40 +129,39 @@ public class StudentCourseSectionSearchService {
         int effectivePage = page == null ? DEFAULT_PAGE : page;
         int effectiveSize = size == null ? DEFAULT_SIZE : size;
         validatePageRequest(effectivePage, effectiveSize, MAX_PAGE_SIZE);
+        String normalizedHonorsFilter = normalizeHonorsFilter(honorsFilter);
+        Set<String> allowedAcademicDivisionCodes = academicCareerEligibilityService
+                .getAllowedAcademicDivisionCodes(student.getId());
 
         List<CourseSection> sections =
-                courseSectionRepository.findAvailableForStudentRegistrationBySubTermIds(subTermIds);
+                courseSectionRepository.findAvailableForStudentRegistrationBySubTermIds(subTermIds).stream()
+                        .filter(courseSection -> matchesAcademicCareerDivision(
+                                courseSection,
+                                allowedAcademicDivisionCodes
+                        ))
+                        .filter(courseSection -> matchesHonorsFilter(courseSection, normalizedHonorsFilter))
+                        .toList();
+        if (sections.isEmpty()) {
+            return emptyResponse(effectivePage, effectiveSize);
+        }
+
         attachAssociations(sections);
 
-        List<StudentCourseRegistrationSelection> selectedSelections = findSelectedSelections(student.getId(), termId);
-        Set<Long> selectedSectionIds = selectedSelections.stream()
-                .map(StudentCourseRegistrationSelection::getCourseSection)
-                .filter(Objects::nonNull)
-                .map(CourseSection::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toCollection(HashSet::new));
-        List<StudentCoursePlannedPrerequisiteEvidence> plannedPrerequisiteEvidence =
-                prerequisiteEvidenceService.toPlannedPrerequisiteEvidence(selectedSelections);
-        Set<Long> assignedEnrollmentSectionIds = findAssignedEnrollmentSectionIds(student.getId(), termId);
         Map<Long, EnrollmentCounts> enrollmentCountsBySectionId = findEnrollmentCountsBySectionId(sections);
 
-        List<StudentCourseSectionSearchResultResponse> sortedResults = sections.stream()
-                .map(sectionEntity -> toSearchResult(
-                        student.getId(),
+        List<StudentCourseSectionSearchRowResponse> sortedResults = sections.stream()
+                .filter(sectionEntity -> matchesCourse(sectionEntity, courseCode))
+                .filter(sectionEntity -> matchesSection(sectionEntity, section))
+                .filter(sectionEntity -> matchesInstructor(sectionEntity, instructor))
+                .filter(sectionEntity -> matchesMeetingFilters(sectionEntity, dayOfWeeks, startHour))
+                .filter(sectionEntity -> matchesTime(sectionEntity, time))
+                .map(sectionEntity -> toSearchRow(
                         termId,
                         registrationWindow.termCode(),
                         registrationWindow.termName(),
                         sectionEntity,
-                        selectedSectionIds,
-                        plannedPrerequisiteEvidence,
-                        assignedEnrollmentSectionIds,
                         enrollmentCountsBySectionId.getOrDefault(sectionEntity.getId(), EnrollmentCounts.EMPTY)
                 ))
-                .filter(row -> matchesCourse(row, courseCode))
-                .filter(row -> matchesSection(row, section))
-                .filter(row -> matchesInstructor(row, instructor))
-                .filter(row -> matchesMeetingFilters(row, dayOfWeeks, startHour))
-                .filter(row -> matchesTime(row, time))
                 .sorted(buildComparator(sortBy, sortDirection))
                 .toList();
 
@@ -166,6 +176,59 @@ public class StudentCourseSectionSearchService {
                 totalElements,
                 totalPages,
                 sortedResults.subList(fromIndex, toIndex)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public StudentCourseSectionSearchResultResponse getCourseSectionDetailForAuthenticatedStudent(
+            Long userId,
+            Long sectionId,
+            Long registrationGroupId,
+            Long requestedTermId
+    ) {
+        if (sectionId == null || sectionId < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Section id is required.");
+        }
+
+        Student student = studentRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Authenticated user is not linked to a student record."
+                ));
+        StudentCourseRegistrationWindowResponse registrationWindow =
+                contextService.getRegistrationWindowForStudent(student.getId(), registrationGroupId, requestedTermId);
+        Long termId = registrationWindow.termId();
+        CourseSection section = courseSectionRepository.findById(sectionId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Course section was not found."
+                ));
+        validateSectionAvailableInRegistrationWindow(section, registrationWindow);
+        attachAssociations(List.of(section));
+
+        List<StudentCourseRegistrationSelection> selectedSelections = findSelectedSelections(student.getId(), termId);
+        Set<Long> selectedSectionIds = selectedSelections.stream()
+                .map(StudentCourseRegistrationSelection::getCourseSection)
+                .filter(Objects::nonNull)
+                .map(CourseSection::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(HashSet::new));
+        List<StudentCoursePlannedPrerequisiteEvidence> plannedPrerequisiteEvidence =
+                prerequisiteEvidenceService.toPlannedPrerequisiteEvidence(selectedSelections);
+        Set<Long> assignedEnrollmentSectionIds = findAssignedEnrollmentSectionIds(student.getId(), termId);
+        EnrollmentCounts enrollmentCounts = findEnrollmentCountsBySectionId(List.of(section))
+                .getOrDefault(section.getId(), EnrollmentCounts.EMPTY);
+
+        return toSectionDetailResult(
+                student.getId(),
+                termId,
+                registrationWindow.termCode(),
+                registrationWindow.termName(),
+                section,
+                selectedSectionIds,
+                plannedPrerequisiteEvidence,
+                assignedEnrollmentSectionIds,
+                enrollmentCounts
         );
     }
 
@@ -202,6 +265,29 @@ public class StudentCourseSectionSearchService {
                 .toList();
     }
 
+    private void validateSectionAvailableInRegistrationWindow(
+            CourseSection section,
+            StudentCourseRegistrationWindowResponse registrationWindow
+    ) {
+        String statusCode = section.getStatus() == null ? null : section.getStatus().getCode();
+        if (!"PLANNED".equalsIgnoreCase(statusCode)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Course section was not found."
+            );
+        }
+
+        Long sectionSubTermId = section.getSubTerm() == null ? null : section.getSubTerm().getId();
+        boolean sectionInWindow = registrationWindow.subTerms().stream()
+                .anyMatch(subTerm -> Objects.equals(subTerm.subTermId(), sectionSubTermId));
+        if (!sectionInWindow) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Course section was not found for the selected registration term."
+            );
+        }
+    }
+
     private void attachAssociations(List<CourseSection> sections) {
         if (sections.isEmpty()) {
             return;
@@ -229,6 +315,43 @@ public class StudentCourseSectionSearchService {
         }
 
         return selectionRepository.findSelectionsForStudentAndTerm(studentId, termId);
+    }
+
+    private String normalizeHonorsFilter(String honorsFilter) {
+        String normalizedFilter = trimToNull(honorsFilter);
+        if (normalizedFilter == null) {
+            return HONORS_FILTER_ALL;
+        }
+
+        normalizedFilter = normalizedFilter.toUpperCase(Locale.ROOT);
+        return switch (normalizedFilter) {
+            case HONORS_FILTER_ALL, HONORS_FILTER_HONORS_ONLY, HONORS_FILTER_NON_HONORS_ONLY -> normalizedFilter;
+            default -> throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Honors filter must be one of: ALL, HONORS_ONLY, NON_HONORS_ONLY."
+            );
+        };
+    }
+
+    private boolean matchesHonorsFilter(CourseSection section, String honorsFilter) {
+        return switch (honorsFilter) {
+            case HONORS_FILTER_HONORS_ONLY -> section.isHonors();
+            case HONORS_FILTER_NON_HONORS_ONLY -> !section.isHonors();
+            default -> true;
+        };
+    }
+
+    private boolean matchesAcademicCareerDivision(
+            CourseSection section,
+            Set<String> allowedAcademicDivisionCodes
+    ) {
+        AcademicDivision academicDivision = section.getAcademicDivision();
+        String academicDivisionCode = academicDivision == null ? null : academicDivision.getCode();
+        if (academicDivisionCode == null) {
+            return false;
+        }
+
+        return allowedAcademicDivisionCodes.contains(academicDivisionCode.toUpperCase(Locale.ROOT));
     }
 
     private Set<Long> findAssignedEnrollmentSectionIds(Long studentId, Long termId) {
@@ -260,7 +383,7 @@ public class StudentCourseSectionSearchService {
         return countsBySectionId;
     }
 
-    private StudentCourseSectionSearchResultResponse toSearchResult(
+    private StudentCourseSectionSearchResultResponse toSectionDetailResult(
             Long studentId,
             Long termId,
             String termCode,
@@ -290,6 +413,11 @@ public class StudentCourseSectionSearchService {
                 .map(StudentCourseDuplicateRegistrationService.StudentCourseDuplicateRegistrationResult::message)
                 .orElse(null);
         boolean prerequisitesSatisfied = true;
+        boolean registrationEligibilitySatisfied = true;
+        String registrationEligibilityMessage = null;
+        boolean honorsEligibilitySatisfied = true;
+        String honorsEligibilityMessage = null;
+        String honorsWarningMessage = null;
         String unavailableReason = null;
         List<String> corequisiteWarnings = List.of();
         List<StudentCourseRegistrationRequisiteResponse> requisites = courseVersion == null || courseVersion.getId() == null
@@ -300,6 +428,15 @@ public class StudentCourseSectionSearchService {
                 section,
                 plannedPrerequisiteEvidence
         );
+        List<StudentCourseRegistrationRequisiteGroupResponse> requisiteGroups =
+                courseVersion == null || courseVersion.getId() == null
+                        ? List.of()
+                        : requisiteDisplayService.findRequisiteGroupsForStudentCourseVersion(
+                                studentId,
+                                courseVersion.getId(),
+                                section,
+                                plannedPrerequisiteEvidence
+                        );
 
         if (courseVersion != null && courseVersion.getId() != null) {
             try {
@@ -314,6 +451,24 @@ public class StudentCourseSectionSearchService {
                 prerequisitesSatisfied = false;
                 unavailableReason = exception.getReason() == null ? exception.getMessage() : exception.getReason();
             }
+        }
+
+        AcademicDivision sectionAcademicDivision = section.getAcademicDivision();
+        registrationEligibilityMessage = academicCareerEligibilityService.findRegistrationEligibilityMessage(
+                studentId,
+                sectionAcademicDivision == null ? null : sectionAcademicDivision.getCode()
+        );
+        if (registrationEligibilityMessage != null) {
+            registrationEligibilitySatisfied = false;
+        }
+        boolean honorsStudent = studentHonorsRepository.findForStudent(studentId)
+                .map(honors -> honors.isActive())
+                .orElse(false);
+        if (section.isHonors() && !honorsStudent) {
+            honorsEligibilitySatisfied = false;
+            honorsEligibilityMessage = "Only honors students may register for honors sections.";
+        } else if (!section.isHonors() && honorsStudent && hasPlannedHonorsSectionForSameCourse(section)) {
+            honorsWarningMessage = "An honors section is available for this course.";
         }
 
         Integer seatsAvailable = section.getCapacity() == null
@@ -351,6 +506,7 @@ public class StudentCourseSectionSearchService {
                 gradingBasis == null ? null : gradingBasis.getCode(),
                 gradingBasis == null ? null : gradingBasis.getName(),
                 section.getCredits(),
+                section.isHonors(),
                 section.getCapacity(),
                 section.getHardCapacity(),
                 section.isWaitlistAllowed(),
@@ -368,45 +524,123 @@ public class StudentCourseSectionSearchService {
                 enrollmentDuplicate.isPresent(),
                 duplicateCourseReason,
                 prerequisitesSatisfied,
+                registrationEligibilitySatisfied,
+                registrationEligibilityMessage,
+                honorsEligibilitySatisfied,
+                honorsEligibilityMessage,
+                honorsWarningMessage,
                 unavailableReason,
                 requisites,
+                requisiteGroups,
                 corequisiteWarnings,
                 meetings.stream().map(this::toMeetingResponse).toList()
         );
     }
 
-    private boolean matchesCourse(StudentCourseSectionSearchResultResponse row, String courseCode) {
+    private StudentCourseSectionSearchRowResponse toSearchRow(
+            Long termId,
+            String termCode,
+            String termName,
+            CourseSection section,
+            EnrollmentCounts enrollmentCounts
+    ) {
+        CourseOffering courseOffering = section.getCourseOffering();
+        CourseVersion courseVersion = courseOffering == null ? null : courseOffering.getCourseVersion();
+        Course course = courseVersion == null ? null : courseVersion.getCourse();
+        AcademicDivision academicDivision = section.getAcademicDivision();
+        AcademicSubTerm subTerm = section.getSubTerm();
+        List<CourseSectionInstructor> instructors = sortedInstructors(section);
+        List<CourseSectionMeeting> meetings = sortedMeetings(section);
+        Integer seatsAvailable = section.getCapacity() == null
+                ? null
+                : Math.max(0, section.getCapacity() - enrollmentCounts.enrolledCount());
+
+        return new StudentCourseSectionSearchRowResponse(
+                section.getId(),
+                course == null ? null : course.getId(),
+                courseVersion == null ? null : courseVersion.getId(),
+                courseOffering == null ? null : courseOffering.getId(),
+                termId,
+                termCode,
+                termName,
+                subTerm == null ? null : subTerm.getId(),
+                subTerm == null ? null : subTerm.getCode(),
+                subTerm == null ? null : subTerm.getName(),
+                subTerm == null ? null : subTerm.getStartDate(),
+                subTerm == null ? null : subTerm.getEndDate(),
+                courseCode(course),
+                courseVersion == null ? null : courseVersion.getTitle(),
+                section.getSectionLetter(),
+                displaySectionCode(section),
+                academicDivision == null ? null : academicDivision.getId(),
+                academicDivision == null ? null : academicDivision.getCode(),
+                academicDivision == null ? null : academicDivision.getName(),
+                section.getCredits(),
+                section.isHonors(),
+                section.getCapacity(),
+                section.getHardCapacity(),
+                enrollmentCounts.enrolledCount(),
+                enrollmentCounts.waitlistCount(),
+                seatsAvailable,
+                instructorSummary(instructors),
+                meetingSummary(meetings)
+        );
+    }
+
+    private boolean matchesCourse(CourseSection section, String courseCode) {
         String normalizedCourseCode = trimToNull(courseCode);
         if (normalizedCourseCode == null) {
             return true;
         }
 
-        return containsCourseCode(row.courseCode(), normalizedCourseCode)
-                || containsIgnoreCase(row.courseTitle(), normalizedCourseCode)
-                || containsIgnoreCase(row.sectionTitle(), normalizedCourseCode);
+        CourseOffering courseOffering = section.getCourseOffering();
+        CourseVersion courseVersion = courseOffering == null ? null : courseOffering.getCourseVersion();
+        Course course = courseVersion == null ? null : courseVersion.getCourse();
+
+        return containsCourseCode(courseCode(course), normalizedCourseCode)
+                || containsIgnoreCase(courseVersion == null ? null : courseVersion.getTitle(), normalizedCourseCode)
+                || containsIgnoreCase(section.getTitle(), normalizedCourseCode);
     }
 
-    private boolean matchesSection(StudentCourseSectionSearchResultResponse row, String section) {
+    private boolean matchesSection(CourseSection courseSection, String section) {
         String normalizedSection = trimToNull(section);
         if (normalizedSection == null) {
             return true;
         }
 
-        return containsIgnoreCase(row.sectionLetter(), normalizedSection)
-                || containsIgnoreCase(row.displaySectionCode(), normalizedSection)
-                || containsIgnoreCase(row.sectionTitle(), normalizedSection);
+        return containsIgnoreCase(courseSection.getSectionLetter(), normalizedSection)
+                || containsIgnoreCase(displaySectionCode(courseSection), normalizedSection)
+                || containsIgnoreCase(courseSection.getTitle(), normalizedSection);
     }
 
-    private boolean matchesInstructor(StudentCourseSectionSearchResultResponse row, String instructor) {
-        return containsIgnoreCase(row.instructorSummary(), instructor);
+    private boolean matchesInstructor(CourseSection section, String instructor) {
+        return containsIgnoreCase(instructorSummary(sortedInstructors(section)), instructor);
     }
 
-    private boolean matchesTime(StudentCourseSectionSearchResultResponse row, String time) {
-        return containsIgnoreCase(row.meetingSummary(), time);
+    private boolean hasPlannedHonorsSectionForSameCourse(CourseSection section) {
+        CourseOffering courseOffering = section.getCourseOffering();
+        AcademicSubTerm subTerm = section.getSubTerm();
+        if (courseOffering == null
+                || courseOffering.getId() == null
+                || subTerm == null
+                || subTerm.getId() == null
+                || section.getId() == null) {
+            return false;
+        }
+
+        return courseSectionRepository.existsPlannedHonorsSectionForOfferingAndSubTermExcludingSection(
+                courseOffering.getId(),
+                subTerm.getId(),
+                section.getId()
+        );
+    }
+
+    private boolean matchesTime(CourseSection section, String time) {
+        return containsIgnoreCase(meetingSummary(sortedMeetings(section)), time);
     }
 
     private boolean matchesMeetingFilters(
-            StudentCourseSectionSearchResultResponse row,
+            CourseSection section,
             List<Short> dayOfWeeks,
             Integer startHour
     ) {
@@ -417,7 +651,8 @@ public class StudentCourseSectionSearchService {
             return true;
         }
 
-        return row.meetings().stream()
+        return sortedMeetings(section).stream()
+                .map(this::toMeetingResponse)
                 .anyMatch(meeting -> matchesMeetingFilter(meeting, requestedDays, requestedStartHour));
     }
 
@@ -464,38 +699,35 @@ public class StudentCourseSectionSearchService {
         return normalizedCourseCode.contains(normalizedFilter);
     }
 
-    private Comparator<StudentCourseSectionSearchResultResponse> buildComparator(
+    private Comparator<StudentCourseSectionSearchRowResponse> buildComparator(
             String sortBy,
             String sortDirection
     ) {
         Sort.Direction direction = parseDirection(sortDirection, Sort.Direction.ASC);
         String normalizedSortBy = normalizeSortBy(sortBy, "courseCode");
 
-        Comparator<StudentCourseSectionSearchResultResponse> comparator = switch (normalizedSortBy) {
+        Comparator<StudentCourseSectionSearchRowResponse> comparator = switch (normalizedSortBy) {
             case "courseCode" -> Comparator
-                    .comparing(StudentCourseSectionSearchResultResponse::courseCode, nullSafeStringComparator())
-                    .thenComparing(StudentCourseSectionSearchResultResponse::displaySectionCode, nullSafeStringComparator());
+                    .comparing(StudentCourseSectionSearchRowResponse::courseCode, nullSafeStringComparator())
+                    .thenComparing(StudentCourseSectionSearchRowResponse::displaySectionCode, nullSafeStringComparator());
             case "courseTitle" -> Comparator
-                    .comparing(StudentCourseSectionSearchResultResponse::courseTitle, nullSafeStringComparator())
-                    .thenComparing(StudentCourseSectionSearchResultResponse::courseCode, nullSafeStringComparator());
+                    .comparing(StudentCourseSectionSearchRowResponse::courseTitle, nullSafeStringComparator())
+                    .thenComparing(StudentCourseSectionSearchRowResponse::courseCode, nullSafeStringComparator());
             case "credits" -> Comparator
-                    .comparing(StudentCourseSectionSearchResultResponse::credits, Comparator.nullsLast(Comparator.naturalOrder()))
-                    .thenComparing(StudentCourseSectionSearchResultResponse::courseCode, nullSafeStringComparator());
+                    .comparing(StudentCourseSectionSearchRowResponse::credits, Comparator.nullsLast(Comparator.naturalOrder()))
+                    .thenComparing(StudentCourseSectionSearchRowResponse::courseCode, nullSafeStringComparator());
             case "instructor" -> Comparator
-                    .comparing(StudentCourseSectionSearchResultResponse::instructorSummary, nullSafeStringComparator())
-                    .thenComparing(StudentCourseSectionSearchResultResponse::courseCode, nullSafeStringComparator());
+                    .comparing(StudentCourseSectionSearchRowResponse::instructorSummary, nullSafeStringComparator())
+                    .thenComparing(StudentCourseSectionSearchRowResponse::courseCode, nullSafeStringComparator());
             case "section" -> Comparator
-                    .comparing(StudentCourseSectionSearchResultResponse::displaySectionCode, nullSafeStringComparator())
-                    .thenComparing(StudentCourseSectionSearchResultResponse::courseCode, nullSafeStringComparator());
-            case "status" -> Comparator
-                    .comparing(StudentCourseSectionSearchResultResponse::statusName, nullSafeStringComparator())
-                    .thenComparing(StudentCourseSectionSearchResultResponse::courseCode, nullSafeStringComparator());
+                    .comparing(StudentCourseSectionSearchRowResponse::displaySectionCode, nullSafeStringComparator())
+                    .thenComparing(StudentCourseSectionSearchRowResponse::courseCode, nullSafeStringComparator());
             case "time" -> Comparator
-                    .comparing(StudentCourseSectionSearchResultResponse::meetingSummary, nullSafeStringComparator())
-                    .thenComparing(StudentCourseSectionSearchResultResponse::courseCode, nullSafeStringComparator());
+                    .comparing(StudentCourseSectionSearchRowResponse::meetingSummary, nullSafeStringComparator())
+                    .thenComparing(StudentCourseSectionSearchRowResponse::courseCode, nullSafeStringComparator());
             default -> throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Sort by must be one of: courseCode, courseTitle, credits, instructor, section, status, time."
+                    "Sort by must be one of: courseCode, courseTitle, credits, instructor, section, time."
             );
         };
 
@@ -503,7 +735,7 @@ public class StudentCourseSectionSearchService {
             comparator = comparator.reversed();
         }
 
-        return comparator.thenComparing(StudentCourseSectionSearchResultResponse::sectionId);
+        return comparator.thenComparing(StudentCourseSectionSearchRowResponse::sectionId);
     }
 
     private Comparator<String> nullSafeStringComparator() {
@@ -618,12 +850,7 @@ public class StudentCourseSectionSearchService {
     }
 
     private String displaySectionCode(CourseSection section) {
-        StringBuilder displayCode = new StringBuilder(section.getSectionLetter() == null ? "" : section.getSectionLetter());
-        if (section.isHonors()) {
-            displayCode.append("H");
-        }
-
-        return displayCode.toString();
+        return section.getSectionLetter() == null ? "" : section.getSectionLetter();
     }
 
     private String courseCode(Course course) {

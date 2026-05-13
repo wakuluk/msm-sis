@@ -15,16 +15,21 @@ import { IconChecklist, IconSearch, IconTrash } from '@tabler/icons-react';
 import { displayDateTime } from '@/components/academic-year/academicYearDisplay';
 import { RecordPageSection } from '@/components/create/RecordPageSection';
 import tableClasses from '@/components/search/SearchResultsTable.module.css';
-import type { SearchCourseSectionsRequest } from '@/services/student-course-registration-service';
+import type {
+  GetCourseSectionRegistrationDetailRequest,
+  SearchCourseSectionsRequest,
+} from '@/services/student-course-registration-service';
 import type {
   StudentCourseRegistrationEnrollmentResponse,
   StudentCourseRegistrationFailureResponse,
   StudentCourseRegistrationResponse,
   StudentCourseRegistrationScheduleMeetingResponse,
+  StudentCourseRegistrationRequisiteGroupResponse,
   StudentCourseRegistrationRequisiteResponse,
   StudentCourseRegistrationSelectionResponse,
   StudentCourseRegistrationSubmitResponse,
   StudentCourseRegistrationWindowResponse,
+  StudentCourseSectionDetailResponse,
   StudentCourseSectionSearchResponse,
 } from '@/services/schemas/student-course-registration-schemas';
 import { StudentCourseRegistrationSchedule } from './StudentCourseRegistrationSchedule';
@@ -36,6 +41,8 @@ import type {
   StudentRegistrationSubTermView,
 } from './studentCourseRegistrationTypes';
 import classes from './StudentCourseRegistrationWindow.module.css';
+
+const STUDENT_REGISTRATION_MODAL_SIZE = 'min(96vw, 112rem)';
 
 type StudentCourseRegistrationWindowProps = {
   actionError?: string | null;
@@ -49,6 +56,9 @@ type StudentCourseRegistrationWindowProps = {
   onRegister: () => Promise<void>;
   onRemoveEnrollment: (enrollmentId: number) => Promise<void>;
   onRemoveCourse: (selectionId: number) => Promise<void>;
+  onGetCourseSectionDetail: (
+    request: GetCourseSectionRegistrationDetailRequest
+  ) => Promise<StudentCourseSectionDetailResponse>;
   onSearchCourseSections: (
     request: SearchCourseSectionsRequest
   ) => Promise<StudentCourseSectionSearchResponse>;
@@ -66,11 +76,14 @@ type StudentRegistrationCourseRow = {
   credits: number;
   enrollmentId: number | null;
   enrolledCount: number | null;
+  honors: boolean;
+  honorsWarningMessage: string | null;
   instructor: string;
   meetingPattern: string;
   sectionCode: string;
   sectionId: number | null;
   selectionId: number | null;
+  requisiteGroups: StudentCourseRegistrationRequisiteGroupResponse[];
   requisites: StudentCourseRegistrationRequisiteResponse[];
   status: StudentRegistrationCourseStatus;
   title: string;
@@ -190,8 +203,8 @@ function hasActiveWaitlistOffer(course: StudentRegistrationCourseRow | null) {
   );
 }
 
-function canEditRegistrationWindow(window: StudentCourseRegistrationWindowResponse) {
-  return window.statusCode?.trim().toUpperCase() === 'PUBLISHED' && window.registrationWindowOpen;
+function isPublishedRegistrationGroup(window: StudentCourseRegistrationWindowResponse) {
+  return window.statusCode?.trim().toUpperCase() === 'PUBLISHED';
 }
 
 function getCourseSortValue(course: StudentRegistrationCourseRow, sortBy: CourseTableSortBy) {
@@ -256,11 +269,14 @@ function mapSelectionToCourseRow(
     credits: displayNumber(selection.selectedCredits ?? selection.credits),
     enrollmentId: null,
     enrolledCount: selection.enrolledCount,
+    honors: selection.honors,
+    honorsWarningMessage: selection.honorsWarningMessage,
     instructor: displayText(selection.instructorSummary),
     meetingPattern: displayText(selection.meetingSummary, 'No meetings'),
-    sectionCode: displayText(selection.sectionLetter ?? selection.displaySectionCode),
+    sectionCode: displayText(selection.displaySectionCode ?? selection.sectionLetter),
     sectionId: selection.sectionId,
     selectionId: selection.selectionId,
+    requisiteGroups: selection.requisiteGroups,
     requisites: selection.requisites,
     status: 'PRE_REGISTERED',
     title: displayText(selection.courseTitle ?? selection.sectionTitle),
@@ -282,11 +298,14 @@ function mapEnrollmentToCourseRow(
     credits: displayNumber(enrollment.creditsAttempted ?? enrollment.creditsEarned),
     enrollmentId: enrollment.enrollmentId,
     enrolledCount: enrollment.enrolledCount,
+    honors: enrollment.honors,
+    honorsWarningMessage: null,
     instructor: displayText(enrollment.instructorSummary),
     meetingPattern: displayText(enrollment.meetingSummary, 'No meetings'),
-    sectionCode: displayText(enrollment.sectionLetter ?? enrollment.displaySectionCode),
+    sectionCode: displayText(enrollment.displaySectionCode ?? enrollment.sectionLetter),
     sectionId: enrollment.sectionId,
     selectionId: null,
+    requisiteGroups: enrollment.requisiteGroups,
     requisites: enrollment.requisites,
     status,
     title: displayText(enrollment.courseTitle ?? enrollment.sectionTitle),
@@ -339,7 +358,7 @@ function mapScheduleMeeting(
     endTime: meeting.endTime,
     id: meeting.id,
     location: displayText(meeting.location),
-    sectionCode: displayText(meeting.sectionLetter ?? meeting.displaySectionCode),
+    sectionCode: displayText(meeting.displaySectionCode ?? meeting.sectionLetter),
     startTime: meeting.startTime,
     status: normalizeScheduleStatus(meeting.registrationStatus),
     subTermCode: displayText(meeting.subTermCode),
@@ -450,13 +469,20 @@ function PreregisteredCourseManagementModal({
       opened={opened}
       onClose={onClose}
       title="Manage Pre-registered Course"
-      size="lg"
+      size={STUDENT_REGISTRATION_MODAL_SIZE}
       centered
     >
       {course ? (
         <Stack gap="md">
           <Stack gap={2}>
-            <Text fw={900}>{course.courseCode}</Text>
+            <Group gap="xs">
+              <Text fw={900}>{course.courseCode}</Text>
+              {course.honors ? (
+                <Badge variant="light" color="blue">
+                  Honors
+                </Badge>
+              ) : null}
+            </Group>
             <Text c="dimmed">{course.title}</Text>
           </Stack>
 
@@ -470,14 +496,24 @@ function PreregisteredCourseManagementModal({
             </Alert>
           ) : null}
 
+          {course.honorsWarningMessage ? (
+            <Alert color="yellow" title="Honors advisory">
+              {course.honorsWarningMessage}
+            </Alert>
+          ) : null}
+
           <div className={classes.courseManagementGrid}>
             <SummaryField label="Section" value={course.sectionCode} />
+            <SummaryField label="Honors" value={course.honors ? 'Yes' : 'No'} />
             <SummaryField label="Credits" value={String(course.credits)} />
             <SummaryField label="Meeting" value={course.meetingPattern} />
             <SummaryField label="Instructor" value={course.instructor} />
           </div>
 
-          <StudentCoursePrerequisitesTable requisites={course.requisites} />
+          <StudentCoursePrerequisitesTable
+            requisiteGroups={course.requisiteGroups}
+            requisites={course.requisites}
+          />
 
           <Group justify="flex-end">
             <Button variant="default" onClick={onClose}>
@@ -514,11 +550,24 @@ function WaitlistedCourseOfferModal({
   const hasActiveOffer = hasActiveWaitlistOffer(course);
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Waitlist Offer" size="lg" centered>
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title="Waitlist Offer"
+      size={STUDENT_REGISTRATION_MODAL_SIZE}
+      centered
+    >
       {course ? (
         <Stack gap="md">
           <Stack gap={2}>
-            <Text fw={900}>{course.courseCode}</Text>
+            <Group gap="xs">
+              <Text fw={900}>{course.courseCode}</Text>
+              {course.honors ? (
+                <Badge variant="light" color="blue">
+                  Honors
+                </Badge>
+              ) : null}
+            </Group>
             <Text c="dimmed">{course.title}</Text>
           </Stack>
 
@@ -534,12 +583,16 @@ function WaitlistedCourseOfferModal({
 
           <div className={classes.courseManagementGrid}>
             <SummaryField label="Section" value={course.sectionCode} />
+            <SummaryField label="Honors" value={course.honors ? 'Yes' : 'No'} />
             <SummaryField label="Credits" value={String(course.credits)} />
             <SummaryField label="Meeting" value={course.meetingPattern} />
             <SummaryField label="Instructor" value={course.instructor} />
           </div>
 
-          <StudentCoursePrerequisitesTable requisites={course.requisites} />
+          <StudentCoursePrerequisitesTable
+            requisiteGroups={course.requisiteGroups}
+            requisites={course.requisites}
+          />
 
           <Group justify="flex-end">
             <Button variant="default" onClick={onClose}>
@@ -576,11 +629,24 @@ function EnrolledCourseManagementModal({
   onDrop: (course: StudentRegistrationCourseRow) => void;
 }) {
   return (
-    <Modal opened={opened} onClose={onClose} title="Manage Enrolled Course" size="lg" centered>
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title="Manage Enrolled Course"
+      size={STUDENT_REGISTRATION_MODAL_SIZE}
+      centered
+    >
       {course ? (
         <Stack gap="md">
           <Stack gap={2}>
-            <Text fw={900}>{course.courseCode}</Text>
+            <Group gap="xs">
+              <Text fw={900}>{course.courseCode}</Text>
+              {course.honors ? (
+                <Badge variant="light" color="blue">
+                  Honors
+                </Badge>
+              ) : null}
+            </Group>
             <Text c="dimmed">{course.title}</Text>
           </Stack>
 
@@ -592,12 +658,16 @@ function EnrolledCourseManagementModal({
 
           <div className={classes.courseManagementGrid}>
             <SummaryField label="Section" value={course.sectionCode} />
+            <SummaryField label="Honors" value={course.honors ? 'Yes' : 'No'} />
             <SummaryField label="Credits" value={String(course.credits)} />
             <SummaryField label="Meeting" value={course.meetingPattern} />
             <SummaryField label="Instructor" value={course.instructor} />
           </div>
 
-          <StudentCoursePrerequisitesTable requisites={course.requisites} />
+          <StudentCoursePrerequisitesTable
+            requisiteGroups={course.requisiteGroups}
+            requisites={course.requisites}
+          />
 
           <Group justify="flex-end">
             <Button variant="default" onClick={onClose}>
@@ -623,20 +693,26 @@ function PreregisteredCoursesTable({
   courses,
   isMutatingSelection,
   isSubmitting,
+  preRegistrationAvailable,
   registrationWindowOpen,
   registrationWindow,
   onAddCourse,
   onRegister,
   onRemoveCourse,
+  onGetCourseSectionDetail,
   onSearchCourseSections,
 }: {
   courses: ReadonlyArray<StudentRegistrationCourseRow>;
   isMutatingSelection: boolean;
   isSubmitting: boolean;
+  preRegistrationAvailable: boolean;
   registrationWindowOpen: boolean;
   onAddCourse: (sectionId: number) => Promise<void>;
   onRegister: () => Promise<void>;
   onRemoveCourse: (selectionId: number) => Promise<void>;
+  onGetCourseSectionDetail: (
+    request: GetCourseSectionRegistrationDetailRequest
+  ) => Promise<StudentCourseSectionDetailResponse>;
   onSearchCourseSections: (
     request: SearchCourseSectionsRequest
   ) => Promise<StudentCourseSectionSearchResponse>;
@@ -675,13 +751,13 @@ function PreregisteredCoursesTable({
         <Stack gap={2}>
           <Text fw={800}>Pre-registered Courses</Text>
           <Text size="sm" c="dimmed">
-            These courses are staged for registration when your window opens.
+            These courses are staged for final registration when your window opens.
           </Text>
         </Stack>
         <Button
           variant="light"
           leftSection={<IconSearch size={16} />}
-          disabled={!registrationWindowOpen}
+          disabled={!preRegistrationAvailable}
           onClick={() => setSearchModalOpened(true)}
         >
           Find Course Sections
@@ -692,6 +768,7 @@ function PreregisteredCoursesTable({
         registrationWindow={registrationWindow}
         onAddCourse={onAddCourse}
         onClose={() => setSearchModalOpened(false)}
+        onGetCourseSectionDetail={onGetCourseSectionDetail}
         onSearch={onSearchCourseSections}
       />
       <PreregisteredCourseManagementModal
@@ -791,6 +868,11 @@ function PreregisteredCoursesTable({
                   <Table.Td>
                     <Stack gap={0}>
                       <Text fw={800}>{course.courseCode}</Text>
+                      {course.honors ? (
+                        <Badge variant="light" color="blue" size="sm">
+                          Honors
+                        </Badge>
+                      ) : null}
                       <Text size="sm" c="dimmed">
                         {course.title}
                       </Text>
@@ -799,6 +881,11 @@ function PreregisteredCoursesTable({
                           {warning}
                         </Text>
                       ))}
+                      {course.honorsWarningMessage ? (
+                        <Text size="xs" c="yellow.8" fw={700}>
+                          {course.honorsWarningMessage}
+                        </Text>
+                      ) : null}
                     </Stack>
                   </Table.Td>
                   <Table.Td>{course.sectionCode}</Table.Td>
@@ -893,6 +980,11 @@ function RegisteredCourseTable({
                 <Table.Td>
                   <Stack gap={0}>
                     <Text fw={800}>{course.courseCode}</Text>
+                    {course.honors ? (
+                      <Badge variant="light" color="blue" size="sm">
+                        Honors
+                      </Badge>
+                    ) : null}
                     <Text size="sm" c="dimmed">
                       {course.title}
                     </Text>
@@ -931,6 +1023,17 @@ function RegistrationSubmitResultAlert({
       <Alert color={failures.length > 0 ? 'yellow' : 'green'} title="Registration result">
         {result.message}
       </Alert>
+      {result.warnings.length > 0 ? (
+        <Alert color="yellow" title="Registration warnings">
+          <Stack gap={4}>
+            {result.warnings.map((warning) => (
+              <Text key={`${warning.warningCode}-${warning.selectionId ?? warning.sectionId}`}>
+                {displayText(warning.displaySectionCode ?? warning.courseCode)}: {warning.message}
+              </Text>
+            ))}
+          </Stack>
+        </Alert>
+      ) : null}
       {scheduleConflictFailures.length > 0 ? (
         <Alert color="red" title="Schedule conflicts found">
           <Stack gap={6}>
@@ -973,13 +1076,16 @@ export function StudentCourseRegistrationWindow({
   onRegister,
   onRemoveEnrollment,
   onRemoveCourse,
+  onGetCourseSectionDetail,
   onSearchCourseSections,
   registration,
   submitResult = null,
 }: StudentCourseRegistrationWindowProps) {
   const window = registration.registrationWindow;
   const groupIsAssigned = window.registrationGroupId !== null;
-  const registrationEditable = canEditRegistrationWindow(window);
+  const preRegistrationAvailable = isPublishedRegistrationGroup(window);
+  const registrationWindowOpen = window.registrationWindowOpen;
+  const registrationEditable = preRegistrationAvailable && registrationWindowOpen;
   const [selectedEnrolledCourse, setSelectedEnrolledCourse] =
     useState<StudentRegistrationCourseRow | null>(null);
   const [selectedWaitlistedCourse, setSelectedWaitlistedCourse] =
@@ -1029,7 +1135,7 @@ export function StudentCourseRegistrationWindow({
               <Stack gap={2}>
                 <Text fw={800}>{displayText(window.termName)} Registration</Text>
                 <Text size="sm" c="dimmed">
-                  Registration opens for {displayText(window.termName)}.
+                  Pre-register while your group is published, then register when your window opens.
                 </Text>
               </Stack>
               <Badge variant="light" color={getStatusColor(window.statusCode)} size="lg">
@@ -1065,11 +1171,13 @@ export function StudentCourseRegistrationWindow({
               courses={selectionRows}
               isMutatingSelection={isMutatingSelection}
               isSubmitting={isSubmitting}
-              registrationWindowOpen={window.registrationWindowOpen}
+              preRegistrationAvailable={preRegistrationAvailable}
+              registrationWindowOpen={registrationWindowOpen}
               registrationWindow={window}
               onAddCourse={onAddCourse}
               onRegister={onRegister}
               onRemoveCourse={onRemoveCourse}
+              onGetCourseSectionDetail={onGetCourseSectionDetail}
               onSearchCourseSections={onSearchCourseSections}
             />
 

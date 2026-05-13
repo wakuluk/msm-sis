@@ -10,7 +10,6 @@ import com.msm.sis.api.entity.AcademicDivision;
 import com.msm.sis.api.entity.AcademicTerm;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.AthleticSport;
-import com.msm.sis.api.entity.DegreeType;
 import com.msm.sis.api.entity.Program;
 import com.msm.sis.api.entity.RegistrationGroup;
 import com.msm.sis.api.entity.RegistrationGroupStudent;
@@ -18,7 +17,6 @@ import com.msm.sis.api.entity.Student;
 import com.msm.sis.api.entity.StudentAthlete;
 import com.msm.sis.api.entity.StudentHonors;
 import com.msm.sis.api.entity.StudentProgram;
-import com.msm.sis.api.repository.AcademicDivisionRepository;
 import com.msm.sis.api.repository.AcademicTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.repository.RegistrationGroupStudentRepository;
@@ -28,6 +26,7 @@ import com.msm.sis.api.repository.StudentProgramRepository;
 import com.msm.sis.api.repository.StudentRepository;
 import com.msm.sis.api.repository.StudentSectionEnrollmentRepository;
 import com.msm.sis.api.repository.StudentTransferCreditRepository;
+import com.msm.sis.api.service.student.StudentAcademicCareerEligibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -66,10 +65,10 @@ public class RegistrationGroupBuilderPreviewService {
     private static final String DEFAULT_GROUP_NAME_PREFIX = "Registration Group";
     private static final int MAX_SPLIT_COUNT = 100;
 
-    private final AcademicDivisionRepository academicDivisionRepository;
     private final AcademicTermRepository academicTermRepository;
     private final AcademicYearRepository academicYearRepository;
     private final RegistrationGroupStudentRepository registrationGroupStudentRepository;
+    private final StudentAcademicCareerEligibilityService academicCareerEligibilityService;
     private final StudentAthleteRepository studentAthleteRepository;
     private final StudentHonorsRepository studentHonorsRepository;
     private final StudentProgramRepository studentProgramRepository;
@@ -114,9 +113,11 @@ public class RegistrationGroupBuilderPreviewService {
         Map<Long, BigDecimal> transferCreditsByStudent = criteria.includeTransferCredits()
                 ? loadTransferCreditsByStudent(studentIds)
                 : Map.of();
-        Map<String, AcademicDivision> divisionsByCode = loadDivisionsByCode();
+        Map<Long, List<AcademicDivision>> academicDivisionsByStudent =
+                academicCareerEligibilityService.getAllowedAcademicDivisionsByStudentId(studentIds);
 
         List<PreviewStudent> matchingStudents = students.stream()
+                .filter(student -> !academicDivisionsByStudent.getOrDefault(student.getId(), List.of()).isEmpty())
                 .map(student -> toPreviewStudent(
                         student,
                         programsByStudent.getOrDefault(student.getId(), List.of()),
@@ -126,7 +127,7 @@ public class RegistrationGroupBuilderPreviewService {
                         completedCreditsByStudent.getOrDefault(student.getId(), ZERO_CREDITS),
                         currentCreditsByStudent.getOrDefault(student.getId(), ZERO_CREDITS),
                         transferCreditsByStudent.getOrDefault(student.getId(), ZERO_CREDITS),
-                        divisionsByCode
+                        academicDivisionsByStudent.getOrDefault(student.getId(), List.of())
                 ))
                 .filter(student -> matchesCriteria(student, criteria))
                 .sorted(Comparator
@@ -183,7 +184,7 @@ public class RegistrationGroupBuilderPreviewService {
                 normalizeSearchTerm(request.studentSearchText()),
                 normalizeSearchTerm(request.programSearchText()),
                 normalizeGroupNamePrefix(request.groupNamePrefix()),
-                normalizeOptionalId(request.academicDivisionId(), "Academic division id"),
+                normalizeAcademicDivisionIds(request),
                 normalizeEnum(request.honorsFilter(), HONORS_ANY, Set.of(HONORS_ANY, HONORS_ONLY, HONORS_NOT), "Honors filter"),
                 normalizeEnum(request.athleteFilter(), ATHLETE_ANY, Set.of(ATHLETE_ANY, ATHLETE_ONLY, ATHLETE_NOT), "Athlete filter"),
                 normalizeSportIds(request.athleticSportIds()),
@@ -201,6 +202,19 @@ public class RegistrationGroupBuilderPreviewService {
             return null;
         }
         return requirePositiveId(id, label);
+    }
+
+    private List<Long> normalizeAcademicDivisionIds(RegistrationGroupBuilderPreviewRequest request) {
+        LinkedHashSet<Long> normalizedIds = new LinkedHashSet<>();
+        if (request.academicDivisionIds() != null) {
+            for (Long academicDivisionId : request.academicDivisionIds()) {
+                normalizedIds.add(requirePositiveId(academicDivisionId, "Academic division id"));
+            }
+        }
+        if (normalizedIds.isEmpty() && request.academicDivisionId() != null) {
+            normalizedIds.add(requirePositiveId(request.academicDivisionId(), "Academic division id"));
+        }
+        return List.copyOf(normalizedIds);
     }
 
     private List<Long> normalizeSportIds(List<Long> athleticSportIds) {
@@ -305,16 +319,6 @@ public class RegistrationGroupBuilderPreviewService {
         return credits == null ? ZERO_CREDITS : credits;
     }
 
-    private Map<String, AcademicDivision> loadDivisionsByCode() {
-        Map<String, AcademicDivision> divisionsByCode = new HashMap<>();
-        academicDivisionRepository.findAllByActiveTrueOrderBySortOrderAsc()
-                .forEach(division -> divisionsByCode.put(
-                        division.getCode().toUpperCase(Locale.ROOT),
-                        division
-                ));
-        return divisionsByCode;
-    }
-
     private PreviewStudent toPreviewStudent(
             Student student,
             List<StudentProgram> programs,
@@ -324,9 +328,12 @@ public class RegistrationGroupBuilderPreviewService {
             BigDecimal completedCredits,
             BigDecimal currentCredits,
             BigDecimal transferCredits,
-            Map<String, AcademicDivision> divisionsByCode
+            List<AcademicDivision> academicDivisions
     ) {
-        AcademicDivision academicDivision = inferAcademicDivision(programs, divisionsByCode);
+        AcademicDivision academicDivision = displayAcademicDivision(academicDivisions);
+        Set<Long> academicDivisionIds = academicDivisionIds(academicDivisions);
+        String academicDivisionCodes = academicDivisionCodes(academicDivisions);
+        String academicDivisionNames = academicDivisionNames(academicDivisions);
         BigDecimal totalCredits = completedCredits.add(currentCredits).add(transferCredits);
         RegistrationGroupBuilderPreviewStudentResponse response = new RegistrationGroupBuilderPreviewStudentResponse(
                 student.getId(),
@@ -336,8 +343,8 @@ public class RegistrationGroupBuilderPreviewService {
                 buildDisplayName(student),
                 student.getEmail(),
                 academicDivision == null ? null : academicDivision.getId(),
-                academicDivision == null ? null : academicDivision.getCode(),
-                academicDivision == null ? null : academicDivision.getName(),
+                academicDivisionCodes,
+                academicDivisionNames,
                 student.getClassStandingId(),
                 student.getClassStanding() == null ? null : student.getClassStanding().getName(),
                 student.getEstimatedGradDate(),
@@ -353,31 +360,33 @@ public class RegistrationGroupBuilderPreviewService {
                 toExistingAssignmentResponse(existingAssignment)
         );
 
-        return new PreviewStudent(response, totalCredits);
+        return new PreviewStudent(response, totalCredits, academicDivisionIds);
     }
 
-    private AcademicDivision inferAcademicDivision(
-            List<StudentProgram> programs,
-            Map<String, AcademicDivision> divisionsByCode
-    ) {
-        boolean hasGraduateProgram = programs.stream().anyMatch(this::isGraduateProgram);
-        if (hasGraduateProgram) {
-            return divisionsByCode.get("GRADUATE");
-        }
-
-        return programs.isEmpty() ? null : divisionsByCode.get("UNDERGRADUATE");
+    private AcademicDivision displayAcademicDivision(List<AcademicDivision> academicDivisions) {
+        return academicDivisions.isEmpty() ? null : academicDivisions.getFirst();
     }
 
-    private boolean isGraduateProgram(StudentProgram studentProgram) {
-        Program program = studentProgram.getProgram();
-        DegreeType degreeType = program == null ? null : program.getDegreeType();
-        if (degreeType == null) {
-            return false;
-        }
+    private String academicDivisionCodes(List<AcademicDivision> academicDivisions) {
+        return academicDivisions.stream()
+                .map(AcademicDivision::getCode)
+                .filter(code -> trimToNull(code) != null)
+                .distinct()
+                .collect(java.util.stream.Collectors.joining(", "));
+    }
 
-        String code = degreeType.getCode() == null ? "" : degreeType.getCode().toUpperCase(Locale.ROOT);
-        String name = degreeType.getName() == null ? "" : degreeType.getName().toUpperCase(Locale.ROOT);
-        return code.contains("MASTER") || name.contains("MASTER") || code.contains("GRAD") || name.contains("GRAD");
+    private String academicDivisionNames(List<AcademicDivision> academicDivisions) {
+        return academicDivisions.stream()
+                .map(AcademicDivision::getName)
+                .filter(name -> trimToNull(name) != null)
+                .distinct()
+                .collect(java.util.stream.Collectors.joining(", "));
+    }
+
+    private Set<Long> academicDivisionIds(List<AcademicDivision> academicDivisions) {
+        return academicDivisions.stream()
+                .map(AcademicDivision::getId)
+                .collect(HashSet::new, Set::add, Set::addAll);
     }
 
     private String buildDisplayName(Student student) {
@@ -462,7 +471,8 @@ public class RegistrationGroupBuilderPreviewService {
         if (!matchesProgramSearch(response, criteria.programSearchText())) {
             return false;
         }
-        if (criteria.academicDivisionId() != null && !criteria.academicDivisionId().equals(response.academicDivisionId())) {
+        if (!criteria.academicDivisionIds().isEmpty()
+                && !student.academicDivisionIds().equals(Set.copyOf(criteria.academicDivisionIds()))) {
             return false;
         }
         if (!matchesHonors(response.honors(), criteria.honorsFilter())) {
@@ -593,7 +603,7 @@ public class RegistrationGroupBuilderPreviewService {
             String studentSearchText,
             String programSearchText,
             String groupNamePrefix,
-            Long academicDivisionId,
+            List<Long> academicDivisionIds,
             String honorsFilter,
             String athleteFilter,
             List<Long> athleticSportIds,
@@ -608,7 +618,8 @@ public class RegistrationGroupBuilderPreviewService {
 
     private record PreviewStudent(
             RegistrationGroupBuilderPreviewStudentResponse response,
-            BigDecimal totalCredits
+            BigDecimal totalCredits,
+            Set<Long> academicDivisionIds
     ) {
         String displayName() {
             return response.displayName();

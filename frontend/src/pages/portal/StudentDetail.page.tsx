@@ -4,13 +4,20 @@ import {
   Alert,
   Badge,
   Button,
+  Checkbox,
   Container,
   Group,
   Loader,
+  Modal,
   Paper,
+  Select,
+  SimpleGrid,
   Stack,
   Tabs,
+  Table,
   Text,
+  Textarea,
+  TextInput,
   Title,
 } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -36,8 +43,19 @@ import {
   type StudentDetailResponse,
   type StudentTranscriptResponse,
 } from '@/services/schemas/student-schemas';
+import {
+  createStudentAcademicCareer,
+  getAcademicCareerOptions,
+  getStudentAcademicCareers,
+  updateStudentAcademicCareer,
+} from '@/services/student-academic-career-service';
 import { getStudentSchedule } from '@/services/student-schedule-service';
 import { getStudentById, getStudentTranscriptById, patchStudent } from '@/services/student-service';
+import type {
+  AcademicCareerOptionResponse,
+  StudentAcademicCareerResponse,
+  StudentAcademicCareerStatus,
+} from '@/services/schemas/student-academic-career-schemas';
 import { getErrorMessage } from '@/utils/errors';
 import { displayValue } from '@/utils/form-values';
 import classes from './StudentDetail.module.css';
@@ -62,6 +80,7 @@ type StudentDetailTabKey =
   | 'overview'
   | 'transcript'
   | 'schedule'
+  | 'academic-career'
   | 'affiliations'
   | 'billing'
   | 'medical';
@@ -92,6 +111,11 @@ const studentDetailTabs: StudentDetailTabConfig[] = [
   {
     key: 'schedule',
     label: 'Schedule',
+    requiredRoles: [PORTAL_ROLES.ADMIN],
+  },
+  {
+    key: 'academic-career',
+    label: 'Academic Career',
     requiredRoles: [PORTAL_ROLES.ADMIN],
   },
   {
@@ -144,6 +168,618 @@ function PlaceholderTabPanel({ accessLabel, description, title }: PlaceholderTab
         </Stack>
       </div>
     </div>
+  );
+}
+
+type StudentAcademicCareerDraft = {
+  academicCareerId: string | null;
+  effectiveEndDate: string;
+  effectiveStartDate: string;
+  entryReason: string;
+  notes: string;
+  primaryCareer: boolean;
+  status: StudentAcademicCareerStatus;
+  studentAcademicCareerId: number | null;
+};
+
+type StudentAcademicCareerModalState =
+  | { mode: 'add'; draft: StudentAcademicCareerDraft }
+  | { mode: 'edit'; draft: StudentAcademicCareerDraft }
+  | null;
+
+type StudentAcademicCareerLoadState =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | {
+      status: 'success';
+      careers: StudentAcademicCareerResponse[];
+      options: AcademicCareerOptionResponse[];
+    };
+
+type StudentAcademicCareerSaveState =
+  | { status: 'idle' }
+  | { status: 'saving' }
+  | { status: 'success'; message: string }
+  | { status: 'error'; message: string };
+
+const academicCareerStatusOptions = [
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'INTENT_TO_GRADUATE', label: 'Intent to graduate' },
+  { value: 'GRADUATED', label: 'Graduated' },
+  { value: 'WITHDRAWN', label: 'Withdrawn' },
+  { value: 'DISMISSED', label: 'Dismissed' },
+  { value: 'LEAVE_OF_ABSENCE', label: 'Leave of absence' },
+];
+
+const registrationEligibleAcademicCareerStatuses = new Set<StudentAcademicCareerStatus>([
+  'ACTIVE',
+  'INTENT_TO_GRADUATE',
+]);
+
+function createBlankAcademicCareerDraft(): StudentAcademicCareerDraft {
+  return {
+    academicCareerId: null,
+    effectiveStartDate: '',
+    effectiveEndDate: '',
+    entryReason: '',
+    notes: '',
+    primaryCareer: false,
+    status: 'ACTIVE',
+    studentAcademicCareerId: null,
+  };
+}
+
+function mapAcademicCareerToDraft(
+  academicCareer: StudentAcademicCareerResponse
+): StudentAcademicCareerDraft {
+  return {
+    academicCareerId:
+      academicCareer.academicCareerId === null ? null : String(academicCareer.academicCareerId),
+    effectiveStartDate: academicCareer.effectiveStartDate ?? '',
+    effectiveEndDate: academicCareer.effectiveEndDate ?? '',
+    entryReason: academicCareer.entryReason ?? '',
+    notes: academicCareer.notes ?? '',
+    primaryCareer: academicCareer.primaryCareer,
+    status: academicCareer.status,
+    studentAcademicCareerId: academicCareer.studentAcademicCareerId,
+  };
+}
+
+function formatAcademicCareerName(
+  academicCareerId: string | null,
+  options: AcademicCareerOptionResponse[]
+): string {
+  if (!academicCareerId) {
+    return 'Select academic career';
+  }
+
+  const option = options.find(
+    (careerOption) => String(careerOption.academicCareerId) === academicCareerId
+  );
+  return option?.name ?? 'Unknown academic career';
+}
+
+function formatAcademicCareerStatus(value: StudentAcademicCareerStatus): string {
+  return academicCareerStatusOptions.find((option) => option.value === value)?.label ?? value;
+}
+
+function getCareerStatusColor(status: StudentAcademicCareerStatus) {
+  if (status === 'ACTIVE') {
+    return 'green';
+  }
+
+  if (status === 'INTENT_TO_GRADUATE') {
+    return 'blue';
+  }
+
+  if (status === 'GRADUATED') {
+    return 'gray';
+  }
+
+  if (status === 'WITHDRAWN' || status === 'DISMISSED') {
+    return 'red';
+  }
+
+  if (status === 'LEAVE_OF_ABSENCE') {
+    return 'yellow';
+  }
+
+  return 'gray';
+}
+
+function formatRegistrationDivisionSummary(registrationDivisions: Array<{ name: string }>): string {
+  if (registrationDivisions.length === 0) {
+    return 'No registration divisions configured';
+  }
+
+  return registrationDivisions.map((division) => division.name).join(', ');
+}
+
+function getRegistrationEligibleAcademicCareers(careers: StudentAcademicCareerResponse[]) {
+  return careers.filter(
+    (career) =>
+      registrationEligibleAcademicCareerStatuses.has(career.status) && !career.effectiveEndDate
+  );
+}
+
+function getAllowedRegistrationDivisions(careers: StudentAcademicCareerResponse[]) {
+  const divisionsByCode = new Map<string, { code: string; name: string }>();
+
+  getRegistrationEligibleAcademicCareers(careers).forEach((career) => {
+    career.registrationDivisions.forEach((division) => {
+      divisionsByCode.set(division.code, {
+        code: division.code,
+        name: division.name,
+      });
+    });
+  });
+
+  return Array.from(divisionsByCode.values()).sort((left, right) =>
+    left.name.localeCompare(right.name)
+  );
+}
+
+function getDraftRegistrationDivisions(
+  draft: StudentAcademicCareerDraft,
+  options: AcademicCareerOptionResponse[]
+) {
+  if (!draft.academicCareerId) {
+    return [];
+  }
+
+  return (
+    options.find((careerOption) => String(careerOption.academicCareerId) === draft.academicCareerId)
+      ?.registrationDivisions ?? []
+  );
+}
+
+function StudentAcademicCareerPanel({
+  studentId,
+  studentName,
+}: {
+  studentId: number;
+  studentName: string | null;
+}) {
+  const [careerState, setCareerState] = useState<StudentAcademicCareerLoadState>({
+    status: 'loading',
+  });
+  const [modalState, setModalState] = useState<StudentAcademicCareerModalState>(null);
+  const [saveState, setSaveState] = useState<StudentAcademicCareerSaveState>({ status: 'idle' });
+
+  const loadAcademicCareerData = useCallback(
+    async (signal?: AbortSignal) => {
+      setCareerState({ status: 'loading' });
+
+      try {
+        const [careers, options] = await Promise.all([
+          getStudentAcademicCareers(studentId, signal),
+          getAcademicCareerOptions(signal),
+        ]);
+
+        setCareerState({ status: 'success', careers, options });
+      } catch (error) {
+        if (signal?.aborted) {
+          return;
+        }
+
+        setCareerState({
+          status: 'error',
+          message: getErrorMessage(error, 'Failed to load academic career data.'),
+        });
+      }
+    },
+    [studentId]
+  );
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    void loadAcademicCareerData(abortController.signal);
+
+    return () => {
+      abortController.abort();
+    };
+  }, [loadAcademicCareerData]);
+
+  function updateModalDraft(updates: Partial<StudentAcademicCareerDraft>) {
+    setModalState((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        draft: {
+          ...current.draft,
+          ...updates,
+        },
+      };
+    });
+    setSaveState({ status: 'idle' });
+  }
+
+  async function handleSaveModalDraft() {
+    if (!modalState || careerState.status !== 'success' || saveState.status === 'saving') {
+      return;
+    }
+
+    const nextDraft = modalState.draft;
+    const academicCareerId = nextDraft.academicCareerId ? Number(nextDraft.academicCareerId) : null;
+
+    if (!academicCareerId) {
+      setSaveState({ status: 'error', message: 'Academic career is required.' });
+      return;
+    }
+
+    if (!nextDraft.effectiveStartDate) {
+      setSaveState({ status: 'error', message: 'Effective start date is required.' });
+      return;
+    }
+
+    try {
+      setSaveState({ status: 'saving' });
+
+      if (modalState.mode === 'add') {
+        await createStudentAcademicCareer(studentId, {
+          academicCareerId,
+          status: nextDraft.status,
+          effectiveStartDate: nextDraft.effectiveStartDate,
+          effectiveEndDate: nextDraft.effectiveEndDate || null,
+          primaryCareer: nextDraft.primaryCareer,
+          entryReason: nextDraft.entryReason || null,
+          notes: nextDraft.notes || null,
+        });
+      } else {
+        if (!nextDraft.studentAcademicCareerId) {
+          setSaveState({ status: 'error', message: 'Academic career row is missing an id.' });
+          return;
+        }
+
+        await updateStudentAcademicCareer(studentId, nextDraft.studentAcademicCareerId, {
+          academicCareerId,
+          status: nextDraft.status,
+          effectiveStartDate: nextDraft.effectiveStartDate,
+          effectiveEndDate: nextDraft.effectiveEndDate || null,
+          primaryCareer: nextDraft.primaryCareer,
+          entryReason: nextDraft.entryReason || null,
+          notes: nextDraft.notes || null,
+        });
+      }
+
+      const [careers, options] = await Promise.all([
+        getStudentAcademicCareers(studentId),
+        getAcademicCareerOptions(),
+      ]);
+
+      setCareerState({ status: 'success', careers, options });
+      setModalState(null);
+      setSaveState({
+        status: 'success',
+        message:
+          modalState.mode === 'add' ? 'Academic career added.' : 'Academic career changes saved.',
+      });
+    } catch (error) {
+      setSaveState({
+        status: 'error',
+        message: getErrorMessage(error, 'Failed to save academic career.'),
+      });
+    }
+  }
+
+  const activeDraft = modalState?.draft ?? null;
+  const options = careerState.status === 'success' ? careerState.options : [];
+  const activeDraftRegistrationDivisions = activeDraft
+    ? getDraftRegistrationDivisions(activeDraft, options)
+    : [];
+  const eligibleCareers =
+    careerState.status === 'success'
+      ? getRegistrationEligibleAcademicCareers(careerState.careers)
+      : [];
+  const allowedRegistrationDivisions =
+    careerState.status === 'success'
+      ? getAllowedRegistrationDivisions(careerState.careers)
+      : [];
+  const careerOptions = options.map((option) => ({
+    value: String(option.academicCareerId),
+    label: option.name,
+  }));
+  const isSavingAcademicCareer = saveState.status === 'saving';
+
+  function openAddModal() {
+    const blankDraft = createBlankAcademicCareerDraft();
+    setModalState({
+      mode: 'add',
+      draft: {
+        ...blankDraft,
+        academicCareerId: careerOptions[0]?.value ?? null,
+      },
+    });
+    setSaveState({ status: 'idle' });
+  }
+
+  function openEditModal(academicCareer: StudentAcademicCareerResponse) {
+    setModalState({ mode: 'edit', draft: mapAcademicCareerToDraft(academicCareer) });
+    setSaveState({ status: 'idle' });
+  }
+
+  function renderCareerRows() {
+    if (careerState.status === 'loading') {
+      return (
+        <Table.Tr>
+          <Table.Td colSpan={5}>
+            <Group gap="sm">
+              <Loader size="sm" />
+              <Text size="sm" c="dimmed">
+                Loading academic careers.
+              </Text>
+            </Group>
+          </Table.Td>
+        </Table.Tr>
+      );
+    }
+
+    if (careerState.status === 'error') {
+      return (
+        <Table.Tr>
+          <Table.Td colSpan={5}>
+            <Alert color="red" title="Unable to load academic careers">
+              {careerState.message}
+            </Alert>
+          </Table.Td>
+        </Table.Tr>
+      );
+    }
+
+    if (careerState.careers.length === 0) {
+      return (
+        <Table.Tr>
+          <Table.Td colSpan={5}>
+            <Text size="sm" c="dimmed">
+              No academic careers have been added for this student yet.
+            </Text>
+          </Table.Td>
+        </Table.Tr>
+      );
+    }
+
+    return careerState.careers.map((row) => (
+      <Table.Tr
+        key={row.studentAcademicCareerId}
+        className={classes.academicCareerRow}
+        role="button"
+        tabIndex={0}
+        onClick={() => {
+          openEditModal(row);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openEditModal(row);
+          }
+        }}
+      >
+        <Table.Td>
+          <Text fw={600}>{displayValue(row.academicCareerName)}</Text>
+          <Text size="sm" c="dimmed">
+            {row.entryReason || 'No entry reason recorded'}
+          </Text>
+        </Table.Td>
+        <Table.Td>
+          <Badge color={getCareerStatusColor(row.status)} variant="light">
+            {formatAcademicCareerStatus(row.status)}
+          </Badge>
+        </Table.Td>
+        <Table.Td>
+          {row.effectiveStartDate || 'No start date'} - {row.effectiveEndDate || 'Present'}
+        </Table.Td>
+        <Table.Td>{row.primaryCareer ? 'Yes' : 'No'}</Table.Td>
+        <Table.Td>{formatRegistrationDivisionSummary(row.registrationDivisions)}</Table.Td>
+      </Table.Tr>
+    ));
+  }
+
+  return (
+    <Stack gap={0}>
+      <Modal
+        opened={modalState !== null}
+        onClose={() => {
+          setModalState(null);
+        }}
+        title={modalState?.mode === 'add' ? 'Add Academic Career' : 'Edit Academic Career'}
+        size="lg"
+      >
+        {activeDraft ? (
+          <Stack gap="md">
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+              <Select
+                label="Career type"
+                data={careerOptions}
+                value={activeDraft.academicCareerId}
+                onChange={(value) => {
+                  updateModalDraft({ academicCareerId: value });
+                }}
+              />
+              <Select
+                label="Status"
+                data={academicCareerStatusOptions}
+                value={activeDraft.status}
+                onChange={(value) => {
+                  if (value) {
+                    updateModalDraft({
+                      status: value as StudentAcademicCareerDraft['status'],
+                    });
+                  }
+                }}
+              />
+              <TextInput
+                label="Effective start date"
+                type="date"
+                value={activeDraft.effectiveStartDate}
+                onChange={(event) => {
+                  updateModalDraft({ effectiveStartDate: event.currentTarget.value });
+                }}
+              />
+              <TextInput
+                label="Effective end date"
+                type="date"
+                value={activeDraft.effectiveEndDate}
+                onChange={(event) => {
+                  updateModalDraft({ effectiveEndDate: event.currentTarget.value });
+                }}
+              />
+            </SimpleGrid>
+
+            <Checkbox
+              label="Primary academic career"
+              checked={activeDraft.primaryCareer}
+              onChange={(event) => {
+                updateModalDraft({ primaryCareer: event.currentTarget.checked });
+              }}
+            />
+
+            <TextInput
+              label="Entry reason"
+              value={activeDraft.entryReason}
+              onChange={(event) => {
+                updateModalDraft({ entryReason: event.currentTarget.value });
+              }}
+            />
+            <Textarea
+              label="Notes"
+              minRows={3}
+              value={activeDraft.notes}
+              onChange={(event) => {
+                updateModalDraft({ notes: event.currentTarget.value });
+              }}
+            />
+
+            <div className={classes.academicCareerPreview}>
+              <Text fw={600}>Registration access preview</Text>
+              <Text size="sm" c="dimmed">
+                {formatAcademicCareerName(activeDraft.academicCareerId, options)} allows{' '}
+                {formatRegistrationDivisionSummary(activeDraftRegistrationDivisions).toLowerCase()}.
+              </Text>
+            </div>
+
+            {saveState.status === 'error' ? (
+              <Alert color="red" title="Unable to save academic career">
+                {saveState.message}
+              </Alert>
+            ) : null}
+
+            <Group justify="flex-end" gap="sm">
+              <Button
+                variant="default"
+                disabled={isSavingAcademicCareer}
+                onClick={() => {
+                  setModalState(null);
+                  setSaveState({ status: 'idle' });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button loading={isSavingAcademicCareer} onClick={handleSaveModalDraft}>
+                {modalState?.mode === 'add' ? 'Add career' : 'Save changes'}
+              </Button>
+            </Group>
+          </Stack>
+        ) : null}
+      </Modal>
+
+      <div className={createClasses.section}>
+        <Group justify="space-between" align="flex-start" gap="lg" wrap="wrap">
+          <Stack gap="xs">
+            <Text className="portal-ui-eyebrow-text">Admin only</Text>
+            <Title order={3} className={classes.sectionTitle}>
+              Academic Career
+            </Title>
+            <Text c="dimmed" maw="44rem">
+              Track the student&apos;s active academic career history and preview which course
+              divisions their career should allow during registration.
+            </Text>
+          </Stack>
+          <Badge variant="light">Admin managed</Badge>
+        </Group>
+      </div>
+
+      <div className={createClasses.section}>
+        <Stack gap="md">
+          <Group justify="space-between" align="center" wrap="wrap">
+            <Stack gap={4}>
+              <Title order={4} className={classes.academicCareerSubheading}>
+                Career history for {displayValue(studentName)}
+              </Title>
+              <Text size="sm" c="dimmed">
+                Click a row to edit it. Registration access preview is display-only.
+              </Text>
+            </Stack>
+            <Button
+              variant="light"
+              disabled={careerState.status !== 'success' || careerOptions.length === 0}
+              onClick={() => {
+                openAddModal();
+              }}
+            >
+              Add academic career
+            </Button>
+          </Group>
+
+          {careerState.status === 'success' ? (
+            <div className={classes.academicCareerAccessPreview}>
+              <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
+                <Stack gap={4}>
+                  <Text fw={600}>Registration access preview</Text>
+                  <Text size="sm" c="dimmed">
+                    Based on eligible active academic careers. Multiple eligible careers combine
+                    their allowed course divisions.
+                  </Text>
+                  <Text size="sm" c="dimmed">
+                    Eligible careers:{' '}
+                    {eligibleCareers.length === 0
+                      ? 'None'
+                      : eligibleCareers
+                          .map((career) => displayValue(career.academicCareerName))
+                          .join(', ')}
+                  </Text>
+                </Stack>
+                <Group gap="xs" wrap="wrap">
+                  {allowedRegistrationDivisions.length === 0 ? (
+                    <Badge color="gray" variant="light">
+                      No registration access
+                    </Badge>
+                  ) : (
+                    allowedRegistrationDivisions.map((division) => (
+                      <Badge key={division.code} color="blue" variant="light">
+                        {division.name}
+                      </Badge>
+                    ))
+                  )}
+                </Group>
+              </Group>
+            </div>
+          ) : null}
+
+          <Table.ScrollContainer minWidth={760}>
+            <Table withTableBorder withColumnBorders horizontalSpacing="md" verticalSpacing="sm">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Career</Table.Th>
+                  <Table.Th>Status</Table.Th>
+                  <Table.Th>Effective dates</Table.Th>
+                  <Table.Th>Primary</Table.Th>
+                  <Table.Th>Registration divisions</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>{renderCareerRows()}</Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+          <Text size="sm" c={saveState.status === 'success' ? 'green' : 'dimmed'}>
+            {saveState.status === 'success'
+              ? saveState.message
+              : 'Academic career changes are saved to the student record.'}
+          </Text>
+        </Stack>
+      </div>
+    </Stack>
   );
 }
 
@@ -489,6 +1125,13 @@ export function StudentDetailPage() {
 
             <Tabs.Panel value="schedule" className={classes.tabPanel}>
               <StudentDetailSchedulePanel studentId={detail.studentId} />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="academic-career" className={classes.tabPanel}>
+              <StudentAcademicCareerPanel
+                studentId={detail.studentId}
+                studentName={detail.fullName}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value="affiliations" className={classes.tabPanel}>

@@ -208,9 +208,6 @@ public class StudentCourseDuplicateRegistrationService {
         }
 
         String displayCode = section.getSectionLetter() == null ? "" : section.getSectionLetter().trim();
-        if (section.isHonors()) {
-            displayCode += "H";
-        }
 
         return displayCode.isBlank() ? "unknown" : displayCode;
     }

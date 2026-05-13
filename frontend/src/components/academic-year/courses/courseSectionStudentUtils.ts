@@ -13,6 +13,7 @@ export const sortableStudentColumns: SortableStudentColumn[] = [
   { label: 'Waitlist offer', sortBy: 'waitlistOffer' },
   { label: 'Credits', sortBy: 'credits' },
   { label: 'Grading', sortBy: 'grading' },
+  { label: 'Midterm grade', sortBy: 'midtermGrade' },
   { label: 'Final grade', sortBy: 'finalGrade' },
   { label: 'Registered', sortBy: 'registered' },
 ];
@@ -100,6 +101,18 @@ export function getCurrentFinalGradeLabel(student: CourseSectionStudentResponse)
   );
 }
 
+export function getCurrentMidtermGradeLabel(student: CourseSectionStudentResponse) {
+  if (!student.currentMidtermGrade) {
+    return 'Not posted';
+  }
+
+  return (
+    student.currentMidtermGrade.gradeMarkCode ??
+    student.currentMidtermGrade.gradeMarkName ??
+    'Not set'
+  );
+}
+
 export function formatBoolean(value: boolean) {
   return value ? 'Yes' : 'No';
 }
@@ -145,6 +158,7 @@ export function studentMatchesSearch(student: CourseSectionStudentResponse, sear
     student.studentId === null ? null : String(student.studentId),
     student.statusName,
     student.gradingBasisName,
+    getCurrentMidtermGradeLabel(student),
     getCurrentFinalGradeLabel(student),
   ]
     .filter(Boolean)
@@ -200,6 +214,11 @@ export function compareStudentsByColumn(
       return compareNullableString(
         left.gradingBasisName ?? left.gradingBasisCode,
         right.gradingBasisName ?? right.gradingBasisCode
+      );
+    case 'midtermGrade':
+      return compareNullableString(
+        getCurrentMidtermGradeLabel(left),
+        getCurrentMidtermGradeLabel(right)
       );
     case 'finalGrade':
       return compareNullableString(

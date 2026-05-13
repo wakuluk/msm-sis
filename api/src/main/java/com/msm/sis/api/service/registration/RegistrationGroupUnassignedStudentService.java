@@ -9,14 +9,12 @@ import com.msm.sis.api.entity.AcademicDivision;
 import com.msm.sis.api.entity.AcademicTerm;
 import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.AthleticSport;
-import com.msm.sis.api.entity.DegreeType;
 import com.msm.sis.api.entity.Program;
 import com.msm.sis.api.entity.RegistrationGroupStudent;
 import com.msm.sis.api.entity.Student;
 import com.msm.sis.api.entity.StudentAthlete;
 import com.msm.sis.api.entity.StudentHonors;
 import com.msm.sis.api.entity.StudentProgram;
-import com.msm.sis.api.repository.AcademicDivisionRepository;
 import com.msm.sis.api.repository.AcademicTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.repository.RegistrationGroupStudentRepository;
@@ -26,6 +24,7 @@ import com.msm.sis.api.repository.StudentProgramRepository;
 import com.msm.sis.api.repository.StudentRepository;
 import com.msm.sis.api.repository.StudentSectionEnrollmentRepository;
 import com.msm.sis.api.repository.StudentTransferCreditRepository;
+import com.msm.sis.api.service.student.StudentAcademicCareerEligibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -59,10 +58,10 @@ public class RegistrationGroupUnassignedStudentService {
     private static final int DEFAULT_SIZE = 25;
     private static final int MAX_PAGE_SIZE = 100;
 
-    private final AcademicDivisionRepository academicDivisionRepository;
     private final AcademicTermRepository academicTermRepository;
     private final AcademicYearRepository academicYearRepository;
     private final RegistrationGroupStudentRepository registrationGroupStudentRepository;
+    private final StudentAcademicCareerEligibilityService academicCareerEligibilityService;
     private final StudentAthleteRepository studentAthleteRepository;
     private final StudentHonorsRepository studentHonorsRepository;
     private final StudentProgramRepository studentProgramRepository;
@@ -111,10 +110,12 @@ public class RegistrationGroupUnassignedStudentService {
         Map<Long, BigDecimal> completedCreditsByStudent = loadCompletedCreditsByStudent(unassignedStudentIds);
         Map<Long, BigDecimal> currentCreditsByStudent = loadCurrentCreditsByStudent(unassignedStudentIds);
         Map<Long, BigDecimal> transferCreditsByStudent = loadTransferCreditsByStudent(unassignedStudentIds);
-        Map<String, AcademicDivision> divisionsByCode = loadDivisionsByCode();
+        Map<Long, List<AcademicDivision>> academicDivisionsByStudent =
+                academicCareerEligibilityService.getAllowedAcademicDivisionsByStudentId(unassignedStudentIds);
 
         String normalizedSearchText = normalizeSearchTerm(effectiveCriteria.getSearchText());
         List<UnassignedRegistrationGroupStudentResponse> sortedResults = unassignedStudents.stream()
+                .filter(student -> !academicDivisionsByStudent.getOrDefault(student.getId(), List.of()).isEmpty())
                 .map(student -> toResponse(
                         student,
                         programsByStudent.getOrDefault(student.getId(), List.of()),
@@ -123,7 +124,7 @@ public class RegistrationGroupUnassignedStudentService {
                         completedCreditsByStudent.getOrDefault(student.getId(), ZERO_CREDITS),
                         currentCreditsByStudent.getOrDefault(student.getId(), ZERO_CREDITS),
                         transferCreditsByStudent.getOrDefault(student.getId(), ZERO_CREDITS),
-                        divisionsByCode
+                        academicDivisionsByStudent.getOrDefault(student.getId(), List.of())
                 ))
                 .filter(response -> matchesSearch(response, normalizedSearchText))
                 .sorted(buildComparator(effectiveCriteria.getSortBy(), effectiveCriteria.getSortDirection()))
@@ -244,16 +245,6 @@ public class RegistrationGroupUnassignedStudentService {
         return credits == null ? ZERO_CREDITS : credits;
     }
 
-    private Map<String, AcademicDivision> loadDivisionsByCode() {
-        Map<String, AcademicDivision> divisionsByCode = new HashMap<>();
-        academicDivisionRepository.findAllByActiveTrueOrderBySortOrderAsc()
-                .forEach(division -> divisionsByCode.put(
-                        division.getCode().toUpperCase(Locale.ROOT),
-                        division
-                ));
-        return divisionsByCode;
-    }
-
     private UnassignedRegistrationGroupStudentResponse toResponse(
             Student student,
             List<StudentProgram> programs,
@@ -262,9 +253,10 @@ public class RegistrationGroupUnassignedStudentService {
             BigDecimal completedCredits,
             BigDecimal currentCredits,
             BigDecimal transferCredits,
-            Map<String, AcademicDivision> divisionsByCode
+            List<AcademicDivision> academicDivisions
     ) {
-        AcademicDivision academicDivision = inferAcademicDivision(programs, divisionsByCode);
+        String academicDivisionCodes = academicDivisionCodes(academicDivisions);
+        String academicDivisionNames = academicDivisionNames(academicDivisions);
         BigDecimal totalCredits = completedCredits.add(currentCredits).add(transferCredits);
 
         return new UnassignedRegistrationGroupStudentResponse(
@@ -274,8 +266,8 @@ public class RegistrationGroupUnassignedStudentService {
                 student.getLastName(),
                 buildDisplayName(student),
                 student.getEmail(),
-                academicDivision == null ? null : academicDivision.getCode(),
-                academicDivision == null ? null : academicDivision.getName(),
+                academicDivisionCodes,
+                academicDivisionNames,
                 student.getClassStandingId() == null ? null : student.getClassStandingId().longValue(),
                 student.getClassStanding() == null ? null : student.getClassStanding().getName(),
                 programNames(programs),
@@ -290,28 +282,20 @@ public class RegistrationGroupUnassignedStudentService {
         );
     }
 
-    private AcademicDivision inferAcademicDivision(
-            List<StudentProgram> programs,
-            Map<String, AcademicDivision> divisionsByCode
-    ) {
-        boolean hasGraduateProgram = programs.stream().anyMatch(this::isGraduateProgram);
-        if (hasGraduateProgram) {
-            return divisionsByCode.get("GRADUATE");
-        }
-
-        return programs.isEmpty() ? null : divisionsByCode.get("UNDERGRADUATE");
+    private String academicDivisionCodes(List<AcademicDivision> academicDivisions) {
+        return academicDivisions.stream()
+                .map(AcademicDivision::getCode)
+                .filter(code -> trimToNull(code) != null)
+                .distinct()
+                .collect(java.util.stream.Collectors.joining(", "));
     }
 
-    private boolean isGraduateProgram(StudentProgram studentProgram) {
-        Program program = studentProgram.getProgram();
-        DegreeType degreeType = program == null ? null : program.getDegreeType();
-        if (degreeType == null) {
-            return false;
-        }
-
-        String code = degreeType.getCode() == null ? "" : degreeType.getCode().toUpperCase(Locale.ROOT);
-        String name = degreeType.getName() == null ? "" : degreeType.getName().toUpperCase(Locale.ROOT);
-        return code.contains("MASTER") || name.contains("MASTER") || code.contains("GRAD") || name.contains("GRAD");
+    private String academicDivisionNames(List<AcademicDivision> academicDivisions) {
+        return academicDivisions.stream()
+                .map(AcademicDivision::getName)
+                .filter(name -> trimToNull(name) != null)
+                .distinct()
+                .collect(java.util.stream.Collectors.joining(", "));
     }
 
     private String buildDisplayName(Student student) {

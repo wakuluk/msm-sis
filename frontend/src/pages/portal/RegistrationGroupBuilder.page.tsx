@@ -78,7 +78,7 @@ type SaveState =
   | { status: 'error'; message: string };
 
 type RegistrationGroupFilters = {
-  academicDivisionId: string;
+  academicDivisionIds: string[];
   academicYearId: string;
   athleteFilter: string;
   athleticSportIds: string[];
@@ -149,7 +149,7 @@ type AddStudentSearchState = {
 };
 
 const initialFilters: RegistrationGroupFilters = {
-  academicDivisionId: '',
+  academicDivisionIds: [],
   academicYearId: '',
   athleteFilter: '',
   athleticSportIds: [],
@@ -285,7 +285,7 @@ function buildStudentOptionLabel(student: RegistrationGroupStudentOptionResponse
 }
 
 function buildStudentOptionDescription(student: RegistrationGroupStudentOptionResponse) {
-  return [student.studentNumber, student.email, student.classStanding].filter(Boolean).join(' · ');
+  return [student.studentNumber, student.email, student.academicDivisionName].filter(Boolean).join(' · ');
 }
 
 function getGroupWindowValidationMessage(groups: GeneratedRegistrationGroup[]) {
@@ -348,7 +348,7 @@ function mapPreviewStudent(
   return {
     academicDivisionName: student.academicDivisionName ?? 'Unknown',
     athleticSportNames: student.athleticSports.map((sport) => sport.name),
-    classStandingName: student.classStandingName ?? 'Unknown',
+    classStandingName: student.academicDivisionName ?? 'Unknown',
     completedCredits: toNumber(student.completedCredits),
     currentCredits: toNumber(student.currentCredits),
     email: student.email ?? '',
@@ -386,9 +386,9 @@ function mapStudentOptionToGeneratedStudent(
   option: RegistrationGroupStudentOptionResponse
 ): RegistrationGroupBuilderStudent {
   return {
-    academicDivisionName: 'Unknown',
+    academicDivisionName: option.academicDivisionName ?? 'Unknown',
     athleticSportNames: [],
-    classStandingName: option.classStanding ?? 'Unknown',
+    classStandingName: option.academicDivisionName ?? 'Unknown',
     completedCredits: 0,
     currentCredits: 0,
     email: option.email ?? '',
@@ -531,13 +531,16 @@ function getMatchingStudentCount(previewState: PreviewState) {
 }
 
 function buildPreviewRequest(values: RegistrationGroupFilters) {
+  const academicDivisionIds = values.academicDivisionIds.map(Number).filter(Number.isFinite);
+
   return {
     academicYearId: parseOptionalId(values.academicYearId),
     termId: parseOptionalId(values.termId),
     studentSearchText: values.studentQuery.trim() || null,
     programSearchText: values.programQuery.trim() || null,
     groupNamePrefix: getGroupNamePrefix(values.groupNamePrefix),
-    academicDivisionId: parseOptionalId(values.academicDivisionId) ?? null,
+    academicDivisionId: null,
+    academicDivisionIds,
     honorsFilter: values.honorsFilter || null,
     athleteFilter: values.athleteFilter || null,
     athleticSportIds: values.athleticSportIds.map(Number).filter(Number.isFinite),
@@ -1096,7 +1099,7 @@ export function RegistrationGroupBuilderPage() {
                     {selectedAddStudentForGroup.email ? ` · ${selectedAddStudentForGroup.email}` : ''}
                   </Text>
                   <Group gap="xs">
-                    <Badge variant="light">{selectedAddStudentForGroup.classStandingName}</Badge>
+                    <Badge variant="light">{selectedAddStudentForGroup.academicDivisionName}</Badge>
                     {selectedAddStudentCurrentGroup ? (
                       <Badge color="yellow" variant="light">
                         Currently in {selectedAddStudentCurrentGroup.name}
@@ -1273,13 +1276,13 @@ export function RegistrationGroupBuilderPage() {
                     />
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, md: 3 }}>
-                    <Select
+                    <MultiSelect
                       label="Academic Division"
                       placeholder="All divisions"
                       clearable
                       data={academicDivisionOptions}
                       disabled={referenceOptionsLoading}
-                      {...form.getInputProps('academicDivisionId')}
+                      {...form.getInputProps('academicDivisionIds')}
                     />
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, md: 3 }}>
@@ -1703,7 +1706,7 @@ export function RegistrationGroupBuilderPage() {
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Th>Student</Table.Th>
-                      <Table.Th>Class</Table.Th>
+                      <Table.Th>Division</Table.Th>
                       <Table.Th>Programs</Table.Th>
                       <Table.Th>Credits</Table.Th>
                       <Table.Th>Existing Group</Table.Th>
@@ -1738,10 +1741,7 @@ export function RegistrationGroupBuilderPage() {
                           </Table.Td>
                           <Table.Td>
                             <Stack gap={2}>
-                              <Text>{student.classStandingName}</Text>
-                              <Text size="sm" c="dimmed">
-                                {student.academicDivisionName}
-                              </Text>
+                              <Text>{student.academicDivisionName}</Text>
                             </Stack>
                           </Table.Td>
                           <Table.Td>

@@ -185,7 +185,7 @@ function buildStudentOptionLabel(student: RegistrationGroupStudentOptionResponse
 }
 
 function buildStudentOptionDescription(student: RegistrationGroupStudentOptionResponse) {
-  return [student.studentNumber, student.email, student.classStanding].filter(Boolean).join(' · ');
+  return [student.studentNumber, student.email, student.academicDivisionName].filter(Boolean).join(' · ');
 }
 
 function displayAssignedStudentName(student: RegistrationGroupAssignedStudentResponse) {
@@ -240,7 +240,13 @@ function getSearchCriteriaRows(criteria: RegistrationGroupSavedSearchCriteriaRes
     { label: 'Student', value: criteria.studentSearchText ?? 'Any student' },
     { label: 'Program', value: criteria.programSearchText ?? 'Any program' },
     { label: 'Group Name Prefix', value: criteria.groupNamePrefix ?? 'Registration Group' },
-    { label: 'Academic Division', value: criteria.academicDivision?.name ?? 'Any division' },
+    {
+      label: 'Academic Division',
+      value:
+        criteria.academicDivisions.length > 0
+          ? criteria.academicDivisions.map((division) => division.name).join(', ')
+          : 'Any division',
+    },
     {
       label: 'Honors',
       value: displayFilterValue(criteria.honorsFilter, {
@@ -1027,7 +1033,7 @@ export function RegistrationGroupDetailPage() {
                   </Text>
                   <Group gap="xs">
                     <Badge variant="light">
-                      {displayValue(selectedAddStudent.classStanding)}
+                      {displayValue(selectedAddStudent.academicDivisionName)}
                     </Badge>
                     {selectedAddStudentAlreadyAssigned ? (
                       <Badge color="yellow" variant="light">
@@ -1104,8 +1110,8 @@ export function RegistrationGroupDetailPage() {
             <Grid>
               <Grid.Col span={{ base: 12, md: 6 }}>
                 <Stack gap={4}>
-                  <Text className="portal-ui-eyebrow-text">Class</Text>
-                  <Text fw={700}>{displayValue(selectedStudent.classStandingName)}</Text>
+                  <Text className="portal-ui-eyebrow-text">Division</Text>
+                  <Text fw={700}>{displayValue(selectedStudent.academicDivisionName)}</Text>
                 </Stack>
               </Grid.Col>
               <Grid.Col span={{ base: 12, md: 6 }}>
@@ -1408,7 +1414,7 @@ export function RegistrationGroupDetailPage() {
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>Student</Table.Th>
-                    <Table.Th>Class</Table.Th>
+                    <Table.Th>Division</Table.Th>
                     <Table.Th>Source</Table.Th>
                     <Table.Th>Assigned</Table.Th>
                     <Table.Th>Updated</Table.Th>
@@ -1443,7 +1449,7 @@ export function RegistrationGroupDetailPage() {
                             </Text>
                           </Stack>
                         </Table.Td>
-                        <Table.Td>{displayValue(student.classStandingName)}</Table.Td>
+                        <Table.Td>{displayValue(student.academicDivisionName)}</Table.Td>
                         <Table.Td>
                           <Badge variant="light">{displayValue(student.assignmentSource)}</Badge>
                         </Table.Td>

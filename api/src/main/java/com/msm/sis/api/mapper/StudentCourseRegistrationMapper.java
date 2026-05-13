@@ -2,6 +2,7 @@ package com.msm.sis.api.mapper;
 
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationEnrollmentResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationMeetingResponse;
+import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationRequisiteGroupResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationRequisiteResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationScheduleMeetingResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationSelectionResponse;
@@ -42,7 +43,9 @@ public class StudentCourseRegistrationMapper {
             int enrolledCount,
             int waitlistCount,
             List<StudentCourseRegistrationRequisiteResponse> requisites,
-            List<String> corequisiteWarnings
+            List<StudentCourseRegistrationRequisiteGroupResponse> requisiteGroups,
+            List<String> corequisiteWarnings,
+            String honorsWarningMessage
     ) {
         CourseSection section = selection.getCourseSection();
         CourseOffering courseOffering = section == null ? null : section.getCourseOffering();
@@ -85,6 +88,7 @@ public class StudentCourseRegistrationMapper {
                 selectedGradingBasis == null ? null : selectedGradingBasis.getName(),
                 section == null ? null : section.getCredits(),
                 selection.getSelectedCredits(),
+                section != null && section.isHonors(),
                 section == null ? null : section.getCapacity(),
                 section == null ? null : section.getHardCapacity(),
                 section != null && section.isWaitlistAllowed(),
@@ -98,7 +102,9 @@ public class StudentCourseRegistrationMapper {
                 selection.getCreatedAt(),
                 selection.getUpdatedAt(),
                 requisites == null ? List.of() : requisites,
+                requisiteGroups == null ? List.of() : requisiteGroups,
                 corequisiteWarnings == null ? List.of() : corequisiteWarnings,
+                honorsWarningMessage,
                 meetings.stream().map(this::toMeetingResponse).toList()
         );
     }
@@ -115,7 +121,7 @@ public class StudentCourseRegistrationMapper {
             StudentSectionEnrollment enrollment,
             StudentSectionWaitlistOffer waitlistOffer
     ) {
-        return toEnrollmentResponse(term, enrollment, waitlistOffer, 0, 0, List.of());
+        return toEnrollmentResponse(term, enrollment, waitlistOffer, 0, 0, List.of(), List.of());
     }
 
     public StudentCourseRegistrationEnrollmentResponse toEnrollmentResponse(
@@ -124,7 +130,8 @@ public class StudentCourseRegistrationMapper {
             StudentSectionWaitlistOffer waitlistOffer,
             int enrolledCount,
             int waitlistCount,
-            List<StudentCourseRegistrationRequisiteResponse> requisites
+            List<StudentCourseRegistrationRequisiteResponse> requisites,
+            List<StudentCourseRegistrationRequisiteGroupResponse> requisiteGroups
     ) {
         CourseSection section = enrollment.getCourseSection();
         CourseOffering courseOffering = section == null ? null : section.getCourseOffering();
@@ -163,6 +170,7 @@ public class StudentCourseRegistrationMapper {
                 gradingBasis == null ? null : gradingBasis.getName(),
                 enrollment.getCreditsAttempted(),
                 enrollment.getCreditsEarned(),
+                section != null && section.isHonors(),
                 enrollment.getWaitlistPosition(),
                 section == null ? null : section.getCapacity(),
                 section == null ? null : section.getHardCapacity(),
@@ -179,6 +187,7 @@ public class StudentCourseRegistrationMapper {
                 enrollment.getRegisteredAt(),
                 enrollment.getWaitlistedAt(),
                 requisites == null ? List.of() : requisites,
+                requisiteGroups == null ? List.of() : requisiteGroups,
                 meetings.stream().map(this::toMeetingResponse).toList()
         );
     }
@@ -388,12 +397,7 @@ public class StudentCourseRegistrationMapper {
             return null;
         }
 
-        StringBuilder displayCode = new StringBuilder(section.getSectionLetter() == null ? "" : section.getSectionLetter());
-        if (section.isHonors()) {
-            displayCode.append("H");
-        }
-
-        return displayCode.toString();
+        return section.getSectionLetter() == null ? "" : section.getSectionLetter();
     }
 
     private String courseCode(Course course) {

@@ -3,6 +3,7 @@ package com.msm.sis.api.controller;
 import com.msm.sis.api.config.AuthenticatedJwt;
 import com.msm.sis.api.dto.course.AddCourseSectionStudentRequest;
 import com.msm.sis.api.dto.course.CourseSectionDetailResponse;
+import com.msm.sis.api.dto.course.CourseSectionInitialGradesResponse;
 import com.msm.sis.api.dto.course.CourseSectionListResponse;
 import com.msm.sis.api.dto.course.CourseSectionStageTransitionRequest;
 import com.msm.sis.api.dto.course.CourseSectionStageTransitionResponse;
@@ -14,6 +15,7 @@ import com.msm.sis.api.dto.course.CreateCourseSectionRequest;
 import com.msm.sis.api.dto.course.PatchCourseSectionRequest;
 import com.msm.sis.api.dto.course.PatchCourseSectionStudentEnrollmentRequest;
 import com.msm.sis.api.dto.course.PostCourseSectionStudentGradeRequest;
+import com.msm.sis.api.dto.course.PostInitialCourseSectionGradesRequest;
 import com.msm.sis.api.service.course.CourseSectionAccessService;
 import com.msm.sis.api.service.course.CourseSectionGradePermissionService;
 import com.msm.sis.api.service.course.CourseSectionPatchService;
@@ -317,6 +319,30 @@ public class CourseSectionController {
         return ResponseEntity.ok(studentSectionEnrollmentService.postGrade(
                 sectionId,
                 enrollmentId,
+                request,
+                jwt.getUserId()
+        ));
+    }
+
+    @PostMapping("/course-sections/{sectionId}/initial-grades")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'ADJUNCT', 'TEACHING_ASSISTANT', 'DEPARTMENT_HEAD')")
+    @Operation(
+            summary = "Post initial course section grades",
+            description = "Posts initial midterm or final grades in bulk. Existing grades are not overwritten."
+    )
+    public ResponseEntity<CourseSectionInitialGradesResponse> postInitialCourseSectionGrades(
+            @AuthenticationPrincipal AuthenticatedJwt jwt,
+            @PathVariable Long sectionId,
+            @Valid @NotNull @RequestBody PostInitialCourseSectionGradesRequest request
+    ) {
+        courseSectionGradePermissionService.assertCanManageGrades(
+                sectionId,
+                jwt.getUserId(),
+                jwt.getRoles()
+        );
+
+        return ResponseEntity.ok(studentSectionEnrollmentService.postInitialGrades(
+                sectionId,
                 request,
                 jwt.getUserId()
         ));

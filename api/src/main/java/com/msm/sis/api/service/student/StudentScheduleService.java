@@ -485,12 +485,7 @@ public class StudentScheduleService {
             return null;
         }
 
-        StringBuilder displayCode = new StringBuilder(section.getSectionLetter() == null ? "" : section.getSectionLetter());
-        if (section.isHonors()) {
-            displayCode.append("H");
-        }
-
-        return displayCode.toString();
+        return section.getSectionLetter() == null ? "" : section.getSectionLetter();
     }
 
     private String courseCode(Course course) {

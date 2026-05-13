@@ -41,6 +41,7 @@ export type StudentSortBy =
   | 'waitlistOffer'
   | 'credits'
   | 'grading'
+  | 'midtermGrade'
   | 'finalGrade'
   | 'registered';
 

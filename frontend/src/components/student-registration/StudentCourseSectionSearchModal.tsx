@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Badge,
@@ -18,13 +18,16 @@ import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { SearchPaginationFooter } from '@/components/search/SearchPaginationFooter';
 import {
   StudentCourseRegistrationScheduleConflictError,
+  type GetCourseSectionRegistrationDetailRequest,
   type SearchCourseSectionsRequest,
 } from '@/services/student-course-registration-service';
 import type {
   StudentCourseRegistrationScheduleConflictResponse,
   StudentCourseRegistrationWindowResponse,
+  StudentCourseSectionDetailResponse,
   StudentCourseSectionSearchResponse,
   StudentCourseSectionSearchResultResponse,
+  StudentCourseSectionSearchRowResponse,
 } from '@/services/schemas/student-course-registration-schemas';
 import { StudentCoursePrerequisitesTable } from './StudentCoursePrerequisitesTable';
 import classes from './StudentCourseSectionSearchModal.module.css';
@@ -33,6 +36,9 @@ type StudentCourseSectionSearchModalProps = {
   opened: boolean;
   onAddCourse: (sectionId: number) => Promise<void>;
   onClose: () => void;
+  onGetCourseSectionDetail: (
+    request: GetCourseSectionRegistrationDetailRequest
+  ) => Promise<StudentCourseSectionDetailResponse>;
   onSearch: (request: SearchCourseSectionsRequest) => Promise<StudentCourseSectionSearchResponse>;
   registrationWindow: StudentCourseRegistrationWindowResponse;
 };
@@ -40,6 +46,7 @@ type StudentCourseSectionSearchModalProps = {
 type SearchFilters = {
   courseCode: string;
   dayOfWeeks: string[];
+  honorsFilter: 'ALL' | 'HONORS_ONLY' | 'NON_HONORS_ONLY';
   instructor: string;
   section: string;
   subTermIds: string[];
@@ -64,7 +71,18 @@ type AddState =
       status: 'conflict';
     };
 
+type DetailState =
+  | { status: 'idle' }
+  | { row: StudentCourseSectionSearchRowResponse; status: 'loading' }
+  | { message: string; row: StudentCourseSectionSearchRowResponse; status: 'error' }
+  | {
+      response: StudentCourseSectionDetailResponse;
+      row: StudentCourseSectionSearchRowResponse;
+      status: 'loaded';
+    };
+
 const PAGE_SIZE = 5;
+const COURSE_SECTION_SEARCH_MODAL_SIZE = 'min(96vw, 112rem)';
 const DAY_OPTIONS = [
   { label: 'Monday', value: '1' },
   { label: 'Tuesday', value: '2' },
@@ -77,6 +95,11 @@ const DAY_OPTIONS = [
 const MERIDIEM_OPTIONS = [
   { label: 'AM', value: 'AM' },
   { label: 'PM', value: 'PM' },
+];
+const HONORS_FILTER_OPTIONS = [
+  { label: 'All sections', value: 'ALL' },
+  { label: 'Honors only', value: 'HONORS_ONLY' },
+  { label: 'Non-honors only', value: 'NON_HONORS_ONLY' },
 ];
 
 function isAbortError(error: unknown) {
@@ -95,7 +118,7 @@ function displayNumber(value: number | null | undefined, fallback = '—') {
   return value === null || value === undefined ? fallback : String(value);
 }
 
-function formatSeats(row: Pick<StudentCourseSectionSearchResultResponse, 'capacity' | 'enrolledCount'>) {
+function formatSeats(row: Pick<StudentCourseSectionSearchRowResponse, 'capacity' | 'enrolledCount'>) {
   if (row.enrolledCount === null || row.capacity === null) {
     return '—';
   }
@@ -150,6 +173,17 @@ function getAddDisabledReason(section: StudentCourseSectionSearchResultResponse)
 
   if (!section.prerequisitesSatisfied) {
     return section.unavailableReason || 'Prerequisites are not satisfied.';
+  }
+
+  if (!section.registrationEligibilitySatisfied) {
+    return (
+      section.registrationEligibilityMessage ||
+      'Student registration eligibility is not satisfied for this course.'
+    );
+  }
+
+  if (!section.honorsEligibilitySatisfied) {
+    return section.honorsEligibilityMessage || 'Honors eligibility is not satisfied for this section.';
   }
 
   return section.unavailableReason;
@@ -349,11 +383,27 @@ function CourseSectionDetailPanel({
           <Stack gap={2}>
             <Group gap="xs" wrap="wrap">
               <Text fw={900}>
-                {displayText(section.courseCode)} Section {displayText(section.sectionLetter)}
+                {displayText(section.courseCode)} Section{' '}
+                {displayText(section.displaySectionCode ?? section.sectionLetter)}
               </Text>
+              {section.honors ? (
+                <Badge variant="light" color="blue">
+                  Honors
+                </Badge>
+              ) : null}
               <Badge variant="light" color={section.prerequisitesSatisfied ? 'green' : 'red'}>
-                {section.prerequisitesSatisfied ? 'Prereqs met' : 'Prereqs missing'}
+                Prerequisites: {section.prerequisitesSatisfied ? 'Met' : 'Missing'}
               </Badge>
+              {!section.registrationEligibilitySatisfied ? (
+                <Badge variant="light" color="red">
+                  Registration eligibility: Blocked
+                </Badge>
+              ) : null}
+              {!section.honorsEligibilitySatisfied ? (
+                <Badge variant="light" color="red">
+                  Honors eligibility: Blocked
+                </Badge>
+              ) : null}
             </Group>
             <Text c="dimmed">{displayText(section.courseTitle ?? section.sectionTitle)}</Text>
           </Stack>
@@ -383,6 +433,12 @@ function CourseSectionDetailPanel({
           </Alert>
         ) : null}
 
+        {!disabledReason && section.honorsWarningMessage ? (
+          <Alert color="yellow" title="Honors section available">
+            {section.honorsWarningMessage}
+          </Alert>
+        ) : null}
+
         {addState.status === 'error' ? (
           <Alert color="red" title="Unable to add course">
             {addState.message}
@@ -398,7 +454,10 @@ function CourseSectionDetailPanel({
 
         <div className={classes.detailGrid}>
           <DetailField label="Course code" value={displayText(section.courseCode)} />
-          <DetailField label="Section" value={displayText(section.sectionLetter)} />
+          <DetailField
+            label="Section"
+            value={displayText(section.displaySectionCode ?? section.sectionLetter)}
+          />
           <DetailField label="Instructor" value={displayText(section.instructorSummary)} />
           <DetailField label="Time" value={displayText(section.meetingSummary, 'No meetings')} />
           <DetailField label="Subterm" value={displayText(section.subTermName)} />
@@ -409,8 +468,47 @@ function CourseSectionDetailPanel({
         </div>
 
         <StudentCoursePrerequisitesTable
+          requisiteGroups={section.requisiteGroups}
           requisites={section.requisites}
         />
+      </Stack>
+    </div>
+  );
+}
+
+function CourseSectionDetailLoadingPanel({
+  color = 'blue',
+  row,
+  message = 'Loading course registration details...',
+  title = 'Section details',
+}: {
+  color?: 'blue' | 'red';
+  message?: string;
+  row: StudentCourseSectionSearchRowResponse;
+  title?: string;
+}) {
+  return (
+    <div className={classes.detailPanel}>
+      <Stack gap="md">
+        <Group justify="space-between" align="flex-start" wrap="wrap">
+          <Stack gap={2}>
+            <Group gap="xs" wrap="wrap">
+              <Text fw={900}>
+                {displayText(row.courseCode)} Section{' '}
+                {displayText(row.displaySectionCode ?? row.sectionLetter)}
+              </Text>
+              {row.honors ? (
+                <Badge variant="light" color="blue">
+                  Honors
+                </Badge>
+              ) : null}
+            </Group>
+            <Text c="dimmed">{displayText(row.courseTitle)}</Text>
+          </Stack>
+        </Group>
+        <Alert color={color} title={title}>
+          {message}
+        </Alert>
       </Stack>
     </div>
   );
@@ -420,12 +518,14 @@ export function StudentCourseSectionSearchModal({
   opened,
   onAddCourse,
   onClose,
+  onGetCourseSectionDetail,
   onSearch,
   registrationWindow,
 }: StudentCourseSectionSearchModalProps) {
   const [filters, setFilters] = useState<SearchFilters>({
     courseCode: '',
     dayOfWeeks: [],
+    honorsFilter: 'ALL',
     instructor: '',
     section: '',
     startHour: '',
@@ -434,10 +534,13 @@ export function StudentCourseSectionSearchModal({
   });
   const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(null);
   const [selectedSection, setSelectedSection] =
-    useState<StudentCourseSectionSearchResultResponse | null>(null);
+    useState<StudentCourseSectionSearchRowResponse | null>(null);
+  const [detailState, setDetailState] = useState<DetailState>({ status: 'idle' });
   const [page, setPage] = useState(0);
   const [searchState, setSearchState] = useState<SearchState>({ status: 'idle' });
   const [addState, setAddState] = useState<AddState>({ status: 'idle' });
+  const detailRequestIdRef = useRef(0);
+  const detailAbortControllerRef = useRef<AbortController | null>(null);
   const subTermOptions = useMemo(
     () =>
       registrationWindow.subTerms
@@ -449,9 +552,64 @@ export function StudentCourseSectionSearchModal({
     [registrationWindow.subTerms]
   );
 
+  function clearSelectedSection() {
+    detailRequestIdRef.current += 1;
+    detailAbortControllerRef.current?.abort();
+    detailAbortControllerRef.current = null;
+    setSelectedSection(null);
+    setDetailState({ status: 'idle' });
+  }
+
+  function selectSection(row: StudentCourseSectionSearchRowResponse) {
+    detailRequestIdRef.current += 1;
+    detailAbortControllerRef.current?.abort();
+    const requestId = detailRequestIdRef.current;
+    const controller = new AbortController();
+    detailAbortControllerRef.current = controller;
+
+    setSelectedSection(row);
+    setAddState({ status: 'idle' });
+
+    if (row.sectionId === null) {
+      setDetailState({
+        message: 'This section is missing an id, so details cannot be loaded.',
+        row,
+        status: 'error',
+      });
+      return;
+    }
+
+    setDetailState({ row, status: 'loading' });
+
+    void onGetCourseSectionDetail({
+      registrationGroupId: registrationWindow.registrationGroupId,
+      sectionId: row.sectionId,
+      signal: controller.signal,
+      termId: registrationWindow.termId,
+    })
+      .then((response) => {
+        if (detailRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        setDetailState({ response, row, status: 'loaded' });
+      })
+      .catch((error: unknown) => {
+        if (isAbortError(error) || detailRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        setDetailState({
+          message: getErrorMessage(error, 'Failed to load course registration details.'),
+          row,
+          status: 'error',
+        });
+      });
+  }
+
   function executeSearch(nextFilters: SearchFilters, nextPage = 0) {
     setPage(nextPage);
-    setSelectedSection(null);
+    clearSelectedSection();
     setAddState({ status: 'idle' });
     setSearchState({ status: 'loading' });
 
@@ -461,6 +619,7 @@ export function StudentCourseSectionSearchModal({
         .map(Number)
         .filter((dayOfWeek) => Number.isFinite(dayOfWeek)),
       instructor: nextFilters.instructor,
+      honorsFilter: nextFilters.honorsFilter,
       page: nextPage,
       section: nextFilters.section,
       size: PAGE_SIZE,
@@ -468,6 +627,7 @@ export function StudentCourseSectionSearchModal({
       subTermIds: nextFilters.subTermIds
         .map(Number)
         .filter((subTermId) => Number.isFinite(subTermId)),
+      registrationGroupId: registrationWindow.registrationGroupId,
       termId: registrationWindow.termId,
       sortBy: 'courseCode',
       sortDirection: 'asc',
@@ -507,25 +667,25 @@ export function StudentCourseSectionSearchModal({
 
   function updateFilter(key: TextSearchFilterKey, value: string) {
     setFilters((current) => ({ ...current, [key]: value }));
-    setSelectedSection(null);
+    clearSelectedSection();
     setAddState({ status: 'idle' });
   }
 
   function updateSubTermIds(subTermIds: string[]) {
     setFilters((current) => ({ ...current, subTermIds }));
-    setSelectedSection(null);
+    clearSelectedSection();
     setAddState({ status: 'idle' });
   }
 
   function updateDayOfWeeks(dayOfWeeks: string[]) {
     setFilters((current) => ({ ...current, dayOfWeeks }));
-    setSelectedSection(null);
+    clearSelectedSection();
     setAddState({ status: 'idle' });
   }
 
   function updateStartHour(value: string | number) {
     setFilters((current) => ({ ...current, startHour: value === '' ? '' : String(value) }));
-    setSelectedSection(null);
+    clearSelectedSection();
     setAddState({ status: 'idle' });
   }
 
@@ -534,14 +694,26 @@ export function StudentCourseSectionSearchModal({
       ...current,
       startMeridiem: value === 'PM' ? 'PM' : 'AM',
     }));
-    setSelectedSection(null);
+    clearSelectedSection();
+    setAddState({ status: 'idle' });
+  }
+
+  function updateHonorsFilter(value: string | null) {
+    setFilters((current) => ({
+      ...current,
+      honorsFilter:
+        value === 'HONORS_ONLY' || value === 'NON_HONORS_ONLY'
+          ? value
+          : 'ALL',
+    }));
+    clearSelectedSection();
     setAddState({ status: 'idle' });
   }
 
   function closeModal() {
     setPage(0);
     setSubmittedFilters(null);
-    setSelectedSection(null);
+    clearSelectedSection();
     setAddState({ status: 'idle' });
     setSearchState({ status: 'idle' });
     onClose();
@@ -577,7 +749,13 @@ export function StudentCourseSectionSearchModal({
   }
 
   return (
-    <Modal opened={opened} onClose={closeModal} title="Find Course Sections" size="72rem" centered>
+    <Modal
+      opened={opened}
+      onClose={closeModal}
+      title="Find Course Sections"
+      size={COURSE_SECTION_SEARCH_MODAL_SIZE}
+      centered
+    >
       <Stack gap="md">
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
           <TextInput
@@ -610,6 +788,13 @@ export function StudentCourseSectionSearchModal({
             placeholder="Instructor name"
             value={filters.instructor}
             onChange={(event) => updateFilter('instructor', event.currentTarget.value)}
+          />
+          <Select
+            allowDeselect={false}
+            data={HONORS_FILTER_OPTIONS}
+            label="Honors"
+            value={filters.honorsFilter}
+            onChange={updateHonorsFilter}
           />
           <MultiSelect
             clearable
@@ -701,15 +886,11 @@ export function StudentCourseSectionSearchModal({
                       }
                       role="button"
                       tabIndex={0}
-                      onClick={() => {
-                        setSelectedSection(row);
-                        setAddState({ status: 'idle' });
-                      }}
+                      onClick={() => selectSection(row)}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
                           event.preventDefault();
-                          setSelectedSection(row);
-                          setAddState({ status: 'idle' });
+                          selectSection(row);
                         }
                       }}
                     >
@@ -729,7 +910,7 @@ export function StudentCourseSectionSearchModal({
                           </Text>
                         </Stack>
                       </Table.Td>
-                      <Table.Td>{displayText(row.sectionLetter)}</Table.Td>
+                      <Table.Td>{displayText(row.displaySectionCode ?? row.sectionLetter)}</Table.Td>
                       <Table.Td>{formatSeats(row)}</Table.Td>
                       <Table.Td>{displayText(row.instructorSummary)}</Table.Td>
                       <Table.Td>{displayText(row.meetingSummary, 'No meetings')}</Table.Td>
@@ -753,10 +934,23 @@ export function StudentCourseSectionSearchModal({
           onPageChange={changePage}
         />
 
-        {selectedSection ? (
+        {detailState.status === 'loading' ? (
+          <CourseSectionDetailLoadingPanel row={detailState.row} />
+        ) : null}
+
+        {detailState.status === 'error' ? (
+          <CourseSectionDetailLoadingPanel
+            color="red"
+            row={detailState.row}
+            message={detailState.message}
+            title="Unable to load section details"
+          />
+        ) : null}
+
+        {detailState.status === 'loaded' ? (
           <CourseSectionDetailPanel
             addState={addState}
-            section={selectedSection}
+            section={detailState.response}
             onAdd={handleAddSection}
           />
         ) : null}

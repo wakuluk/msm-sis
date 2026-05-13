@@ -49,8 +49,7 @@ export function useCourseSectionModalState({
       duplicateOffering ||
       (selectedOffering && !isSearchScope && activeAction === 'add')
   );
-  const sectionPreviewBase = courseSectionDraft.sectionCode.trim() || 'New';
-  const sectionPreview = `${sectionPreviewBase}${courseSectionDraft.honors ? 'H' : ''}`;
+  const sectionPreview = courseSectionDraft.sectionCode.trim() || 'New';
   const creditOptions = useMemo(
     () => buildCreditOptions(sectionModalOffering),
     [sectionModalOffering]

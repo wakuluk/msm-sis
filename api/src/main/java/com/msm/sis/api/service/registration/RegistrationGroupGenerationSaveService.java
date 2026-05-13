@@ -10,6 +10,7 @@ import com.msm.sis.api.entity.AcademicYear;
 import com.msm.sis.api.entity.AthleticSport;
 import com.msm.sis.api.entity.RegistrationGroup;
 import com.msm.sis.api.entity.RegistrationGroupGeneration;
+import com.msm.sis.api.entity.RegistrationGroupGenerationAcademicDivision;
 import com.msm.sis.api.entity.RegistrationGroupGenerationSport;
 import com.msm.sis.api.entity.RegistrationGroupStudent;
 import com.msm.sis.api.entity.SisUser;
@@ -18,6 +19,7 @@ import com.msm.sis.api.repository.AcademicDivisionRepository;
 import com.msm.sis.api.repository.AcademicTermRepository;
 import com.msm.sis.api.repository.AcademicYearRepository;
 import com.msm.sis.api.repository.AthleticSportRepository;
+import com.msm.sis.api.repository.RegistrationGroupGenerationAcademicDivisionRepository;
 import com.msm.sis.api.repository.RegistrationGroupGenerationRepository;
 import com.msm.sis.api.repository.RegistrationGroupGenerationSportRepository;
 import com.msm.sis.api.repository.RegistrationGroupRepository;
@@ -71,6 +73,7 @@ public class RegistrationGroupGenerationSaveService {
     private final AcademicTermRepository academicTermRepository;
     private final AcademicYearRepository academicYearRepository;
     private final AthleticSportRepository athleticSportRepository;
+    private final RegistrationGroupGenerationAcademicDivisionRepository generationAcademicDivisionRepository;
     private final RegistrationGroupGenerationRepository generationRepository;
     private final RegistrationGroupGenerationSportRepository generationSportRepository;
     private final RegistrationGroupRepository registrationGroupRepository;
@@ -98,6 +101,9 @@ public class RegistrationGroupGenerationSaveService {
         List<NormalizedGroupRequest> groups = normalizeGroups(requiredRequest.groups());
         Map<Long, Student> studentsById = loadStudents(groups);
         validateStudentsAreNotAlreadyAssignedToTerm(academicYear, term, groups, studentsById);
+        List<AcademicDivision> selectedAcademicDivisions = loadSelectedAcademicDivisions(
+                normalizedRequest.academicDivisionIds()
+        );
         List<AthleticSport> selectedSports = loadSelectedSports(normalizedRequest.athleticSportIds());
         SisUser actorUser = resolveActorUser(actorUserId);
 
@@ -108,6 +114,7 @@ public class RegistrationGroupGenerationSaveService {
                 actorUser,
                 groups
         );
+        saveGenerationAcademicDivisions(generation, selectedAcademicDivisions);
         saveGenerationSports(generation, selectedSports);
         List<RegistrationGroup> savedGroups = saveGroups(generation, academicYear, term, groups, studentsById, actorUser);
 
@@ -153,7 +160,7 @@ public class RegistrationGroupGenerationSaveService {
                 trimToNull(request.studentSearchText()),
                 trimToNull(request.programSearchText()),
                 normalizeGroupNamePrefix(request.groupNamePrefix()),
-                normalizeOptionalId(request.academicDivisionId(), "Academic division id"),
+                normalizeAcademicDivisionIds(request),
                 normalizeEnum(request.honorsFilter(), HONORS_ANY, Set.of(HONORS_ANY, HONORS_ONLY, HONORS_NOT), "Honors filter"),
                 normalizeEnum(request.athleteFilter(), ATHLETE_ANY, Set.of(ATHLETE_ANY, ATHLETE_ONLY, ATHLETE_NOT), "Athlete filter"),
                 normalizeSportIds(request.athleticSportIds()),
@@ -187,6 +194,19 @@ public class RegistrationGroupGenerationSaveService {
             return null;
         }
         return requirePositiveId(id, label);
+    }
+
+    private List<Long> normalizeAcademicDivisionIds(RegistrationGroupGenerationCreateRequest request) {
+        LinkedHashSet<Long> normalizedIds = new LinkedHashSet<>();
+        if (request.academicDivisionIds() != null) {
+            for (Long academicDivisionId : request.academicDivisionIds()) {
+                normalizedIds.add(requirePositiveId(academicDivisionId, "Academic division id"));
+            }
+        }
+        if (normalizedIds.isEmpty() && request.academicDivisionId() != null) {
+            normalizedIds.add(requirePositiveId(request.academicDivisionId(), "Academic division id"));
+        }
+        return List.copyOf(normalizedIds);
     }
 
     private String normalizeEnum(String value, String defaultValue, Set<String> allowedValues, String label) {
@@ -366,6 +386,29 @@ public class RegistrationGroupGenerationSaveService {
         return selectedSports;
     }
 
+    private List<AcademicDivision> loadSelectedAcademicDivisions(List<Long> academicDivisionIds) {
+        if (academicDivisionIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, AcademicDivision> activeAcademicDivisionsById = academicDivisionRepository
+                .findAllByActiveTrueOrderBySortOrderAsc()
+                .stream()
+                .collect(Collectors.toMap(AcademicDivision::getId, Function.identity()));
+        List<AcademicDivision> selectedAcademicDivisions = new ArrayList<>();
+        for (Long academicDivisionId : academicDivisionIds) {
+            AcademicDivision academicDivision = activeAcademicDivisionsById.get(academicDivisionId);
+            if (academicDivision == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Academic division " + academicDivisionId + " was not found."
+                );
+            }
+            selectedAcademicDivisions.add(academicDivision);
+        }
+        return selectedAcademicDivisions;
+    }
+
     private SisUser resolveActorUser(Long actorUserId) {
         if (actorUserId == null) {
             return null;
@@ -401,7 +444,9 @@ public class RegistrationGroupGenerationSaveService {
         generation.setStudentSearchText(request.studentSearchText());
         generation.setProgramSearchText(request.programSearchText());
         generation.setGroupNamePrefix(request.groupNamePrefix());
-        generation.setAcademicDivision(resolveAcademicDivision(request.academicDivisionId()));
+        generation.setAcademicDivision(request.academicDivisionIds().isEmpty()
+                ? null
+                : resolveAcademicDivision(request.academicDivisionIds().getFirst()));
         generation.setHonorsFilter(request.honorsFilter());
         generation.setAthleteFilter(request.athleteFilter());
         generation.setExistingGroupFilter(request.existingGroupFilter());
@@ -463,6 +508,27 @@ public class RegistrationGroupGenerationSaveService {
                 })
                 .toList();
         generationSportRepository.saveAll(generationSports);
+    }
+
+    private void saveGenerationAcademicDivisions(
+            RegistrationGroupGeneration generation,
+            List<AcademicDivision> selectedAcademicDivisions
+    ) {
+        if (selectedAcademicDivisions.isEmpty()) {
+            return;
+        }
+
+        List<RegistrationGroupGenerationAcademicDivision> generationAcademicDivisions =
+                selectedAcademicDivisions.stream()
+                        .map(academicDivision -> {
+                            RegistrationGroupGenerationAcademicDivision generationAcademicDivision =
+                                    new RegistrationGroupGenerationAcademicDivision();
+                            generationAcademicDivision.setRegistrationGroupGeneration(generation);
+                            generationAcademicDivision.setAcademicDivision(academicDivision);
+                            return generationAcademicDivision;
+                        })
+                        .toList();
+        generationAcademicDivisionRepository.saveAll(generationAcademicDivisions);
     }
 
     private List<RegistrationGroup> saveGroups(
@@ -583,7 +649,7 @@ public class RegistrationGroupGenerationSaveService {
             String studentSearchText,
             String programSearchText,
             String groupNamePrefix,
-            Long academicDivisionId,
+            List<Long> academicDivisionIds,
             String honorsFilter,
             String athleteFilter,
             List<Long> athleticSportIds,

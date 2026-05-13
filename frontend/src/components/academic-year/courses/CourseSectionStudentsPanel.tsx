@@ -9,6 +9,7 @@ import {
   getCourseSectionStudentEnrollmentEvents,
   getCourseSectionStudents,
   patchCourseSectionStudentEnrollment,
+  postCourseSectionInitialGrades,
   postCourseSectionStudentGrade,
   runCourseSectionExpiredWaitlistCleanup,
 } from '@/services/course-service';
@@ -40,15 +41,39 @@ import { getErrorMessage } from './courseSectionsWorkspaceUtils';
 type CourseSectionStudentsPanelProps = {
   selectedSection: CourseSectionPreview;
   canManage?: boolean;
+  canEditGrades?: boolean;
   gradeMarkOptions: SelectOption[];
   gradeTypeOptions: SelectOption[];
   gradingBasisOptions: SelectOption[];
   enrollmentStatusOptions?: SelectOption[];
 };
 
+type InitialGradeSaveState =
+  | { status: 'idle' }
+  | { status: 'saving' }
+  | { status: 'error'; message: string };
+
+const previewGradeMarkOptions: SelectOption[] = [
+  { value: 'A', label: 'A' },
+  { value: 'A-', label: 'A-' },
+  { value: 'B+', label: 'B+' },
+  { value: 'B', label: 'B' },
+  { value: 'B-', label: 'B-' },
+  { value: 'C+', label: 'C+' },
+  { value: 'C', label: 'C' },
+  { value: 'C-', label: 'C-' },
+  { value: 'D+', label: 'D+' },
+  { value: 'D', label: 'D' },
+  { value: 'D-', label: 'D-' },
+  { value: 'F', label: 'F' },
+];
+
+const SEAT_HOLDING_STATUS_CODES = new Set(['REGISTERED', 'IN_PROGRESS']);
+
 export function CourseSectionStudentsPanel({
   selectedSection,
   canManage = true,
+  canEditGrades = canManage,
   gradeMarkOptions,
   gradeTypeOptions,
   gradingBasisOptions,
@@ -85,6 +110,12 @@ export function CourseSectionStudentsPanel({
     events: [],
   });
   const [gradePostState, setGradePostState] = useState<GradePostState>({ status: 'idle' });
+  const [stubInitialGrades, setStubInitialGrades] = useState<Record<string, string | null>>({});
+  const [initialGradeSaveState, setInitialGradeSaveState] = useState<InitialGradeSaveState>({
+    status: 'idle',
+  });
+  const editableGradeMarkOptions =
+    gradeMarkOptions.length > 0 ? gradeMarkOptions : previewGradeMarkOptions;
 
   const students = studentListState.students;
   const filteredStudents = useMemo(
@@ -102,13 +133,16 @@ export function CourseSectionStudentsPanel({
         }),
     [searchValue, sortBy, sortDirection, students]
   );
-  const registeredCount = students.filter((student) => student.statusCode === 'REGISTERED').length;
+  const registeredCount = students.filter((student) =>
+    SEAT_HOLDING_STATUS_CODES.has(student.statusCode ?? '')
+  ).length;
   const waitlistCount = students.filter((student) => student.statusCode === 'WAITLISTED').length;
   const capacity = selectedSection.capacity || 0;
   const hardCapacity = selectedSection.hardCapacity;
   const openSeats = Math.max(capacity - registeredCount, 0);
   const addStudentError =
     studentMutationState.status === 'error' ? studentMutationState.message : null;
+  const pendingInitialGradeCount = Object.values(stubInitialGrades).filter(Boolean).length;
   const selectedStudentFromList =
     selectedEnrollmentId === null
       ? null
@@ -204,6 +238,11 @@ export function CourseSectionStudentsPanel({
   useEffect(() => {
     setGradePostState({ status: 'idle' });
   }, [selectedEnrollmentId]);
+
+  useEffect(() => {
+    setStubInitialGrades({});
+    setInitialGradeSaveState({ status: 'idle' });
+  }, [selectedSection.sectionId]);
 
   useEffect(() => {
     if (selectedEnrollmentId === null || !canManage) {
@@ -397,6 +436,89 @@ export function CourseSectionStudentsPanel({
     setSortBy(nextSortBy);
   }
 
+  function handleStubInitialGradeChange(
+    enrollmentId: number,
+    gradeTypeCode: 'MIDTERM' | 'FINAL',
+    gradeMarkCode: string | null
+  ) {
+    const key = `${enrollmentId}:${gradeTypeCode}`;
+
+    setStubInitialGrades((current) => ({
+      ...current,
+      [key]: gradeMarkCode,
+    }));
+    setInitialGradeSaveState({ status: 'idle' });
+  }
+
+  async function handleSaveInitialGrades() {
+    if (initialGradeSaveState.status === 'saving') {
+      return;
+    }
+
+    const grades = Object.entries(stubInitialGrades)
+      .filter((entry): entry is [string, string] => Boolean(entry[1]))
+      .map(([key, gradeMarkCode]) => {
+        const [enrollmentId, gradeTypeCode] = key.split(':');
+
+        return {
+          enrollmentId: Number(enrollmentId),
+          gradeTypeCode,
+          gradeMarkCode,
+        };
+      })
+      .filter(
+        (
+          grade
+        ): grade is {
+          enrollmentId: number;
+          gradeTypeCode: 'MIDTERM' | 'FINAL';
+          gradeMarkCode: string;
+        } =>
+          Number.isInteger(grade.enrollmentId) &&
+          (grade.gradeTypeCode === 'MIDTERM' || grade.gradeTypeCode === 'FINAL')
+      );
+
+    if (grades.length === 0) {
+      return;
+    }
+
+    try {
+      setInitialGradeSaveState({ status: 'saving' });
+      const response = await postCourseSectionInitialGrades({
+        sectionId: selectedSection.sectionId,
+        grades,
+      });
+
+      setStudentListState((current) => ({
+        ...current,
+        students: current.students.map(
+          (student) =>
+            response.results.find(
+              (updatedStudent) => updatedStudent.enrollmentId === student.enrollmentId
+            ) ?? student
+        ),
+      }));
+
+      if (selectedEnrollmentId !== null) {
+        const updatedSelectedStudent =
+          response.results.find((student) => student.enrollmentId === selectedEnrollmentId) ?? null;
+
+        if (updatedSelectedStudent) {
+          setSelectedEnrollmentDetailState({ status: 'success', student: updatedSelectedStudent });
+        }
+      }
+
+      setStubInitialGrades({});
+      setInitialGradeSaveState({ status: 'idle' });
+      setEventListReloadKey((current) => current + 1);
+    } catch (error: unknown) {
+      setInitialGradeSaveState({
+        status: 'error',
+        message: getErrorMessage(error, 'Failed to save initial grades.'),
+      });
+    }
+  }
+
   return (
     <Stack gap="sm" w="100%">
       <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
@@ -406,7 +528,7 @@ export function CourseSectionStudentsPanel({
               Students
             </Text>
             <Badge variant="light" color="blue">
-              {registeredCount}/{capacity} registered
+              {registeredCount}/{capacity} enrolled
             </Badge>
             <Badge variant="light" color={openSeats > 0 ? 'green' : 'red'}>
               {openSeats} open seats
@@ -465,15 +587,40 @@ export function CourseSectionStudentsPanel({
         </Alert>
       ) : null}
 
+      {initialGradeSaveState.status === 'error' ? (
+        <Alert color="red" title="Unable to save initial grades">
+          {initialGradeSaveState.message}
+        </Alert>
+      ) : null}
+
       <CourseSectionStudentTable
         students={filteredStudents}
         loading={studentListState.status === 'loading'}
         selectedEnrollmentId={selectedEnrollmentId}
         sortBy={sortBy}
         sortDirection={sortDirection}
+        canEditGrades={canEditGrades}
+        gradeMarkOptions={editableGradeMarkOptions}
+        stubInitialGrades={stubInitialGrades}
         onToggleSort={handleToggleSort}
         onSelectEnrollment={setSelectedEnrollmentId}
+        onStubInitialGradeChange={handleStubInitialGradeChange}
       />
+
+      {canEditGrades ? (
+        <Group justify="flex-end">
+          <Button
+            size="xs"
+            disabled={pendingInitialGradeCount === 0 || initialGradeSaveState.status === 'saving'}
+            loading={initialGradeSaveState.status === 'saving'}
+            onClick={() => {
+              void handleSaveInitialGrades();
+            }}
+          >
+            Save initial grades
+          </Button>
+        </Group>
+      ) : null}
 
       {selectedStudent ? (
         <CourseSectionStudentDetailsPanel

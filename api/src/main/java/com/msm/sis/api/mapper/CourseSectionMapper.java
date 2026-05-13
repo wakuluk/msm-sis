@@ -34,6 +34,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.msm.sis.api.patch.PatchUtils.apply;
 import static com.msm.sis.api.patch.PatchUtils.applyTrimmed;
@@ -41,6 +42,11 @@ import static com.msm.sis.api.util.TextUtils.trimToNull;
 
 @Component
 public class CourseSectionMapper {
+    private static final Set<String> SEAT_HOLDING_STATUS_CODES = Set.of(
+            "REGISTERED",
+            "IN_PROGRESS"
+    );
+
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h:mm a");
 
     public CourseSectionListResponse toCourseSectionListResponse(
@@ -284,13 +290,7 @@ public class CourseSectionMapper {
     }
 
     private String buildDisplaySectionCode(CourseSection section) {
-        StringBuilder displayCode = new StringBuilder(section.getSectionLetter() == null ? "" : section.getSectionLetter());
-
-        if (section.isHonors()) {
-            displayCode.append("H");
-        }
-
-        return displayCode.toString();
+        return section.getSectionLetter() == null ? "" : section.getSectionLetter();
     }
 
     private String buildFullSectionCode(CourseSection section) {
@@ -317,7 +317,9 @@ public class CourseSectionMapper {
                 : section.getEnrollments();
         int enrolledCount = (int) enrollments.stream()
                 .filter(enrollment -> enrollment.getStatus() != null)
-                .filter(enrollment -> "REGISTERED".equalsIgnoreCase(enrollment.getStatus().getCode()))
+                .filter(enrollment -> SEAT_HOLDING_STATUS_CODES.contains(
+                        enrollment.getStatus().getCode().toUpperCase()
+                ))
                 .count();
         int waitlistedCount = (int) enrollments.stream()
                 .filter(enrollment -> enrollment.getStatus() != null)

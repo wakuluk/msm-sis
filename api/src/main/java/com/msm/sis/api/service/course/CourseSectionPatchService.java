@@ -67,7 +67,7 @@ public class CourseSectionPatchService {
         Long courseOfferingId = courseOffering.getId();
         Long finalSubTermId = request.getSubTermId().orElse(courseSection.getSubTerm().getId());
         String finalSectionLetter = request.getSectionLetter().isPresent()
-                ? request.getSectionLetter().getValue().trim().toUpperCase(Locale.US)
+                ? courseSectionValidationService.normalizeSectionLetter(request.getSectionLetter().getValue())
                 : courseSection.getSectionLetter();
         boolean finalHonors = request.getHonors().orElse(courseSection.isHonors());
         AcademicSubTerm finalSubTerm = courseSection.getSubTerm();

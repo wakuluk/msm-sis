@@ -207,4 +207,21 @@ public interface CourseSectionRepository extends JpaRepository<CourseSection, Lo
             @Param("honors") boolean honors,
             @Param("sectionId") Long sectionId
     );
+
+    @Query("""
+            select
+                case when count(courseSection) > 0 then true else false end
+            from CourseSection courseSection
+            join courseSection.status status
+            where courseSection.courseOffering.id = :courseOfferingId
+              and courseSection.subTerm.id = :subTermId
+              and courseSection.honors = true
+              and upper(status.code) = 'PLANNED'
+              and courseSection.id <> :sectionId
+            """)
+    boolean existsPlannedHonorsSectionForOfferingAndSubTermExcludingSection(
+            @Param("courseOfferingId") Long courseOfferingId,
+            @Param("subTermId") Long subTermId,
+            @Param("sectionId") Long sectionId
+    );
 }

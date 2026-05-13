@@ -25,6 +25,7 @@ TRUNCATE TABLE
     student_academic_plan,
     student_program_request,
     student_program,
+    student_academic_career,
     academic_department_staff_role,
     student_transfer_credit_course,
     student_transfer_credit,

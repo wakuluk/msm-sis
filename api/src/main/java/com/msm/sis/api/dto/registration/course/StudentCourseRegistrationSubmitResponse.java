@@ -13,6 +13,7 @@ public record StudentCourseRegistrationSubmitResponse(
         List<StudentCourseRegistrationEnrollmentResponse> waitlisted,
         List<StudentCourseRegistrationFailureResponse> removedFailures,
         List<StudentCourseRegistrationFailureResponse> retryableFailures,
+        List<StudentCourseRegistrationWarningResponse> warnings,
         StudentCourseRegistrationResponse registrationPage
 ) {
 }

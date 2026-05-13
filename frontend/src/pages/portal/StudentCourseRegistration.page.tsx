@@ -8,10 +8,12 @@ import {
   acceptWaitlistOffer,
   getMyCourseRegistration,
   getMyCourseRegistrationGroups,
+  getCourseSectionRegistrationDetail,
   removeEnrollment,
   removeSelection,
   searchCourseSections,
   StudentCourseRegistrationScheduleConflictError,
+  type GetCourseSectionRegistrationDetailRequest,
   submitRegistration,
   type SearchCourseSectionsRequest,
 } from '@/services/student-course-registration-service';
@@ -19,6 +21,7 @@ import type {
   StudentCourseRegistrationGroupChoicesResponse,
   StudentCourseRegistrationResponse,
   StudentCourseRegistrationSubmitResponse,
+  StudentCourseSectionDetailResponse,
   StudentCourseSectionSearchResponse,
 } from '@/services/schemas/student-course-registration-schemas';
 
@@ -65,8 +68,11 @@ function getGroupStatusColor(statusCode: string | null | undefined) {
   }
 }
 
-function hasActiveRegistrationWindow(groups: StudentCourseRegistrationGroupChoicesResponse | null) {
-  return groups?.groups.some((group) => group.registrationWindowOpen) ?? false;
+function hasPublishedRegistrationGroup(groups: StudentCourseRegistrationGroupChoicesResponse | null) {
+  return (
+    groups?.groups.some((group) => group.statusCode?.trim().toUpperCase() === 'PUBLISHED') ??
+    false
+  );
 }
 
 function RegistrationTermSelect({
@@ -99,7 +105,7 @@ function RegistrationTermSelect({
   );
 }
 
-function NoActiveRegistrationLanding({
+function NoPublishedRegistrationLanding({
   groups,
   studentDisplayName,
 }: {
@@ -120,11 +126,11 @@ function NoActiveRegistrationLanding({
             <Text className="portal-ui-eyebrow-text">
               {studentDisplayName ? displayText(studentDisplayName) : 'Student registration'}
             </Text>
-            <Title order={2}>No active registration window</Title>
+            <Title order={2}>No published registration group</Title>
             <Text c="dimmed" maw={760}>
-              You do not currently have an open registration window. When a registration group is
-              published and your window opens, course search and registration actions will be
-              available here.
+              You do not currently have a published registration group. When your group is
+              published, you can search course sections and pre-register before your registration
+              window opens.
             </Text>
           </Stack>
         </Group>
@@ -135,8 +141,8 @@ function NoActiveRegistrationLanding({
               <IconChecklist size={14} />
             </ThemeIcon>
             <Text size="sm">
-              Check back after your registration window opens, or contact the Registrar if you
-              expected current registration access.
+              Check back after your registration group is published, or contact the Registrar if
+              you expected pre-registration access.
             </Text>
           </Group>
           {hasClosedGroups ? (
@@ -248,6 +254,12 @@ export function StudentCourseRegistrationPage() {
     []
   );
 
+  const handleGetCourseSectionDetail = useCallback(
+    (request: GetCourseSectionRegistrationDetailRequest): Promise<StudentCourseSectionDetailResponse> =>
+      getCourseSectionRegistrationDetail(request),
+    []
+  );
+
   const handleAddCourse = useCallback(
     async (sectionId: number) => {
       setActionState({ status: 'loading' });
@@ -338,7 +350,7 @@ export function StudentCourseRegistrationPage() {
     <RecordPageShell
       eyebrow="Student Registration"
       title="Course Registration"
-      description="Review your assigned registration window before building a schedule."
+      description="Build a pre-registration schedule for your published group, then register when your window opens."
       badge={
         <Badge variant="light" color="blue" size="lg">
           Student View
@@ -360,7 +372,7 @@ export function StudentCourseRegistrationPage() {
         ) : null}
 
         {pageState.status === 'empty' ? (
-          <NoActiveRegistrationLanding groups={registrationGroups} />
+          <NoPublishedRegistrationLanding groups={registrationGroups} />
         ) : null}
 
         {pageState.status === 'loaded' ? (
@@ -370,8 +382,8 @@ export function StudentCourseRegistrationPage() {
               selectedRegistrationGroupId={selectedRegistrationGroupId}
               onChange={handleRegistrationGroupChange}
             />
-            {!hasActiveRegistrationWindow(registrationGroups) ? (
-              <NoActiveRegistrationLanding
+            {!hasPublishedRegistrationGroup(registrationGroups) ? (
+              <NoPublishedRegistrationLanding
                 groups={registrationGroups}
                 studentDisplayName={pageState.registration.studentDisplayName}
               />
@@ -402,6 +414,7 @@ export function StudentCourseRegistrationPage() {
               onRegister={handleSubmitRegistration}
               onRemoveCourse={handleRemoveCourse}
               onRemoveEnrollment={handleRemoveEnrollment}
+              onGetCourseSectionDetail={handleGetCourseSectionDetail}
               onSearchCourseSections={handleSearchCourseSections}
             />
           </>

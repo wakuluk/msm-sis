@@ -1353,7 +1353,7 @@ WITH desired_sections(
 ) AS (
     VALUES
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 28, 32, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Lecture section for general registration.'),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'PLANNED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 3.00, 18, 22, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Honors section with additional seminar discussion.'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'BH', TRUE, 'PLANNED', 'UNDERGRADUATE', 'HYBRID', 'GRADED', 3.00, 18, 22, TRUE, '2027-01-19'::date, '2027-05-07'::date, 'Honors section with additional seminar discussion.'),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'ONLINE', 'GRADED', 3.00, 24, 28, TRUE, '2027-05-24'::date, '2027-06-25'::date, 'Condensed online summer section.'),
         ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'PLANNED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 3.00, 16, 18, FALSE, '2026-08-24'::date, '2026-12-11'::date, 'Discussion-heavy seminar section.'),
         ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'COMPLETED', 'UNDERGRADUATE', 'IN_PERSON', 'GRADED', 4.00, 20, 24, TRUE, '2026-08-24'::date, '2026-12-11'::date, 'Seeded completed first-semester lecture section for planner history testing.'),
@@ -1429,7 +1429,7 @@ WITH desired_section_instructors(
 ) AS (
     VALUES
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'jane.smith@msm.edu'),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'alan.reed@msm.edu'),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'BH', TRUE, 'alan.reed@msm.edu'),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'jane.smith@msm.edu'),
         ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'maria.chen@msm.edu'),
         ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'maria.chen@msm.edu'),
@@ -1489,7 +1489,7 @@ WITH desired_additional_section_instructors(
 ) AS (
     VALUES
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'alan.reed@msm.edu', 'TEACHING_ASSISTANT', NULL, NULL),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'jane.smith@msm.edu', 'CO_INSTRUCTOR', TRUE, FALSE),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'BH', TRUE, 'jane.smith@msm.edu', 'CO_INSTRUCTOR', TRUE, FALSE),
         ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'gandalf@valinor.me', 'OBSERVER', NULL, NULL),
         ('ELV', '201', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'legolas@mirkwood.me', 'CO_INSTRUCTOR', NULL, NULL),
         ('ELV', '201L', 1, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'legolas@mirkwood.me', 'TEACHING_ASSISTANT', NULL, NULL),
@@ -1547,8 +1547,8 @@ WITH desired_section_meetings(
     VALUES
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'CLASS', 1, '09:00'::time, '10:15'::time, 'Rivendell Hall', '204', 1),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'A', FALSE, 'CLASS', 3, '09:00'::time, '10:15'::time, 'Rivendell Hall', '204', 2),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'CLASS', 2, '11:00'::time, '12:15'::time, 'Lore House', '012', 1),
-        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'B', TRUE, 'CLASS', 4, '13:00'::time, '14:15'::time, 'Lore House', '012', 2),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'BH', TRUE, 'CLASS', 2, '11:00'::time, '12:15'::time, 'Lore House', '012', 1),
+        ('TOLK', '101', 2, 'AY-2026-2027', 'SPRING-2027', 'BH', TRUE, 'CLASS', 4, '13:00'::time, '14:15'::time, 'Lore House', '012', 2),
         ('TOLK', '101', 2, 'AY-2026-2027', 'SUMMER-I-2027', 'A', FALSE, 'CLASS', NULL, NULL, NULL, NULL, NULL, 1),
         ('TOLK', '240', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'CLASS', 5, '13:00'::time, '15:30'::time, 'Rivendell Hall', '110', 1),
         ('ELV', '201', 1, 'AY-2026-2027', 'FALL-2026', 'A', FALSE, 'CLASS', 5, '09:00'::time, '10:00'::time, 'Language Hall', '201', 1),

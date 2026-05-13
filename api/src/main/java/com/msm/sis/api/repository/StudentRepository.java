@@ -71,6 +71,13 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             left join class_standing class_standing
               on class_standing.class_standing_id = student.class_standing_id
             where student.is_disabled = false
+              and exists (
+                  select 1
+                  from student_academic_career student_academic_career
+                  where student_academic_career.student_id = student.student_id
+                    and upper(student_academic_career.status) = 'ACTIVE'
+                    and student_academic_career.effective_end_date is null
+              )
               and (
                    cast(:search as text) is null
                    or cast(student.student_id as text) = cast(:search as text)
@@ -94,6 +101,13 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             select student
             from Student student
             where student.disabled = false
+              and exists (
+                  select studentAcademicCareer.id
+                  from StudentAcademicCareer studentAcademicCareer
+                  where studentAcademicCareer.student.id = student.id
+                    and upper(studentAcademicCareer.status) = 'ACTIVE'
+                    and studentAcademicCareer.effectiveEndDate is null
+              )
             order by student.lastName asc,
                      student.firstName asc,
                      student.id asc

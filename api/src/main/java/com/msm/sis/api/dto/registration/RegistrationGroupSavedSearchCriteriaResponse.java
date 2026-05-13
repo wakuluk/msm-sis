@@ -18,6 +18,7 @@ public record RegistrationGroupSavedSearchCriteriaResponse(
         String programSearchText,
         String groupNamePrefix,
         CodeNameReferenceOptionResponse academicDivision,
+        List<CodeNameReferenceOptionResponse> academicDivisions,
         String honorsFilter,
         String athleteFilter,
         String existingGroupFilter,

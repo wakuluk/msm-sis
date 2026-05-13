@@ -6,9 +6,11 @@ import {
   StudentCourseRegistrationScheduleConflictErrorResponseSchema,
   StudentCourseRegistrationResponseSchema,
   StudentCourseRegistrationSubmitResponseSchema,
+  StudentCourseSectionDetailResponseSchema,
   StudentCourseSectionSearchResponseSchema,
   SubmitStudentCourseRegistrationRequestSchema,
   type AddStudentCourseRegistrationSelectionRequest,
+  type StudentCourseSectionDetailResponse,
   type StudentCourseRegistrationGroupChoicesResponse,
   type StudentCourseRegistrationResponse,
   type StudentCourseRegistrationScheduleConflictResponse,
@@ -23,10 +25,10 @@ export type CourseRegistrationSectionSortBy =
   | 'credits'
   | 'instructor'
   | 'section'
-  | 'status'
   | 'time';
 
 export type CourseRegistrationSortDirection = 'asc' | 'desc';
+export type CourseRegistrationHonorsFilter = 'ALL' | 'HONORS_ONLY' | 'NON_HONORS_ONLY';
 
 export type GetMyCourseRegistrationRequest = {
   registrationGroupId?: number | null;
@@ -35,11 +37,13 @@ export type GetMyCourseRegistrationRequest = {
 };
 
 export type SearchCourseSectionsRequest = {
+  registrationGroupId?: number | null;
   termId?: number | null;
   subTermIds?: number[] | null;
   courseCode?: string | null;
   section?: string | null;
   instructor?: string | null;
+  honorsFilter?: CourseRegistrationHonorsFilter | null;
   dayOfWeeks?: number[] | null;
   startHour?: number | null;
   time?: string | null;
@@ -47,6 +51,13 @@ export type SearchCourseSectionsRequest = {
   size?: number;
   sortBy?: CourseRegistrationSectionSortBy;
   sortDirection?: CourseRegistrationSortDirection;
+  signal?: AbortSignal;
+};
+
+export type GetCourseSectionRegistrationDetailRequest = {
+  sectionId: number;
+  registrationGroupId?: number | null;
+  termId?: number | null;
   signal?: AbortSignal;
 };
 
@@ -128,11 +139,13 @@ function throwCourseRegistrationError(payload: unknown, fallbackMessage: string)
 }
 
 function buildCourseSectionSearchParams({
+  registrationGroupId,
   termId,
   subTermIds,
   courseCode,
   section,
   instructor,
+  honorsFilter,
   dayOfWeeks,
   startHour,
   time,
@@ -147,6 +160,10 @@ function buildCourseSectionSearchParams({
     sortBy,
     sortDirection,
   });
+
+  if (registrationGroupId !== null && registrationGroupId !== undefined) {
+    queryParams.set('registrationGroupId', String(registrationGroupId));
+  }
 
   if (termId !== null && termId !== undefined) {
     queryParams.set('termId', String(termId));
@@ -166,6 +183,7 @@ function buildCourseSectionSearchParams({
   appendStringQueryParam(queryParams, 'courseCode', courseCode);
   appendStringQueryParam(queryParams, 'section', section);
   appendStringQueryParam(queryParams, 'instructor', instructor);
+  appendStringQueryParam(queryParams, 'honorsFilter', honorsFilter);
   appendStringQueryParam(queryParams, 'time', time);
 
   return queryParams;
@@ -235,6 +253,22 @@ export async function searchCourseSections(
     parser: StudentCourseSectionSearchResponseSchema,
     fallbackMessage: 'Failed to search course sections.',
     signal: request.signal,
+  });
+}
+
+export async function getCourseSectionRegistrationDetail({
+  sectionId,
+  registrationGroupId,
+  termId,
+  signal,
+}: GetCourseSectionRegistrationDetailRequest): Promise<StudentCourseSectionDetailResponse> {
+  const queryParams = buildRegistrationContextParams({ registrationGroupId, termId });
+
+  return apiRequest({
+    path: withQueryParams(`/api/me/course-registration/course-sections/${sectionId}`, queryParams),
+    parser: StudentCourseSectionDetailResponseSchema,
+    fallbackMessage: 'Failed to load course section registration details.',
+    signal,
   });
 }
 

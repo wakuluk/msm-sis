@@ -100,7 +100,7 @@ function mapRowMeetingToTeachingMeeting({
     id: `${row.sectionInstructorId}-${meeting.sectionMeetingId}`,
     courseCode: toDisplayValue(row.courseCode, 'Course'),
     courseTitle: toDisplayValue(row.courseTitle ?? row.sectionTitle, 'Untitled section'),
-    sectionCode: toDisplayValue(row.sectionLetter, 'Section'),
+    sectionCode: toDisplayValue(row.displaySectionCode ?? row.sectionLetter, 'Section'),
     sectionId: row.sectionId ?? undefined,
     subTermCode: toDisplayValue(row.subTermCode, 'SUBTERM'),
     subTermId: row.subTermId ?? undefined,

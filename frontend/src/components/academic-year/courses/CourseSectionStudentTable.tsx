@@ -1,19 +1,22 @@
 // Sortable enrollment table for students in a course section.
 // Emits selected enrollment ids so the parent panel can load detail and history data.
-import { Badge, ScrollArea, Table, Text, UnstyledButton } from '@mantine/core';
-import type { CourseSectionStudentResponse } from '@/services/schemas/course-schemas';
+import { Badge, Box, ScrollArea, Select, Table, Text, UnstyledButton } from '@mantine/core';
+import type {
+  CourseSectionStudentGradeResponse,
+  CourseSectionStudentResponse,
+} from '@/services/schemas/course-schemas';
 import classes from './CourseSectionStudentsPanel.module.css';
 import type {
   SortableStudentColumn,
   StudentSortBy,
   StudentSortDirection,
 } from './courseSectionStudentTypes';
+import type { SelectOption } from './courseSectionsWorkspaceTypes';
 import {
   formatCredits,
   formatStudentDate,
   formatStudentDateTime,
   formatWaitlistOfferStatus,
-  getCurrentFinalGradeLabel,
   sortableStudentColumns,
   studentStatusColor,
   waitlistOfferStatusColor,
@@ -54,21 +57,74 @@ function SortableStudentHeader({
   );
 }
 
-function FinalGradeCell({ student }: { student: CourseSectionStudentResponse }) {
-  const finalGradeLabel = getCurrentFinalGradeLabel(student);
+type InitialGradeTypeCode = 'MIDTERM' | 'FINAL';
 
-  if (!student.currentFinalGrade) {
-    return (
-      <Text size="sm" c="dimmed">
-        {finalGradeLabel}
-      </Text>
-    );
+function PostedGradeBadge({ label }: { label: string }) {
+  return (
+    <Badge variant="light" color="gray">
+      {label}
+    </Badge>
+  );
+}
+
+function EmptyGradeText({ label }: { label: string }) {
+  return (
+    <Text size="sm" c="dimmed">
+      {label}
+    </Text>
+  );
+}
+
+function InitialGradeCell({
+  grade,
+  gradeTypeCode,
+  gradeMarkOptions,
+  canEditGrades,
+  stubGradeMarkCode,
+  onStubGradeChange,
+}: {
+  grade: CourseSectionStudentGradeResponse | null;
+  gradeTypeCode: InitialGradeTypeCode;
+  gradeMarkOptions: SelectOption[];
+  canEditGrades: boolean;
+  stubGradeMarkCode: string | null;
+  onStubGradeChange: (gradeTypeCode: InitialGradeTypeCode, gradeMarkCode: string | null) => void;
+}) {
+  const gradeLabel = grade?.gradeMarkCode ?? grade?.gradeMarkName ?? 'Not set';
+  const selectGradeMarkOptions =
+    stubGradeMarkCode && !gradeMarkOptions.some((option) => option.value === stubGradeMarkCode)
+      ? [{ value: stubGradeMarkCode, label: stubGradeMarkCode }, ...gradeMarkOptions]
+      : gradeMarkOptions;
+
+  if (grade) {
+    return <PostedGradeBadge label={gradeLabel} />;
+  }
+
+  if (!canEditGrades || gradeMarkOptions.length === 0) {
+    return <EmptyGradeText label="Not posted" />;
   }
 
   return (
-    <Badge variant="light" color="gray">
-      {finalGradeLabel}
-    </Badge>
+    <Box
+      onClick={(event) => {
+        event.stopPropagation();
+      }}
+    >
+      <Select
+        aria-label={`${gradeTypeCode === 'MIDTERM' ? 'Midterm' : 'Final'} grade`}
+        placeholder="Not posted"
+        size="xs"
+        data={selectGradeMarkOptions}
+        value={stubGradeMarkCode}
+        comboboxProps={{ withinPortal: true }}
+        clearable
+        searchable
+        w={140}
+        onChange={(value) => {
+          onStubGradeChange(gradeTypeCode, value);
+        }}
+      />
+    </Box>
   );
 }
 
@@ -78,8 +134,16 @@ type CourseSectionStudentTableProps = {
   selectedEnrollmentId: number | null;
   sortBy: StudentSortBy;
   sortDirection: StudentSortDirection;
+  canEditGrades: boolean;
+  gradeMarkOptions: SelectOption[];
+  stubInitialGrades: Record<string, string | null>;
   onToggleSort: (sortBy: StudentSortBy) => void;
   onSelectEnrollment: (enrollmentId: number) => void;
+  onStubInitialGradeChange: (
+    enrollmentId: number,
+    gradeTypeCode: InitialGradeTypeCode,
+    gradeMarkCode: string | null
+  ) => void;
 };
 
 export function CourseSectionStudentTable({
@@ -88,11 +152,15 @@ export function CourseSectionStudentTable({
   selectedEnrollmentId,
   sortBy,
   sortDirection,
+  canEditGrades,
+  gradeMarkOptions,
+  stubInitialGrades,
   onToggleSort,
   onSelectEnrollment,
+  onStubInitialGradeChange,
 }: CourseSectionStudentTableProps) {
   return (
-    <Table.ScrollContainer minWidth={1080} w="100%">
+    <Table.ScrollContainer minWidth={1220} w="100%">
       <ScrollArea.Autosize mah={320} type="auto" offsetScrollbars>
         <Table
           withTableBorder
@@ -182,7 +250,28 @@ export function CourseSectionStudentTable({
                 <Table.Td>{formatCredits(student.creditsAttempted)}</Table.Td>
                 <Table.Td>{student.gradingBasisName ?? 'Not set'}</Table.Td>
                 <Table.Td>
-                  <FinalGradeCell student={student} />
+                  <InitialGradeCell
+                    grade={student.currentMidtermGrade}
+                    gradeTypeCode="MIDTERM"
+                    gradeMarkOptions={gradeMarkOptions}
+                    canEditGrades={canEditGrades}
+                    stubGradeMarkCode={stubInitialGrades[`${student.enrollmentId}:MIDTERM`] ?? null}
+                    onStubGradeChange={(gradeTypeCode, gradeMarkCode) => {
+                      onStubInitialGradeChange(student.enrollmentId, gradeTypeCode, gradeMarkCode);
+                    }}
+                  />
+                </Table.Td>
+                <Table.Td>
+                  <InitialGradeCell
+                    grade={student.currentFinalGrade}
+                    gradeTypeCode="FINAL"
+                    gradeMarkOptions={gradeMarkOptions}
+                    canEditGrades={canEditGrades}
+                    stubGradeMarkCode={stubInitialGrades[`${student.enrollmentId}:FINAL`] ?? null}
+                    onStubGradeChange={(gradeTypeCode, gradeMarkCode) => {
+                      onStubInitialGradeChange(student.enrollmentId, gradeTypeCode, gradeMarkCode);
+                    }}
+                  />
                 </Table.Td>
                 <Table.Td>
                   {formatStudentDate(student.registeredAt ?? student.enrollmentDate)}

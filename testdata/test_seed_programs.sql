@@ -1225,8 +1225,126 @@ LEFT JOIN academic_department placeholder_department
        ON placeholder_department.code = desired_placeholder_plan_courses.placeholder_department_code
 LEFT JOIN users actor ON actor.email = 'frodo@shire.me';
 
+-- Academic career seed data.
+-- Most demo students receive an active undergraduate career. A few named students
+-- intentionally show transition/status edge cases for the admin Academic Career tab
+-- and registration search POC:
+--   STU-1002 = intent to graduate only; should not appear in registration student searches.
+--   STU-1003 = leave of absence only; should not appear in registration student searches.
+--   STU-1004 = graduated undergraduate + active graduate; should appear as graduate eligible.
+--   SEC-2015 = withdrawn only; should not appear in registration student searches.
+--   SEC-2016 = graduated only; should not appear in registration student searches.
+DELETE FROM student_academic_career
+USING student
+WHERE student_academic_career.student_id = student.student_id
+  AND student.is_disabled = FALSE;
+
+WITH desired_default_academic_careers(
+    alt_id,
+    academic_career_code,
+    status,
+    effective_start_date,
+    effective_end_date,
+    primary_career,
+    entry_reason,
+    notes
+) AS (
+    SELECT student.alt_id,
+           'UNDERGRADUATE',
+           'ACTIVE',
+           '2026-08-20'::date,
+           NULL::date,
+           TRUE,
+           'POC seed',
+           'Default active undergraduate career for local testing.'
+    FROM student
+    WHERE student.is_disabled = FALSE
+      AND student.alt_id NOT IN (
+          'STU-1002',
+          'STU-1003',
+          'STU-1004',
+          'SEC-2011',
+          'SEC-2015',
+          'SEC-2016',
+          'SEC-2029'
+      )
+),
+desired_special_academic_careers(
+    alt_id,
+    academic_career_code,
+    status,
+    effective_start_date,
+    effective_end_date,
+    primary_career,
+    entry_reason,
+    notes
+) AS (
+    VALUES
+        ('STU-1002', 'UNDERGRADUATE', 'INTENT_TO_GRADUATE', '2022-08-22'::date, NULL::date, FALSE, 'POC seed', 'Undergraduate intent-to-graduate status example.'),
+        ('STU-1003', 'UNDERGRADUATE', 'LEAVE_OF_ABSENCE', '2024-08-26'::date, NULL::date, FALSE, 'POC seed', 'Leave-of-absence status example.'),
+        ('STU-1004', 'UNDERGRADUATE', 'GRADUATED', '2020-08-24'::date, '2024-05-12'::date, FALSE, 'POC seed', 'Completed undergraduate history before graduate study.'),
+        ('STU-1004', 'GRADUATE', 'ACTIVE', '2026-08-20'::date, NULL::date, TRUE, 'POC seed', 'Active graduate career after undergraduate graduation.'),
+        ('SEC-2011', 'GRADUATE', 'ACTIVE', '2026-08-20'::date, NULL::date, TRUE, 'POC seed', 'Registration roster graduate career example.'),
+        ('SEC-2015', 'UNDERGRADUATE', 'WITHDRAWN', '2024-08-26'::date, NULL::date, FALSE, 'POC seed', 'Withdrawn career example with no registration eligibility.'),
+        ('SEC-2016', 'UNDERGRADUATE', 'GRADUATED', '2020-08-24'::date, '2024-05-12'::date, FALSE, 'POC seed', 'Graduated career example with no current registration eligibility.'),
+        ('SEC-2029', 'UNDERGRADUATE', 'GRADUATED', '2021-08-23'::date, '2025-05-18'::date, FALSE, 'POC seed', 'Undergraduate alumni history before seminary study.'),
+        ('SEC-2029', 'SEMINARY', 'ACTIVE', '2026-08-20'::date, NULL::date, TRUE, 'POC seed', 'Active seminary career with undergraduate, graduate, and seminary registration access.')
+),
+desired_academic_careers AS (
+    SELECT * FROM desired_default_academic_careers
+    UNION ALL
+    SELECT * FROM desired_special_academic_careers
+)
+INSERT INTO student_academic_career (
+    student_id,
+    academic_career_id,
+    status,
+    effective_start_date,
+    effective_end_date,
+    primary_career,
+    entry_reason,
+    notes,
+    created_by_user_id,
+    updated_by_user_id
+)
+SELECT student.student_id,
+       academic_career.academic_career_id,
+       desired_academic_careers.status,
+       desired_academic_careers.effective_start_date,
+       desired_academic_careers.effective_end_date,
+       desired_academic_careers.primary_career,
+       desired_academic_careers.entry_reason,
+       desired_academic_careers.notes,
+       actor.id,
+       actor.id
+FROM desired_academic_careers
+JOIN student ON student.alt_id = desired_academic_careers.alt_id
+JOIN academic_career ON academic_career.code = desired_academic_careers.academic_career_code
+LEFT JOIN users actor ON actor.email = 'frodo@shire.me';
+
+UPDATE student_program student_program
+SET student_academic_career_id = student_academic_career.student_academic_career_id
+FROM student,
+     program_version,
+     program,
+     student_academic_career,
+     academic_career
+WHERE student.student_id = student_program.student_id
+  AND program_version.program_version_id = student_program.program_version_id
+  AND program.program_id = program_version.program_id
+  AND student_academic_career.student_id = student.student_id
+  AND academic_career.academic_career_id = student_academic_career.academic_career_id
+  AND student_academic_career.status = 'ACTIVE'
+  AND student_academic_career.effective_end_date IS NULL
+  AND academic_career.code = CASE
+      WHEN student.alt_id = 'SEC-2029' THEN 'SEMINARY'
+      WHEN program.code = 'HIST-MA' THEN 'GRADUATE'
+      ELSE 'UNDERGRADUATE'
+  END;
+
 SELECT setval(pg_get_serial_sequence('student_program', 'student_program_id'), COALESCE((SELECT MAX(student_program_id) FROM student_program), 1), TRUE);
 SELECT setval(pg_get_serial_sequence('student_program_request', 'student_program_request_id'), COALESCE((SELECT MAX(student_program_request_id) FROM student_program_request), 1), TRUE);
+SELECT setval(pg_get_serial_sequence('student_academic_career', 'student_academic_career_id'), COALESCE((SELECT MAX(student_academic_career_id) FROM student_academic_career), 1), TRUE);
 SELECT setval(pg_get_serial_sequence('program_version_completion_requirement', 'program_version_completion_requirement_id'), COALESCE((SELECT MAX(program_version_completion_requirement_id) FROM program_version_completion_requirement), 1), TRUE);
 SELECT setval(pg_get_serial_sequence('program_version_completion_requirement_option', 'program_version_completion_requirement_option_id'), COALESCE((SELECT MAX(program_version_completion_requirement_option_id) FROM program_version_completion_requirement_option), 1), TRUE);
 SELECT setval(pg_get_serial_sequence('student_academic_plan', 'student_academic_plan_id'), COALESCE((SELECT MAX(student_academic_plan_id) FROM student_academic_plan), 1), TRUE);

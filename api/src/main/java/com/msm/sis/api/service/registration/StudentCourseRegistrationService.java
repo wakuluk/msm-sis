@@ -3,14 +3,17 @@ package com.msm.sis.api.service.registration;
 import com.msm.sis.api.dto.registration.course.AddStudentCourseRegistrationSelectionRequest;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationFailureResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationEnrollmentResponse;
+import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationRequisiteGroupResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationRequisiteResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationScheduleConflictResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationScheduleMeetingResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationSelectionResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationSubmitResponse;
+import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationWarningResponse;
 import com.msm.sis.api.dto.registration.course.StudentCourseRegistrationWindowResponse;
 import com.msm.sis.api.dto.registration.course.SubmitStudentCourseRegistrationRequest;
+import com.msm.sis.api.entity.AcademicDivision;
 import com.msm.sis.api.entity.AcademicSubject;
 import com.msm.sis.api.entity.AcademicSubTerm;
 import com.msm.sis.api.entity.AcademicTerm;
@@ -39,6 +42,7 @@ import com.msm.sis.api.repository.GradingBasisRepository;
 import com.msm.sis.api.repository.RegistrationGroupStudentRepository;
 import com.msm.sis.api.repository.SisUserRepository;
 import com.msm.sis.api.repository.StudentCourseRegistrationSelectionRepository;
+import com.msm.sis.api.repository.StudentHonorsRepository;
 import com.msm.sis.api.repository.StudentRepository;
 import com.msm.sis.api.repository.StudentSectionEnrollmentRepository;
 import com.msm.sis.api.repository.StudentSectionWaitlistOfferRepository;
@@ -46,6 +50,7 @@ import com.msm.sis.api.service.course.StudentSectionEnrollmentEventService;
 import com.msm.sis.api.service.course.StudentSectionEnrollmentReferenceResolver;
 import com.msm.sis.api.service.course.StudentSectionEnrollmentStatusService;
 import com.msm.sis.api.service.course.StudentSectionWaitlistActivationService;
+import com.msm.sis.api.service.student.StudentAcademicCareerEligibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -63,6 +68,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -70,6 +76,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class StudentCourseRegistrationService {
     private static final Set<String> STUDENT_REGISTRATION_SECTION_STATUSES = Set.of("PLANNED");
+    private static final List<String> SEAT_HOLDING_STATUS_CODES = List.of(
+            "REGISTERED",
+            "IN_PROGRESS"
+    );
 
     private final AcademicTermRepository academicTermRepository;
     private final CourseSectionInstructorRepository courseSectionInstructorRepository;
@@ -88,6 +98,8 @@ public class StudentCourseRegistrationService {
     private final StudentCourseRequisiteValidationService requisiteValidationService;
     private final StudentCoursePrerequisiteEvidenceService prerequisiteEvidenceService;
     private final StudentCourseRegistrationRequisiteDisplayService requisiteDisplayService;
+    private final StudentAcademicCareerEligibilityService academicCareerEligibilityService;
+    private final StudentHonorsRepository studentHonorsRepository;
     private final StudentSectionEnrollmentEventService enrollmentEventService;
     private final StudentSectionEnrollmentReferenceResolver enrollmentReferenceResolver;
     private final StudentSectionEnrollmentStatusService enrollmentStatusService;
@@ -142,10 +154,19 @@ public class StudentCourseRegistrationService {
                             selection.getCourseSection(),
                             plannedPrerequisiteEvidence
                     );
+                    List<StudentCourseRegistrationRequisiteGroupResponse> requisiteGroups = findRequisiteGroups(
+                            student.getId(),
+                            selection.getCourseSection(),
+                            plannedPrerequisiteEvidence
+                    );
                     List<String> corequisiteWarnings = findCorequisiteWarnings(
                             student.getId(),
                             selection,
                             selectedCourseIds
+                    );
+                    String honorsWarningMessage = findHonorsWarningMessage(
+                            student.getId(),
+                            selection.getCourseSection()
                     );
 
                     return mapper.toSelectionResponse(
@@ -154,7 +175,9 @@ public class StudentCourseRegistrationService {
                             counts.enrolledCount(),
                             counts.waitlistCount(),
                             requisites,
-                            corequisiteWarnings
+                            requisiteGroups,
+                            corequisiteWarnings,
+                            honorsWarningMessage
                     );
                 })
                 .toList();
@@ -168,6 +191,11 @@ public class StudentCourseRegistrationService {
                             enrollment.getCourseSection(),
                             plannedPrerequisiteEvidence
                     );
+                    List<StudentCourseRegistrationRequisiteGroupResponse> requisiteGroups = findRequisiteGroups(
+                            student.getId(),
+                            enrollment.getCourseSection(),
+                            plannedPrerequisiteEvidence
+                    );
 
                     return mapper.toEnrollmentResponse(
                             term,
@@ -175,7 +203,8 @@ public class StudentCourseRegistrationService {
                             waitlistOffersByEnrollmentId.get(enrollment.getId()),
                             counts.enrolledCount(),
                             counts.waitlistCount(),
-                            requisites
+                            requisites,
+                            requisiteGroups
                     );
                 })
                 .toList();
@@ -189,6 +218,11 @@ public class StudentCourseRegistrationService {
                             enrollment.getCourseSection(),
                             plannedPrerequisiteEvidence
                     );
+                    List<StudentCourseRegistrationRequisiteGroupResponse> requisiteGroups = findRequisiteGroups(
+                            student.getId(),
+                            enrollment.getCourseSection(),
+                            plannedPrerequisiteEvidence
+                    );
 
                     return mapper.toEnrollmentResponse(
                             term,
@@ -196,7 +230,8 @@ public class StudentCourseRegistrationService {
                             waitlistOffersByEnrollmentId.get(enrollment.getId()),
                             counts.enrolledCount(),
                             counts.waitlistCount(),
-                            requisites
+                            requisites,
+                            requisiteGroups
                     );
                 })
                 .toList();
@@ -210,6 +245,11 @@ public class StudentCourseRegistrationService {
                             enrollment.getCourseSection(),
                             plannedPrerequisiteEvidence
                     );
+                    List<StudentCourseRegistrationRequisiteGroupResponse> requisiteGroups = findRequisiteGroups(
+                            student.getId(),
+                            enrollment.getCourseSection(),
+                            plannedPrerequisiteEvidence
+                    );
 
                     return mapper.toEnrollmentResponse(
                             term,
@@ -217,7 +257,8 @@ public class StudentCourseRegistrationService {
                             waitlistOffersByEnrollmentId.get(enrollment.getId()),
                             counts.enrolledCount(),
                             counts.waitlistCount(),
-                            requisites
+                            requisites,
+                            requisiteGroups
                     );
                 })
                 .toList();
@@ -403,6 +444,8 @@ public class StudentCourseRegistrationService {
                 plannedPrerequisiteEvidence
         );
         scheduleConflictService.assertNoConflicts(student.getId(), registrationGroup, section);
+        validateAcademicCareerAllowsSection(student.getId(), section);
+        validateHonorsAllowsSection(student.getId(), section);
 
         StudentCourseRegistrationSelection selection = new StudentCourseRegistrationSelection();
         selection.setStudent(student);
@@ -443,7 +486,7 @@ public class StudentCourseRegistrationService {
                 ));
         StudentCourseRegistrationWindowResponse registrationWindow =
                 contextService.getRegistrationWindowForStudent(student.getId(), registrationGroupId, termId);
-        validateRegistrationWindowOpen(registrationWindow);
+        validateRegistrationGroupPublished(registrationWindow);
         StudentCourseRegistrationSelection selection = selectionRepository.findSelectionForStudent(
                         selectionId,
                         student.getId()
@@ -572,6 +615,7 @@ public class StudentCourseRegistrationService {
         List<Long> registeredEnrollmentIds = new ArrayList<>();
         List<Long> waitlistedEnrollmentIds = new ArrayList<>();
         List<StudentCourseRegistrationFailureResponse> failures = new ArrayList<>();
+        List<StudentCourseRegistrationWarningResponse> warnings = new ArrayList<>();
         Set<Long> duplicateCourseSelectionIds = addDuplicateCourseFailures(
                 student.getId(),
                 selectedSelections,
@@ -587,6 +631,22 @@ public class StudentCourseRegistrationService {
         Set<Long> preRegistrationFailureIds = new HashSet<>();
         preRegistrationFailureIds.addAll(duplicateCourseSelectionIds);
         preRegistrationFailureIds.addAll(scheduleConflictSelectionIds);
+        Set<Long> academicCareerEligibilityFailureIds = addAcademicCareerEligibilityFailures(
+                student.getId(),
+                chronologicalSelections.stream()
+                        .filter(selection -> !preRegistrationFailureIds.contains(selection.getId()))
+                        .toList(),
+                failures
+        );
+        preRegistrationFailureIds.addAll(academicCareerEligibilityFailureIds);
+        Set<Long> honorsEligibilityFailureIds = addHonorsEligibilityFailures(
+                student.getId(),
+                chronologicalSelections.stream()
+                        .filter(selection -> !preRegistrationFailureIds.contains(selection.getId()))
+                        .toList(),
+                failures
+        );
+        preRegistrationFailureIds.addAll(honorsEligibilityFailureIds);
         Set<Long> prerequisiteFailureSelectionIds = addPrerequisiteFailures(
                 student.getId(),
                 chronologicalSelections.stream()
@@ -621,6 +681,9 @@ public class StudentCourseRegistrationService {
             }
             if (result.failure() != null) {
                 failures.add(result.failure());
+            } else {
+                findHonorsSubmitWarning(student.getId(), selection)
+                        .ifPresent(warnings::add);
             }
         }
 
@@ -659,6 +722,7 @@ public class StudentCourseRegistrationService {
                 waitlisted,
                 removedFailures,
                 retryableFailures,
+                List.copyOf(warnings),
                 refreshed
         );
     }
@@ -688,16 +752,20 @@ public class StudentCourseRegistrationService {
     }
 
     private void validateRegistrationWindowOpen(StudentCourseRegistrationWindowResponse registrationWindow) {
-        if (!RegistrationGroupStatusSupport.PUBLISHED.equals(normalizeCode(registrationWindow.statusCode()))) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Registration group is not published."
-            );
-        }
+        validateRegistrationGroupPublished(registrationWindow);
         if (!registrationWindow.registrationWindowOpen()) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Registration window is not open."
+            );
+        }
+    }
+
+    private void validateRegistrationGroupPublished(StudentCourseRegistrationWindowResponse registrationWindow) {
+        if (!RegistrationGroupStatusSupport.PUBLISHED.equals(normalizeCode(registrationWindow.statusCode()))) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Registration group is not published."
             );
         }
     }
@@ -852,6 +920,93 @@ public class StudentCourseRegistrationService {
         return failedSelectionIds;
     }
 
+    private Set<Long> addAcademicCareerEligibilityFailures(
+            Long studentId,
+            List<StudentCourseRegistrationSelection> selectedSelections,
+            List<StudentCourseRegistrationFailureResponse> failures
+    ) {
+        if (selectedSelections.isEmpty()) {
+            return Set.of();
+        }
+
+        Set<Long> failedSelectionIds = new HashSet<>();
+        for (StudentCourseRegistrationSelection selection : selectedSelections) {
+            try {
+                validateAcademicCareerAllowsSection(studentId, selection.getCourseSection());
+            } catch (ResponseStatusException exception) {
+                failedSelectionIds.add(selection.getId());
+                CourseSection section = selection.getCourseSection();
+                failures.add(new StudentCourseRegistrationFailureResponse(
+                        selection.getId(),
+                        sectionId(section),
+                        courseCode(section),
+                        displaySectionCode(section),
+                        "ACADEMIC_CAREER_DIVISION_NOT_ALLOWED",
+                        reason(
+                                exception,
+                                "This student's academic career does not allow registration for this course."
+                        ),
+                        false,
+                        true
+                ));
+            }
+        }
+
+        return failedSelectionIds;
+    }
+
+    private Set<Long> addHonorsEligibilityFailures(
+            Long studentId,
+            List<StudentCourseRegistrationSelection> selectedSelections,
+            List<StudentCourseRegistrationFailureResponse> failures
+    ) {
+        if (selectedSelections.isEmpty()) {
+            return Set.of();
+        }
+
+        Set<Long> failedSelectionIds = new HashSet<>();
+        for (StudentCourseRegistrationSelection selection : selectedSelections) {
+            try {
+                validateHonorsAllowsSection(studentId, selection.getCourseSection());
+            } catch (ResponseStatusException exception) {
+                failedSelectionIds.add(selection.getId());
+                CourseSection section = selection.getCourseSection();
+                failures.add(new StudentCourseRegistrationFailureResponse(
+                        selection.getId(),
+                        sectionId(section),
+                        courseCode(section),
+                        displaySectionCode(section),
+                        "HONORS_ELIGIBILITY_NOT_SATISFIED",
+                        reason(exception, "Only honors students may register for honors sections."),
+                        false,
+                        true
+                ));
+            }
+        }
+
+        return failedSelectionIds;
+    }
+
+    private Optional<StudentCourseRegistrationWarningResponse> findHonorsSubmitWarning(
+            Long studentId,
+            StudentCourseRegistrationSelection selection
+    ) {
+        CourseSection section = selection.getCourseSection();
+        String honorsWarningMessage = findHonorsWarningMessage(studentId, section);
+        if (honorsWarningMessage == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new StudentCourseRegistrationWarningResponse(
+                selection.getId(),
+                sectionId(section),
+                courseCode(section),
+                displaySectionCode(section),
+                "HONORS_SECTION_AVAILABLE",
+                honorsWarningMessage
+        ));
+    }
+
     private RegistrationAttemptResult registerSelection(
             Student student,
             SisUser actorUser,
@@ -866,10 +1021,12 @@ public class StudentCourseRegistrationService {
             validateSectionAvailable(section);
             validateNotAlreadyEnrolled(student.getId(), section.getId());
             requisiteValidationService.validateForPreRegistration(
-                    student.getId(),
-                    section,
-                    plannedPrerequisiteEvidence
+                student.getId(),
+                section,
+                plannedPrerequisiteEvidence
             );
+            validateAcademicCareerAllowsSection(student.getId(), section);
+            validateHonorsAllowsSection(student.getId(), section);
 
             StudentSectionEnrollmentStatus status = determineEnrollmentStatus(section, waitlistIfFull);
             StudentSectionEnrollment enrollment = createEnrollment(student, actorUser, selection, status);
@@ -945,12 +1102,9 @@ public class StudentCourseRegistrationService {
             CourseSection section,
             boolean waitlistIfFull
     ) {
-        long registeredCount = enrollmentRepository.countBySectionIdAndStatusCode(
-                section.getId(),
-                "REGISTERED"
-        );
-        boolean seatAvailable = section.getCapacity() == null || registeredCount < section.getCapacity();
-        boolean hardCapacityReached = section.getHardCapacity() != null && registeredCount >= section.getHardCapacity();
+        long seatHoldingCount = countSeatHoldingEnrollments(section);
+        boolean seatAvailable = section.getCapacity() == null || seatHoldingCount < section.getCapacity();
+        boolean hardCapacityReached = section.getHardCapacity() != null && seatHoldingCount >= section.getHardCapacity();
 
         if (seatAvailable && !hardCapacityReached) {
             return enrollmentReferenceResolver.resolveEnrollmentStatus("REGISTERED");
@@ -974,16 +1128,20 @@ public class StudentCourseRegistrationService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Waitlist offer is no longer available.");
         }
 
-        long registeredCount = enrollmentRepository.countBySectionIdAndStatusCode(
-                section.getId(),
-                "REGISTERED"
-        );
-        if (section.getHardCapacity() != null && registeredCount >= section.getHardCapacity()) {
+        long seatHoldingCount = countSeatHoldingEnrollments(section);
+        if (section.getHardCapacity() != null && seatHoldingCount >= section.getHardCapacity()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Course section has reached its hard capacity.");
         }
-        if (section.getCapacity() != null && registeredCount >= section.getCapacity()) {
+        if (section.getCapacity() != null && seatHoldingCount >= section.getCapacity()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Seat is no longer available.");
         }
+    }
+
+    private long countSeatHoldingEnrollments(CourseSection section) {
+        return enrollmentRepository.countBySectionIdAndStatusCodes(
+                section.getId(),
+                SEAT_HOLDING_STATUS_CODES
+        );
     }
 
     private StudentSectionEnrollment createEnrollment(
@@ -1068,7 +1226,7 @@ public class StudentCourseRegistrationService {
     ) {
         StudentCourseRegistrationWindowResponse registrationWindow =
                 contextService.getRegistrationWindowForStudent(studentId, registrationGroupId, termId);
-        validateRegistrationWindowOpen(registrationWindow);
+        validateRegistrationGroupPublished(registrationWindow);
 
         if (!Objects.equals(registrationWindow.termId(), sectionTerm.getId())) {
             throw new ResponseStatusException(
@@ -1161,6 +1319,60 @@ public class StudentCourseRegistrationService {
                 .ifPresent(duplicate -> {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, duplicate.message());
                 });
+    }
+
+    private void validateAcademicCareerAllowsSection(Long studentId, CourseSection section) {
+        AcademicDivision academicDivision = section.getAcademicDivision();
+        String academicDivisionCode = academicDivision == null ? null : academicDivision.getCode();
+        academicCareerEligibilityService.validateCanRegisterForAcademicDivision(studentId, academicDivisionCode);
+    }
+
+    private void validateHonorsAllowsSection(Long studentId, CourseSection section) {
+        if (!section.isHonors()) {
+            return;
+        }
+
+        boolean honorsStudent = studentHonorsRepository.findForStudent(studentId)
+                .map(honors -> honors.isActive())
+                .orElse(false);
+        if (!honorsStudent) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Only honors students may register for honors sections."
+            );
+        }
+    }
+
+    private String findHonorsWarningMessage(Long studentId, CourseSection section) {
+        if (section == null || section.isHonors() || !isActiveHonorsStudent(studentId)) {
+            return null;
+        }
+        CourseOffering courseOffering = section.getCourseOffering();
+        AcademicSubTerm subTerm = section.getSubTerm();
+        if (courseOffering == null
+                || courseOffering.getId() == null
+                || subTerm == null
+                || subTerm.getId() == null
+                || section.getId() == null) {
+            return null;
+        }
+
+        boolean honorsSectionAvailable =
+                courseSectionRepository.existsPlannedHonorsSectionForOfferingAndSubTermExcludingSection(
+                        courseOffering.getId(),
+                        subTerm.getId(),
+                        section.getId()
+                );
+
+        return honorsSectionAvailable
+                ? "An honors section is available for this course."
+                : null;
+    }
+
+    private boolean isActiveHonorsStudent(Long studentId) {
+        return studentHonorsRepository.findForStudent(studentId)
+                .map(honors -> honors.isActive())
+                .orElse(false);
     }
 
     private GradingBasis resolveSelectedGradingBasis(
@@ -1385,6 +1597,24 @@ public class StudentCourseRegistrationService {
         );
     }
 
+    private List<StudentCourseRegistrationRequisiteGroupResponse> findRequisiteGroups(
+            Long studentId,
+            CourseSection section,
+            List<StudentCoursePlannedPrerequisiteEvidence> plannedPrerequisiteEvidence
+    ) {
+        Long courseVersionId = courseVersionId(section);
+        if (courseVersionId == null) {
+            return List.of();
+        }
+
+        return requisiteDisplayService.findRequisiteGroupsForStudentCourseVersion(
+                studentId,
+                courseVersionId,
+                section,
+                plannedPrerequisiteEvidence
+        );
+    }
+
     private Long sectionId(CourseSection section) {
         return section == null ? null : section.getId();
     }
@@ -1430,8 +1660,7 @@ public class StudentCourseRegistrationService {
             return null;
         }
 
-        String displayCode = section.getSectionLetter() == null ? "" : section.getSectionLetter().trim();
-        return section.isHonors() ? displayCode + "H" : displayCode;
+        return section.getSectionLetter() == null ? "" : section.getSectionLetter().trim();
     }
 
     private LocalDate subTermStartDate(CourseSection section) {

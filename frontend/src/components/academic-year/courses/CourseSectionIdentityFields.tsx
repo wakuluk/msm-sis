@@ -13,6 +13,10 @@ import {
   type TextInputProps,
 } from '@mantine/core';
 import type { CourseSectionDraft, SelectOption } from './courseSectionsWorkspaceTypes';
+import {
+  ensureHonorsSectionCode,
+  removeHonorsSectionSuffix,
+} from './courseSectionCodeUtils';
 
 type CourseSectionIdentityFieldsProps = {
   draft: CourseSectionDraft;
@@ -45,9 +49,13 @@ export function CourseSectionIdentityFields({
             readOnly={fieldsDisabled}
             styles={readOnlyInputStyles}
             onChange={(event) => {
+              const nextSectionCode = draft.honors
+                ? ensureHonorsSectionCode(event.currentTarget.value)
+                : removeHonorsSectionSuffix(event.currentTarget.value);
+
               setDraft((current) => ({
                 ...current,
-                sectionCode: event.currentTarget.value,
+                sectionCode: nextSectionCode,
               }));
             }}
           />
@@ -60,9 +68,14 @@ export function CourseSectionIdentityFields({
             styles={readOnlySwitchStyles}
             mt="lg"
             onChange={(event) => {
+              const honors = event.currentTarget.checked;
+
               setDraft((current) => ({
                 ...current,
-                honors: event.currentTarget.checked,
+                honors,
+                sectionCode: honors
+                  ? ensureHonorsSectionCode(current.sectionCode)
+                  : removeHonorsSectionSuffix(current.sectionCode),
               }));
             }}
           />

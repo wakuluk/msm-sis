@@ -128,6 +128,35 @@ export type StudentCourseRegistrationRequisiteResponse = z.infer<
   typeof StudentCourseRegistrationRequisiteResponseSchema
 >;
 
+export const StudentCourseRegistrationRequisiteOptionResponseSchema = z.object({
+  courseVersionRequisiteCourseId: NullableNumberSchema,
+  requiredCourseId: NullableNumberSchema,
+  requiredCourseCode: NullableStringSchema,
+  requiredCourseLab: z.boolean(),
+  minimumGrade: NullableStringSchema,
+  studentEvidence: NullableStringSchema,
+  status: NullableStringSchema,
+});
+
+export type StudentCourseRegistrationRequisiteOptionResponse = z.infer<
+  typeof StudentCourseRegistrationRequisiteOptionResponseSchema
+>;
+
+export const StudentCourseRegistrationRequisiteGroupResponseSchema = z.object({
+  groupId: NullableNumberSchema,
+  requisiteType: NullableStringSchema,
+  conditionType: NullableStringSchema,
+  minimumRequired: NullableNumberSchema,
+  minimumGradeSummary: NullableStringSchema,
+  status: NullableStringSchema,
+  title: NullableStringSchema,
+  courses: z.array(StudentCourseRegistrationRequisiteOptionResponseSchema).optional().default([]),
+});
+
+export type StudentCourseRegistrationRequisiteGroupResponse = z.infer<
+  typeof StudentCourseRegistrationRequisiteGroupResponseSchema
+>;
+
 export const StudentCourseRegistrationSelectionResponseSchema = z.object({
   selectionId: NullableNumberSchema,
   sectionId: NullableNumberSchema,
@@ -158,7 +187,11 @@ export const StudentCourseRegistrationSelectionResponseSchema = z.object({
   selectedGradingBasisName: NullableStringSchema,
   credits: NullableNumberSchema,
   selectedCredits: NullableNumberSchema,
+  honors: z.boolean().optional().default(false),
+  honorsEligibilitySatisfied: z.boolean().optional(),
+  honorsEligibilityMessage: OptionalNullableStringSchema,
   capacity: NullableNumberSchema,
+  hardCapacity: OptionalNullableNumberSchema,
   waitlistAllowed: z.boolean(),
   enrolledCount: NullableNumberSchema,
   waitlistCount: NullableNumberSchema,
@@ -170,7 +203,12 @@ export const StudentCourseRegistrationSelectionResponseSchema = z.object({
   createdAt: NullableDateStringSchema,
   updatedAt: NullableDateStringSchema,
   requisites: z.array(StudentCourseRegistrationRequisiteResponseSchema).optional().default([]),
+  requisiteGroups: z
+    .array(StudentCourseRegistrationRequisiteGroupResponseSchema)
+    .optional()
+    .default([]),
   corequisiteWarnings: z.array(z.string()).optional().default([]),
+  honorsWarningMessage: OptionalNullableStringSchema,
   meetings: z.array(StudentCourseRegistrationMeetingResponseSchema),
 });
 
@@ -205,8 +243,13 @@ export const StudentCourseRegistrationEnrollmentResponseSchema = z.object({
   gradingBasisName: NullableStringSchema,
   creditsAttempted: NullableNumberSchema,
   creditsEarned: NullableNumberSchema,
+  honors: z.boolean().optional().default(false),
+  honorsEligibilitySatisfied: z.boolean().optional(),
+  honorsEligibilityMessage: OptionalNullableStringSchema,
+  honorsWarningMessage: OptionalNullableStringSchema,
   waitlistPosition: NullableNumberSchema,
   capacity: NullableNumberSchema,
+  hardCapacity: OptionalNullableNumberSchema,
   enrolledCount: NullableNumberSchema,
   waitlistCount: NullableNumberSchema,
   waitlistOfferId: OptionalNullableNumberSchema,
@@ -220,6 +263,10 @@ export const StudentCourseRegistrationEnrollmentResponseSchema = z.object({
   registeredAt: NullableDateStringSchema,
   waitlistedAt: NullableDateStringSchema,
   requisites: z.array(StudentCourseRegistrationRequisiteResponseSchema).optional().default([]),
+  requisiteGroups: z
+    .array(StudentCourseRegistrationRequisiteGroupResponseSchema)
+    .optional()
+    .default([]),
   meetings: z.array(StudentCourseRegistrationMeetingResponseSchema),
 });
 
@@ -334,6 +381,19 @@ export type StudentCourseRegistrationFailureResponse = z.infer<
   typeof StudentCourseRegistrationFailureResponseSchema
 >;
 
+export const StudentCourseRegistrationWarningResponseSchema = z.object({
+  selectionId: NullableNumberSchema,
+  sectionId: NullableNumberSchema,
+  courseCode: NullableStringSchema,
+  displaySectionCode: NullableStringSchema,
+  warningCode: z.string(),
+  message: z.string(),
+});
+
+export type StudentCourseRegistrationWarningResponse = z.infer<
+  typeof StudentCourseRegistrationWarningResponseSchema
+>;
+
 export const StudentCourseRegistrationSubmitResponseSchema = z.object({
   message: z.string(),
   submittedCount: z.number(),
@@ -345,6 +405,7 @@ export const StudentCourseRegistrationSubmitResponseSchema = z.object({
   waitlisted: z.array(StudentCourseRegistrationEnrollmentResponseSchema),
   removedFailures: z.array(StudentCourseRegistrationFailureResponseSchema),
   retryableFailures: z.array(StudentCourseRegistrationFailureResponseSchema),
+  warnings: z.array(StudentCourseRegistrationWarningResponseSchema).optional().default([]),
   registrationPage: StudentCourseRegistrationResponseSchema,
 });
 
@@ -383,7 +444,9 @@ export const StudentCourseSectionSearchResultResponseSchema = z.object({
   gradingBasisCode: NullableStringSchema,
   gradingBasisName: NullableStringSchema,
   credits: NullableNumberSchema,
+  honors: z.boolean(),
   capacity: NullableNumberSchema,
+  hardCapacity: OptionalNullableNumberSchema,
   waitlistAllowed: z.boolean(),
   enrolledCount: NullableNumberSchema,
   waitlistCount: NullableNumberSchema,
@@ -399,8 +462,17 @@ export const StudentCourseSectionSearchResultResponseSchema = z.object({
   sameCourseAlreadyEnrolled: z.boolean(),
   duplicateCourseReason: NullableStringSchema,
   prerequisitesSatisfied: z.boolean(),
+  registrationEligibilitySatisfied: z.boolean(),
+  registrationEligibilityMessage: NullableStringSchema,
+  honorsEligibilitySatisfied: z.boolean(),
+  honorsEligibilityMessage: NullableStringSchema,
+  honorsWarningMessage: NullableStringSchema,
   unavailableReason: NullableStringSchema,
   requisites: z.array(StudentCourseRegistrationRequisiteResponseSchema).optional().default([]),
+  requisiteGroups: z
+    .array(StudentCourseRegistrationRequisiteGroupResponseSchema)
+    .optional()
+    .default([]),
   corequisiteWarnings: z.array(z.string()).optional().default([]),
   meetings: z.array(StudentCourseRegistrationMeetingResponseSchema),
 });
@@ -409,12 +481,54 @@ export type StudentCourseSectionSearchResultResponse = z.infer<
   typeof StudentCourseSectionSearchResultResponseSchema
 >;
 
+export const StudentCourseSectionDetailResponseSchema =
+  StudentCourseSectionSearchResultResponseSchema;
+
+export type StudentCourseSectionDetailResponse = z.infer<
+  typeof StudentCourseSectionDetailResponseSchema
+>;
+
+export const StudentCourseSectionSearchRowResponseSchema = z.object({
+  sectionId: NullableNumberSchema,
+  courseId: NullableNumberSchema,
+  courseVersionId: NullableNumberSchema,
+  courseOfferingId: NullableNumberSchema,
+  termId: NullableNumberSchema,
+  termCode: NullableStringSchema,
+  termName: NullableStringSchema,
+  subTermId: NullableNumberSchema,
+  subTermCode: NullableStringSchema,
+  subTermName: NullableStringSchema,
+  subTermStartDate: NullableDateStringSchema,
+  subTermEndDate: NullableDateStringSchema,
+  courseCode: NullableStringSchema,
+  courseTitle: NullableStringSchema,
+  sectionLetter: NullableStringSchema,
+  displaySectionCode: NullableStringSchema,
+  academicDivisionId: NullableNumberSchema,
+  academicDivisionCode: NullableStringSchema,
+  academicDivisionName: NullableStringSchema,
+  credits: NullableNumberSchema,
+  honors: z.boolean(),
+  capacity: NullableNumberSchema,
+  hardCapacity: OptionalNullableNumberSchema,
+  enrolledCount: NullableNumberSchema,
+  waitlistCount: NullableNumberSchema,
+  seatsAvailable: NullableNumberSchema,
+  instructorSummary: NullableStringSchema,
+  meetingSummary: NullableStringSchema,
+});
+
+export type StudentCourseSectionSearchRowResponse = z.infer<
+  typeof StudentCourseSectionSearchRowResponseSchema
+>;
+
 export const StudentCourseSectionSearchResponseSchema = z.object({
   page: z.number(),
   size: z.number(),
   totalElements: z.number(),
   totalPages: z.number(),
-  results: z.array(StudentCourseSectionSearchResultResponseSchema),
+  results: z.array(StudentCourseSectionSearchRowResponseSchema),
 });
 
 export type StudentCourseSectionSearchResponse = z.infer<
