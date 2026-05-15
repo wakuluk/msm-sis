@@ -99,6 +99,8 @@ public class TranscriptCalculationService {
                 row.sourceCode(),
                 courseCode,
                 row.title(),
+                row.institutionName(),
+                row.mappedLocalCourseLabels(),
                 row.statusCode(),
                 row.statusName(),
                 repeatCode.code(),

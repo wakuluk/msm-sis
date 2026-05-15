@@ -19,10 +19,16 @@ export type PortalRouteItemKey =
   | 'academic-requirement-detail'
   | 'academic-degree-requests'
   | 'academic-degree-request-detail'
+  | 'academic-transfer-requests'
+  | 'academic-transfer-request-detail'
   | 'academic-student-program-review-detail'
   | 'student-transcript'
   | 'student-course-history'
   | 'student-programs'
+  | 'student-transfer-request'
+  | 'student-transfer-request-new'
+  | 'student-transfer-request-detail'
+  | 'student-approved-transfer-requests'
   | 'student-course-registration'
   | 'student-schedule'
   | 'academic-schools'
@@ -47,6 +53,9 @@ export type PortalRouteItemKey =
   | 'registration-group-detail'
   | 'academic-term-detail'
   | 'academic-term-group-detail'
+  | 'admin-transfer-credit-policy-settings'
+  | 'admin-transfer-credit-policy-settings-new'
+  | 'admin-transfer-credit-policy-settings-detail'
   | 'athletics';
 export type PortalRoutePath =
   | '/portal'
@@ -67,10 +76,16 @@ export type PortalRoutePath =
   | '/academics/requirements/:requirementId'
   | '/academics/degree-requests'
   | '/academics/degree-requests/:studentProgramRequestId'
+  | '/academics/transfer-requests'
+  | '/academics/transfer-requests/:transferRequestId'
   | '/academics/student-programs/:studentProgramId/review'
   | '/academics/transcript'
   | '/academics/course-history'
   | '/academics/student-programs'
+  | '/student/transfer-request'
+  | '/student/transfer-request/new'
+  | '/student/transfer-request/:transferRequestId'
+  | '/academics/approved-transfer-requests'
   | '/registration/course-registration'
   | '/registration/schedule'
   | '/academics/schools'
@@ -93,6 +108,9 @@ export type PortalRoutePath =
   | '/registration/groups/publish'
   | '/registration/groups/unassigned'
   | '/registration/groups/:registrationGroupId'
+  | '/admin/settings/transfer-credit-policy'
+  | '/admin/settings/transfer-credit-policy/new'
+  | '/admin/settings/transfer-credit-policy/:policyId'
   | '/athletics'
   | '/academics/academic-sub-term/:subTermId'
   | '/academics/academic-terms/:termId';
@@ -102,8 +120,10 @@ export type PortalRouteGroupKey =
   | 'catalog'
   | 'academics'
   | 'programs'
+  | 'transfer'
   | 'calendar'
   | 'registration'
+  | 'settings'
   | 'athletics';
 
 export type PortalRouteItem = {
@@ -487,6 +507,86 @@ export const portalRoutes: PortalRouteNode[] = [
   },
   {
     kind: 'group',
+    key: 'transfer',
+    label: 'Transfer',
+    showInNav: true,
+    children: [
+      {
+        kind: 'item',
+        key: 'student-transfer-request',
+        label: 'Transfer Requests',
+        path: '/student/transfer-request',
+        requiredRoles: [PORTAL_ROLES.STUDENT],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'student-transfer-request-new',
+        label: 'New Transfer Request',
+        path: '/student/transfer-request/new',
+        requiredRoles: [PORTAL_ROLES.STUDENT],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'student-transfer-request-detail',
+        label: 'Transfer Request Detail',
+        path: '/student/transfer-request/:transferRequestId',
+        requiredRoles: [PORTAL_ROLES.STUDENT],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'student-approved-transfer-requests',
+        label: 'Approved Transfers',
+        path: '/academics/approved-transfer-requests',
+        requiredRoles: [PORTAL_ROLES.STUDENT],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-transfer-requests',
+        label: 'Transfer Requests',
+        path: '/academics/transfer-requests',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'academic-transfer-request-detail',
+        label: 'Transfer Request Detail',
+        path: '/academics/transfer-requests/:transferRequestId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'admin-transfer-credit-policy-settings',
+        label: 'Transfer Credit Policy',
+        path: '/admin/settings/transfer-credit-policy',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'admin-transfer-credit-policy-settings-new',
+        label: 'New Transfer Credit Policy',
+        path: '/admin/settings/transfer-credit-policy/new',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'admin-transfer-credit-policy-settings-detail',
+        label: 'Transfer Credit Policy Detail',
+        path: '/admin/settings/transfer-credit-policy/:policyId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+    ],
+  },
+  {
+    kind: 'group',
     key: 'registration',
     label: 'Registration',
     requiredRoles: [PORTAL_ROLES.ADMIN, PORTAL_ROLES.STUDENT],
@@ -549,6 +649,14 @@ export const portalRoutes: PortalRouteNode[] = [
         showInNav: false,
       },
     ],
+  },
+  {
+    kind: 'group',
+    key: 'settings',
+    label: 'Settings',
+    requiredRoles: [PORTAL_ROLES.ADMIN],
+    showInNav: true,
+    children: [],
   },
   {
     kind: 'group',

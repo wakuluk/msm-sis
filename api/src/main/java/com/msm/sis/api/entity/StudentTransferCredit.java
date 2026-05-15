@@ -34,13 +34,40 @@ public class StudentTransferCredit {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "transfer_institution_id", nullable = false)
+    @JoinColumn(name = "transfer_institution_id")
     private TransferInstitution transferInstitution;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "transfer_course_equivalency_id")
     private TransferCourseEquivalency transferCourseEquivalency;
+
+    @Column(name = "transfer_institution_name_snapshot", nullable = false)
+    private String transferInstitutionNameSnapshot;
+
+    @Column(name = "transfer_institution_address_line_1_snapshot")
+    private String transferInstitutionAddressLine1Snapshot;
+
+    @Column(name = "transfer_institution_address_line_2_snapshot")
+    private String transferInstitutionAddressLine2Snapshot;
+
+    @Column(name = "transfer_institution_city_snapshot")
+    private String transferInstitutionCitySnapshot;
+
+    @Column(name = "transfer_institution_state_region_snapshot")
+    private String transferInstitutionStateRegionSnapshot;
+
+    @Column(name = "transfer_institution_postal_code_snapshot")
+    private String transferInstitutionPostalCodeSnapshot;
+
+    @Column(name = "transfer_institution_country_code_snapshot")
+    private String transferInstitutionCountryCodeSnapshot;
+
+    @Column(name = "transfer_institution_website_snapshot")
+    private String transferInstitutionWebsiteSnapshot;
+
+    @Column(name = "transfer_institution_level_snapshot")
+    private String transferInstitutionLevelSnapshot;
 
     @Column(name = "external_term_label", nullable = false)
     private String externalTermLabel;

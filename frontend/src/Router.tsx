@@ -22,6 +22,9 @@ import { AcademicDepartmentDetailPage } from './pages/portal/AcademicDepartmentD
 import { CourseSearchPage } from './pages/portal/CourseSearch.page';
 import { CourseCreatePlaceholderPage } from './pages/portal/CourseCreatePlaceholder.page';
 import { CourseDetailPage } from './pages/portal/CourseDetail.page';
+import { AdminTransferCreditPolicySettingsPage } from './pages/portal/AdminTransferCreditPolicySettings.page';
+import { AdminTransferRequestDetailPage } from './pages/portal/AdminTransferRequestDetail.page';
+import { AdminTransferRequestsPage } from './pages/portal/AdminTransferRequests.page';
 import { AcademicYearsSearchPage } from './pages/portal/AcademicYearsSearch.page';
 import { AcademicYearCreatePage } from './pages/portal/AcademicYearCreate.page';
 import { AcademicYearDetailPage } from './pages/portal/AcademicYearDetail.page';
@@ -44,6 +47,8 @@ import { RegistrationGroupUnassignedBuilderPage } from './pages/portal/Registrat
 import { RegistrationGroupsPage } from './pages/portal/RegistrationGroups.page';
 import { StudentCourseRegistrationPage } from './pages/portal/StudentCourseRegistration.page';
 import { StudentSchedulePage } from './pages/portal/StudentSchedule.page';
+import { StudentApprovedTransferRequestsPage } from './pages/portal/StudentApprovedTransferRequests.page';
+import { StudentTransferRequestPage } from './pages/portal/StudentTransferRequest.page';
 import { TeachingSchedulePage } from './pages/portal/TeachingSchedule.page';
 import { TeachingScheduleSearchPage } from './pages/portal/TeachingScheduleSearch.page';
 import {
@@ -70,10 +75,16 @@ const portalRouteComponents = {
   'academic-requirement-detail': RequirementDetailPage,
   'academic-degree-requests': AcademicDegreeRequestsPage,
   'academic-degree-request-detail': ProgramRequestDetailPage,
+  'academic-transfer-requests': AdminTransferRequestsPage,
+  'academic-transfer-request-detail': AdminTransferRequestDetailPage,
   'academic-student-program-review-detail': ProgramRequestDetailPage,
   'student-transcript': StudentTranscriptPage,
   'student-course-history': StudentCourseHistoryPage,
   'student-programs': StudentProgramsPage,
+  'student-transfer-request': StudentTransferRequestPage,
+  'student-transfer-request-new': StudentTransferRequestPage,
+  'student-transfer-request-detail': StudentTransferRequestPage,
+  'student-approved-transfer-requests': StudentApprovedTransferRequestsPage,
   'student-course-registration': StudentCourseRegistrationPage,
   'student-schedule': StudentSchedulePage,
   'academic-schools': AcademicSchoolsPage,
@@ -99,6 +110,9 @@ const portalRouteComponents = {
   'academic-term-detail': AcademicTermDetailPage,
   'academic-term-group-detail': AcademicTermGroupDetailPage,
   'academic-years-search': AcademicYearsSearchPage,
+  'admin-transfer-credit-policy-settings': AdminTransferCreditPolicySettingsPage,
+  'admin-transfer-credit-policy-settings-new': AdminTransferCreditPolicySettingsPage,
+  'admin-transfer-credit-policy-settings-detail': AdminTransferCreditPolicySettingsPage,
   athletics: AthleticsPage,
   student: StudentProfilePage,
   studentCreate: StudentCreatePage,

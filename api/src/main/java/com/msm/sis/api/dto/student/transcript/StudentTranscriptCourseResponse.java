@@ -7,6 +7,8 @@ public record StudentTranscriptCourseResponse(
         String source,
         String courseCode,
         String title,
+        String institutionName,
+        String mappedLocalCourseLabels,
         String statusCode,
         String statusName,
         String repeatCode,
