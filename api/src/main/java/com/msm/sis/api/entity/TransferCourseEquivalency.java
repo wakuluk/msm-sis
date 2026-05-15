@@ -11,22 +11,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(
-        name = "transfer_course_equivalency",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uq_transfer_course_equivalency",
-                        columnNames = {"transfer_institution_id", "external_subject_code", "external_course_number"}
-                )
-        }
-)
+@Table(name = "transfer_course_equivalency")
 public class TransferCourseEquivalency {
 
     @Id
@@ -48,11 +40,27 @@ public class TransferCourseEquivalency {
     @Column(name = "external_course_title")
     private String externalCourseTitle;
 
+    @Column(name = "external_course_description")
+    private String externalCourseDescription;
+
+    @Column(name = "external_credits")
+    private BigDecimal externalCredits;
+
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
     @Column(name = "notes")
     private String notes;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_user_id")
+    private SisUser createdByUser;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by_user_id")
+    private SisUser updatedByUser;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "created_at", insertable = false, updatable = false)

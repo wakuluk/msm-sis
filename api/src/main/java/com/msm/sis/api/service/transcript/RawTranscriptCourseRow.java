@@ -12,6 +12,8 @@ public record RawTranscriptCourseRow(
         String subjectCode,
         String courseNumber,
         String title,
+        String institutionName,
+        String mappedLocalCourseLabels,
         String statusCode,
         String statusName,
         boolean completed,

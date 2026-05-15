@@ -17,9 +17,11 @@ public interface StudentTransferCreditRepository extends JpaRepository<StudentTr
                 stc.external_term_label as termLabel,
                 stc.transcript_sort_date as termSortDate,
                 'TRANSFER' as source,
-                coalesce(local_mapping.subject_code, stc.external_subject_code) as subjectCode,
-                coalesce(local_mapping.course_number, stc.external_course_number) as courseNumber,
-                coalesce(local_mapping.title, stc.external_course_title) as title,
+                stc.external_subject_code as subjectCode,
+                stc.external_course_number as courseNumber,
+                stc.external_course_title as title,
+                stc.transfer_institution_name_snapshot as institutionName,
+                local_mapping.mapped_local_course_labels as mappedLocalCourseLabels,
                 'TRANSFERRED' as statusCode,
                 'Transferred' as statusName,
                 null as repeatCode,
@@ -35,13 +37,17 @@ public interface StudentTransferCreditRepository extends JpaRepository<StudentTr
             from student_transfer_credit stc
             left join lateral (
                 select
-                    string_agg(subject.code, ', ' order by subject.code, catalog_course.course_number) as subject_code,
-                    string_agg(catalog_course.course_number, ', ' order by subject.code, catalog_course.course_number) as course_number,
                     string_agg(
-                        coalesce(current_version.title, catalog_course.course_number),
+                        concat(
+                            subject.code,
+                            ' ',
+                            catalog_course.course_number,
+                            ' ',
+                            coalesce(current_version.title, '')
+                        ),
                         '; '
                         order by subject.code, catalog_course.course_number
-                    ) as title
+                    ) as mapped_local_course_labels
                 from student_transfer_credit_course stcc
                 join course catalog_course
                   on catalog_course.course_id = stcc.course_id
@@ -107,6 +113,14 @@ public interface StudentTransferCreditRepository extends JpaRepository<StudentTr
             @Param("studentIds") List<Long> studentIds
     );
 
+    @Query("""
+            select coalesce(sum(transferCredit.creditsEarned), 0)
+            from StudentTransferCredit transferCredit
+            where transferCredit.student.id = :studentId
+              and transferCredit.creditsEarned > 0
+            """)
+    BigDecimal sumTransferCreditsByStudentId(@Param("studentId") Long studentId);
+
     interface StudentTranscriptCourseProjection {
         Long getRecordId();
 
@@ -121,6 +135,10 @@ public interface StudentTransferCreditRepository extends JpaRepository<StudentTr
         String getCourseNumber();
 
         String getTitle();
+
+        String getInstitutionName();
+
+        String getMappedLocalCourseLabels();
 
         String getStatusCode();
 

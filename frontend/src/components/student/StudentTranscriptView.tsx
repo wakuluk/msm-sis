@@ -218,7 +218,21 @@ function TranscriptTermTable({ term }: { term: StudentTranscriptTermResponse }) 
                 return (
                   <Table.Tr key={`${course.source}-${course.recordId}`}>
                     <Table.Td>{course.courseCode}</Table.Td>
-                    <Table.Td>{course.title ?? '—'}</Table.Td>
+                    <Table.Td>
+                      <Stack gap={2}>
+                        <Text size="sm">{course.title ?? '—'}</Text>
+                        {course.institutionName ? (
+                          <Text size="xs" c="dimmed">
+                            From {course.institutionName}
+                          </Text>
+                        ) : null}
+                        {course.mappedLocalCourseLabels ? (
+                          <Text size="xs" c="dimmed">
+                            Maps to {course.mappedLocalCourseLabels}
+                          </Text>
+                        ) : null}
+                      </Stack>
+                    </Table.Td>
                     <Table.Td>
                       <Badge variant="light" color={getGradeBadgeColor(course)}>
                         {course.gradeCode ?? '—'}

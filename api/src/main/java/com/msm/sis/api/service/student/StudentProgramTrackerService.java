@@ -50,6 +50,7 @@ import static com.msm.sis.api.util.ValidationUtils.requirePositiveId;
 @RequiredArgsConstructor
 public class StudentProgramTrackerService {
     private static final String COURSE_REUSE_POLICY_ALLOW_REUSE = "ALLOW_REUSE";
+    private static final String SOURCE_REQUIREMENT_WAIVER = "TRANSFER_REQUIREMENT_WAIVER";
     private static final String PROGRAM_REQUIREMENT_STATUS_COMPLETED = "completed";
     private static final String PROGRAM_REQUIREMENT_STATUS_PLANNED = "planned";
     private static final String PROGRAM_REQUIREMENT_STATUS_NEEDED = "needed";
@@ -76,6 +77,8 @@ public class StudentProgramTrackerService {
     private final StudentCourseEvidenceService studentCourseEvidenceService;
     private final StudentAcademicPlanWarningService studentAcademicPlanWarningService;
     private final StudentRequirementEvaluationService studentRequirementEvaluationService;
+    private final StudentRequirementWaiverService studentRequirementWaiverService;
+    private final RequirementProgressMath requirementProgressMath;
     private final StudentProgramTrackerMapper mapper;
 
     @Transactional
@@ -143,6 +146,8 @@ public class StudentProgramTrackerService {
         Map<Long, CourseVersion> currentCourseVersionsByCourseId =
                 buildCurrentCourseVersionsByCourseId(requirementCoursesByRequirementId);
         ProgramRequestLookup requestLookup = buildRequestLookup(studentPrograms);
+        StudentRequirementWaiverService.StudentRequirementWaiverLookup requirementWaiverLookup =
+                studentRequirementWaiverService.findApprovedRequirementWaivers(studentId);
 
         List<StudentProgramResponse> programResponses = studentPrograms.stream()
                 .map(studentProgram -> toStudentProgramResponse(
@@ -155,7 +160,8 @@ public class StudentProgramTrackerService {
                         completedEvidence,
                         completionRequirementsByProgramVersionId,
                         studentPrograms,
-                        requestLookup.findFor(studentProgram)
+                        requestLookup.findFor(studentProgram),
+                        requirementWaiverLookup
                 ))
                 .toList();
 
@@ -229,7 +235,8 @@ public class StudentProgramTrackerService {
             List<StudentCourseEvidence> completedEvidence,
             Map<Long, List<ProgramVersionCompletionRequirement>> completionRequirementsByProgramVersionId,
             List<StudentProgram> activeStudentPrograms,
-            StudentProgramRequest openRequest
+            StudentProgramRequest openRequest,
+            StudentRequirementWaiverService.StudentRequirementWaiverLookup requirementWaiverLookup
     ) {
         Long programVersionId = studentProgram.getProgramVersion() == null
                 ? null
@@ -244,19 +251,21 @@ public class StudentProgramTrackerService {
                                     allowsCourseReuse(programVersionRequirement)
                                             ? new StudentCompletionRequirementClaimTracker()
                                             : claimTracker;
+                            StudentRequirementEvaluationResult evaluationResult = evaluateRequirement(
+                                    programVersionRequirement,
+                                    requirementCoursesByRequirementId.getOrDefault(requirementId, List.of()),
+                                    requirementCourseRulesByRequirementId.getOrDefault(requirementId, List.of()),
+                                    completedEvidence,
+                                    plannedCoursesByRequirementId.getOrDefault(requirementId, List.of()),
+                                    effectiveClaimTracker,
+                                    requirementWaiverLookup.findFor(programVersionRequirement)
+                            );
                             return mapper.toStudentCompletionRequirementResponse(
                                     programVersionRequirement,
                                     requirementCoursesByRequirementId.getOrDefault(requirementId, List.of()),
                                     requirementCourseRulesByRequirementId.getOrDefault(requirementId, List.of()),
                                     currentCourseVersionsByCourseId,
-                                    studentRequirementEvaluationService.evaluate(
-                                            requirement,
-                                            requirementCoursesByRequirementId.getOrDefault(requirementId, List.of()),
-                                            requirementCourseRulesByRequirementId.getOrDefault(requirementId, List.of()),
-                                            completedEvidence,
-                                            plannedCoursesByRequirementId.getOrDefault(requirementId, List.of()),
-                                            effectiveClaimTracker
-                                    )
+                                    evaluationResult
                             );
                         })
                         .toList();
@@ -280,6 +289,88 @@ public class StudentProgramTrackerService {
 
     private boolean allowsCourseReuse(ProgramVersionRequirement programVersionRequirement) {
         return COURSE_REUSE_POLICY_ALLOW_REUSE.equals(programVersionRequirement.getCourseReusePolicy());
+    }
+
+    private StudentRequirementEvaluationResult evaluateRequirement(
+            ProgramVersionRequirement programVersionRequirement,
+            List<RequirementCourse> requirementCourses,
+            List<RequirementCourseRule> requirementCourseRules,
+            List<StudentCourseEvidence> completedEvidence,
+            List<StudentAcademicPlanCourse> plannedCourses,
+            StudentCompletionRequirementClaimTracker claimTracker,
+            StudentRequirementWaiver waiver
+    ) {
+        Requirement requirement = programVersionRequirement.getRequirement();
+        if (waiver == null) {
+            return studentRequirementEvaluationService.evaluate(
+                    requirement,
+                    requirementCourses,
+                    requirementCourseRules,
+                    completedEvidence,
+                    plannedCourses,
+                    claimTracker
+            );
+        }
+
+        return waivedEvaluationResult(requirement, requirementCourses, requirementCourseRules, waiver);
+    }
+
+    private StudentRequirementEvaluationResult waivedEvaluationResult(
+            Requirement requirement,
+            List<RequirementCourse> requirementCourses,
+            List<RequirementCourseRule> requirementCourseRules,
+            StudentRequirementWaiver waiver
+    ) {
+        String requirementType = requirement == null ? null : requirement.getRequirementType();
+        String progressUnit = "DEPARTMENT_LEVEL_COURSES".equals(requirementType)
+                ? requirementProgressMath.progressUnit(requirement, requirementCourseRules)
+                : requirementProgressMath.progressUnit(requirement);
+        java.math.BigDecimal required = requiredValue(requirement, requirementCourses, requirementCourseRules);
+        java.math.BigDecimal completed = required.compareTo(java.math.BigDecimal.ZERO) > 0
+                ? required
+                : java.math.BigDecimal.ONE;
+
+        return new StudentRequirementEvaluationResult(
+                completed,
+                java.math.BigDecimal.ZERO,
+                required,
+                progressUnit,
+                Map.of(),
+                List.of(new StudentRequirementMatchedCourse(
+                        null,
+                        "Requirement waiver",
+                        waiver.notes(),
+                        waiver.acceptedCredits(),
+                        PROGRAM_REQUIREMENT_STATUS_COMPLETED,
+                        SOURCE_REQUIREMENT_WAIVER,
+                        waiver.transferRequestOutcomeId(),
+                        null,
+                        null,
+                        null
+                ))
+        );
+    }
+
+    private java.math.BigDecimal requiredValue(
+            Requirement requirement,
+            List<RequirementCourse> requirementCourses,
+            List<RequirementCourseRule> requirementCourseRules
+    ) {
+        if (requirement == null) {
+            return java.math.BigDecimal.ZERO;
+        }
+
+        return switch (requirement.getRequirementType() == null ? "" : requirement.getRequirementType()) {
+            case "SPECIFIC_COURSES" -> requirementProgressMath.requiredValueForRequirementCourses(
+                    requirement,
+                    requirementCourses
+            );
+            case "DEPARTMENT_LEVEL_COURSES" -> requirementProgressMath.requiredValueForRequirementCourseRules(
+                    requirement,
+                    requirementCourseRules
+            );
+            default -> requirementProgressMath.requiredValue(requirement);
+        };
     }
 
     private record ProgramRequestLookup(

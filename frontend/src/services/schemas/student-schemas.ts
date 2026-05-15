@@ -278,6 +278,8 @@ export const StudentTranscriptCourseResponseSchema = z.object({
   source: z.enum(['LOCAL', 'TRANSFER']),
   courseCode: z.string(),
   title: z.string().nullable(),
+  institutionName: z.string().nullable(),
+  mappedLocalCourseLabels: z.string().nullable(),
   statusCode: z.string().nullable(),
   statusName: z.string().nullable(),
   repeatCode: z.string().nullable(),
