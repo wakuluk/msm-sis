@@ -14,6 +14,7 @@ ENROLLMENT_SEED_FILE="${ENROLLMENT_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/tes
 TRANSFER_CREDIT_SEED_FILE="${TRANSFER_CREDIT_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_transfer_credits.sql}"
 STUDENT_REGISTRATION_COURSE_SEED_FILE="${STUDENT_REGISTRATION_COURSE_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_student_registration_courses.sql}"
 PROGRAM_SEED_FILE="${PROGRAM_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_programs.sql}"
+BILLING_SEED_FILE="${BILLING_SEED_FILE:-$(cd "$(dirname "$0")" && pwd)/test_seed_billing.sql}"
 
 if [[ -n "$RESET_SEED_FILE" && ! -f "$RESET_SEED_FILE" ]]; then
   echo "Reset seed file not found: $RESET_SEED_FILE"
@@ -57,6 +58,11 @@ fi
 
 if [[ -n "$PROGRAM_SEED_FILE" && ! -f "$PROGRAM_SEED_FILE" ]]; then
   echo "Program seed file not found: $PROGRAM_SEED_FILE"
+  exit 1
+fi
+
+if [[ -n "$BILLING_SEED_FILE" && ! -f "$BILLING_SEED_FILE" ]]; then
+  echo "Billing seed file not found: $BILLING_SEED_FILE"
   exit 1
 fi
 
@@ -112,6 +118,12 @@ if [[ -n "$PROGRAM_SEED_FILE" ]]; then
   echo "Loading program seed data from: $PROGRAM_SEED_FILE"
   docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
     psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$PROGRAM_SEED_FILE"
+fi
+
+if [[ -n "$BILLING_SEED_FILE" ]]; then
+  echo "Loading billing seed data from: $BILLING_SEED_FILE"
+  docker compose exec -T -e PGPASSWORD="$DB_PASSWORD" "$DB_SERVICE" \
+    psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" < "$BILLING_SEED_FILE"
 fi
 
 echo "Seed load complete."

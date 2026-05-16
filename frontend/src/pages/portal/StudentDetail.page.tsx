@@ -24,6 +24,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAccessTokenData } from '@/auth/auth-store';
 import createClasses from '@/components/create/RecordPageLayout.module.css';
 import { StudentAffiliationsPanel } from '@/components/student-affiliations/StudentAffiliationsPanel';
+import { StudentBillingPanel } from '@/components/billing/StudentBillingPanel';
 import {
   StudentSchedulePanel,
   type LoadStudentScheduleRequest,
@@ -1142,11 +1143,7 @@ export function StudentDetailPage() {
             </Tabs.Panel>
 
             <Tabs.Panel value="billing" className={classes.tabPanel}>
-              <PlaceholderTabPanel
-                accessLabel="Admin only"
-                title="Billing"
-                description="Billing records, balances, and payment actions can live under this tab without exposing them to non-admin roles."
-              />
+              <StudentBillingPanel studentId={detail.studentId} studentName={detail.fullName} />
             </Tabs.Panel>
 
             <Tabs.Panel value="medical" className={classes.tabPanel}>

@@ -6,11 +6,14 @@ CREATE TABLE transfer_request_course (
     external_course_title VARCHAR(255) NOT NULL,
     external_course_description TEXT,
     external_term VARCHAR(100),
+    requested_local_course_equivalent TEXT,
     requested_credits DECIMAL(5,2),
     attempted_credits DECIMAL(5,2),
+    earned_credits DECIMAL(5,2),
     grade VARCHAR(20),
     reason TEXT,
     student_notes TEXT,
+    posted_student_transfer_credit_id BIGINT,
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -19,11 +22,21 @@ CREATE TABLE transfer_request_course (
         FOREIGN KEY (transfer_request_id)
             REFERENCES transfer_request(transfer_request_id) ON DELETE CASCADE,
 
+    CONSTRAINT fk_transfer_request_course_posted_credit
+        FOREIGN KEY (posted_student_transfer_credit_id)
+            REFERENCES student_transfer_credit(student_transfer_credit_id),
+
+    CONSTRAINT uq_transfer_request_course_posted_credit
+        UNIQUE (posted_student_transfer_credit_id),
+
     CONSTRAINT chk_transfer_request_course_requested_credits
         CHECK (requested_credits IS NULL OR requested_credits >= 0),
 
     CONSTRAINT chk_transfer_request_course_attempted_credits
-        CHECK (attempted_credits IS NULL OR attempted_credits >= 0)
+        CHECK (attempted_credits IS NULL OR attempted_credits >= 0),
+
+    CONSTRAINT chk_transfer_request_course_earned_credits
+        CHECK (earned_credits IS NULL OR earned_credits >= 0)
 );
 
 CREATE INDEX idx_transfer_request_course_request

@@ -2,6 +2,10 @@
 -- Migration-owned reference tables are intentionally left alone.
 
 TRUNCATE TABLE
+    billing_period_run,
+    billing_period,
+    student_tuition_code_assignment,
+    tuition_code,
     pdf_documents,
     student_section_waitlist_offer,
     student_athlete,

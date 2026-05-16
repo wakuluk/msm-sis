@@ -51,6 +51,10 @@ import { StudentApprovedTransferRequestsPage } from './pages/portal/StudentAppro
 import { StudentTransferRequestPage } from './pages/portal/StudentTransferRequest.page';
 import { TeachingSchedulePage } from './pages/portal/TeachingSchedule.page';
 import { TeachingScheduleSearchPage } from './pages/portal/TeachingScheduleSearch.page';
+import { BillingPeriodDetailPage } from './pages/portal/BillingPeriodDetail.page';
+import { BillingPeriodSearchPage } from './pages/portal/BillingPeriodSearch.page';
+import { TuitionCodeDetailPage } from './pages/portal/TuitionCodeDetail.page';
+import { TuitionCodeSearchPage } from './pages/portal/TuitionCodeSearch.page';
 import {
   AcademicDegreeRequestsPage,
   AcademicProgramCreatePage,
@@ -113,6 +117,10 @@ const portalRouteComponents = {
   'admin-transfer-credit-policy-settings': AdminTransferCreditPolicySettingsPage,
   'admin-transfer-credit-policy-settings-new': AdminTransferCreditPolicySettingsPage,
   'admin-transfer-credit-policy-settings-detail': AdminTransferCreditPolicySettingsPage,
+  'billing-tuition-codes': TuitionCodeSearchPage,
+  'billing-tuition-code-detail': TuitionCodeDetailPage,
+  'billing-periods': BillingPeriodSearchPage,
+  'billing-period-detail': BillingPeriodDetailPage,
   athletics: AthleticsPage,
   student: StudentProfilePage,
   studentCreate: StudentCreatePage,

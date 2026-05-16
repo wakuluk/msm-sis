@@ -56,6 +56,10 @@ export type PortalRouteItemKey =
   | 'admin-transfer-credit-policy-settings'
   | 'admin-transfer-credit-policy-settings-new'
   | 'admin-transfer-credit-policy-settings-detail'
+  | 'billing-tuition-codes'
+  | 'billing-tuition-code-detail'
+  | 'billing-periods'
+  | 'billing-period-detail'
   | 'athletics';
 export type PortalRoutePath =
   | '/portal'
@@ -111,6 +115,10 @@ export type PortalRoutePath =
   | '/admin/settings/transfer-credit-policy'
   | '/admin/settings/transfer-credit-policy/new'
   | '/admin/settings/transfer-credit-policy/:policyId'
+  | '/billing/tuition-codes'
+  | '/billing/tuition-codes/:tuitionCodeId'
+  | '/billing/periods'
+  | '/billing/periods/:billingPeriodId'
   | '/athletics'
   | '/academics/academic-sub-term/:subTermId'
   | '/academics/academic-terms/:termId';
@@ -123,6 +131,7 @@ export type PortalRouteGroupKey =
   | 'transfer'
   | 'calendar'
   | 'registration'
+  | 'billing'
   | 'settings'
   | 'athletics';
 
@@ -645,6 +654,47 @@ export const portalRoutes: PortalRouteNode[] = [
         key: 'registration-group-detail',
         label: 'Registration Group Detail',
         path: '/registration/groups/:registrationGroupId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+    ],
+  },
+  {
+    kind: 'group',
+    key: 'billing',
+    label: 'Billing',
+    requiredRoles: [PORTAL_ROLES.ADMIN],
+    showInNav: true,
+    children: [
+      {
+        kind: 'item',
+        key: 'billing-tuition-codes',
+        label: 'Tuition Codes',
+        path: '/billing/tuition-codes',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'billing-tuition-code-detail',
+        label: 'Tuition Code Detail',
+        path: '/billing/tuition-codes/:tuitionCodeId',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: false,
+      },
+      {
+        kind: 'item',
+        key: 'billing-periods',
+        label: 'Billing Periods',
+        path: '/billing/periods',
+        requiredRoles: [PORTAL_ROLES.ADMIN],
+        showInNav: true,
+      },
+      {
+        kind: 'item',
+        key: 'billing-period-detail',
+        label: 'Billing Period Detail',
+        path: '/billing/periods/:billingPeriodId',
         requiredRoles: [PORTAL_ROLES.ADMIN],
         showInNav: false,
       },
