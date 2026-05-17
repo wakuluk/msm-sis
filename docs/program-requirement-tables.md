@@ -1,0 +1,646 @@
+# Program Requirement Tables
+
+This documents the database shape for 10 tables: `degree_type`, `program_type`, `program`, `program_version`, `requirement`, `requirement_course`, `requirement_course_rule`, `program_version_requirement`, `program_version_completion_requirement`, `program_version_completion_requirement_option`. It supports:
+
+- Stores reference types for degree
+- Stores reference types for program
+- Stores academic programs
+- Stores versioned program definitions
+- Stores reusable program requirement definitions
+- Maps requirements to eligible course versions
+- Stores structured course-selection rules for requirements
+- Maps program versions to requirements
+- Stores completion requirement groups for program versions
+- Stores course options for completion requirement groups
+
+Implemented by Flyway migration:
+`api/src/main/resources/db/migration/V10__create_program_requirement_tables.sql`.
+
+## Tables
+
+### `degree_type`
+
+Stores reference types for degree.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `degree_type_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(100)` | Yes |  |
+| `sort_order` | `INT` | Yes |  |
+
+### `program_type`
+
+Stores reference types for program.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `program_type_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(100)` | Yes |  |
+| `sort_order` | `INT` | Yes |  |
+
+### `program`
+
+Stores academic programs.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `program_id` | `BIGINT` | Yes | Identity primary key |
+| `school_id` | `BIGINT` | No | References `academic_school(school_id)` |
+| `department_id` | `BIGINT` | No | References `academic_department(department_id)` |
+| `program_type_id` | `BIGINT` | Yes | References `program_type(program_type_id)` |
+| `degree_type_id` | `BIGINT` | No | References `degree_type(degree_type_id)` |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(255)` | Yes |  |
+| `description` | `TEXT` | No |  |
+| `created_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Creation timestamp |
+| `updated_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Maintained by trigger where defined |
+
+### `program_version`
+
+Stores versioned program definitions.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `program_version_id` | `BIGINT` | Yes | Identity primary key |
+| `program_id` | `BIGINT` | Yes | Part of unique constraint; References `program(program_id)` |
+| `version_number` | `INT` | Yes | Part of unique constraint |
+| `is_published` | `BOOLEAN` | Yes | Defaults to `FALSE` |
+| `class_year_start` | `INT` | Yes |  |
+| `class_year_end` | `INT` | No |  |
+| `notes` | `VARCHAR(500)` | No |  |
+| `created_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Creation timestamp |
+| `updated_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Maintained by trigger where defined |
+
+### `requirement`
+
+Stores reusable program requirement definitions.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `requirement_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(255)` | Yes |  |
+| `requirement_type` | `VARCHAR(50)` | Yes |  |
+| `description` | `TEXT` | No |  |
+| `minimum_credits` | `DECIMAL(5,2)` | No |  |
+| `minimum_courses` | `INT` | No |  |
+| `course_match_mode` | `VARCHAR(50)` | No |  |
+| `minimum_grade` | `VARCHAR(10)` | No |  |
+| `created_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Creation timestamp |
+| `updated_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Maintained by trigger where defined |
+
+### `requirement_course`
+
+Maps requirements to eligible course versions.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `requirement_course_id` | `BIGINT` | Yes | Identity primary key |
+| `requirement_id` | `BIGINT` | Yes | Part of unique constraint; References `requirement(requirement_id)` |
+| `course_id` | `BIGINT` | Yes | Part of unique constraint; References `course(course_id)` |
+| `required` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `minimum_grade` | `VARCHAR(10)` | No |  |
+| `created_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Creation timestamp |
+| `updated_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Maintained by trigger where defined |
+
+### `requirement_course_rule`
+
+Stores structured course-selection rules for requirements.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `requirement_course_rule_id` | `BIGINT` | Yes | Identity primary key |
+| `requirement_id` | `BIGINT` | Yes | References `requirement(requirement_id)` |
+| `department_id` | `BIGINT` | Yes | References `academic_department(department_id)` |
+| `minimum_course_number` | `INT` | No |  |
+| `maximum_course_number` | `INT` | No |  |
+| `minimum_credits` | `DECIMAL(5,2)` | No |  |
+| `minimum_courses` | `INT` | No |  |
+| `minimum_grade` | `VARCHAR(10)` | No |  |
+| `created_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Creation timestamp |
+| `updated_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Maintained by trigger where defined |
+
+### `program_version_requirement`
+
+Maps program versions to requirements.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `program_version_requirement_id` | `BIGINT` | Yes | Identity primary key |
+| `program_version_id` | `BIGINT` | Yes | Part of unique constraint; References `program_version(program_version_id)` |
+| `requirement_id` | `BIGINT` | Yes | Part of unique constraint; References `requirement(requirement_id)` |
+| `sort_order` | `INT` | Yes | Defaults to `0` |
+| `required` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `course_reuse_policy` | `VARCHAR(40)` | Yes | Defaults to `'CONSUME_AVAILABLE'` |
+| `notes` | `VARCHAR(500)` | No |  |
+| `created_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Creation timestamp |
+| `updated_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Maintained by trigger where defined |
+
+### `program_version_completion_requirement`
+
+Stores completion requirement groups for program versions.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `program_version_completion_requirement_id` | `BIGINT` | Yes | Identity primary key |
+| `program_version_id` | `BIGINT` | Yes | References `program_version(program_version_id)` |
+| `minimum_count` | `INT` | Yes | Defaults to `1` |
+| `sort_order` | `INT` | Yes | Defaults to `0` |
+| `notes` | `VARCHAR(500)` | No |  |
+| `created_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Creation timestamp |
+| `updated_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Maintained by trigger where defined |
+
+### `program_version_completion_requirement_option`
+
+Stores course options for completion requirement groups.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `program_version_completion_requirement_option_id` | `BIGINT` | Yes | Identity primary key |
+| `program_version_completion_requirement_id` | `BIGINT` | Yes | References `program_version_completion_requirement(program_version_completion_requirement_id)` |
+| `required_program_type_id` | `BIGINT` | No | References `program_type(program_type_id)` |
+| `required_program_id` | `BIGINT` | No | References `program(program_id)` |
+| `required_program_version_id` | `BIGINT` | No | References `program_version(program_version_id)` |
+| `created_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Creation timestamp |
+| `updated_at` | `TIMESTAMP` | Yes | Defaults to `CURRENT_TIMESTAMP`; Maintained by trigger where defined |
+
+## SQL
+
+```sql
+CREATE TABLE degree_type (
+    degree_type_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    sort_order INT NOT NULL
+);
+
+INSERT INTO degree_type (code, name, sort_order) VALUES
+    ('BACHELOR', 'Bachelor', 1),
+    ('MASTER', 'Master', 2);
+
+CREATE TABLE program_type (
+    program_type_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    sort_order INT NOT NULL
+);
+
+INSERT INTO program_type (code, name, sort_order) VALUES
+    ('MAJOR', 'Major', 1),
+    ('MINOR', 'Minor', 2),
+    ('CERTIFICATE', 'Certificate', 3),
+    ('CORE', 'Core', 4);
+
+CREATE TABLE program (
+    program_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    school_id BIGINT NULL,
+    department_id BIGINT NULL,
+    program_type_id BIGINT NOT NULL,
+    degree_type_id BIGINT NULL,
+
+    code VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_program_school
+        FOREIGN KEY (school_id) REFERENCES academic_school(school_id),
+
+    CONSTRAINT fk_program_department
+        FOREIGN KEY (department_id) REFERENCES academic_department(department_id),
+
+    CONSTRAINT fk_program_program_type
+        FOREIGN KEY (program_type_id) REFERENCES program_type(program_type_id),
+
+    CONSTRAINT fk_program_degree_type
+        FOREIGN KEY (degree_type_id) REFERENCES degree_type(degree_type_id),
+
+    CONSTRAINT uq_program_code
+        UNIQUE (code)
+);
+
+CREATE TABLE program_version (
+    program_version_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    program_id BIGINT NOT NULL,
+
+    version_number INT NOT NULL,
+    is_published BOOLEAN NOT NULL DEFAULT FALSE,
+    class_year_start INT NOT NULL,
+    class_year_end INT NULL,
+    notes VARCHAR(500) NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_program_version_program
+        FOREIGN KEY (program_id) REFERENCES program(program_id) ON DELETE CASCADE,
+
+    CONSTRAINT uq_program_version_number
+        UNIQUE (program_id, version_number),
+
+    CONSTRAINT chk_program_version_number
+        CHECK (version_number > 0),
+
+    CONSTRAINT chk_program_version_class_year_start
+        CHECK (class_year_start >= 1900),
+
+    CONSTRAINT chk_program_version_class_year_end
+        CHECK (class_year_end IS NULL OR class_year_end >= class_year_start)
+);
+
+CREATE TABLE requirement (
+    requirement_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    requirement_type VARCHAR(50) NOT NULL,
+    description TEXT NULL,
+    minimum_credits DECIMAL(5,2) NULL,
+    minimum_courses INT NULL,
+    course_match_mode VARCHAR(50) NULL,
+    minimum_grade VARCHAR(10) NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_requirement_code
+        UNIQUE (code),
+
+    CONSTRAINT chk_requirement_type
+        CHECK (
+            requirement_type IN (
+                'TOTAL_ELECTIVE_CREDITS',
+                'SPECIFIC_COURSES',
+                'DEPARTMENT_LEVEL_COURSES',
+                'MANUAL'
+            )
+        ),
+
+    CONSTRAINT chk_requirement_minimum_credits
+        CHECK (minimum_credits IS NULL OR minimum_credits >= 0),
+
+    CONSTRAINT chk_requirement_minimum_courses
+        CHECK (minimum_courses IS NULL OR minimum_courses > 0),
+
+    CONSTRAINT chk_requirement_course_match_mode
+        CHECK (course_match_mode IS NULL OR course_match_mode IN ('ALL', 'ANY')),
+
+    CONSTRAINT chk_requirement_total_elective_credits_shape
+        CHECK (
+            requirement_type <> 'TOTAL_ELECTIVE_CREDITS'
+            OR (
+                minimum_credits IS NOT NULL
+                AND minimum_credits > 0
+                AND minimum_courses IS NULL
+                AND course_match_mode IS NULL
+                AND minimum_grade IS NULL
+            )
+        ),
+
+    CONSTRAINT chk_requirement_specific_courses_shape
+        CHECK (
+            requirement_type <> 'SPECIFIC_COURSES'
+            OR (
+                minimum_credits IS NULL
+                AND minimum_grade IS NULL
+                AND (
+                    (
+                        course_match_mode = 'ALL'
+                        AND minimum_courses IS NULL
+                    )
+                    OR (
+                        course_match_mode = 'ANY'
+                        AND minimum_courses IS NOT NULL
+                    )
+                )
+            )
+        ),
+
+    CONSTRAINT chk_requirement_department_level_courses_shape
+        CHECK (
+            requirement_type <> 'DEPARTMENT_LEVEL_COURSES'
+            OR (
+                minimum_credits IS NULL
+                AND minimum_courses IS NULL
+                AND course_match_mode IS NULL
+                AND minimum_grade IS NULL
+            )
+        ),
+
+    CONSTRAINT chk_requirement_manual_shape
+        CHECK (
+            requirement_type <> 'MANUAL'
+            OR (
+                minimum_credits IS NULL
+                AND minimum_courses IS NULL
+                AND course_match_mode IS NULL
+                AND minimum_grade IS NULL
+            )
+        )
+);
+
+CREATE TABLE requirement_course (
+    requirement_course_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    requirement_id BIGINT NOT NULL,
+    course_id BIGINT NOT NULL,
+
+    required BOOLEAN NOT NULL DEFAULT TRUE,
+    minimum_grade VARCHAR(10) NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_requirement_course_requirement
+        FOREIGN KEY (requirement_id) REFERENCES requirement(requirement_id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_requirement_course_course
+        FOREIGN KEY (course_id) REFERENCES course(course_id),
+
+    CONSTRAINT uq_requirement_course
+        UNIQUE (requirement_id, course_id)
+);
+
+CREATE TABLE requirement_course_rule (
+    requirement_course_rule_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    requirement_id BIGINT NOT NULL,
+    department_id BIGINT NOT NULL,
+
+    minimum_course_number INT NULL,
+    maximum_course_number INT NULL,
+    minimum_credits DECIMAL(5,2) NULL,
+    minimum_courses INT NULL,
+    minimum_grade VARCHAR(10) NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_requirement_course_rule_requirement
+        FOREIGN KEY (requirement_id) REFERENCES requirement(requirement_id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_requirement_course_rule_department
+        FOREIGN KEY (department_id) REFERENCES academic_department(department_id),
+
+    CONSTRAINT chk_requirement_course_rule_course_number
+        CHECK (
+            minimum_course_number IS NULL
+            OR maximum_course_number IS NULL
+            OR maximum_course_number >= minimum_course_number
+        ),
+
+    CONSTRAINT chk_requirement_course_rule_minimum_credits
+        CHECK (minimum_credits IS NULL OR minimum_credits >= 0),
+
+    CONSTRAINT chk_requirement_course_rule_minimum_courses
+        CHECK (minimum_courses IS NULL OR minimum_courses >= 0),
+
+    CONSTRAINT chk_requirement_course_rule_target
+        CHECK (
+            COALESCE(minimum_credits, 0) > 0
+            OR COALESCE(minimum_courses, 0) > 0
+        )
+);
+
+CREATE TABLE program_version_requirement (
+    program_version_requirement_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    program_version_id BIGINT NOT NULL,
+    requirement_id BIGINT NOT NULL,
+
+    sort_order INT NOT NULL DEFAULT 0,
+    required BOOLEAN NOT NULL DEFAULT TRUE,
+    course_reuse_policy VARCHAR(40) NOT NULL DEFAULT 'CONSUME_AVAILABLE',
+    notes VARCHAR(500) NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_program_version_requirement_version
+        FOREIGN KEY (program_version_id)
+            REFERENCES program_version(program_version_id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_program_version_requirement_requirement
+        FOREIGN KEY (requirement_id)
+            REFERENCES requirement(requirement_id),
+
+    CONSTRAINT uq_program_version_requirement
+        UNIQUE (program_version_id, requirement_id),
+
+    CONSTRAINT chk_program_version_requirement_sort_order
+        CHECK (sort_order >= 0),
+
+    CONSTRAINT chk_program_version_requirement_course_reuse_policy
+        CHECK (course_reuse_policy IN ('CONSUME_AVAILABLE', 'ALLOW_REUSE'))
+);
+
+CREATE TABLE program_version_completion_requirement (
+    program_version_completion_requirement_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    program_version_id BIGINT NOT NULL,
+
+    minimum_count INT NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0,
+    notes VARCHAR(500) NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_program_version_completion_requirement_version
+        FOREIGN KEY (program_version_id)
+            REFERENCES program_version(program_version_id) ON DELETE CASCADE,
+
+    CONSTRAINT chk_program_version_completion_requirement_minimum_count
+        CHECK (minimum_count > 0),
+
+    CONSTRAINT chk_program_version_completion_requirement_sort_order
+        CHECK (sort_order >= 0)
+);
+
+CREATE TABLE program_version_completion_requirement_option (
+    program_version_completion_requirement_option_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    program_version_completion_requirement_id BIGINT NOT NULL,
+    required_program_type_id BIGINT NULL,
+    required_program_id BIGINT NULL,
+    required_program_version_id BIGINT NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_program_version_completion_requirement_option_requirement
+        FOREIGN KEY (program_version_completion_requirement_id)
+            REFERENCES program_version_completion_requirement(program_version_completion_requirement_id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_program_version_completion_requirement_option_type
+        FOREIGN KEY (required_program_type_id)
+            REFERENCES program_type(program_type_id),
+
+    CONSTRAINT fk_program_version_completion_requirement_option_program
+        FOREIGN KEY (required_program_id)
+            REFERENCES program(program_id),
+
+    CONSTRAINT fk_program_version_completion_requirement_option_program_version
+        FOREIGN KEY (required_program_version_id)
+            REFERENCES program_version(program_version_id),
+
+    CONSTRAINT chk_program_version_completion_requirement_option_target
+        CHECK (
+            (
+                CASE WHEN required_program_type_id IS NULL THEN 0 ELSE 1 END
+                + CASE WHEN required_program_id IS NULL THEN 0 ELSE 1 END
+                + CASE WHEN required_program_version_id IS NULL THEN 0 ELSE 1 END
+            ) = 1
+        )
+);
+
+CREATE INDEX idx_program_school
+    ON program (school_id);
+
+CREATE INDEX idx_program_department
+    ON program (department_id);
+
+CREATE INDEX idx_program_program_type
+    ON program (program_type_id);
+
+CREATE INDEX idx_program_degree_type
+    ON program (degree_type_id);
+
+CREATE INDEX idx_program_version_program
+    ON program_version (program_id);
+
+CREATE INDEX idx_program_version_class_year
+    ON program_version (program_id, class_year_start, class_year_end);
+
+CREATE UNIQUE INDEX uq_program_version_published_open_ended
+    ON program_version (program_id)
+    WHERE is_published = TRUE
+      AND class_year_end IS NULL;
+
+CREATE INDEX idx_program_version_requirement_version
+    ON program_version_requirement (program_version_id);
+
+CREATE INDEX idx_program_version_requirement_requirement
+    ON program_version_requirement (requirement_id);
+
+CREATE INDEX idx_program_version_completion_requirement_version
+    ON program_version_completion_requirement (program_version_id);
+
+CREATE INDEX idx_program_version_completion_requirement_option_requirement
+    ON program_version_completion_requirement_option (program_version_completion_requirement_id);
+
+CREATE INDEX idx_program_version_completion_requirement_option_type
+    ON program_version_completion_requirement_option (required_program_type_id);
+
+CREATE INDEX idx_program_version_completion_requirement_option_program
+    ON program_version_completion_requirement_option (required_program_id);
+
+CREATE INDEX idx_program_version_completion_requirement_option_program_version
+    ON program_version_completion_requirement_option (required_program_version_id);
+
+CREATE INDEX idx_requirement_course_requirement
+    ON requirement_course (requirement_id);
+
+CREATE INDEX idx_requirement_course_course
+    ON requirement_course (course_id);
+
+CREATE INDEX idx_requirement_course_rule_requirement
+    ON requirement_course_rule (requirement_id);
+
+CREATE INDEX idx_requirement_course_rule_department
+    ON requirement_course_rule (department_id);
+
+CREATE FUNCTION prevent_program_version_class_year_overlap()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.is_published = FALSE THEN
+        RETURN NEW;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM program_version existing_version
+        WHERE existing_version.program_id = NEW.program_id
+          AND existing_version.program_version_id <> COALESCE(NEW.program_version_id, -1)
+          AND existing_version.is_published = TRUE
+          AND existing_version.class_year_start <= COALESCE(NEW.class_year_end, 2147483647)
+          AND NEW.class_year_start <= COALESCE(existing_version.class_year_end, 2147483647)
+    ) THEN
+        RAISE EXCEPTION 'Published program versions cannot have overlapping class year ranges.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE FUNCTION validate_program_department_school()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.department_id IS NOT NULL
+        AND NOT EXISTS (
+            SELECT 1
+            FROM academic_department department
+            WHERE department.department_id = NEW.department_id
+              AND department.school_id = NEW.school_id
+        )
+    THEN
+        RAISE EXCEPTION 'Program department must belong to the selected school.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_program_updated_at
+    BEFORE UPDATE ON program
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at_timestamp();
+
+CREATE TRIGGER trg_program_version_updated_at
+    BEFORE UPDATE ON program_version
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at_timestamp();
+
+CREATE TRIGGER trg_requirement_updated_at
+    BEFORE UPDATE ON requirement
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at_timestamp();
+
+CREATE TRIGGER trg_requirement_course_updated_at
+    BEFORE UPDATE ON requirement_course
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at_timestamp();
+
+CREATE TRIGGER trg_requirement_course_rule_updated_at
+    BEFORE UPDATE ON requirement_course_rule
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at_timestamp();
+
+CREATE TRIGGER trg_program_version_requirement_updated_at
+    BEFORE UPDATE ON program_version_requirement
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at_timestamp();
+
+CREATE TRIGGER trg_program_version_completion_requirement_updated_at
+    BEFORE UPDATE ON program_version_completion_requirement
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at_timestamp();
+
+CREATE TRIGGER trg_program_version_completion_requirement_option_updated_at
+    BEFORE UPDATE ON program_version_completion_requirement_option
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at_timestamp();
+
+CREATE TRIGGER trg_program_version_class_year_overlap
+    BEFORE INSERT OR UPDATE ON program_version
+    FOR EACH ROW
+    EXECUTE FUNCTION prevent_program_version_class_year_overlap();
+
+CREATE TRIGGER trg_program_department_school
+    BEFORE INSERT OR UPDATE ON program
+    FOR EACH ROW
+    EXECUTE FUNCTION validate_program_department_school();
+```
+
+## Notes
+
+- Keep this document aligned with `api/src/main/resources/db/migration/V10__create_program_requirement_tables.sql`; the SQL block is included so reviewers can compare the table summary against the migration.
+- Reference and seed data inserted by the migration are part of the migration contract, but the tables above describe the stored shape.

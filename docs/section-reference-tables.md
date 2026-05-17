@@ -1,0 +1,229 @@
+# Section Reference Tables
+
+This documents the database shape for 9 tables: `course_section_status`, `delivery_mode`, `grading_basis`, `section_meeting_type`, `section_instructor_role`, `instructional_assignment_role`, `student_section_enrollment_status`, `student_section_grade_type`, `grade_mark`. It supports:
+
+- Stores reference statuses for course section
+- Stores delivery mode records
+- Stores grading basis records
+- Stores reference types for section meeting
+- Stores section instructor role records
+- Stores instructional assignment role records
+- Stores reference statuses for student section enrollment
+- Stores reference types for student section grade
+- Stores grade mark records
+
+Implemented by Flyway migration:
+`api/src/main/resources/db/migration/V6__create_section_reference_tables.sql`.
+
+## Tables
+
+### `course_section_status`
+
+Stores reference statuses for course section.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `course_section_status_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(100)` | Yes |  |
+| `active` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `sort_order` | `INT` | Yes |  |
+| `allow_linear_shift` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+
+### `delivery_mode`
+
+Stores delivery mode records.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `delivery_mode_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(100)` | Yes |  |
+| `active` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `sort_order` | `INT` | Yes |  |
+
+### `grading_basis`
+
+Stores grading basis records.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `grading_basis_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(100)` | Yes |  |
+| `active` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `sort_order` | `INT` | Yes |  |
+| `allowed_for_course_sections` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `allowed_for_student_enrollments` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+
+### `section_meeting_type`
+
+Stores reference types for section meeting.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `section_meeting_type_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(100)` | Yes |  |
+| `active` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `sort_order` | `INT` | Yes |  |
+
+### `section_instructor_role`
+
+Stores section instructor role records.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `section_instructor_role_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(100)` | Yes |  |
+| `active` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `sort_order` | `INT` | Yes |  |
+
+### `instructional_assignment_role`
+
+Stores instructional assignment role records.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `instructional_assignment_role_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(100)` | Yes |  |
+| `description` | `VARCHAR(500)` | No |  |
+| `counts_for_conflict_check` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `default_can_view_grades` | `BOOLEAN` | Yes | Defaults to `FALSE` |
+| `default_can_manage_grades` | `BOOLEAN` | Yes | Defaults to `FALSE` |
+| `active` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `sort_order` | `INT` | Yes |  |
+
+### `student_section_enrollment_status`
+
+Stores reference statuses for student section enrollment.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `student_section_enrollment_status_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(100)` | Yes |  |
+| `active` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `sort_order` | `INT` | Yes |  |
+| `allow_linear_shift` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+
+### `student_section_grade_type`
+
+Stores reference types for student section grade.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `student_section_grade_type_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(50)` | Yes | Unique |
+| `name` | `VARCHAR(100)` | Yes |  |
+| `active` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `sort_order` | `INT` | Yes |  |
+
+### `grade_mark`
+
+Stores grade mark records.
+
+| Column | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `grade_mark_id` | `BIGINT` | Yes | Identity primary key |
+| `code` | `VARCHAR(20)` | Yes | Unique |
+| `name` | `VARCHAR(100)` | Yes |  |
+| `quality_points` | `DECIMAL(4,2)` | No |  |
+| `earns_credit` | `BOOLEAN` | Yes | Defaults to `FALSE` |
+| `counts_in_gpa` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `active` | `BOOLEAN` | Yes | Defaults to `TRUE` |
+| `sort_order` | `INT` | Yes |  |
+
+## SQL
+
+```sql
+CREATE TABLE course_section_status (
+    course_section_status_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL,
+    allow_linear_shift BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE delivery_mode (
+    delivery_mode_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL
+);
+
+CREATE TABLE grading_basis (
+    grading_basis_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL,
+    allowed_for_course_sections BOOLEAN NOT NULL DEFAULT TRUE,
+    allowed_for_student_enrollments BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE section_meeting_type (
+    section_meeting_type_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL
+);
+
+CREATE TABLE section_instructor_role (
+    section_instructor_role_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL
+);
+
+CREATE TABLE instructional_assignment_role (
+    instructional_assignment_role_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(500) NULL,
+    counts_for_conflict_check BOOLEAN NOT NULL DEFAULT TRUE,
+    default_can_view_grades BOOLEAN NOT NULL DEFAULT FALSE,
+    default_can_manage_grades BOOLEAN NOT NULL DEFAULT FALSE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL
+);
+
+CREATE TABLE student_section_enrollment_status (
+    student_section_enrollment_status_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL,
+    allow_linear_shift BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE student_section_grade_type (
+    student_section_grade_type_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL
+);
+
+CREATE TABLE grade_mark (
+    grade_mark_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    code VARCHAR(20) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    quality_points DECIMAL(4,2) NULL,
+    earns_credit BOOLEAN NOT NULL DEFAULT FALSE,
+    counts_in_gpa BOOLEAN NOT NULL DEFAULT TRUE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL
+);
+```
+
+## Notes
+
+- Keep this document aligned with `api/src/main/resources/db/migration/V6__create_section_reference_tables.sql`; the SQL block is included so reviewers can compare the table summary against the migration.
+- Reference and seed data inserted by the migration are part of the migration contract, but the tables above describe the stored shape.
